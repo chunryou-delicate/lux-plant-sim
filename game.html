@@ -716,6 +716,8 @@
   .qrow .qtodo{margin-top:3px;font-size:11.5px;line-height:1.55;color:rgba(255,255,255,.78);
     word-break:keep-all}
   .qrow .qwhy{margin-top:3px;font-size:11px;line-height:1.5;color:var(--dim);word-break:keep-all}
+  /* ★ D50 — 기다림 줄(사람 손으로 할 것이 없다)은 할 일 글보다 한 톤 낮게 */
+  .qrow .qtodo.qwait{color:rgba(255,255,255,.55);font-style:italic}
   /* 보상 — **오른쪽 끝에 세로로 선다.** 줄 안에 섞으면 「무엇을 받나」가 안 읽힌다 */
   .qrow .qrew{flex:0 0 auto;max-width:38%;text-align:right;font-size:11px;line-height:1.45;
     color:var(--dim);word-break:keep-all}
@@ -3256,6 +3258,8 @@ import { endingRulesFromHomes } from './src/game/ending.js';   /* ★ 2026-10-09
 import { endingGoal } from './src/game/ending.js';   /* ★ 2026-10-08 [plan] 지도 50 — 원룸 할 일이 비었을 때의 글(§questEmptyKo) */
 /* ★ 2026-10-08 D2 — 독촉은 «할 수 있었던 날»만: 기다린 날을 적는다(판정·날수는 nudge_wait.js · 거는 자리는 dialogue.js chatterContext) */
 import { noteQuestWaits } from './src/game/nudge_wait.js';
+/* ★ 2026-10-09 D50([plan] dbbf7f29) — 칩·할 일 창이 «무엇을 기다리나»를 싣는다(판정은 nudge_wait 하나 · §questViewNow) */
+import { nudgeWaitReason } from './src/game/nudge_wait.js';
 /* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
 import { noteZoomOpened } from './src/game/leaf_wait.js';
 /* ★ 2026-10-08 ④ 내 집 마련 규칙 — 목표(D9)가 null 이면 화면에 아무것도 안 뜬다 · ?endingTarget=N 은 걸어서 잴 때만(§homeGoalOf) */
@@ -9725,13 +9729,14 @@ function drawQuestPanel() {
   if (!questOpen) return;
 
   let v = null;
-  try { v = questView(S, questSnapshotNow(lastTurn)); } catch (e) { v = null; }
+  try { v = questViewNow(); } catch (e) { v = null; }
   if (!v) { $('questList').textContent = '지금은 할 일을 읽을 수 없습니다'; return; }
 
   const total = v.all.length, done = v.done.length;
   $('questTitle').textContent = `할 일 ${done}/${total}`;
-  $('questSub').textContent = v.next
-    ? `지금 할 것 — ${v.next.ko}`
+  /* D50 — 머리는 칩과 같은 줄(기다리지 않는 첫 줄)을 말한다 */
+  $('questSub').textContent = v.chip
+    ? (v.chip.waiting ? `기다리는 중 — ${v.chip.waitWhat || v.chip.ko}` : `지금 할 것 — ${v.chip.ko}`)
     /* ⚠ 수를 글자로 박지 마라 — 2026-08-16 에 줄이 다섯에서 여섯이 됐고 이 줄만 낡았다.
        `total` 은 `quest.QUESTS` 에서 오므로 줄이 늘면 저절로 따라온다(§2.8). */
     : (done >= total ? `${total}가지를 다 배웠습니다` : questEmptyKo());
@@ -9777,6 +9782,19 @@ function drawQuestPanel() {
        왔다」라서 남고, 안 온 길은 「끝없는 목록」이라 접는다. 그 둘은 다른 것이다.
    ⚠ 도장 `✓` 와 `.qrow.done` 은 그대로 둔다 — 끝낸 줄을 그것으로 세는 검사가 있다(A-7). */
 const QUEST_PEEK_LOCKED = 1;
+/* ★★ 2026-10-09 D50(총괄 · [plan] dbbf7f29 · D51 ffc2dfce) — **칩은 «기다림» 줄을 건너뛰고 지금 할 수 있는 줄을 보인다.**
+   보기는 quest.js §questView 가 짓고(chip · waiting · waitWhat) «기다리나»는 nudge_wait §nudgeWaitReason 하나가 가른다.
+   칩·[가방] 할 일 단추·할 일 창 머리는 `chip` 을 보고, 할 일 줄은 기다림이면 「기다리는 중 — {무엇}」으로 적는다.
+   ⚠ `next`·`current` 는 그대로다 — 손가락·사슬 머리(D12)·다른 부름이 안 흔들리게 */
+function questViewNow() {
+  return questView(S, questSnapshotNow(lastTurn), { waitReason: id => nudgeWaitReason(S, id) });
+}
+/* 칩 한 줄 — 기다림이면 「기다리는 중 — …」 · 아니면 그 줄의 할 일(D51 집 자금 줄은 날마다 글이 바뀐다 · questTodo) */
+function questChipLineOf(v) {
+  const c = v && v.chip;
+  if (!c) return null;
+  return c.waiting && c.waitWhat ? `기다리는 중 — ${c.waitWhat}` : (c.todo || null);
+}
 function questRowsHtml(v) {
   const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -9793,7 +9811,9 @@ function questRowsHtml(v) {
     const body =
       state === 'locked' ? '<div class="qwhy">아직 열리지 않았습니다</div>'
       : state === 'done' ? ''
-      : `<div class="qtodo">${esc(q.todo)}</div><div class="qwhy">${esc(q.why)}</div>`;
+      : q.waiting && q.waitWhat
+        ? `<div class="qtodo qwait">기다리는 중 — ${esc(q.waitWhat)}</div><div class="qwhy">${esc(q.why)}</div>`   /* D50 */
+        : `<div class="qtodo">${esc(q.todo)}</div><div class="qwhy">${esc(q.why)}</div>`;
     const cls = state === 'done' ? 'done' : state === 'open' ? 'open' : 'lock';
     /* ⚠ `data-qid` 를 붙인다 — 화면이 **일부만** 그리게 됐으므로, 검사가 「어느 줄이
        그려졌나」를 알아야 보상 문구를 정의와 대조할 수 있다(test_questui C-9). */
@@ -9937,7 +9957,7 @@ function drawQuestTab() {
   const list = $('questListTab');
   if (!list) return;                       /* 옛 화면 — 탭이 없으면 조용히 지나간다 */
   let v = null;
-  try { v = questView(S, questSnapshotNow(lastTurn)); } catch { v = null; }
+  try { v = questViewNow(); } catch { v = null; }   /* D50 — 기다림 줄을 «기다리는 중 — …»으로 */
   if (!v) { list.textContent = '지금은 할 일을 읽을 수 없습니다'; return; }
   const total = v.all.length, done = v.done.length;
   $('questTabTitle').textContent = `할 일 ${done}/${total}`;
@@ -9980,11 +10000,13 @@ function drawBagQuestBtn() {
   const b = $('questBack'), h = $('questBackHint');
   if (!b) return;
   let v = null;
-  try { v = questView(S, questSnapshotNow(lastTurn)); } catch { v = null; }
+  try { v = questViewNow(); } catch { v = null; }
   const done = v ? v.done.length : 0, total = v ? v.all.length : 0;
   b.textContent = total ? `📜 할 일 (${done}/${total})` : '📜 할 일';
   if (!questNewSeen) b.dataset.dot = '1'; else delete b.dataset.dot;
-  if (h) h.textContent = v && v.next ? `지금 할 것 — ${v.next.todo}` : '';
+  /* D50 — 칩과 같은 줄 */
+  { const line = questChipLineOf(v);
+    if (h) h.textContent = line ? (v.chip.waiting ? line : `지금 할 것 — ${line}`) : ''; }
 }
 
 /* ★★★ **체력이 모자라 못 하는 것은 「왜 안 되는지」가 보여야 한다** (2026-08-09).
@@ -11065,10 +11087,12 @@ function drawJourney() {
      ⚠ 문구를 여기서 새로 짓지 않는다 — `questTodo` 하나가 정본이다. */
   let questGoal = null, questChain = null, questFresh = null;
   try {
-    const qv = questView(S, questSnapshotNow(lastTurn));
-    questGoal = qv.next ? qv.next.todo : null;
-    /* ★ 2026-10-08 D12 — 초반 사슬 몇 번째인가(quest.js questView 가 이미 센다 · 여기서 다시 안 센다) */
-    questChain = (qv.chain && qv.next) ? { index: qv.chain.index, total: qv.chain.total, id: qv.next.id, ko: qv.next.ko } : null;
+    const qv = questViewNow();
+    /* ★ 2026-10-09 D50 — 칩은 «기다리지 않는» 첫 열린 줄(다 기다림이면 「기다리는 중 — …」) · D51 집 자금 줄은 chip.todo 가 날마다 바뀐다 */
+    questGoal = questChipLineOf(qv);
+    /* ★ 2026-10-08 D12 — 초반 사슬 몇 번째인가(quest.js questView 가 이미 센다 · 여기서 다시 안 센다)
+         ⚠ D50 — 칩 줄이 사슬 줄(next)과 같을 때만 머리에 「n/5」를 단다(다르면 머리와 몸이 다른 줄을 말한다) */
+    questChain = (qv.chain && qv.next && qv.chip && qv.chip.id === qv.next.id) ? { index: qv.chain.index, total: qv.chain.total, id: qv.next.id, ko: qv.next.ko } : null;
     /* ★ 2026-10-08 [plan] b3a49dbc P3 — 새로 열린 줄(열린 날이 오늘·어제 · current 아님)을 48시간 칩 첫 줄로 */
     questFresh = (Array.isArray(qv.fresh) && qv.fresh[0]) ? { id: qv.fresh[0].id, ko: qv.fresh[0].ko } : null;
   } catch { questGoal = null; questChain = null; }
@@ -13176,7 +13200,7 @@ async function bootRoomView() {
     /* ★ 퀘스트 — 검사가 「무엇이 열렸나 · 화면이 무슨 사실을 보고 그렇게 말했나」를
        밖에서 잴 수 있게. **읽기 전용**이다(`stepQuests` 는 안 내준다 — 보상이 걸려 있다). */
     window.__questSnap = () => questSnapshotNow(lastTurn);
-    window.__questView = () => questView(S, questSnapshotNow(lastTurn));
+    window.__questView = () => questViewNow();   /* D50 — chip·waiting 까지 */
     /* ★★ 무늬 등급 — 검사가 「배선이 실제로 등급을 붙이나」를 밖에서 잴 수 있게.
        ⚠ **읽기 전용이 아니다** — `noteLeafGrades` 는 등급을 정한다(굴림이 들어 있다).
          그래도 내주는 까닭: 이 배선은 **200일을 굴려야 처음 걸리는 자리**라
@@ -15541,7 +15565,12 @@ const FURN_LIGHT_KO = Object.freeze({
   D:  '여기선 몬스테라가 안 자랍니다 — 창에 더 붙여 보세요',
   grow: '여기면 몬스테라가 자랍니다',
   lamp: '여기선 식물등이 있어야 자랍니다',
-  none: '여기선 몬스테라가 안 자랍니다 — 창에 더 붙여 보세요'
+  /* plan 45b94a49 — 반지하는 창이 높아 가구 윗단이 창에 못 닿는다(등 없이 1.0 안팎 · 자라는 데는 붙박이 창턱 3.68뿐) ⇒ 식물을 옮기라는 말 */
+  none: '여기선 몬스테라가 안 자랍니다 — 몬스테라는 창턱에 두세요',
+  /* ★ C 보탬(총괄 10-09 · house bd7d0b80 · 글 plan 8c7702fe) — 엔진이 `higher`(창틀 높이로 올리면 여름 등 없이 15% 넘게 밝아짐)를 낼 때만 둘째 줄.
+       A·B·Bp → «더 잘» · C·D 인데 올리면 문턱을 넘으면 → «등 없이도» · 올려도 못 넘으면 둘째 줄 없음(반지하는 higher 를 안 낸다) */
+  higher:     '창틀 높이로 올리면 여름에 더 잘 자랍니다',
+  higherGrow: '창틀 높이로 올리면 여름엔 등 없이도 자랍니다'
 });
 function furnLightLine(uid) {
   if (!uid || !io.light || typeof io.light.placeVerdict !== 'function') return null;
@@ -15553,7 +15582,10 @@ function furnLightLine(uid) {
     const v = io.light.placeVerdict(pts, { novice: !seasons });
     if (!v || !FURN_LIGHT_KO[v.key]) return null;
     const text = FURN_LIGHT_KO[v.key] + (v.key === 'C' && v.wnShort ? FURN_LIGHT_KO.Cshort : '');
-    return { key: v.key, text, good: v.key === 'A' || v.key === 'grow' };
+    const tail = !v.higher ? null
+      : (v.key === 'A' || v.key === 'B' || v.key === 'Bp') ? FURN_LIGHT_KO.higher
+      : (Number.isFinite(v.higher.s0) && Number.isFinite(v.th) && v.higher.s0 >= v.th ? FURN_LIGHT_KO.higherGrow : null);
+    return { key: v.key, text, tail, good: v.key === 'A' || v.key === 'grow' };
   } catch (e) { console.warn('[가구 빛]', e && e.message); return null; }
 }
 /* 가구 메뉴의 그 칸을 채운다(null 이면 걷는다) */
@@ -15561,6 +15593,7 @@ function paintFurnLight(line) {
   const el = $('furnLight'); if (!el) return;
   el.style.display = line ? '' : 'none';
   el.textContent = line ? line.text : '';
+  if (line && line.tail) { el.appendChild(document.createElement('br')); el.appendChild(document.createTextNode(line.tail)); }
   el.classList.toggle('good', !!(line && line.good));
 }
 window.__byeotFurnLight = (uid) => furnLightLine(uid);   /* 재는 손잡이 */

@@ -51,7 +51,7 @@ import { lightOptsOf } from '../src/game/loop.js';
 import { moveIntoOneroom } from '../src/game/oneroom.js';
 import { endingRulesFrom, endingProgress } from '../src/game/ending.js';
 import { stepQuests, questView } from '../src/game/quest.js';
-import { nudgeWaiting, noteQuestWaits } from '../src/game/nudge_wait.js';
+import { nudgeWaiting, noteQuestWaits, nudgeWaitReason } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
 /* ★ 2026-10-09 (총괄 · plan 청) — 대사 고르기도 같이 돌린다(화면과 무관한 순수 함수 · game.html §story 와 같은 것) */
 import { createStoryteller } from '../src/game/dialogue.js';
@@ -362,12 +362,14 @@ export async function play(name, seed, opt = {}) {
       const snap = questSnapshotOf(S, io, { mealKinds: meals, targetWon: targets[0] });
       const qr = stepQuests(S, snap);
       if (opt.trace) { out._qDone = (qr && qr.finished) || []; out._qEv = ((qr && qr.events) || []).map(e => e && e.id).filter(Boolean);
-                       try { const cur = questView(S, snap).current; out._chip = cur ? cur.id : null; } catch { out._chip = null; } }
+                       try { const cur = questView(S, snap, { waitReason: id => nudgeWaitReason(S, id) }).chip; out._chip = cur ? cur.id : null; } catch { out._chip = null; } }
       for (const id of (qr && qr.finished) || []) { try { grantStaminaQuest(S, id); } catch { } }   /* 게임 checkQuests 와 같다 — 끝낸 것은 stamina.questsTaken 이 기억한다 */
       try { if (qr && qr.events && qr.events.length) { const q2 = story.events(qr.events, S) || []; saidToday += q2.length; saidIds = saidIds.concat(q2); } } catch { }
       noteQuestWaits(S, S.day);
-      /* ★ 2026-10-09 ([plan] 7d3b2e4f 청) — «지금 할 일» 칩(questView.current · 정의 순서 첫 열린 줄)이 이사 뒤 어느 줄에 며칠 머물렀나 */
-      if (ts.movedOut) { try { const cur = questView(S, snap).current; const k = cur ? cur.id : '(없음)'; (out.chipDays = out.chipDays || {})[k] = (out.chipDays[k] || 0) + 1; } catch { } }
+      /* ★ 2026-10-09 ([plan] 7d3b2e4f 청) — «지금 할 일» 칩이 이사 뒤 어느 줄에 며칠 머물렀나
+           ★ D50 — 게임 칩과 같은 자(questView(…, { waitReason }).chip · 기다림 줄을 건너뜀). 다 기다림이면 «id(기다림)» 으로 센다 */
+      if (ts.movedOut) { try { const cur = questView(S, snap, { waitReason: id => nudgeWaitReason(S, id) }).chip;
+        const k = cur ? (cur.waiting ? `${cur.id}(기다림)` : cur.id) : '(없음)'; (out.chipDays = out.chipDays || {})[k] = (out.chipDays[k] || 0) + 1; } catch { } }
       const stm = S.stamina || {}, done = new Set(stm.questsTaken || []);
       for (const [id, on] of Object.entries(stm.questsOpenedOn || {})) {
         if (out.questOpen[id] == null) out.questOpen[id] = on;

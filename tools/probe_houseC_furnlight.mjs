@@ -23,7 +23,7 @@ const KO = {
   D: '여기선 몬스테라가 안 자랍니다 — 창에 더 붙여 보세요',
   grow: '여기면 몬스테라가 자랍니다',
   lamp: '여기선 식물등이 있어야 자랍니다',
-  none: '여기선 몬스테라가 안 자랍니다 — 창에 더 붙여 보세요'
+  none: '여기선 몬스테라가 안 자랍니다 — 몬스테라는 창턱에 두세요'
 };
 const J = async (js, ms = 180000) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, ms));
 const skip = async () => { for (let k = 0; k < 4; k++) { for (let i = 0; i < 40; i++) {
@@ -106,6 +106,8 @@ try {
     await page.shot(`${OUTDIR}/3_oneroom_window.png`);
     ok(o1.shown && o1.verdict && o1.text.startsWith(KO[o1.verdict.key]), `줄이 뜨고 글이 엔진 갈래 그대로(${o1.verdict && o1.verdict.key} «${o1.text}»)`);
     ok(o1.verdict && ['A', 'B', 'Bp'].includes(o1.verdict.key), `창 앞은 «여름엔 등 없이 자랍니다» 쪽(${o1.verdict && o1.verdict.key})`);
+    /* C 보탬(house bd7d0b80) — 계단식 맨 윗단(0.595m)은 창 아랫변보다 낮다 ⇒ 엔진이 higher 를 내면 둘째 줄 */
+    ok(o1.verdict && (!o1.verdict.tail || (o1.text || '').includes(o1.verdict.tail)), `엔진이 «더 높이면»을 내면 둘째 줄이 붙는다(${o1.verdict && o1.verdict.tail ? '붙음' : '안 냄'})`);
     const o2 = await moveVia(placed.uid, [[-2.4, 1.9], [-2.0, 1.6], [2.3, 1.9], [-1.0, 1.5]]);
     console.log('③ 안쪽 —', JSON.stringify(o2));
     await page.shot(`${OUTDIR}/4_oneroom_inner.png`);

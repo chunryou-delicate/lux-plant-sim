@@ -39,12 +39,21 @@ function cropRows(S, day) {
 /* 그 퀘스트가 오늘 «기다리는 중»인가. true 면 독촉하지 않는다.
      S    게임 상태 (읽기만)
      id   퀘스트 id (stamina.questsOpenedOn 의 열쇠)
-     day  오늘(없으면 S.day) */
+     day  오늘(없으면 S.day)
+   ★ 2026-10-09 D50([plan] dbbf7f29) — 판정은 아래 §nudgeWaitReason 하나다(까닭 열쇠가 있으면 기다림). 여기는 그 참/거짓이다 */
 export function nudgeWaiting(S, id, day = (S && S.day)) {
-  if (NUDGE_ALWAYS_WAIT.includes(id)) return true;
+  return !!nudgeWaitReason(S, id, day);
+}
+
+/* ★★ 2026-10-09 D50([plan] dbbf7f29 · 총괄) — **무엇을 기다리나**까지 낸다. 열쇠는 quest.js §QUEST_WAIT_WHAT 의 것
+   (leaf · cropGrowing · cropReady · seedComing · cutRooting · cutClosed · noRootedVarie · node · noVarieSource · recutNode).
+   null = 기다림이 아니다(할 수 있다). 칩은 기다림 줄을 건너뛰고, 할 일 창은 그 줄을 «기다리는 중 — {무엇}»으로 적는다.
+   ⚠ 판정 갈래는 예전 nudgeWaiting 그대로다 — 까닭이 둘 이상인 줄은 «먼저 걸리는 쪽»을 낸다(아래 차례가 곧 말의 차례). */
+export function nudgeWaitReason(S, id, day = (S && S.day)) {
+  if (NUDGE_ALWAYS_WAIT.includes(id)) return 'leaf';
   if (id === 'first_harvest') {
     const rows = cropRows(S, day);
-    return !rows.some(r => r && r.ready);
+    return rows.some(r => r && r.ready) ? null : 'cropGrowing';
   }
   if (id === 'order_seed') {
     /* ★ 2026-10-08 [plan] 갈래 지도 13·14 — «재고가 있다»를 기다림에서 뺐다: 씨앗을 사 두고 안 심은 판은 할 일이 있다(심기).
@@ -54,13 +63,14 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
     const rows = cropRows(S, day);
     const growing = rows.some(r => r && r.growing);
     const ready = rows.some(r => r && r.ready);
-    return coming || growing || ready;
+    /* 말의 차례: 익은 시루(거두면 풀린다) > 오는 씨앗 > 자라는 시루 */
+    return ready ? 'cropReady' : coming ? 'seedComing' : growing ? 'cropGrowing' : null;
   }
   /* ★ 2026-10-08 원룸 줄([plan] f39fbddb 청) — 사람이 할 일을 «이미 해 놓고» 몸이 자라기를 기다리는 동안은 독촉하지 않는다 */
   if (id === 'oneroom_root_bright') {
     /* 무늬 삽수를 잘라 꽂아 «뿌리내리는 중»이면 기다림(밝은 자리에 두는 것까지 했다) */
     /* ⚠ 2026-10-08 — 방에 «놓인» 삽수만(가방 속 삽수는 하루가 안 간다 · propagation §stepCuttings) — 가방에 둔 것을 기다림으로 치면 «놓으라»가 영영 안 나온다 */
-    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.varieFromCut && c.status === 'rooting' && (c.at || c.slotId));
+    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.varieFromCut && c.status === 'rooting' && (c.at || c.slotId)) ? 'cutRooting' : null;
   }
   /* ★ 2026-10-08 D25(총괄) — first_cut 은 «뿌리를 냈다»로 끝난다. 잘라 물에 꽂은 뒤로는 사람이 할 것이 없다.
      ⚠ «자르기 문이 잠긴 동안»(무늬 다 자란 잎 < 2)은 여기서 안 센다 — [plan] c07263f1 이 그동안 퀘스트를 «안 연다»(열린 것만 독촉한다). */
@@ -68,31 +78,31 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
     /* ★ 2026-10-09 [plan] — 자를 수 있는 마디가 하나도 없으면(모주 잎 예산 · 초보 문 · 자르기 문이 다 막음) 사람이 할 것이 없다.
          «수경병은 상점에 있어. 잎 한 장짜리 마디를 잘라 꽂아 봐.»가 할 수 없는 일을 시키지 않게. 값은 하루 결산이 센다(그날 것만 믿는다) */
     const g = S && S.cutOpenToday;
-    if (g && g.day === day && g.n === 0) return true;
-    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.method === 'water' && c.status === 'rooting' && (c.at || c.slotId));   /* 놓인 것만(위와 같은 까닭) */
+    if (g && g.day === day && g.n === 0) return 'cutClosed';
+    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.method === 'water' && c.status === 'rooting' && (c.at || c.slotId)) ? 'cutRooting' : null;   /* 놓인 것만(위와 같은 까닭) */
   }
   if (id === 'oneroom_settle_cutting') {
     /* ★ 2026-10-09 [plan] 7d3b2e4f 청 — 뿌리낸(rooted · node) 무늬 삽수가 «하나도 없으면» 기다림.
          뿌리낸 삽수를 다 판 사람에게 «혹이 나면 흙으로»는 할 수 없는 일이다(갈래 판: 판당 약 264일 열린 채 독촉).
          ⚠ 여기만은 가방 속 것도 센다 — 가방에 뿌리낸 것이 있으면 «놓기»가 할 일이다(아래 «놓인 것만»과 같은 까닭의 반대쪽) */
     const all = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.varieFromCut);
-    if (!all.some(c => c.status === 'rooted' || c.status === 'node')) return true;
+    if (!all.some(c => c.status === 'rooted' || c.status === 'node')) return 'noRootedVarie';
     /* 뿌리는 냈는데 아직 «혹»이 안 났으면 기다림 — 혹이 나야 흙으로 옮길 수 있다(혹이 나면 할 수 있음) */
     const cs = all.filter(c => c.at || c.slotId);   /* 놓인 것만 */
-    return cs.some(c => c.status === 'rooted') && !cs.some(c => c.status === 'node');
+    return (cs.some(c => c.status === 'rooted') && !cs.some(c => c.status === 'node')) ? 'node' : null;
   }
   /* ★ 2026-10-08 [plan] be02f66a 청 — 반지하 varie_bright 는 «무늬 원천 0»이면 기다림.
      모주를 일찍 판 판(갈래 판 seller)에서 할 수 없는 일을 주 1회 시키고 있었다(6/6 판 끝까지). */
-  if (id === 'varie_bright') return varieSourceCount(S) === 0;
+  if (id === 'varie_bright') return varieSourceCount(S) === 0 ? 'noVarieSource' : null;
   /* ★ 2026-10-09 D41([plan] 7abbc23d) — «키운 그루에서 다시 자르기». 흙에 자리 잡은 삽수(established)에 무늬 잎을 싣는 마디가
        하나도 없으면 사람이 할 것이 없다(새 무늬 잎이 나기를 기다린다). 놓인 것만 센다(가방 속 그루는 자라지 않는다 · §D29). */
   if (id === 'oneroom_recut') {
     const grown = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.status === 'established' && (c.at || c.slotId));
     let can = false;
     for (const c of grown) { try { if (cuttableNodesOfCutting(c).some(n => (n.variegatedLeaves || 0) > 0)) { can = true; break; } } catch { } }
-    return !can;
+    return can ? null : 'recutNode';
   }
-  return false;
+  return null;
 }
 
 /* ★ 2026-10-08 — **무늬 원천** = 무늬 잎 단 그루 수 + 안 죽은 무늬 삽수 수 (plan «갈래 지도» §7 의 말 그대로).
