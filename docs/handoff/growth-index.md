@@ -308,6 +308,12 @@ src/render3d/plant_assemble.js  getPlantAssembler() 의 youngPlantOf(o) → THRE
   TAIL 읽기 둘: __leafBirthsOf(seed, g)(SEED 를 잠깐 꽂고 topologyNow) · __soilY()
 ```
 ⚠ 삽수가 모주에서 들고 온 잎도 «이 그루의 1·2… 번째 잎»으로 그려진다 — D46 «작은 그루» 결정의 뜻. 병 삽수(뿌리내리는 중)는 branchOf 그대로.
+★ 바로잡음(총괄 2026-10-09 · leaf 재기 d46_check: 잎 1장 삽수가 «말린 새순»으로만 그려져 들고 온 잎이 사라졌다):
+  «N 번째 잎을 막 낸 때»를 그려서 다음 잎 몫 0 이면 N 번째가 말린 순이었다. 이제 —
+    들고 온 잎은 다 큰 잎(나이 ≥ 난때 + stageMid × matSpan) · 흙에서 낸 잎은 펼쳐진 뒤부터(+ PROLOGUE_SHOW_M × matSpan)
+    다음 잎(N+1)만 몫 끝자락에 말린 순 → core 가 N+1 을 세는 그날 막 펼쳐짐(이음매 없음) · 숫자는 다 원본 것
+  칸: grewLeaves(core c.grewLeaves · 안 주면 다 들고 온 잎) · userData.spearCount(말린 순 · leafCount 에 안 듦) · carriedLeaves
+  잰 것: core probe_d46_young 잎 1장 그림 높이 0.033 → 0.145m · test_young_plant ⑨ 넷
 사진: docs/handoff/img/young_plant_row.png (잎 1~6 · 잎 2·3 무늬)
 
 ### 2026-10-09 · D45 새 식물 두 종 — 핑크프린세스(PP) · 알로카시아 프라이덱(AL) 생장 규칙 첫 판

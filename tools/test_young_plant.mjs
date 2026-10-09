@@ -11,6 +11,8 @@
      ⑥ withPot:true 면 화분이 남는다 · nextLeaf01 안 주면 «안 줬다»가 적힌다
      ⑦ ★ 이 입구가 모주 조립(assemble)을 안 흔든다 — 씨앗을 잠깐 바꿔 끼우는 읽기가 새지 않나
      ⑧ 사진 — 잎 1~6 장을 나란히(docs/handoff/img/young_plant_row.png) · 색 가짓수로 까만 사진을 거른다
+     ⑨ ★ 들고 온 잎은 다 큰 잎(총괄 2026-10-09 · leaf 재기 «잎 1장 삽수가 말린 새순»):
+        다 들고 온 잎이면 다음 잎 몫 0 에서도 N 번째 잎이 펼쳐진 중간잎 · 흙에서 낸 잎은 펼쳐진 뒤부터 · 다음 잎은 몫 끝자락에만 말린 순
      python tools/serve.py 8963
      BYEOT_URL=http://localhost:8963 node tools/test_young_plant.mjs
 ============================================================ */
@@ -50,7 +52,7 @@ const SETUP = `(async () => {
     const bb = new THREE.Box3().setFromObject(g); const u = g.userData;
     const r = { leafCount: u.leafCount, want: u.leafCountWanted, births: u.leafBirths, days: u.growthDays, ageG: u.ageG,
       dropped: u.droppedParts, h: u.sizeM.h, d: u.sizeM.d, minY: bb.min.y, hash: window.__hash(g), kind: u.kind,
-      given: u.nextLeaf01Given, varieKeys: u.varieLeafKeys, pending: u.skinsPending,
+      given: u.nextLeaf01Given, varieKeys: u.varieLeafKeys, pending: u.skinsPending, spear: u.spearCount, carried: u.carriedLeaves,
       skins: (asm.leafSkinUsedAll() || []).map(x => ({ lb: x.leafBirth, key: x.key })) };
     window.__last = g; return r; };
   return { GMAX: asm.GMAX };
@@ -118,6 +120,21 @@ try {
   /* ⑦ 뒤 — 모주가 그대로인가 */
   const motherAfter = await page.eval(`window.__hash(window.__asm.assemble({ growthDays: 200, seed: 92158, potD: 0.20 }))`);
   ok(motherAfter.h === motherBefore.h && motherAfter.n === motherBefore.n, `⑦ 작은 그루를 수십 번 지은 뒤에도 모주 조립이 같다 — ${motherBefore.h} → ${motherAfter.h}`);
+
+  /* ⑨ 들고 온 잎은 다 큰 잎 · 새 잎만 순에서 펼쳐짐 */
+  { const keyOf = r => { const m = Object.fromEntries(r.skins.map(x => [x.lb, x.key])); return r.births.map(lb => m[lb] ?? null); };
+    const c1 = await page.eval(`window.__yp({ seed: ${SEED}, leaves: ${plain(1)}, nextLeaf01: 0, potD: ${POT} })`);
+    const c3 = await page.eval(`window.__yp({ seed: ${SEED}, leaves: ${plain(3)}, nextLeaf01: 0, potD: ${POT}, grewLeaves: 0 })`);
+    ok(c1.leafCount === 1 && c1.spear === 0 && c1.carried === 1 && /^leaf_mid/.test(keyOf(c1)[0] || ''),
+      `⑨ 잎 1장(들고 온 잎) · 다음 잎 몫 0 — 말린 순이 아니라 펼쳐진 중간잎(${keyOf(c1)[0]}) · 순 ${c1.spear}`);
+    ok(c3.leafCount === 3 && c3.spear === 0 && keyOf(c3).every(k => /^leaf_mid/.test(k || '')),
+      `⑨ 잎 3장 다 들고 온 잎 — 셋 다 중간잎 ${JSON.stringify(keyOf(c3))}`);
+    const g0 = await page.eval(`window.__yp({ seed: ${SEED}, leaves: ${plain(2)}, nextLeaf01: 0, potD: ${POT}, grewLeaves: 1 })`);
+    const g9 = await page.eval(`window.__yp({ seed: ${SEED}, leaves: ${plain(2)}, nextLeaf01: 0.97, potD: ${POT}, grewLeaves: 1 })`);
+    ok(g0.leafCount === 2 && g0.spear === 0 && keyOf(g0)[1] !== null,
+      `⑨ 흙에서 낸 잎(2번째) · 몫 0 — 그날 막 펼쳐짐(${keyOf(g0)[1]}) · 순 ${g0.spear}`);
+    ok(g9.leafCount === 2 && g9.spear === 1,
+      `⑨ 몫 0.97 — 다음 잎(3번째)만 말린 순으로 보인다(잎 ${g9.leafCount} · 순 ${g9.spear}) · 장부 잎 수와 그림 잎 수는 같다`); }
 
   /* ⑧ 사진 — 잎 1~6 을 나란히 */
   const shot = path.join(ROOT, 'docs/handoff/img/young_plant_row.png');

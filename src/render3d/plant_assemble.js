@@ -186,7 +186,9 @@ const TAIL = `
     return n;
   },
   __params(){ return { seedEnd:P.seedEnd, sproutEnd:P.sproutEnd, spawnStep:P.spawnStep,
-                       matSpan:P.matSpan, stageYoung:P.stageYoung, stageMid:P.stageMid }; },
+                       matSpan:P.matSpan, stageYoung:P.stageYoung, stageMid:P.stageMid,
+                       /* ★ 2026-10-09 (D46 뒤 · youngPlantOf) — 새순이 잎으로 펼쳐지는 성숙도. 원본 PROLOGUE_SHOW_M(= drawLeafStage 의 0.22) 그대로 */
+                       leafShowM:PROLOGUE_SHOW_M }; },
   /* ★ 2026-10-09 (총괄 D46 · youngPlantOf) — 읽기 둘. 그리기 규칙 없음.
      __leafBirthsOf: 그 씨앗의 그루가 나이 g 까지 낸 잎의 «난 때»(leafBirth · 나이 단위) — 난 차례대로, 겹치면 한 번.
        원본 topologyNow 를 «그 씨앗으로» 잠깐 부를 뿐이다(SEED 를 꽂았다 되돌린다).
@@ -724,8 +726,14 @@ async function build(opt) {
          seed        그루마다 다른 꼴 — core 가 (S.sim.seed, 삽수 id) 에서 만든 정수
          leaves      [{ varie, grade, midSkin, matSkin, matured }]  아래(오래된 잎) → 위(생장점) · 길이 = 잎 수
                      (정본 propagation c.leafVarie · c.leafGrade · shop.leafSkinsFor(...).midSkin/matSkin)
-         nextLeaf01  다음 잎까지 온 몫 0..1 — core c.leafDays / CUTTING_LEAF_DAYS. 안 주면 0(막 난 잎)으로 짓고
+         nextLeaf01  다음 잎까지 온 몫 0..1 — core c.leafDays / CUTTING_LEAF_DAYS. 안 주면 0 으로 짓고
                      userData.nextLeaf01Given=false 로 적는다(조용히 메꾸지 않는다)
+         grewLeaves  흙에서 새로 낸 잎 수(core c.grewLeaves). 나머지(N − grewLeaves)는 «들고 온 잎»이다.
+                     ★ 총괄 2026-10-09(leaf 재기 · 잎 1장 삽수가 말린 새순으로만 그려졌다) — 들고 온 잎은 «다 큰 잎»으로 친다:
+                       · 잎 N 장이면 N 번째 잎은 «펼쳐진 뒤»부터 그린다(나이 ≥ 난때 + leafShowM × matSpan) — 말린 순으로 안 그린다
+                       · 다 들고 온 잎이면(grewLeaves 0 · 안 주면 이쪽) N 번째 잎도 다 큰 잎(나이 ≥ 난때 + stageMid × matSpan)
+                       · 새로 날 잎(N+1)만 다음 잎까지 몫의 끝자락에 «말린 순 → 펼쳐짐»으로 보인다 — core 가 N+1 을 세는 그날 막 펼쳐진다
+                     숫자는 다 원본 것이다(matSpan · stageMid · PROLOGUE_SHOW_M) — 새로 만든 문턱 없음
          ageDays     받아서 userData 에 적기만 한다 — ★ 꼴을 정하지 않는다. 자리 잡은 뒤 지난 날이 같아도
                      빛이 막은 날은 안 자랐다. 꼴은 «잎 수 + 다음 잎까지의 몫»이 정한다(core 장부와 한 축)
          potD        놓일 그릇 지름[m] — 원본 그루의 화분이 이 지름이 되게 줄인 뒤 화분만 걷는다(그루와 화분의 비가 원본 그대로)
@@ -763,11 +771,22 @@ async function build(opt) {
       if (births.length < N) return null;
       const b0 = births[N - 1], b1 = births.length > N ? births[N] : null;
 
-      /* ②③ 나이 → 생장일. 원본 ageOf 로 되짚어 [b0, b1) 안에 들게 맞춘다(반올림이 경계를 넘지 않게) */
-      const gA = b1 != null ? b0 + f * (b1 - b0) : b0;
+      /* ②③ 나이 → 생장일. ★ 들고 온 잎은 다 큰 잎 · N 번째 잎은 펼쳐진 뒤(위 §grewLeaves).
+           U = 펼쳐짐(leafShowM × matSpan) · M = 다 큼(stageMid × matSpan) — 원본 값만 쓴다.
+           나이 = 난때[N−1] + U + nextLeaf01 × (난때[N] − 난때[N−1])  → nextLeaf01 이 1 에 가까우면 N+1 번째가 말린 순으로 보이다가
+           core 가 N+1 을 세는 그날(몫 0) 막 펼쳐진다(이음매 없음). 위 끝은 난때[N] + U 아래(N+1 번째가 펼쳐지면 안 된다). */
+      const PP = G.__params();
+      const U = (PP.leafShowM ?? 0.22) * PP.matSpan, Mg = PP.stageMid * PP.matSpan;
+      const grew = Number.isFinite(o.grewLeaves) ? Math.max(0, Math.floor(o.grewLeaves)) : null;
+      const carried = grew == null ? N : Math.max(0, N - grew);
+      const span = b1 != null ? b1 - b0 : 0;
+      const lower = b0 + (carried >= N ? Mg : U);
+      const upper = b1 != null ? b1 + U : Infinity;
+      let gA = Math.max(lower, b0 + U + f * span);
+      if (gA >= upper) gA = upper - Math.min(1, (upper - lower) * 0.5);
       let days = Math.max(0, Math.min(G.GMAX, Math.ceil(G.dayOfAge(gA) - 1e-9)));
-      while (days < G.GMAX && G.ageOf(days) < b0) days++;
-      while (b1 != null && days > 0 && G.ageOf(days) >= b1 && G.ageOf(days - 1) >= b0) days--;
+      while (days < G.GMAX && G.ageOf(days) < lower) days++;
+      while (upper < Infinity && days > 0 && G.ageOf(days) >= upper && G.ageOf(days - 1) >= lower) days--;
 
       /* ④ 잎 상태·그림 — 정본이 준 대로 */
       const leafState = leaves.map((l, i) => ({ leafBirth: births[i], varie: !!(l && l.varie), matured: !!(l && l.matured) }));
@@ -795,13 +814,17 @@ async function build(opt) {
         delete plant.userData.potPart;
       }
 
-      const leafAx = new Set();
-      inner.traverse(c => { const u = c.userData || {}; if (u.part === 'leaf' && u.axisKey) leafAx.add(u.axisKey); });
+      /* 잎 수 = 펼쳐진 잎이 붙은 축 · 말린 순(원본 addBud · assetKey 'bud_…')은 따로 센다 — core 장부의 잎 수와 같은 뜻 */
+      const leafAx = new Set(), spearAx = new Set();
+      inner.traverse(c => { const u = c.userData || {}; if (u.part !== 'leaf' || !u.axisKey) return;
+        let bud = false; c.traverse(d => { const k = d.userData && d.userData.assetKey; if (k && /^bud_/.test(k)) bud = true; });
+        (bud ? spearAx : leafAx).add(u.axisKey); });
+      for (const k of leafAx) spearAx.delete(k);
       const bb = new THREE.Box3().setFromObject(plant);
       Object.assign(plant.userData, {
         kind: 'youngPlant', species, seed, growthDays: days, ageG: gA,
         ageDays: Number.isFinite(o.ageDays) ? o.ageDays : null,
-        leafCountWanted: N, leafCount: leafAx.size, leafBirths: births.slice(0, N),
+        leafCountWanted: N, leafCount: leafAx.size, spearCount: spearAx.size, carriedLeaves: carried, grewLeaves: grew, leafBirths: births.slice(0, N),
         nextLeaf01: f, nextLeaf01Given: given,
         leaves: [], droppedParts,
         sizeM: { h: bb.isEmpty() ? 0 : (bb.max.y - bb.min.y), d: rotSafeDiameter(plant, plant) }
