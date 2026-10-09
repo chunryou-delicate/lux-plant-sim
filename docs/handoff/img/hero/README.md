@@ -165,3 +165,35 @@ hero 제 cheer·wave 를 정본 색 몸에 얹어 보니(`emote_cheer_wave.png`)
 - 화면(폰 390×844 · 같은 판 · 전은 옛 텍스처를 바꿔 끼워 찍음): 새벽 0.25 머리 [32,19,15] **0.38 → [56,34,28] 0.67** · 한낮 0.5 [37,24,19] **0.46 → [68,45,38] 0.86** (초상화 밝기 대비)
 - 그림 `d24_hair_before_after.png` — 같은 상자로 자른 전후 · 초상화 같은 폭 · 5배
 - 색상(따뜻함/차가움)은 안 맞춘다 — 방 빛 탓이 섞여 있어 정본을 건드리는 일이 된다(총괄)
+
+---
+
+# 2026-10-09 · 새 주인공 hero2 (긴 생머리 · A포즈 · Meshy 92 크레딧) — `assets/v2/char/hero2.glb`
+
+주문표·장부: `docs/handoff/char-meshy-plan-20261008.md`. 엮기: `python tools/char/build_hero2.py <색 맞춘 리그> assets/v2/char/_src/hero2/clips assets/v2/char/hero2.glb`.
+
+## 지금 hero 와 같은 자로 견줌
+| | 지금 hero (T포즈) | hero2 (A포즈) |
+|---|---|---|
+| 걷기 팔 벌림 | 82.0° (팔 옮겨 고친 판 12.6°) | **11.0°** (고칠 것 없음) |
+| idle · crouch 팔 | 38.2° · 47.0° (고친 판 18.6° · 32.4°) | **15.7° · 24.2°** |
+| 머리 정점 중 팔 무게 >0.5 | 55.8% (7,882) | **0.4% (66)** |
+| 바닥 보정(idle) | −7.1cm | 1.4cm |
+| 걷기 지면 속도 | 0.76 m/s | 0.729 m/s (같은 자로 잰 비 — 자기시험: 옛 걷기 0.757 ≈ 0.76) |
+
+## 게임에 잇기 (v2_hero.js)
+- **켜야만 쓴다**: `?hero2=1` 또는 localStorage `hero2`=`1`. 기본은 지금 hero.glb 그대로
+- 몸마다 다른 수를 파일 `scene.extras` 에서 읽는다: `crouchHand`(쭈그리기 오른손 표 0~2.4초 — 자기시험: 옛 hero 로 재면 v2_hero HAND 표와 0.000m 차) · `walkMps` · `emoteWin.cheer`(3.4~6.4초)
+- 물주기·거두기는 제 클립(옛 자취녀와 같은 Meshy 동작이라 room_view 가 쓰던 구간 그대로) · 심기는 쭈그리기
+- fixBackHair 상자를 파일 키 비율로 늘림(hero 1.0 · hero2 1.4/1.10)
+- 잠깐 몸짓 `breakClips`(scratch · nod · listen) — 거는 자리는 core
+- 머리·티 색: `recolor_hero_tex.py --hair-hue --hair-gain=1.4` (정본 × 1.4 = 지금 hero 와 같은 값 · 여백까지 칠해 이음매 금 없음)
+
+## 게임 안 (방 데모 · `tools/char/probe_hero2_ingame.mjs`)
+hero2 / 지금 hero: 받은 파일 hero2.glb / hero.glb · 걷기 1.70m·1.74초 / 1.75m·1.74초 · 물주기 끝남 3.5초 / 3.3초 · 환호 끝남 / 끝남 · 콘솔 예외 0 / 0.
+그림: `hero2_clips.png`(idle·walk·cheer·wave·crouch · 같은 자 · 게임 fixBackHair 건 판)
+
+## ⚠ 남은 것
+- 파일이 6.7MB(지금 2.8MB) — 긴 클립(끄덕 13초 · 긁적 11.5초 · 앉기 11.4초)이 크다. 쓰는 구간만 남기면 준다
+- 환호 때 앞머리 가닥이 위팔을 따라 조금 들린다(날개·얼굴 띠는 없음)
+- idle 에서 몸이 옆으로 돈다 — 지금 hero 의 idle 과 같은 Meshy 동작(0)이다

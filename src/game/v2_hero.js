@@ -18,7 +18,16 @@
      hero 는 제 클립 8개(walk·idle·sit·sleep·doze·crouch·wave·cheer)만 쓴다.
 ============================================================ */
 
-const HERO_URL = new URL('../../assets/v2/char/hero.glb', import.meta.url).href;
+/* 10-09 (char): 새 주인공 hero2(긴 생머리 · A포즈 · Meshy rig 01a11e7a)는 «켜야만» 쓴다 — ?hero2=1 · localStorage 'hero2'='1'.
+   기본은 지금 hero.glb 그대로다(바꾸는 것은 총괄·박사님 확인 뒤). */
+function heroFile() {
+  try {
+    const q = new URLSearchParams(location.search);
+    const on = q.get('hero2') === '1' || (q.get('hero2') !== '0' && localStorage.getItem('hero2') === '1');
+    return on ? 'hero2.glb' : 'hero.glb';
+  } catch (e) { return 'hero.glb'; }
+}
+const HERO_URL = new URL('../../assets/v2/char/' + heroFile(), import.meta.url).href;
 
 export const HERO_H = 1.40;          // 옛 주인공과 같은 키[m]
 export const HERO_WALK_MPS = 0.76;   // 걷기 클립 지면 속도[m/s] — 위 「잰 것」
@@ -82,8 +91,16 @@ function prepare(g) {
   });
   if (!(h > 0.3 && h < 3)) h = 1.10;
   let moved = 0;
-  g.scene.traverse(o => { if (o.isSkinnedMesh) moved += fixBackHair(o); });
-  return { scene: g.scene, clips, fileH: h, act: new Map(), hairFixed: moved };
+  /* 10-09 (char): fixBackHair 의 상자는 «키 1.10 파일»에서 잰 절대값이다 ⇒ 파일 키 비율로 늘인다(hero 는 1.0 그대로 · hero2 1.4/1.10).
+     hero2 에서 늘인 상자가 잡는 정점: 머리 6,997 · 머리 아님 359(머리 옆 등판 · 팔 무게가 작다) */
+  g.scene.traverse(o => { if (o.isSkinnedMesh) moved += fixBackHair(o, h / 1.10); });
+  /* 10-09 (char): 몸마다 다른 수 — 파일이 scene.extras 에 적어 오면 그것을 쓴다(tools/char/build_hero2.py 가 재서 적는다).
+     crouchHand 쭈그리기 오른손 높이 표 · walkMps 걷기 지면 속도 · emoteWin 몸짓 클립에서 쓸 구간. 없으면 아래 옛 값. */
+  const X = (g.scene && g.scene.userData) || {};
+  return { scene: g.scene, clips, fileH: h, act: new Map(), hairFixed: moved,
+           hand: Array.isArray(X.crouchHand) ? X.crouchHand : null,
+           walkMps: Number.isFinite(X.walkMps) ? X.walkMps : null,
+           emoteWin: X.emoteWin || {} };
 }
 
 /* ⛔ 뒷머리가 «팔»에 묶여 있다 — 잰 것(바인드 · 파일 단위 1.10m):
@@ -93,7 +110,7 @@ function prepare(g) {
        measureGround 가 몸을 0.25m 띄웠다(골반이 매트리스 위 0.32m).
    ⇒ 그 정점의 «팔» 무게만 떼어 Head(위)·Spine(아래)로 옮긴다. 높이로 섞는다(y 0.75↑ Head · 0.50↓ Spine).
      다른 정점·다른 뼈는 손대지 않는다. 한 번만(원본 기하에) 한다. */
-function fixBackHair(mesh) {
+function fixBackHair(mesh, s = 1) {
   const G = mesh.geometry, P = G.attributes.position, SI = G.attributes.skinIndex, SW = G.attributes.skinWeight;
   if (!P || !SI || !SW) return 0;
   const names = mesh.skeleton.bones.map(b => b.name);
@@ -104,7 +121,7 @@ function fixBackHair(mesh) {
   let n = 0;
   for (let i = 0; i < P.count; i++) {
     const x = P.getX(i), y = P.getY(i), z = P.getZ(i);
-    if (!(z < -0.10 && Math.abs(x) < 0.30 && y > 0.35 && y < 0.95)) continue;
+    if (!(z < -0.10 * s && Math.abs(x) < 0.30 * s && y > 0.35 * s && y < 0.95 * s)) continue;
     idx[0] = SI.getX(i); idx[1] = SI.getY(i); idx[2] = SI.getZ(i); idx[3] = SI.getW(i);
     wt[0] = SW.getX(i); wt[1] = SW.getY(i); wt[2] = SW.getZ(i); wt[3] = SW.getW(i);
     let arm = 0;
@@ -115,7 +132,7 @@ function fixBackHair(mesh) {
       else m.set(idx[k], (m.get(idx[k]) || 0) + wt[k]);
     }
     if (arm <= 0) continue;
-    const kh = Math.min(1, Math.max(0, (y - 0.50) / 0.25));
+    const kh = Math.min(1, Math.max(0, (y - 0.50 * s) / (0.25 * s)));
     m.set(iHead, (m.get(iHead) || 0) + arm * kh);
     m.set(iSpine, (m.get(iSpine) || 0) + arm * (1 - kh));
     const top = [...m.entries()].filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -226,8 +243,12 @@ const SIT_TAIL = 1.0;
 
 function crouchEnd(targetY, table = HAND) {
   const want = Math.min(0.62, Math.max(0.12, (Number.isFinite(targetY) ? targetY : 0) + 0.15));
-  let t = 2.4;
-  for (let i = 0; i < table.length - 1; i++) {
+  let t = table[table.length - 1][0];
+  /* 10-09 (char): 찾는 높이가 표의 맨 위(서 있을 때 손)보다 높으면 «가장 이른 때» — 덜 숙인다.
+     ⛔ 옛 표는 0.8초에 0.666m 라 창턱(0.62m)도 안에 들었지만, hero2 는 서 있을 때 손이 0.523m 라
+       표 밖으로 나가 끝까지(바닥까지) 쭈그릴 뻔했다. */
+  if (want >= table[0][1]) t = table[0][0];
+  else for (let i = 0; i < table.length - 1; i++) {
     const [t0, y0] = table[i], [t1, y1] = table[i + 1];
     if (want <= y0 && want >= y1) { t = t0 + (t1 - t0) * (y0 - want) / (y0 - y1); break; }
   }
@@ -252,10 +273,24 @@ function actClipFrom(src, kind, targetY) {
   if (kind === 'sleep' && C.sleep) return cut(C.sleep, 0, C.sleep.duration, 'sleep:act');
   /* 10-08 (char): 기쁜 순간 몸짓 — wave(5.37초 · 오른팔 들어 흔듦) · cheer(2.97초 · 두 팔 위로) 통째.
      거는 자리(첫 새순·첫 무늬·몬이 만남)는 core 다. 예전엔 이 이름도 아래 crouch 로 빠졌다. */
-  if ((kind === 'wave' || kind === 'cheer') && C[kind]) return cut(C[kind], 0, C[kind].duration, `${kind}:act`);
+  if ((kind === 'wave' || kind === 'cheer') && C[kind]) {
+    /* 10-09 (char): hero2 의 cheer 는 9.03초(Motivational_Cheer) — 파일이 적어 온 «팔이 가장 높은 3초»만 튼다 */
+    const w = src.emoteWin && src.emoteWin[kind];
+    const [a, b] = Array.isArray(w) ? [Math.max(0, w[0]), Math.min(C[kind].duration, w[1])] : [0, C[kind].duration];
+    return cut(C[kind], a, b, `${kind}:act`);
+  }
+  /* 10-09 (char): hero2 는 물주기·거두기 제 클립이 있다 — 옛 자취녀와 같은 Meshy 동작(285 문 열기 · 278 서서 따기 · 277 쭈그려 따기)이라
+     room_view ACT_SPEC 이 옛 몸에 쓰던 구간을 그대로 쓴다(0.30초부터 1.5 · 1.8 · 2.1초 · 무릎 0.45m 밑은 쭈그려 따기). */
+  if (kind === 'water' && C.water) return cut(C.water, 0.30, Math.min(C.water.duration, 1.80), 'water:act');
+  if (kind === 'harvest' && C.harvest) {
+    const low = Number.isFinite(targetY) && targetY < 0.45 && C.harvest_low;
+    return low ? cut(C.harvest_low, 0.30, Math.min(C.harvest_low.duration, 2.40), 'harvest_low:act')
+               : cut(C.harvest, 0.30, Math.min(C.harvest.duration, 2.10), 'harvest:act');
+  }
   /* 물·심기·거두기, 그리고 모르는 동작은 crouch → 없으면 idle */
   if (C.crouch) {
-    const end = Math.min(crouchEnd(targetY, C.crouch.__arm ? HAND_ARM : HAND), C.crouch.duration);
+    const table = src.hand || (C.crouch.__arm ? HAND_ARM : HAND);   // 10-09: 파일이 적어 온 표가 먼저
+    const end = Math.min(crouchEnd(targetY, table), C.crouch.duration);
     const from = Math.max(0, +(end - 1.5).toFixed(1));
     return cut(C.crouch, from, end, `crouch:act:${from}-${end}`);
   }
@@ -280,9 +315,12 @@ export async function makeHero() {
     scene: wrap,
     animations: [src.clips.idle],
     walk,
-    walkMps: HERO_WALK_MPS,
+    walkMps: src.walkMps || HERO_WALK_MPS,   // 10-09: hero2 0.729 (파일 extras)
     actClip: (kind, targetY) => Promise.resolve(actClipFrom(src, String(kind || '').toLowerCase(), targetY)),
     clipNames: Object.keys(src.clips),
+    /* 10-09 (char): 서 있을 때 잠깐 몸짓(머리 긁적 · 끄덕 · 듣기) — hero2 에만 있다. 거는 자리는 core(room_view IDLE_BREAK) */
+    breakClips: ['scratch', 'nod', 'listen'].filter(n => src.clips[n]),
+    breakClip: name => (src.clips[name] ? src.clips[name] : null),
     emoteSkin   // 몸짓 무게를 건 메시 수(0 이면 hero.glb 에 _WEIGHTS_EMOTE 가 없다)
   };
 }

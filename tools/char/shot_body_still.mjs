@@ -83,7 +83,7 @@ new THREE.GLTFLoader().load(${JSON.stringify(GLB)}, g=>{
     o.material=new THREE.MeshLambertMaterial({color: map ? 0xffffff : 0xe9bda3, map, skinning: !!o.isSkinnedMesh}); } });
   sc.add(m); window.__m=m;
   window.__hairFixed=null;
-  ${GAME_HAIR ? GAME_HAIR + "\n  { let n=0; m.traverse(o=>{ if(o.isSkinnedMesh) n+=fixBackHair(o); }); window.__hairFixed=n; }" : ''}
+  ${GAME_HAIR ? GAME_HAIR + "\n  { let n=0, h=0; m.traverse(o=>{ if(o.isSkinnedMesh&&o.geometry){ o.geometry.computeBoundingBox(); const b=o.geometry.boundingBox; h=Math.max(h,b.max.y-b.min.y); } }); if(!(h>0.3&&h<3)) h=1.10; m.traverse(o=>{ if(o.isSkinnedMesh) n+=fixBackHair(o, h/1.10); }); window.__hairFixed=n; }" : ''}
   window.__emoteSkin=null;
   ${EMOTE_SKIN ? EMOTE_SKIN + "\n  { let n=0; m.traverse(o=>{ if(o.isSkinnedMesh && installEmoteSkin(o)) n++; }); window.__emoteSkin=n; }" : ''}
   /* ★ --clip 을 주면 «그 파일에 든» 클립을 얹는다.
