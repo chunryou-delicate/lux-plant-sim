@@ -6,8 +6,8 @@
      원룸 창 가운데 앞 · 벽에서 0.2m · 0.80m → B (여름 등0 자람 · 겨울 등0 못 · 겨울 등 다 켜면 자람)
      같은 자리 0.62m → Bp(겨울엔 등을 다 켜도 모자람)  ·  벽에서 0.45m · 0.80m → C(등이 있어야)
      원룸 바닥 → D  ·  반지하 창턱 → grow  ·  반지하 책상 → none
-     «조금만 더 높으면»(higher) · 무늬(×1.4) 문턱 · «맨 윗단에 집게등을 물리면»(clipTop · D53: 원룸은 못 넘는 자리면 무늬든 아니든 · 반지하는 무늬일 때만
-     · atTop: 이미 맨 윗단이면 «맨 윗단에 두고»를 뺀다)
+     «조금만 더 높으면»(higher) · 문턱은 놓는 것으로(D57: 화분 그루 = growthMin · 무늬 삽수만 ×1.4)
+     · «맨 윗단에 집게등을 물리면»(clipTop · 원룸만 · 못 넘는 자리 · D57 이 D53 을 바로잡음 · atTop: 이미 맨 윗단이면 «맨 윗단에 두고» 대신 «여기에»)
    글은 plan(PLACE_LIGHT_KO 후보 · house-decor §C) · 띄우기는 core. 이 검사는 «갈래»만 본다.
 ============================================================ */
 import fs from 'node:fs'; import vm from 'node:vm'; import path from 'node:path';
@@ -55,19 +55,34 @@ const engOf = id => { console.warn = () => {}; const e = createLightEngine({ hou
 { const H = dataOf('house_rooms.json'); const R = H.rooms.oneroom; R.furniture = [...R.furniture, ...R.reference_layout.furniture];
   console.warn = () => {}; const e = createLightEngine({ houseRooms: H, ...D }); const r = e.build('oneroom'); console.warn = _w;
   const eta = r.slots.filter(s => /banjiha-etagere/.test(s.slotId)).map(s => ({ x: s.x, y: s.y, z: s.z, occIdx: s.occIdx }));
-  const vN = e.placeVerdict(eta), vV = e.placeVerdict(eta, { variegated: true });
-  ok(`무늬면 문턱이 1.4배(${vN.th} → ${vV.th})`, Math.abs(vV.th - vN.th * 1.4) < 0.01, JSON.stringify([vN.th, vV.th]));
-  ok('무늬 에타제르 → 맨 윗단에 집게등을 물리면 넘는다(clipTop · 여름 ≥ 무늬 문턱)', !!vV.clipTop && vV.clipTop.s >= vV.th, JSON.stringify(vV.clipTop));
+  /* ★ 총괄 D57 — 문턱은 «놓는 것»으로: 화분 그루는 무늬여도 growthMin(2.7) · 무늬 삽수만 × need_mult(core §cuttingLightOf → bandOf) */
+  const vN = e.placeVerdict(eta), vM = e.placeVerdict(eta, { variegated: true }), vV = e.placeVerdict(eta, { variegated: true, kind: 'cutting' });
+  ok(`무늬 모주는 문턱 그대로(${vN.th} = ${vM.th}) · 무늬 삽수만 1.4배(${vV.th})`, vM.th === vN.th && Math.abs(vV.th - vN.th * 1.4) < 0.01, JSON.stringify([vN.th, vM.th, vV.th]));
+  ok('무늬 삽수 에타제르 → 맨 윗단에 집게등을 물리면 넘는다(clipTop · 여름 ≥ 삽수 문턱)', !!vV.clipTop && vV.clipTop.s >= vV.th, JSON.stringify(vV.clipTop));
   ok('원룸은 무늬 아니어도 못 넘는 자리면 clipTop(D53 · 에타제르 C)', vN.key === 'C' && !!vN.clipTop && vN.clipTop.s >= vN.th, JSON.stringify({ key: vN.key, clipTop: vN.clipTop }));
-  console.log('    무늬 에타제르:', JSON.stringify({ key: vV.key, values: vV.values, clipTop: vV.clipTop }));
+  console.log('    무늬 삽수 에타제르:', JSON.stringify({ key: vV.key, values: vV.values, clipTop: vV.clipTop }));
   /* 화분 한 점(가운데단)을 가르되 집게등 꼬리는 그 가구 맨 윗단으로(topOf) */
   const ys = [...new Set(eta.map(p => +p.y.toFixed(3)))].sort((a, b) => a - b), mid = eta.filter(p => +p.y.toFixed(3) === ys[1]);
-  const vm = e.placeVerdict(mid, { variegated: true, topOf: eta });
+  const vm = e.placeVerdict(mid, { variegated: true, kind: 'cutting', topOf: eta });
   ok('무늬 삽수를 가운데단에 → 그 점은 못 넘고(C/D) · 꼬리는 맨 윗단 높이로', ['C', 'D'].includes(vm.key) && !!vm.clipTop && Math.abs(vm.clipTop.y - ys[ys.length - 1]) < 1e-3, JSON.stringify({ key: vm.key, values: vm.values, clipTop: vm.clipTop }));
   /* atTop — «맨 윗단에 두고»를 붙일지: 가구를 놓을 때(자리 전부)·가운데단 화분은 false · 맨 윗단 화분은 true */
   const topPts = eta.filter(p => +p.y.toFixed(3) === ys[ys.length - 1]);
-  const vt = e.placeVerdict(topPts, { variegated: true, topOf: eta });
+  const vt = e.placeVerdict(topPts, { variegated: true, kind: 'cutting', topOf: eta });
   ok('atTop — 가구 자리 전부·가운데단이면 false · 맨 윗단에 놓은 화분이면 true', vV.clipTop?.atTop === false && vm.clipTop?.atTop === false && (vt.clipTop === null || vt.clipTop.atTop === true), JSON.stringify([vV.clipTop?.atTop, vm.clipTop?.atTop, vt.clipTop]));
+  /* D57 칸 — leaf 잰 것: 원룸 에타제르 윗단 · 등 2 켠 판 · 맑은 여름 3.3~3.6 → 무늬 삽수는 «정체»(민무늬는 «느림»)
+       ⚠ 자가 둘이다: leaf 3.3 은 **맑은 날 값**이고, 원룸 갈래는 **날씨 기댓값**(자연광 × weatherE 여름 0.643 + 등)으로 가른다.
+         맑은 날(초보 판 셈 = 자연광 그대로 + 등)로는 3.45 — 화분 그루 2.7 은 넘고 삽수 3.78 은 못 넘는다(leaf 와 같다).
+         기댓값으로는 2.51 — 그루도 못 넘는다(D). 그래서 원룸 갈래는 그루·삽수 둘 다 D 이고, 삽수만 집게(맨 윗단)로 넘는다고 보이면 된다 */
+  const t2 = e.placeVerdict(topPts, { variegated: true, kind: 'cutting', lamps: 2, topOf: eta });
+  const t2m = e.placeVerdict(topPts, { lamps: 2, topOf: eta });
+  const c2 = e.placeVerdict(topPts, { novice: true, lamps: 2 }), c2c = e.placeVerdict(topPts, { novice: true, lamps: 2, variegated: true, kind: 'cutting' });
+  ok(`맑은 여름 · 에타제르 윗단 · 등 2 = ${c2.values.vN}(leaf 3.3~3.6) → 그루 ${c2.key} · 무늬 삽수 ${c2c.key}`,
+    c2.values.vN >= 3.3 && c2.values.vN <= 3.6 && c2.key === 'lamp' && c2c.key === 'none', JSON.stringify([c2.values, c2.key, c2c.key]));
+  ok(`원룸 갈래(기댓값 ${t2.values.sN}) · 무늬 삽수 · 등 2 → D · clipTop(맨 윗단 집게 여름 ${t2.clipTop && t2.clipTop.s} ≥ ${t2.th})`,
+    t2.key === 'D' && !!t2.clipTop && t2.clipTop.s >= t2.th && t2.clipTop.atTop === true && t2m.key === 'D',
+    JSON.stringify({ cutting: { key: t2.key, values: t2.values, clipTop: t2.clipTop }, mother: { key: t2m.key, values: t2m.values } }));
+  let threw = false; try { e.placeVerdict(topPts, { kind: 'leaf' }); } catch { threw = true; }
+  ok('kind 는 mother·cutting 둘만(모르는 낱말은 던진다)', threw);
 }
 { const { e, r } = engOf('banjiha');
   const sill = r.slots.find(s => /sill/.test(s.slotId)), desk = r.slots.find(s => /desk/.test(s.slotId));
@@ -75,14 +90,14 @@ const engOf = id => { console.warn = () => {}; const e = createLightEngine({ hou
   ok('반지하 창턱 → grow', a.key === 'grow', JSON.stringify(a));
   const b = e.placeVerdict([desk], { novice: true });
   ok('반지하 책상 → none(등 셋을 다 켜도)', b.key === 'none', JSON.stringify(b));
+  /* D57 칸 — 무늬 모주 반지하 창턱: 등 없이 3.68 ≥ growthMin 2.7 → 자람(무늬 말 없음 · plan e6421e0d) */
   const av = e.placeVerdict([sill], { novice: true, variegated: true });
-  ok('반지하 무늬 창턱 → lamp(등을 켜면 무늬 문턱을 넘는다 · plan «창턱에 두고 등을 켜세요»가 참) · 꼬리는 atTop(«맨 윗단» 말 없음)', av.key === 'lamp' && av.values.vN >= av.th && (av.clipTop === null || av.clipTop.atTop === true), JSON.stringify(av));
+  ok(`반지하 무늬 모주 창턱(${av.values.v0}) → grow · 꼬리 없음(D57)`, av.key === 'grow' && av.th === a.th && av.clipTop === null, JSON.stringify(av));
+  const avc = e.placeVerdict([sill], { novice: true, variegated: true, kind: 'cutting' });
+  ok(`반지하 무늬 삽수 창턱 → lamp(등 없이 ${avc.values.v0} < ${avc.th} · 등 켜면 ${avc.values.vN})`, avc.key === 'lamp', JSON.stringify(avc));
   const etaB = r.slots.filter(s => /etagere/.test(s.slotId)).map(s => ({ x: s.x, y: s.y, z: s.z, occIdx: s.occIdx }));
-  const vb = e.placeVerdict(etaB, { novice: true, variegated: true });
-  ok('반지하 무늬 에타제르 — clipTop 은 넘을 때만 낸다(초보 판 · 겨울 말 없음)', vb.clipTop === null || (vb.clipTop.s >= vb.th && vb.clipTop.winterToo === false), JSON.stringify(vb));
-  const vb0 = e.placeVerdict(etaB, { novice: true });
-  ok('반지하 무늬 아닌 몬스테라 — 집게 꼬리를 안 낸다(D53 · 첫 방은 «창턱 + 등» 한 길)', vb0.key === 'none' && vb0.clipTop === null, JSON.stringify(vb0));
-  console.log('    반지하 무늬 에타제르:', JSON.stringify({ key: vb.key, values: vb.values, clipTop: vb.clipTop }));
+  const vb = e.placeVerdict(etaB, { novice: true, variegated: true, kind: 'cutting' }), vb0 = e.placeVerdict(etaB, { novice: true });
+  ok('반지하는 집게 꼬리를 아예 안 낸다(D57 · 무늬 삽수 에타제르 none 도 · 무늬 아닌 몬스테라도)', vb.key === 'none' && vb.clipTop === null && vb0.key === 'none' && vb0.clipTop === null, JSON.stringify([vb, vb0]));
 }
 console.log(`\nplace_verdict: ${fail ? 'FAIL' : 'PASS'} (${pass}/${pass + fail})`);
 process.exit(fail ? 1 : 0);

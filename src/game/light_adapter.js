@@ -452,13 +452,17 @@ export function createLightEngine(data) {
      ⚠ 갈래만 낸다. 수(DLI)를 화면에 내지 않는다(초보 판 showDli 규율) — values 는 검사·진단용이다. */
   /* topOf: (선택) 그 화분이 얹힌 **가구의 자리 전부** — 화분 한 점을 가르되, «맨 윗단에 집게등을 물리면»은 그 가구 맨 윗단으로 잰다
        (화분을 가운데단에 놓을 때 쓴다 · 없으면 points 로) */
-  function placeVerdict(points, { novice = false, plantId = 'monstera_deliciosa', lamps = null, variegated = false, topOf = null } = {}) {
+  function placeVerdict(points, { novice = false, plantId = 'monstera_deliciosa', lamps = null, variegated = false, kind = 'mother', topOf = null } = {}) {
     if (!room) throw new Error('[조도] 방을 아직 조립하지 않았습니다 — build(roomId) 를 먼저 부르세요');
+    if (kind !== 'mother' && kind !== 'cutting')
+      throw new Error(`[조도] placeVerdict kind 는 'mother'(화분 그루) 또는 'cutting'(삽수)입니다: ${JSON.stringify(kind)}`);
     const pts = (points || []).filter(p => p && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z));
     if (!pts.length) return null;
-    /* ★ 2026-10-09 총괄 — 놓는 것이 무늬 그루·무늬 삽수면 **무늬 문턱**(×1.4 · light_thresholds variegated)으로 가른다.
-         «화분대 = 밭»만 말하면 가운데단에 무늬 삽수를 놓고 120일을 기다리는 사람이 나온다(leaf D41 걸음) */
-    const th = (thresholdsFor(data.lightTh, plantId, !!variegated) || {}).min;
+    /* ★ 2026-10-09 총괄 D57 — 문턱은 **놓는 것이 무엇인지로** 고른다(«무늬» 한 낱말이 두 방에서 다른 것을 가리켰다):
+         · 화분 그루(무늬 모주 포함) = plant_grow §growthMin(TH.min) — 무늬여도 ×1.4 를 안 곱한다(×1.4 는 «무늬가 잘 나는 대역»)
+         · 삽수 = core loop §cuttingLightOf → growth.bandOf(dli, 무늬) 가 NO_GROW_BANDS(…·stagnant) 위 = min × (무늬면 need_mult)
+       둘 다 light_thresholds.json 에서 읽는다(박지 않는다). 처음(6e3f22d5)엔 무늬면 그루까지 ×1.4 로 갈라 반지하 무늬 창턱을 «등이 있어야»로 잘못 말했다 */
+    const th = (thresholdsFor(data.lightTh, plantId, kind === 'cutting' && !!variegated) || {}).min;
     const nAll = lamps != null ? lamps : room.growRigs.length;
     const best = (season, n) => Math.max(...pts.map(p => {
       const o = dliAt(p, { weather: 'clear', season: novice ? 'summer' : season, litHours: 12, lampCount: n, occIdx: p.occIdx ?? null });
@@ -466,7 +470,7 @@ export function createLightEngine(data) {
       return novice ? d + l : d * weatherE(season) + l;
     }));
     const r2 = v => +v.toFixed(2);
-    /* «맨 윗단에 집게등을 물리면» — 무늬일 때만 · 집게등(growlight_clip) 발광점을 그 가구 맨 윗단 가운데 위(빌더 키 0.42 × 0.92 —
+    /* «맨 윗단에 집게등을 물리면» — 원룸만(D57) · 집게등(growlight_clip) 발광점을 그 가구 맨 윗단 가운데 위(빌더 키 0.42 × 0.92 —
        house.js emitY 와 같은 셈)로 옮겼다고 치고 집게등까지 켜지는 개수(rigsOn 차례)로 등 몫을 다시 센다. 실제로 물리는 자리는 roomView.lampMounts 의 그 상판 */
     const clipTopOf = () => {
       const ci = room.growRigs.findIndex(r => r && r.id === 'growlight_clip');
@@ -488,8 +492,8 @@ export function createLightEngine(data) {
     if (novice) {
       const v0 = best('summer', 0), vN = best('summer', nAll);
       const key = v0 >= th ? 'grow' : vN >= th ? 'lamp' : 'none';
-      /* ★ 총괄 D53 — 반지하(첫 방 · «창턱 + 등» 한 길로 배우는 곳)에서는 무늬일 때만 집게 꼬리 */
-      return { key, clipTop: variegated && key !== 'grow' ? clipTopOf() : null, variegated: !!variegated, th, lamps: nAll, values: { v0: r2(v0), vN: r2(vN) } };
+      /* ★ 총괄 D57(D53 바로잡음) — 반지하(첫 방 · «창턱 + 등» 한 길로 배우는 곳)는 집게 꼬리를 아예 안 낸다 */
+      return { key, clipTop: null, variegated: !!variegated, kind, th, lamps: nAll, values: { v0: r2(v0), vN: r2(vN) } };
     }
     const s0 = best('summer', 0), sN = best('summer', nAll), w0 = best('winter', 0), wN = best('winter', nAll);
     const key = w0 >= th ? 'A' : s0 >= th ? (wN >= th ? 'B' : 'Bp') : sN >= th ? 'C' : 'D';
@@ -519,7 +523,7 @@ export function createLightEngine(data) {
          C·D(여름 등 없이 못 넘음) → 집게를 물려 여름에 넘으면 · Bp(겨울엔 등을 켜도 모자람) → 집게로 겨울까지 넘을 때만 · A·B 는 이미 넘는다 */
     let clipTop = (key === 'C' || key === 'D' || key === 'Bp') ? clipTopOf() : null;
     if (clipTop && key === 'Bp' && !clipTop.winterToo) clipTop = null;
-    return { key, wnShort: key === 'C' && wN < th, higher, clipTop, variegated: !!variegated, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
+    return { key, wnShort: key === 'C' && wN < th, higher, clipTop, variegated: !!variegated, kind, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
   }
 
   /* 이 좌표에서 제일 가까운 추천 자리. UI 의 원형 가이딩이 쓴다. */
