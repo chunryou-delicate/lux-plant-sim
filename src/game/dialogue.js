@@ -1637,6 +1637,12 @@ export const SCRIPTS = {
      PP 사건: pp_trade_offer(ev.again — 두 번째 물음) · pp_trade_done · pp_trade_declined(ev.last — 두 번째 거절 → 상점에 진열)
               pp_pink_warn(위 잎 «분홍 잎» 둘 연달아) · pp_tip_withered(셋 연달아 → 줄기 끝 시듦) · pp_reverted(초록 잎이 이어짐 · 빛 모자람)
      AL 사건: al_sprout(ev.varie true/false — 구근 첫 싹이 무늬인가) · 겨울잠·깸은 사건 대신 퀘스트 열림·끝 대사가 싣는다(§quest al_keep_winter) */
+  /* ★ 2026-10-09 [plan] D47(총괄) — 가구점이 처음 열린 날(사건 `furniture_shop_open` · [core] · 식물등이 풀리는 날과 같은 날).
+     등 장면이 길어 «한 줄만» 붙인다(EVENT_ORDER — lamp_unlocked 바로 뒤). 거짓 없는 말만: 선반·받침대는 자리(slots)를 더한다.
+     «밝은 자리»라고는 안 한다 — 밝은지는 놓을 때 D39 C 빛 한 줄이 말한다. 한 판에 한 번(REPEATABLE 아님). */
+  furnitureShopOpen: [
+    { who: 'moni', face: 'teach', text: '가구점도 문을 열었대. 선반을 들이면 화분 놓을 자리가 늘어.' }
+  ],
   ppTradeOffer: [
     { who: 'jachwi', face: 'curious',  text: '아래층에 식물 나눔 쪽지가 붙었다. 분홍 잎이 섞인 작은 화분이다.' },
     { who: 'jachwi', face: 'think',    text: '뿌리 낸 무늬 몬스테라 하나랑 바꾸자고 한다.' },
@@ -2274,6 +2280,8 @@ export const EVENT_SCRIPT = Object.freeze({
   neighbor_order:      'neighborOrder',
   /* ★ 2026-10-09 [plan] D45 — 새 식물 두 종(§ppTradeOffer 머리말 · 사건은 [core]). 갈림(again·last·varie)은 §scriptOf */
   pp_trade_offer:      'ppTradeOffer',
+  /* ★ 2026-10-09 [plan] D47 — 가구점 첫 날(§furnitureShopOpen) */
+  furniture_shop_open: 'furnitureShopOpen',
   pp_trade_done:       'ppTradeDone',
   pp_trade_declined:   'ppTradeDeclined',
   pp_pink_warn:        'ppPinkWarn',
@@ -2444,7 +2452,10 @@ const EVENT_ORDER = [
   'monstera_no_spear', 'monstera_needs_lamp',
   'plant_resumed', 'plant_stalled', 'plant_stalled_again', 'plant_stalled_winter',
   'season_autumn', 'season_winter', 'winter_still',
-  'lamp_unlocked', 'lamp_bought', 'lamp_skipped',
+  'lamp_unlocked',
+  /* ★ 2026-10-09 [plan] D47 — 가구점은 등 장면 «뒤»(같은 날 · 등이 먼저 알려야 할 길이다) */
+  'furniture_shop_open',
+  'lamp_bought', 'lamp_skipped',
   'rent_soon', 'rent_first', 'rent_again', 'broke',
   /* ★확정 무늬는 살림(월세·파산) **뒤**, 이사 판정 **앞**이다.
      월세 날에 겹치면 "삼십만 원이 나갔다" 다음에 이 잎이 오는 것이 맞고,
