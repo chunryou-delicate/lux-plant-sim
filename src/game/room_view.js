@@ -8056,6 +8056,9 @@ export async function createRoomView(canvas, opts = {}) {
     return {
       kind: 'person', assetId: id, root, walkable: true,
       v2ActClip: hero ? hero.actClip : null,   // v2: hero 동작 클립(runAct 가 먼저 묻는다)
+      /* ★ 2026-10-09 (char) — 옷(hero2 만 · 몸은 하나 · 그림만 바꿔 끼움). 옛 몸은 false 로 끝난다 */
+      setOutfit: name => (hero && typeof hero.setOutfit === 'function') ? hero.setOutfit(name) : Promise.resolve(false),
+      get outfit() { return hero ? hero.outfit : null; },
       /* ⑦ 잡고 있는 동작 — 끝 자세에서 멈춘다(abortAct 가 푼다) */
       holdClip: (clip, sec, onTick) => runClip(clip, sec, onTick, true),
       get held() { return !!heldAction; },
@@ -9137,6 +9140,7 @@ export async function createRoomView(canvas, opts = {}) {
         if (Number.isFinite(hipsLocal) && hipsLocal > 0) { liftUsed = Math.max(0, top - hipsLocal); root.position.y = before.y + liftUsed; needsRender = true; }
       }
       restPose = { charId: person.id, key: t.key, kind: K, before, top, lift: liftUsed, topWhy };
+      if (K === 'sleep' && person.id === 'jachwi') { heroSleeping = true; applyHeroOutfit(); }   /* 눕기 — 잠옷 */
       return finish();
     }
     let can = null, fx = null, soil = null, hand = null;
@@ -9231,9 +9235,17 @@ export async function createRoomView(canvas, opts = {}) {
   /* ★ 공개 창구는 actAt 하나다. 돌려주는 Promise 에 .cancel() 이 붙어 있다. */
   /* ★ 2026-09-04 ⑦ — 지금 앉아·누워 있는 자리. 일어나면 걸어갔던 자리로 돌아온다. */
   let restPose = null;   // { charId, key, kind, before:{x,y,z,rot} }
+  /* ★ 2026-10-09 (char 청) — 주인공 옷: 낮 옷은 화면이 정해 준다(반지하 summer · 원룸 달력 계절) · 눕기를 잡고 있는 동안은 pajama */
+  let heroDayOutfit = 'summer', heroSleeping = false;
+  function applyHeroOutfit() {
+    const c = chars.get('jachwi');
+    if (!c || typeof c.setOutfit !== 'function') return;
+    Promise.resolve(c.setOutfit(heroSleeping ? 'pajama' : heroDayOutfit)).then(() => { needsRender = true; }).catch(() => { });
+  }
   function standUp(reason) {
     if (!restPose) return false;
     const r = restPose; restPose = null;
+    if (heroSleeping && r.charId === 'jachwi') { heroSleeping = false; applyHeroOutfit(); }   /* 일어나면 낮 옷 */
     const c = chars.get(r.charId);
     if (c) {
       try { c.abortAct(reason || '일어났습니다'); } catch (e) { fail(e); }
@@ -9528,6 +9540,7 @@ export async function createRoomView(canvas, opts = {}) {
     }
     if (disposed || my !== charSeq.get(key)) { c.dispose(); return null; }
     chars.set(key, c);
+    if (key === 'jachwi') applyHeroOutfit();   /* 새로 선 몸에도 지금 옷 */
     progress('character_done:' + key, '캐릭터 준비 완료');
     needsRender = true;
     return c.root;
@@ -10317,6 +10330,9 @@ export async function createRoomView(canvas, opts = {}) {
     /* ⑦ 앉기·눕기는 actAt(uid, 'sit'|'sleep') — 잡고 있다. 일어나기는 여기. */
     standUp(reason) { return standUp(reason); },
     restingOn() { return restingOn(); },
+    /* ★ 2026-10-09 (char) — 주인공 낮 옷을 정한다('summer'·'spring'·'autumn'·'winter'·…). 눕기 동안은 pajama 가 이긴다. 지금 입은 옷은 heroOutfit() */
+    setHeroOutfit(name) { heroDayOutfit = String(name || 'summer'); applyHeroOutfit(); return heroDayOutfit; },
+    heroOutfit() { const c = chars.get('jachwi'); return c && c.outfit != null ? c.outfit : null; },
     /* 하던 동작을 취소한다. 취소하면 onDone 은 안 불린다. 취소할 게 있었으면 true. */
     cancelAct(reason) { return cancelAct(reason); },
     /* 지금 무엇을 하고 있나 — { kind, key, phase, p01 } · 없으면 null */

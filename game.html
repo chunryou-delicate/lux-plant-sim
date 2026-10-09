@@ -11701,7 +11701,19 @@ function siruPick(id) {
   try { picked.select(key); } catch { }
 }
 
+/* ★ 2026-10-09 (char 추천 · core 정함) — 주인공 낮 옷. 반지하 = 늘 summer(빛이 여름·맑음 고정 D1 — 옷만 바뀌면 «한 낱말 두 방») ·
+     원룸부터 = 빛과 같은 달력 계절(io.light.skyFor) · 눕기 동안 pajama 는 방뷰가 맡는다 · rain 은 보류(사람이 늘 방 안) */
+let heroOutfitAsked = null;
+function syncHeroOutfit() {
+  if (!roomView || typeof roomView.setHeroOutfit !== 'function') return;
+  let want = 'summer';
+  try { if (S.tutorial && S.tutorial.movedOut) { const sky = io.light.skyFor(S.day, S.sim); if (sky && ['spring', 'summer', 'autumn', 'winter'].includes(sky.season)) want = sky.season; } } catch { }
+  if (want === heroOutfitAsked) return;
+  heroOutfitAsked = want;
+  try { roomView.setHeroOutfit(want); } catch (e) { console.warn('[옷]', e && e.message); }
+}
 function draw() {
+  try { syncHeroOutfit(); } catch { }
   saveSoon();
   renderHUD($('hud'), S, lastTurn, io);
   renderLog($('log'), S);
