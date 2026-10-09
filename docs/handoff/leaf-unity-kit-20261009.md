@@ -95,3 +95,8 @@
 받은 두 장(`unity_kit/pilot/mon_mature_detail_2d_{a,b}.png`)은 빛은 받았지만 **사진 같은 윤기 잎**이다 — 이걸로 3D 를 뜨면 «사진 결 vs 지금 저폴리»를 견주게 된다. 박사님께 여쭐 것은 «결은 그대로 · 더 세밀하게»라서 고른다면 «부드러운 그림 결의 세밀한 잎»이어야 한다 ⇒ 2단계(Tripo)로 안 넘기고 1단계만 다시(2장 · 5.5).
 참조: ① 지금 성숙잎 3/4(모양) ② `REF_STYLE_B` = `assets/raw/plants/pink_princess/PP2_clean.png`(지금 잎의 파스텔 색).
 글: `A single Monstera deliciosa mature leaf with its petiole, the same silhouette, splits and holes as image 1, 3/4 view, petiole pointing down, the whole leaf visible and centered. Stylized soft 3D game render, NOT a photo: smooth gently curved surface (not faceted, not low-poly), soft natural veins, matte finish with no glossy highlights, the soft pastel green palette of image 2, soft even studio light with gentle shading so the curvature reads. Isolated on a plain pure white background, no pot, no shadow, no text.`
+
+### 6-c. 10-10 결과 — 자세한 판 한 잎 · 나란히 (박사님 «유니티 겉모습» 물음용)
+2D 세 번(r1 사진 결 ✗ · r2 분홍 무늬 섞임 ✗ · r3 a ✓) → Tripo detailed pbr(입력 r3_a · 4,876면) — 크레딧 28.5(장부 `unity_kit/plants/kit_log.json` pilot_detail).
+나란히: `img/leaf1010/unity_look_compare.png` — 확대창과 같은 빛·톤(`tools/leaf/leaf_compare.html`) · 같은 카메라 · 같은 높이 · 겉면이 카메라 쪽. 셋: ① 지금 잎(게임 색) ② 자세한 판(**같은 게임 색** — 텍스처를 빼 «면·노멀맵»만 견줌) ③ 자세한 판(원래 색).
+⇒ 견줄 것은 ①↔②(같은 색에서 «면이 각진가 · 매끈한가»). ③ 은 색까지 바꾸면 이렇다는 참고.
