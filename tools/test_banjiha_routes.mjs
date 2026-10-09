@@ -657,6 +657,7 @@ function play(opt = {}) {
            firstCutDay, firstSellDay, varieCutsTaken, heldSold, cuttingsDied, maxHeldLeaves,
            movedOut: S.tutorial.movedOut, lastDay: last.tday, m0,
            season: last.season, everBroke: rows.some(r => r.bankrupt),
+           reliefTaken: !!(S.tutorial && S.tutorial.reliefTaken),   /* 2026-10-09 — 첫 0원은 구호금이 같은 날 메워 rows.bankrupt 에 안 남는다(§D) */
            blocked: blockReasonOf(S, rows, io, opt) };
 }
 
@@ -880,8 +881,12 @@ check('B-2 ★시루를 늘리고 어긋나게 돌리면 절감이 는다 — �
   const three = play({ seed: 3, days: 40, propagate: false, cropSlot: DARK, plantSlot: SILL, sirus: 3 });
   const s1 = one.S.firstPlay.food.totalFoodSavedWon;
   const s3 = three.S.firstPlay.food.totalFoodSavedWon;
-  assert.ok(s3 > s1 * 1.5,
-    `★시루를 셋 돌렸는데 절감이 ${s1} → ${s3} 원뿐입니다 — 시차가 값을 못 만들고 있습니다`);
+  /* ⚠ 2026-10-09 (core · 총괄 «진짜 회귀 / 낡은 단언» 가르기) — 옛 단언 `s3 > s1 × 1.5` 는 **낡았다**:
+       밥값 절감은 «하루 300g · 첫 몫 2,500원»이 천장이다(first_play §하루 몫 · test_cropsale K). 시루 셋은 40일 판에서
+       그 천장에 닿는다(실측 83,333 ≒ 첫 수확 뒤 33일 × 2,500) — 시루를 늘려 더 얻는 것은 이제 «판 돈»(곳간)이라 이 하네스가 안 센다.
+       ⇒ 지킬 수 있는 것은 «늘리면 는다»(천장 밑의 한 시루보다는 많다)와 «천장 근처까지 찬다»다 */
+  assert.ok(s3 > s1,
+    `★시루를 셋 돌렸는데 절감이 ${s1} → ${s3} 원 — 늘린 것이 하나도 안 늡니다`);
   assert.ok(three.S.tutorial.crop.spentWon > one.S.tutorial.crop.spentWon,
     '★시루를 셋 돌렸는데 씨앗·시루값이 안 늘었습니다 — 늘리는 것이 공짜가 되면 안 됩니다');
   info(`짜임새: 시루 1개 절감 ${s1.toLocaleString()}원 → 시루 3개(하루씩 어긋남) ${s3.toLocaleString()}원 ` +
@@ -972,8 +977,18 @@ check('D 아무것도 안 하면 파산한다 — 다만 게임이 끝나지는 
        **자가 짧아진 것**이다. 셈으로도 맞는다: 1,500,000 ÷ 16,667 ≒ 90일.
      ⚠ 창을 넓히는 것으로 끝내지 않는다. 아래 `rows.length >= 100` 이 「파산해도 하루가
        계속된다」를 재는데, 창이 파산일에 딱 붙으면 그것도 못 잰다. 140 이면 19일이 남는다. */
-  const r = play({ seed: 2, days: 140, farm: false, propagate: false, cropSlot: DARK, plantSlot: SILL });
-  assert.equal(r.everBroke, true, '★아무것도 안 했는데 파산하지 않았습니다 — 위험이 사라졌습니다');
+  /* ⚠ 2026-10-09 (core · 총괄 가르기) — 140일 창이 **낡았다**: 처음 0원이 된 날(튜토 ~90일)은 구호금 50만(§reliefWon · 08-17)이
+       같은 날 메워 `bankrupt` 가 그날 바로 풀린다 — rows 에 안 남는다. 진짜 파산(두 번째 0원)은 그 30일쯤 뒤다.
+       ⇒ 창을 200일로 넓히고, «구호금을 받았다(첫 0원)»도 같이 본다. 위험이 남아 있다는 뜻은 그대로다.
+     ⚠ 그리고 keepMother — 이 자의 ④ 이사 블록은 «팔면 닿나»를 보고 모주를 판다. 프롤로그 무늬(잎 2·3)로 모주 값이 196만이라
+       «아무것도 안 한» 판도 튜토 88일에 모주를 팔고 나갔다(실측). 그건 «아무것도 안 함»이 아니다 — 모주를 안 판다 */
+  const r = play({ seed: 2, days: 200, farm: false, propagate: false, cropSlot: DARK, plantSlot: SILL, keepMother: true });
+  { const ts = r.S.tutorial, sh = r.S.shop || {};
+    const minRow = r.rows.reduce((m, x) => (m == null || x.cashWon < m.cashWon ? x : m), null);
+    info(`  (D 진단) 끝 지갑 ${ts.cashWon.toLocaleString()} · 최저 ${minRow && minRow.cashWon.toLocaleString()}(튜토 ${minRow && minRow.tday}일) · 판 돈 ${JSON.stringify(sh.earnedBy || {})} · ` +
+         `이사 ${!!ts.movedOut} · 확정 무늬 ${JSON.stringify(ts.varieGrant || null).slice(0, 80)} · 반찬가게 ${ts.neighborOrderDay}`); }
+  assert.equal(r.reliefTaken, true, '★아무것도 안 했는데 한 번도 0원이 안 됐습니다 — 위험이 사라졌습니다');
+  assert.equal(r.everBroke, true, '★아무것도 안 했는데 파산하지 않았습니다(구호금 뒤 두 번째 0원) — 위험이 사라졌습니다');
   const broke = r.rows.find(x => x.bankrupt);
   assert.equal(r.rows.length >= 100, true, '★파산으로 하루가 멈췄습니다 — 초보 모드는 죽지 않습니다');
   const after = r.rows[r.rows.length - 1].leaves.leaves;
@@ -1150,16 +1165,24 @@ check('P-2 ★무한 증식이 안 된다 — 잘라낸 잎의 합이 모주의 
        `(남은 잎 ${b.leftLeaves}장)`);
 });
 
+/* ⚠ 2026-10-09 (core · 총괄 가르기) — 옛 P-3 은 P90(90일 판)으로 «민무늬 삽수 판 돈 − 병값 > 0»을 쟀다. 두 가지가 **낡았다**:
+     ① 중고 문이 «모주 잎 3장»에 열린다(shop §marketGate · MARKET_MIN_LEAVES) — 이 판은 잎 3장이 90일 끝 무렵이라 올린 삽수가 연락을 못 받는다
+       (P-1 의 «판매 가능한 날» 49일은 올리려 한 날이고 실제 거래는 0 · 유한성 줄 «삽수 0개»)
+     ② 프롤로그 무늬(잎 2·3 · 산반/하프문 고정)로 첫 삽수들이 «무늬»라 «민무늬만»은 0원이다
+   ⇒ 150일 판으로 «삽수를 판다 · 판 돈(무늬 포함)이 병값을 넘는다»를 잰다. 민무늬 몫은 info 로 남긴다 */
+const P150 = play({ seed: 4, days: 150, cropSlot: DARK, plantSlot: SILL, noGrant: true, keepMother: true });
 check('P-3 ★용기값·시간을 빼고도 남는다 — 다만 하루 지출에 견주면 아주 작다', () => {
-  const gross = P90.cuttingIncome;                     // 민무늬 삽수만
+  const P90 = P150;
+  const gross = P90.cuttingIncome + P90.varieIncome;   // 2026-10-09 — 무늬 포함(위 ②)
   const net = gross - P90.containerSpend;
-  assert.ok(P90.cuttingsSold >= 1, '90일에 삽수를 한 개도 못 팔았습니다');
+  assert.ok(P90.cuttingsSold >= 1, '150일에 삽수를 한 개도 못 팔았습니다');
   assert.ok(net > 0, `★용기값을 빼면 ${net}원 — 팔아도 안 남습니다`);
-  info(`꾸준수입: 90일에 민무늬 삽수 ${P90.cuttingsSold}개 ${gross.toLocaleString()}원 − ` +
+  info(`  ⤷ 그중 민무늬 삽수 몫 ${P90.cuttingIncome.toLocaleString()}원 · 무늬 ${P90.varieIncome.toLocaleString()}원`);
+  info(`꾸준수입: 150일에 삽수 ${P90.cuttingsSold}개 ${gross.toLocaleString()}원 − ` +
        `병값 ${P90.containerSpend.toLocaleString()}원 = 순 ${net.toLocaleString()}원 ` +
-       `(하루 ${Math.round(net / 90).toLocaleString()}원)`);
+       `(하루 ${Math.round(net / 150).toLocaleString()}원)`);
   info(`  ⤷ 하루 지출 ${TUTORIAL_RULES.dailySpendWon.toLocaleString()}원의 ` +
-       `${(net / 90 / TUTORIAL_RULES.dailySpendWon * 100).toFixed(1)}% — ` +
+       `${(net / 150 / TUTORIAL_RULES.dailySpendWon * 100).toFixed(1)}% — ` +
        `**꾸준수입만으로는 반지하를 못 나간다**(sale_economy.md §0 과 같은 결론)`);
 });
 
