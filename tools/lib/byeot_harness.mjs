@@ -152,7 +152,8 @@ export function questSnapshotOf(S, io, opt = {}) {
     try { const ls = io.growth.leafState ? io.growth.leafState() : null; motherVarieMatured = Array.isArray(ls) ? ls.filter(r => r && r.varie && r.matured && !r.dropped).length : null; } catch { motherVarieMatured = null; }
   }
   const cuts = (cuttingsOf(S) || []).map(c => ({ method: c.method, status: c.status, varieFromCut: !!c.varieFromCut,
-                                                 varieLightBand: c.varieLightBand || null, rootedOnDay: Number.isInteger(c.rootedOnDay) ? c.rootedOnDay : null }));
+                                                 varieLightBand: c.varieLightBand || null, rootedOnDay: Number.isInteger(c.rootedOnDay) ? c.rootedOnDay : null,
+                                                 gen: Number.isInteger(c.gen) ? c.gen : null }));   /* D41 — game.html §questSnapshotNow 와 같게 */
   let story = null; try { story = storyOf(S); } catch { story = null; }
   const movedOut = !!ts.movedOut;
   return {

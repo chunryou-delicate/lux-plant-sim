@@ -9,6 +9,7 @@
      node tools/probe_branches.mjs --targets 5000000,10000000 --days 660
      node tools/probe_branches.mjs --noprologue           (잎 2·3 무늬 보장 끔 — 게임은 켠다 · 견주기용)
      node tools/probe_branches.mjs --rent 275000          (D8 — 이사하는 순간 원룸 월세 R 을 «짝»으로 꽂는다 · 없으면 게임 그대로(원룸 월세 미정 = 반지하 월세))
+     node tools/probe_branches.mjs --boost 2                 (D40 — 삽수 «어린 그루» 무늬 배율을 이 판에서만 바꿔 끼운다 · 상한 0.9 · 1 = 캐논)
      node tools/probe_branches.mjs --grades <varie_grades.json>   (재는 판에서만 무늬 등급 표를 그 파일로 바꿔 끼운다 — 전/후 견주기용 · 게임 값은 안 건드림)
      node tools/probe_branches.mjs --persona guide --seeds g --targets 5000000 --days 1500 --rent 275000 --ledger
                                                            (이사 뒤 30일마다 장부 — 들어온 돈 · 나간 돈 · 판 삽수 · 달말 지갑)
@@ -44,7 +45,7 @@ import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, mark
          SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
 import { canMoveOut, varieView, buyLamp } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow, cuttingsOf, cutBlockedReason,
-         cuttingStatsNow, cuttableNodesOfCutting } from '../src/game/propagation.js';
+         cuttingStatsNow, cuttableNodesOfCutting, installVarieBoost } from '../src/game/propagation.js';
 import { lightOptsOf } from '../src/game/loop.js';
 import { moveIntoOneroom } from '../src/game/oneroom.js';
 import { endingRulesFrom, endingProgress } from '../src/game/ending.js';
@@ -95,6 +96,7 @@ export async function play(name, seed, opt = {}) {
   if (!P) throw new Error('모르는 사람: ' + name);
   /* ★ 2026-10-09 D30 전/후 — 이 판(자식 프로세스)에서만 등급 표를 바꿔 끼운다 */
   if (opt.grades) installVarieGrades(JSON.parse(fs.readFileSync(opt.grades, 'utf8')));
+  if (Number.isFinite(opt.boost)) installVarieBoost({ pre_mature_mult: opt.boost, cap: 0.9 });   /* D40 전/후(삽수 쪽만 · 모주는 plant_grow 가 growth_tuning 을 읽는다) */
   const targets = opt.targets || [5_000_000, 10_000_000];
   const maxDays = opt.days || 660;
   const light = makeSwitchingLight('banjiha');
@@ -263,8 +265,11 @@ export async function play(name, seed, opt = {}) {
       for (const c of [...cuttingsOf(S)]) if (c.status === 'node' && stockOf(S, 'pot') >= 1) { try { repotCutting(S, c.id); } catch { } }
       /* ── 팔기 ── */
       const keepVarie = !ts.movedOut && P.move === 'withCuttings' && ts.varieSale && ts.varieSale.count >= 1;
-      /* 늘리는 사람의 «남긴 삽수» — 원룸에서 처음 뿌리낸 무늬 삽수(죽으면 다음 것으로 갈아 듦) */
-      if (P.grow && ts.movedOut) {
+      /* 늘리는 사람의 «남긴 삽수» — 원룸에서 처음 뿌리낸 무늬 삽수(죽으면 다음 것으로 갈아 듦)
+         ★ 2026-10-09 D41 — 안내대로(follow)는 원룸 «흙에 옮겨 키우기»·«다시 자르기» 줄이 열리면 그 안내를 따라 같은 손을 쓴다 */
+      const stmG = S.stamina || {}, openedG = id => (stmG.questsOpenedOn || {})[id] != null;
+      const growNow = P.grow || (P.follow && ts.movedOut && (openedG('oneroom_settle_cutting') || openedG('oneroom_recut')));
+      if (growNow && ts.movedOut) {
         const k = out.keeperId && cuttingsOf(S).find(c => c && c.id === out.keeperId);
         if (!k || k.status === 'dead') {
           const nk = cuttingsOf(S).find(c => c && c.varieFromCut && c.status !== 'dead' && c.status !== 'rooting' && Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= (out.moveDay || 0) && !listingFor(S, c));
@@ -274,7 +279,7 @@ export async function play(name, seed, opt = {}) {
       }
       for (const c of [...cuttingsOf(S)]) {
         if (!SELLABLE_CUTTING_STATUS.includes(c.status) || listingFor(S, c)) continue;
-        if (P.grow && c.id === out.keeperId) continue;
+        if (growNow && c.id === out.keeperId) continue;
         const varie = (c.variegatedLeaves || 0) > 0 || !!c.varieFromCut;
         if (varie && keepVarie) continue;
         try { listCutting(S, c.id); } catch { }
@@ -345,6 +350,8 @@ export async function play(name, seed, opt = {}) {
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
     out.cashDaily.push(cash);
+    if (ts.movedOut) { const g = cuttingsOf(S).filter(c => c && c.status === 'established' && c.varieFromCut && !listingFor(S, c)).length;
+                       if (g > (out.grownMax || 0)) out.grownMax = g; }   /* D41 — 원룸에서 키운 무늬 그루(흙에 자리 잡은 · 안 내놓은) 최대 */
     /* ★ 2026-10-09 (총괄 D36 ③) — 원룸에서 «새 잎»이 달마다 몇 장 나나: 모주(leafState 의 새 leafBirth) · 삽수(cutting_leaf 사건) · 그중 무늬 */
     { let ls = null; try { ls = pot0(S) ? io.growth.leafState() : null; } catch { }
       const fresh = (Array.isArray(ls) ? ls : []).filter(r => r && Number.isFinite(r.leafBirth) && !seenBirth.has(r.leafBirth));
@@ -405,8 +412,10 @@ const JOBS = Number(arg('jobs', 4));
 const SELF = fileURLToPath(import.meta.url);
 const RENT = arg('rent', null) == null ? null : Number(arg('rent'));
 const GRADES = arg('grades', null);
+const BOOST = arg('boost', null) == null ? null : Number(arg('boost'));
 const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false),
-                                                         ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}) })));
+                                                         ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}),
+                                                         ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {
@@ -509,6 +518,8 @@ for (const name of NAMES) {
   }
   const stay = rs.filter(r => r.moveDay == null && r.starvedDay == null);
   { const no = rs.filter(r => r.neighborOrderDay != null); console.log(`  🧺 반찬가게 주문 — ${no.length}/${N}판 · 날 중앙 ${med(no.map(r => r.neighborOrderDay)) ?? '—'}`); }
+  { const rc = rs.filter(r => (r.questDone || {}).oneroom_recut != null && r.moveDay != null);
+    console.log(`  🌿 키워서 늘리기(D41) — 키운 무늬 그루 최대 중앙 ${med(rs.map(r => r.grownMax || 0))} · oneroom_recut 끝남 ${rc.length}/${N}(이사 뒤 중앙 ${med(rc.map(r => r.questDone.oneroom_recut - r.moveDay)) ?? '—'}일)`); }
   if (stay.length) console.log(`  이사 못 한 판 ${stay.length} — 무늬 잎을 낸 적 없음 ${stay.filter(r => r.varieDay == null).length} · 이사 자금 모자람 ${stay.filter(r => r.moneyDay == null).length}` +
                                ` · (이사한 판의 무늬 첫날 중앙 ${med(rs.filter(r => r.moveDay != null).map(r => r.varieDay))}일)`);
   console.log(`  ★막힘 — ${Object.keys(stuckBy).length ? Object.entries(stuckBy).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}판`).join(' · ') : '없음'}`);

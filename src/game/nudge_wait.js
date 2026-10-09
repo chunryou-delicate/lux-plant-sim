@@ -16,12 +16,14 @@
                              뿌리낸(rooted · node) 무늬 삽수가 하나도 없어도 기다림  ← 2026-10-09 [plan] 7d3b2e4f 청
      first_cut               잘라 물에 꽂아 «뿌리내리는 중»(water · rooting)이면 기다림 ← 2026-10-08 D25(총괄)
      varie_bright            무늬 원천(무늬 잎 단 그루 + 안 죽은 무늬 삽수)이 0 이면 기다림 ← 2026-10-08 [plan] be02f66a
+     oneroom_recut           키운 그루(established 삽수)에 자를 수 있는 무늬 마디가 없으면 기다림 ← 2026-10-09 [plan] D41 7abbc23d
    ⚠ 그 밖의 퀘스트는 «할 수 있다»로 본다(false). 모르는 것을 기다림으로 치면 독촉이 영영 안 나온다 —
      그쪽이 «매일 독촉»보다 나쁘다(사람이 막혔는데 아무도 안 알려 준다).
    ⚠ 읽기만 한다. 상태를 안 바꾸고 세이브 칸도 없다.
    ⚠ 이 파일은 dialogue.js 를 import 하지 않는다(dialogue → 이 파일 한 방향). */
 import { cropPotList } from './first_play.js';
 import { stockOf, pendingOrders } from './shop.js';
+import { cuttableNodesOfCutting } from './propagation.js';   /* D41 — 키운 그루의 마디(코어 장부에서 읽는다 · 지어내지 않는다) */
 
 /* 늘 기다리는 퀘스트 — 사람 손으로 할 것이 없다 */
 export const NUDGE_ALWAYS_WAIT = Object.freeze(['leaf_two', 'leaf_three']);
@@ -77,6 +79,14 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
   /* ★ 2026-10-08 [plan] be02f66a 청 — 반지하 varie_bright 는 «무늬 원천 0»이면 기다림.
      모주를 일찍 판 판(갈래 판 seller)에서 할 수 없는 일을 주 1회 시키고 있었다(6/6 판 끝까지). */
   if (id === 'varie_bright') return varieSourceCount(S) === 0;
+  /* ★ 2026-10-09 D41([plan] 7abbc23d) — «키운 그루에서 다시 자르기». 흙에 자리 잡은 삽수(established)에 무늬 잎을 싣는 마디가
+       하나도 없으면 사람이 할 것이 없다(새 무늬 잎이 나기를 기다린다). 놓인 것만 센다(가방 속 그루는 자라지 않는다 · §D29). */
+  if (id === 'oneroom_recut') {
+    const grown = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.status === 'established' && (c.at || c.slotId));
+    let can = false;
+    for (const c of grown) { try { if (cuttableNodesOfCutting(c).some(n => (n.variegatedLeaves || 0) > 0)) { can = true; break; } } catch { } }
+    return !can;
+  }
   return false;
 }
 

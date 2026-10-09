@@ -9520,7 +9520,9 @@ function questSnapshotNow(turn) {
       method: c.method, status: c.status,
       varieFromCut: !!c.varieFromCut, varieLightBand: c.varieLightBand || null,
       /* ★ 2026-10-08 — 원룸 줄(oneroom_root_bright)이 «이사 뒤에 뿌리내렸나»를 보는 칸([plan] f39fbddb) */
-      rootedOnDay: Number.isInteger(c.rootedOnDay) ? c.rootedOnDay : null
+      rootedOnDay: Number.isInteger(c.rootedOnDay) ? c.rootedOnDay : null,
+      /* ★ 2026-10-09 D41([plan] 7abbc23d) — 몇 대째인가. oneroom_recut 은 이 칸이 있어야 열리고 gen ≥ 2(삽수에서 자른 삽수)가 있으면 끝난다 */
+      gen: Number.isInteger(c.gen) ? c.gen : null
     }));
   } catch { cuts = []; }
   return {

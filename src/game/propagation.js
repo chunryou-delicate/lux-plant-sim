@@ -404,6 +404,31 @@ export function varieGenRiseOf(S) {
 /* 그 자리의 빛이 정하는 변이 확률. 못 재면 `null`(안 정한다).
      band  daily_light 밴드 이름
      gen   몇 대째인가 — 손잡이가 꺼져 있으면 **아무 일도 안 한다** */
+/* ══ ★★ 2026-10-09 D40(총괄 · 박사님 «성숙잎 이전 잎, 적당히 비싼 것은 확률을 올려») — **어린 그루의 무늬 나기 배율** ══════════════
+   ------------------------------------------------------------
+   «성숙잎 이전 잎» = 갈라진(성숙) 잎을 아직 안 낸 그루의 새 잎. 삽수는 코어가 잎을 들고 있고 성숙(갈라짐) 셈이 없다 —
+     ⇒ **삽수에서 키운 그루 전부**가 여기 든다(총괄 D40 그대로). 모주(화분) 쪽 «성숙 전»은 growth(plant_grow varieProb)가 같은 칸을 읽는다.
+   ★ 값은 한 칸 — `data/growth_tuning.json` 의 `varie_boost`{ pre_mature_mult · cap } (growth 와 같이 쓴다 · 숫자 두 벌 금지).
+     D40 기본 ×2 · 상한 0.9. 후보 ×1.6/×2/×3 와 원문은 varie_grades.json `_doc_d40_young`(plan).
+   ★ 거는 자리는 «새 잎이 날 때 굴리는 곳» 하나(stepCuttings §새 잎)다 — 무늬 갈래·무지 갈래·옛 세이브의 삽수가 다 같이 든다.
+     빛이 정한 소질(c.varieChance · 20/50/80 · 박사님 확정)은 안 바꾼다 — 그건 그대로 적히고, 굴릴 때만 배율을 탄다.
+   ⚠ 칸이 없으면(못 읽음 · 옛 런타임) 배율 1 — 캐논 그대로 돈다. 재는 판은 installVarieBoost 로 바꿔 끼운다(전/후 견주기). */
+let VARIE_BOOST = null;
+try {
+  const m = await import('../../data/growth_tuning.json', { with: { type: 'json' } });
+  VARIE_BOOST = (m && m.default && m.default.varie_boost) || null;
+} catch { VARIE_BOOST = null; }
+export function installVarieBoost(b) { VARIE_BOOST = b && typeof b === 'object' ? b : null; }
+export function varieBoostRules() { return VARIE_BOOST; }
+export function youngVarieChanceOf(p) {
+  if (!Number.isFinite(p)) return p;
+  const b = VARIE_BOOST;
+  const mult = b && Number.isFinite(b.pre_mature_mult) && b.pre_mature_mult > 0 ? b.pre_mature_mult : 1;
+  if (mult === 1) return p;
+  const cap = b && Number.isFinite(b.cap) ? Math.max(0, Math.min(1, b.cap)) : 1;
+  return +Math.min(cap, Math.max(0, p * mult)).toFixed(6);
+}
+
 export function varieChanceFromLight(band, opt = {}) {
   const step = varieLightStepOf(band);
   if (!step) return null;
@@ -1884,7 +1909,7 @@ function resolveVarieLight(S, c, lit, events, log) {
   c.variegated = true;
   const e = { id: 'cutting_varie_light', cuttingId: c.id, step, band: lit.band, varieChance: p,
               ko: `삽수 ${c.id} — ${VARIE_LIGHT_KO[step]}은 자리에서 뿌리를 냈습니다. ` +
-                  `새 잎 무늬율 ${(p * 100).toFixed(0)}%` };
+                  `새 잎 무늬율 ${(youngVarieChanceOf(p) * 100).toFixed(0)}%` };   /* ★ D40 — 굴릴 때와 같은 값을 말한다 */
   events.push(e);
   if (log) log('✨ ' + e.ko);
 }
@@ -2002,7 +2027,7 @@ export function stepCuttings(S, opt = {}) {
           const idx = (c.leafVarie || []).length;
           const seed = (S.sim && S.sim.seed) || 0;
           const roll = cuttingHash(seed, `${c.id}L${idx}`, 4);
-          const varie = roll < (c.varieChance || 0);
+          const varie = roll < youngVarieChanceOf(c.varieChance || 0);   /* ★ D40 — 어린 그루 배율(§youngVarieChanceOf) */
           /* ★★ 무늬가 났으면 **어느 등급인가**를 그 자리에서 정한다 (확정문 §3).
              ------------------------------------------------------------
              ⚠ **소금(salt)을 따로 쓴다**(4 → 5). 같은 난수로 「났나」와 「무엇인가」를 둘 다
