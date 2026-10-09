@@ -196,6 +196,38 @@
     2160
    ],
    "has_alpha": false
+  },
+  {
+   "name": "hero_m_toy_a_meshy_mv",
+   "job_id": "2aeab4b5-2196-4b62-a4eb-4882762164ca",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_155838_2aeab4b5-2196-4b62-a4eb-4882762164ca.glb",
+   "path": "assets/v2/char/_src/hero_m_unity/hero_m_toy_a_meshy_mv_2aeab4b5.glb",
+   "note": "남 주인공 Meshy multi-image(30) · a-pose · 3만 면 · 입력 crops hero_m_toy_a 넷",
+   "bytes": 4307404,
+   "tris": 30733,
+   "dims_xyz": [
+    1.054,
+    1.899,
+    0.811
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "hero_m_toy_a_tripo_mv30k",
+   "job_id": "e4df0454-2fc9-4e28-a0a5-3ae164122edc",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_155841_e4df0454-2fc9-4e28-a0a5-3ae164122edc.glb",
+   "path": "assets/v2/char/_src/hero_m_unity/hero_m_toy_a_tripo_mv30k_e4df0454.glb",
+   "note": "남 주인공 Tripo multiview(18) · detailed PBR · face_limit 30000 · 입력 앞·옆·뒤",
+   "bytes": 6359860,
+   "tris": 29537,
+   "dims_xyz": [
+    0.412,
+    0.98,
+    0.557
+   ],
+   "images": 3,
+   "magic_ok": true
   }
  ]
 }
