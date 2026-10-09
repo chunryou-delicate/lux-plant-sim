@@ -37,7 +37,11 @@ try {
       const arr = Array.isArray(furn) ? furn : Object.entries(furn).map(([k, v]) => ({ id: k, ...v }));
       const p = arr.find(x => x.id === id);
       if (p) g = buildFurniture(p.type, { ...p, ...(p.size_m || {}) });
-      else {                                                    // 창 — 방 정의에서 그 프리셋을 쓰는 창을 찾는다
+      else if (id.startsWith('type:')) {                       // 프리셋 없이 빌더로 — type:<빌더>[:k=v,k=v] (새 가구를 프리셋 전에 원화 참조로)
+        const [, ty, kv = ''] = id.split(':');
+        const o = Object.fromEntries(kv.split(',').filter(Boolean).map(s => { const [k, v] = s.split('='); return [k, isNaN(+v) ? v : +v]; }));
+        g = buildFurniture(ty, o);
+      } else {                                                    // 창 — 방 정의에서 그 프리셋을 쓰는 창을 찾는다
         for (const r of Object.values(rooms)) for (const w of (r.windows || [])) if (!g && w.preset === id) {
           const wp = Array.isArray(wins) ? wins.find(x => x.id === id) : wins[id];
           g = buildWindowFrame(w.w, w.h, { ...wp, frameColor: w.color || wp.frameColor, gloss: w.gloss || wp.gloss });
@@ -79,7 +83,7 @@ try {
       return out;
     })()`);
     if (typeof url !== 'string' || !url.startsWith('data:image/png')) { console.log('✘', id, String(url).slice(0, 120)); continue; }
-    const file = path.join(OUT, `ref_${id}.png`);
+    const file = path.join(OUT, `ref_${id.replace(/^type:/, '').replace(/[:=,.]+/g, '_')}.png`);
     fs.writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'));
     console.log('✔', path.relative(ROOT, file).replace(/\\/g, '/'));
     await sleep(100);

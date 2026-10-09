@@ -1,0 +1,873 @@
+{
+ "_what": "[house] Higgsfield 3D 주문 — 식물 가게(plan D59) · 협탁 r2 · 벤치 · Tripo 견줌 · 유니티 몫(총괄 10-10) · 문서: docs/handoff/house-higgsfield-3d-order-20261010.md",
+ "_order": "T(견줌) 먼저 → house 가 엔진을 정해 알림 → C(원화) → 고른 원화 job_id 로 M(3D). U 는 따로 돌려도 된다(겉감은 앞 주문 ③ 고른 뒤).",
+ "_cost": {
+  "tripo_h3_1_detailed": 12,
+  "tripo_h3_1_standard": 9,
+  "meshy_v7": 38,
+  "nano_2k": 2,
+  "nano_4k": 3,
+  "note": "get_cost 장당 값(10-10) · count 를 곱해 셌다"
+ },
+ "_sum": {
+  "T": 33,
+  "C": 36,
+  "M_tripo": 60,
+  "M_meshy7": 190,
+  "U_tex": 48,
+  "U_kit": 128,
+  "total_if_tripo": 305,
+  "total_if_meshy7": 435,
+  "balance": 2388
+ },
+ "_input": "3D 입력은 고른 원화의 job_id(generate_image 결과)를 medias:[{value:job_id, role:\"image_references\"}] 로 — 올리기 없이. T 는 로컬 원화를 media_upload 로",
+ "_after": "받으면 save_as 에(고르지 않은 원화도) · job_id 는 assets/gen/hf_runs/house_20261010_3d.json · 잇기(webp 1024 · FURN · 가게 그림)는 [house]",
+ "_house_only": "유니티 «모듈 벽·바닥·창·문 조각»은 크레딧 없이 house 가 코드 판에서 치수 그대로 GLB 로 낸다(GLTFExporter · 창·문 GLB 는 이미 있음) — 생성 모델은 치수가 안 맞아 조각 짜 맞추기에 못 쓴다",
+ "items": [
+  {
+   "n": 1,
+   "phase": "T 견줌",
+   "id": "tripo_stool",
+   "ko": "스툴 — Tripo(detailed)",
+   "why": "같은 원화(c_stool.png)로 Meshy(raw_stool.glb · 30)와 나란히 — 둥근 판·다리 넷 · 쉬운 꼴",
+   "input": "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_stool.png",
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "save_as": "assets/gen/v2_furn/raw_stool_tripo.glb"
+   }
+  },
+  {
+   "n": 2,
+   "phase": "T 견줌",
+   "id": "tripo_stool_std",
+   "ko": "스툴 — Tripo(standard · 9)",
+   "why": "detailed(12)와 standard(9) 차이",
+   "input": "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_stool.png",
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "save_as": "assets/gen/v2_furn/raw_stool_tripo_std.glb"
+   }
+  },
+  {
+   "n": 3,
+   "phase": "T 견줌",
+   "id": "tripo_etagere",
+   "ko": "다단 선반 — Tripo(detailed)",
+   "why": "어려운 꼴(가는 기둥 넷 · 판 셋) — Meshy 는 잘 냈다(raw_shelf_etagere_3tier.glb)",
+   "input": "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\c_shelf_etagere_3tier.png",
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "save_as": "assets/gen/v2_furn/raw_shelf_etagere_3tier_tripo.glb"
+   }
+  },
+  {
+   "n": 4,
+   "phase": "C→M 가구",
+   "id": "shop_display",
+   "ko": "가게 진열대(새 · 투룸 가게)",
+   "why": "plan 식물 가게 D59 — 앞 낮고 뒤 높은 세 단 · 자리 9(단마다 셋 · 깊이 0.25) · 1.25×0.75×0.815",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 3,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_shop_display.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light warm wood #e0d5c2 step boards, slightly darker #c3b49c side panels and front risers, a thin chalk-ledge strip along each step front. All three steps empty.",
+    "save_as": "assets/gen/v2_furn/c_shop_display_{k}.png",
+    "prompt_ko": "첫째 참조(코드 진열대) 다시 칠 — 밝은 나무 단 · 조금 진한 옆판·앞판 · 단 앞에 가는 턱 · 단 비움",
+    "credits": 6
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_shop_display.glb",
+    "alt": {
+     "tool": "generate_3d",
+     "model": "meshy_v7_image_to_3d",
+     "should_texture": true,
+     "enable_pbr": false,
+     "should_remesh": true,
+     "target_polycount": 6000,
+     "topology": "triangle",
+     "credits": 38
+    }
+   },
+   "out": "assets/v2/furniture/shop_display.glb",
+   "fit": "tiers(꺾은 선 · 단마다 제 판)",
+   "check": "원화: 단 수·부품 수가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라"
+  },
+  {
+   "n": 5,
+   "phase": "C→M 가구",
+   "id": "order_board",
+   "ko": "주문판(코르크 · 새 · 투룸 문 옆 벽)",
+   "why": "plan §1·§6 «문 앞에 작은 주문판을 걸었다» — 0.6×0.04×0.45 벽 걸이",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 3,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_order_board.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: cork board #c9a77c inside a simple light wood frame #d8c3a0, three pinned cream paper order slips with tiny doodles of a leaf, a pot and a watering can, one wooden clothes-peg clip. No letters or numbers.",
+    "save_as": "assets/gen/v2_furn/c_order_board_{k}.png",
+    "prompt_ko": "첫째 참조(코드 게시판) 다시 칠 — 밝은 나무 틀 · 코르크 · 핀 꽂은 쪽지 셋(잎·화분·물뿌리개 낙서) · 빨래집게 하나 · 글자 없음",
+    "credits": 6
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_order_board.glb",
+    "alt": {
+     "tool": "generate_3d",
+     "model": "meshy_v7_image_to_3d",
+     "should_texture": true,
+     "enable_pbr": false,
+     "should_remesh": true,
+     "target_polycount": 6000,
+     "topology": "triangle",
+     "credits": 38
+    }
+   },
+   "out": "assets/v2/furniture/order_board.glb",
+   "fit": "box(벽 걸이 · 앞 +Z)",
+   "check": "원화: 단 수·부품 수가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라"
+  },
+  {
+   "n": 6,
+   "phase": "C→M 가구",
+   "id": "nightstand",
+   "ko": "협탁 다시 뽑기(r2)",
+   "why": "지금 cabinet.glb 는 방 안에서도 갈색 상자(서랍이 안 읽힘) · 색 변형 둘(화이트·민트)이 따라온다",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 3,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_nightstand.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm light wood #e6dccd body with one drawer and a small round knob, slightly darker #c8b18a short legs. Top empty.",
+    "save_as": "assets/gen/v2_furn/c_nightstand_{k}.png",
+    "prompt_ko": "첫째 참조(코드 협탁) 다시 칠 — 밝은 나무 몸 · 서랍 하나·둥근 손잡이 · 조금 진한 짧은 다리 · 윗판 비움",
+    "credits": 6
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_nightstand.glb",
+    "alt": {
+     "tool": "generate_3d",
+     "model": "meshy_v7_image_to_3d",
+     "should_texture": true,
+     "enable_pbr": false,
+     "should_remesh": true,
+     "target_polycount": 6000,
+     "topology": "triangle",
+     "credits": 38
+    }
+   },
+   "out": "assets/v2/furniture/nightstand.glb",
+   "fit": "몸 상자(자리 하나)",
+   "check": "원화: 단 수·부품 수가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라"
+  },
+  {
+   "n": 7,
+   "phase": "C→M 가구",
+   "id": "bench",
+   "ko": "벤치(예비 → 지금)",
+   "why": "가게 44번째 줄 · 화분 자리 2(0.44m)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 3,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_bench.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 seat board, two slightly darker #c3b49c panel legs. Seat empty.",
+    "save_as": "assets/gen/v2_furn/c_bench_{k}.png",
+    "prompt_ko": "첫째 참조(코드 벤치) 다시 칠 — 밝은 베이지 앉음판 · 조금 진한 판 다리 둘 · 비움",
+    "credits": 6
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_bench.glb",
+    "alt": {
+     "tool": "generate_3d",
+     "model": "meshy_v7_image_to_3d",
+     "should_texture": true,
+     "enable_pbr": false,
+     "should_remesh": true,
+     "target_polycount": 6000,
+     "topology": "triangle",
+     "credits": 38
+    }
+   },
+   "out": "assets/v2/furniture/bench.glb",
+   "fit": "몸 상자",
+   "check": "원화: 단 수·부품 수가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라"
+  },
+  {
+   "n": 8,
+   "phase": "C→M 가구",
+   "id": "shop_sign_blade",
+   "ko": "가게 간판 — 벽에서 튀어나온 매다는 간판",
+   "why": "plan D59 단골 10명 보상 — 투룸 창밖·문 옆(장식 · 조도 밖 · outside.js 안전선). 둘 다 원화를 뽑고 하나를 3D 로(글자는 게임이 캔버스로 얹을 수 있게 비움)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 3,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A hanging blade sign for a tiny neighborhood plant shop: a round-cornered wooden board hung by two short chains from a black iron wall bracket; the board face shows a painted monstera leaf in a small terracotta pot on cream. No letters, no numbers.",
+    "save_as": "assets/gen/v2_furn/c_shop_sign_blade_{k}.png",
+    "prompt_ko": "작은 동네 식물 가게 매다는 간판 — 검은 쇠 받침대에 짧은 사슬 둘 · 둥근 모서리 나무판 · 판에 토분 몬스테라 그림 · 글자 없음",
+    "credits": 6
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_shop_sign_blade.glb",
+    "alt": {
+     "tool": "generate_3d",
+     "model": "meshy_v7_image_to_3d",
+     "should_texture": true,
+     "enable_pbr": false,
+     "should_remesh": true,
+     "target_polycount": 6000,
+     "topology": "triangle",
+     "credits": 38
+    }
+   },
+   "out": "assets/v2/house/shop_sign_blade.glb",
+   "fit": "장식(옷 층 밖 · house 가 자리에 세움)",
+   "after": "둘 중 하나만 3D(house 가 고른다)",
+   "check": "글자·가짜 글씨 없음 · 간판 판 앞면이 비거나 그림만"
+  },
+  {
+   "n": 9,
+   "phase": "C→M 가구",
+   "id": "shop_sign_aframe",
+   "ko": "가게 간판 — 문 옆 입간판(A자)",
+   "why": "plan D59 단골 10명 보상 — 투룸 창밖·문 옆(장식 · 조도 밖 · outside.js 안전선). 둘 다 원화를 뽑고 하나를 3D 로(글자는 게임이 캔버스로 얹을 수 있게 비움)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 3,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden A-frame standing sidewalk sign for a tiny plant shop with a dark green chalkboard face framed in light wood; a little potted plant drawn in chalk at the bottom corner, the rest of the board blank. No letters, no numbers.",
+    "save_as": "assets/gen/v2_furn/c_shop_sign_aframe_{k}.png",
+    "prompt_ko": "작은 식물 가게 A자 입간판 — 밝은 나무 틀 · 짙은 초록 칠판 · 아래 구석에 분필 화분 그림 · 나머지 비움 · 글자 없음",
+    "credits": 6
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_shop_sign_aframe.glb",
+    "alt": {
+     "tool": "generate_3d",
+     "model": "meshy_v7_image_to_3d",
+     "should_texture": true,
+     "enable_pbr": false,
+     "should_remesh": true,
+     "target_polycount": 6000,
+     "topology": "triangle",
+     "credits": 38
+    }
+   },
+   "out": "assets/v2/house/shop_sign_aframe.glb",
+   "fit": "장식(옷 층 밖 · house 가 자리에 세움)",
+   "after": "둘 중 하나만 3D(house 가 고른다)",
+   "check": "글자·가짜 글씨 없음 · 간판 판 앞면이 비거나 그림만"
+  },
+  {
+   "n": 10,
+   "phase": "U 유니티 · 겉감 4k",
+   "id": "u_tex_banjiha_wallpaper",
+   "ko": "반지하 벽지(4k · 이음 없음)",
+   "why": "유니티 판 겉감 — 웹은 2k(앞 주문 ③)를 줄여 쓰고, 유니티는 이 4k 를 그대로",
+   "after": "앞 주문 ③ 에서 고른 2k 를 첫 참조로(«same pattern at 4k»)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Faded pale-yellow wallpaper with sparse sprigs of small orange flowers and green leaves.",
+    "save_as": "assets/gen/v2_hf/unity/tex_banjiha_wallpaper_{k}.png",
+    "prompt_ko": "반지하 벽지 · 이음 없는 4k",
+    "credits": 6
+   },
+   "out": "assets/unity/textures/banjiha_wallpaper_4k.png",
+   "check": "2×2 이음매 · 네 귀퉁이 밝기 차 5% 안"
+  },
+  {
+   "n": 11,
+   "phase": "U 유니티 · 겉감 4k",
+   "id": "u_tex_banjiha_lino",
+   "ko": "반지하 장판(4k · 이음 없음)",
+   "why": "유니티 판 겉감 — 웹은 2k(앞 주문 ③)를 줄여 쓰고, 유니티는 이 4k 를 그대로",
+   "after": "앞 주문 ③ 에서 고른 2k 를 첫 참조로(«same pattern at 4k»)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Old yellow vinyl floor with soft mottling and faint scuffs.",
+    "save_as": "assets/gen/v2_hf/unity/tex_banjiha_lino_{k}.png",
+    "prompt_ko": "반지하 장판 · 이음 없는 4k",
+    "credits": 6
+   },
+   "out": "assets/unity/textures/banjiha_lino_4k.png",
+   "check": "2×2 이음매 · 네 귀퉁이 밝기 차 5% 안"
+  },
+  {
+   "n": 12,
+   "phase": "U 유니티 · 겉감 4k",
+   "id": "u_tex_concrete_wall",
+   "ko": "콘크리트 벽(계단·바깥)(4k · 이음 없음)",
+   "why": "유니티 판 겉감 — 웹은 2k(앞 주문 ③)를 줄여 쓰고, 유니티는 이 4k 를 그대로",
+   "after": null,
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks.",
+    "save_as": "assets/gen/v2_hf/unity/tex_concrete_wall_{k}.png",
+    "prompt_ko": "콘크리트 벽(계단·바깥) · 이음 없는 4k",
+    "credits": 6
+   },
+   "out": "assets/unity/textures/concrete_wall_4k.png",
+   "check": "2×2 이음매 · 네 귀퉁이 밝기 차 5% 안"
+  },
+  {
+   "n": 13,
+   "phase": "U 유니티 · 겉감 4k",
+   "id": "u_tex_concrete_ceiling",
+   "ko": "콘크리트 천장(4k · 이음 없음)",
+   "why": "유니티 판 겉감 — 웹은 2k(앞 주문 ③)를 줄여 쓰고, 유니티는 이 4k 를 그대로",
+   "after": null,
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Pale grey-white painted concrete ceiling, subtle roller texture.",
+    "save_as": "assets/gen/v2_hf/unity/tex_concrete_ceiling_{k}.png",
+    "prompt_ko": "콘크리트 천장 · 이음 없는 4k",
+    "credits": 6
+   },
+   "out": "assets/unity/textures/concrete_ceiling_4k.png",
+   "check": "2×2 이음매 · 네 귀퉁이 밝기 차 5% 안"
+  },
+  {
+   "n": 14,
+   "phase": "U 유니티 · 겉감 4k",
+   "id": "u_tex_oneroom_wallpaper",
+   "ko": "원룸 벽지(4k · 이음 없음)",
+   "why": "유니티 판 겉감 — 웹은 2k(앞 주문 ③)를 줄여 쓰고, 유니티는 이 4k 를 그대로",
+   "after": "앞 주문 ③ 에서 고른 2k 를 첫 참조로(«same pattern at 4k»)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Warm cream wallpaper with a subtle linen weave.",
+    "save_as": "assets/gen/v2_hf/unity/tex_oneroom_wallpaper_{k}.png",
+    "prompt_ko": "원룸 벽지 · 이음 없는 4k",
+    "credits": 6
+   },
+   "out": "assets/unity/textures/oneroom_wallpaper_4k.png",
+   "check": "2×2 이음매 · 네 귀퉁이 밝기 차 5% 안"
+  },
+  {
+   "n": 15,
+   "phase": "U 유니티 · 겉감 4k",
+   "id": "u_tex_oneroom_oak",
+   "ko": "원룸 마루(4k · 이음 없음)",
+   "why": "유니티 판 겉감 — 웹은 2k(앞 주문 ③)를 줄여 쓰고, 유니티는 이 4k 를 그대로",
+   "after": "앞 주문 ③ 에서 고른 2k 를 첫 참조로(«same pattern at 4k»)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Light warm oak plank floor, 10 cm planks, staggered joints.",
+    "save_as": "assets/gen/v2_hf/unity/tex_oneroom_oak_{k}.png",
+    "prompt_ko": "원룸 마루 · 이음 없는 4k",
+    "credits": 6
+   },
+   "out": "assets/unity/textures/oneroom_oak_4k.png",
+   "check": "2×2 이음매 · 네 귀퉁이 밝기 차 5% 안"
+  },
+  {
+   "n": 16,
+   "phase": "U 유니티 · 겉감 4k",
+   "id": "u_tex_villa_brick",
+   "ko": "빌라 벽돌(4k · 이음 없음)",
+   "why": "유니티 판 겉감 — 웹은 2k(앞 주문 ③)를 줄여 쓰고, 유니티는 이 4k 를 그대로",
+   "after": "앞 주문 ③ 에서 고른 2k 를 첫 참조로(«same pattern at 4k»)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Red-brown brick wall, slightly weathered mortar lines.",
+    "save_as": "assets/gen/v2_hf/unity/tex_villa_brick_{k}.png",
+    "prompt_ko": "빌라 벽돌 · 이음 없는 4k",
+    "credits": 6
+   },
+   "out": "assets/unity/textures/villa_brick_4k.png",
+   "check": "2×2 이음매 · 네 귀퉁이 밝기 차 5% 안"
+  },
+  {
+   "n": 17,
+   "phase": "U 유니티 · 겉감 4k",
+   "id": "u_tex_stair_terrazzo",
+   "ko": "계단 인조석(4k · 이음 없음)",
+   "why": "유니티 판 겉감 — 웹은 2k(앞 주문 ③)를 줄여 쓰고, 유니티는 이 4k 를 그대로",
+   "after": null,
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Old Korean terrazzo stair surface, grey with small light chips.",
+    "save_as": "assets/gen/v2_hf/unity/tex_stair_terrazzo_{k}.png",
+    "prompt_ko": "계단 인조석 · 이음 없는 4k",
+    "credits": 6
+   },
+   "out": "assets/unity/textures/stair_terrazzo_4k.png",
+   "check": "2×2 이음매 · 네 귀퉁이 밝기 차 5% 안"
+  },
+  {
+   "n": 18,
+   "phase": "U 유니티 · 방 키트",
+   "id": "u_kit_wall_pipes",
+   "ko": "벽 배관(노출)",
+   "why": "기준 그림의 생활감 — 웹 판에도 소품으로 쓸 수 있다(앞 +Z · 크기는 이을 때 실측)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A cluster of exposed grey wall pipes with elbows and wall clamps, like in a Korean semi-basement stairwell.",
+    "save_as": "assets/gen/v2_hf/unity/c_wall_pipes_{k}.png",
+    "prompt_ko": "벽 배관(노출)",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_hf/unity/raw_wall_pipes.glb"
+   },
+   "out": "assets/unity/kit/wall_pipes.glb",
+   "check": "글자 없음 · 물건 하나 · 3D 구멍 없음"
+  },
+  {
+   "n": 19,
+   "phase": "U 유니티 · 방 키트",
+   "id": "u_kit_meter_box",
+   "ko": "전기 계량함",
+   "why": "기준 그림의 생활감 — 웹 판에도 소품으로 쓸 수 있다(앞 +Z · 크기는 이을 때 실측)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small grey metal electric meter box with a little window and two cables, wall-mounted.",
+    "save_as": "assets/gen/v2_hf/unity/c_meter_box_{k}.png",
+    "prompt_ko": "전기 계량함",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_hf/unity/raw_meter_box.glb"
+   },
+   "out": "assets/unity/kit/meter_box.glb",
+   "check": "글자 없음 · 물건 하나 · 3D 구멍 없음"
+  },
+  {
+   "n": 20,
+   "phase": "U 유니티 · 방 키트",
+   "id": "u_kit_window_well_grate",
+   "ko": "반지하 창 우물 덮개",
+   "why": "기준 그림의 생활감 — 웹 판에도 소품으로 쓸 수 있다(앞 +Z · 크기는 이을 때 실측)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular metal grate over a semi-basement window well with weeds poking through.",
+    "save_as": "assets/gen/v2_hf/unity/c_window_well_grate_{k}.png",
+    "prompt_ko": "반지하 창 우물 덮개",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_hf/unity/raw_window_well_grate.glb"
+   },
+   "out": "assets/unity/kit/window_well_grate.glb",
+   "check": "글자 없음 · 물건 하나 · 3D 구멍 없음"
+  },
+  {
+   "n": 21,
+   "phase": "U 유니티 · 방 키트",
+   "id": "u_kit_wall_shelf_bracket",
+   "ko": "벽 선반(받침쇠)",
+   "why": "기준 그림의 생활감 — 웹 판에도 소품으로 쓸 수 있다(앞 +Z · 크기는 이을 때 실측)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden wall shelf on two black metal brackets, empty.",
+    "save_as": "assets/gen/v2_hf/unity/c_wall_shelf_bracket_{k}.png",
+    "prompt_ko": "벽 선반(받침쇠)",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_hf/unity/raw_wall_shelf_bracket.glb"
+   },
+   "out": "assets/unity/kit/wall_shelf_bracket.glb",
+   "check": "글자 없음 · 물건 하나 · 3D 구멍 없음"
+  },
+  {
+   "n": 22,
+   "phase": "U 유니티 · 방 키트",
+   "id": "u_kit_wall_clothes_rail",
+   "ko": "벽걸이 옷걸이 봉",
+   "why": "기준 그림의 생활감 — 웹 판에도 소품으로 쓸 수 있다(앞 +Z · 크기는 이을 때 실측)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A wall-mounted metal clothes rail with a few empty wire hangers.",
+    "save_as": "assets/gen/v2_hf/unity/c_wall_clothes_rail_{k}.png",
+    "prompt_ko": "벽걸이 옷걸이 봉",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_hf/unity/raw_wall_clothes_rail.glb"
+   },
+   "out": "assets/unity/kit/wall_clothes_rail.glb",
+   "check": "글자 없음 · 물건 하나 · 3D 구멍 없음"
+  },
+  {
+   "n": 23,
+   "phase": "U 유니티 · 방 키트",
+   "id": "u_kit_door_mat",
+   "ko": "현관 매트",
+   "why": "기준 그림의 생활감 — 웹 판에도 소품으로 쓸 수 있다(앞 +Z · 크기는 이을 때 실측)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular coir door mat with a simple leaf border, no letters.",
+    "save_as": "assets/gen/v2_hf/unity/c_door_mat_{k}.png",
+    "prompt_ko": "현관 매트",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_hf/unity/raw_door_mat.glb"
+   },
+   "out": "assets/unity/kit/door_mat.glb",
+   "check": "글자 없음 · 물건 하나 · 3D 구멍 없음"
+  },
+  {
+   "n": 24,
+   "phase": "U 유니티 · 방 키트",
+   "id": "u_kit_pendant_lamp",
+   "ko": "천장 펜던트 등",
+   "why": "기준 그림의 생활감 — 웹 판에도 소품으로 쓸 수 있다(앞 +Z · 크기는 이을 때 실측)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A simple ceiling pendant lamp with a cream cone shade and a fabric cord.",
+    "save_as": "assets/gen/v2_hf/unity/c_pendant_lamp_{k}.png",
+    "prompt_ko": "천장 펜던트 등",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_hf/unity/raw_pendant_lamp.glb"
+   },
+   "out": "assets/unity/kit/pendant_lamp.glb",
+   "check": "글자 없음 · 물건 하나 · 3D 구멍 없음"
+  },
+  {
+   "n": 25,
+   "phase": "U 유니티 · 방 키트",
+   "id": "u_kit_shoe_rack_small",
+   "ko": "작은 신발장(열린)",
+   "why": "기준 그림의 생활감 — 웹 판에도 소품으로 쓸 수 있다(앞 +Z · 크기는 이을 때 실측)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small open two-tier wooden shoe rack, empty.",
+    "save_as": "assets/gen/v2_hf/unity/c_shoe_rack_small_{k}.png",
+    "prompt_ko": "작은 신발장(열린)",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 12,
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_hf/unity/raw_shoe_rack_small.glb"
+   },
+   "out": "assets/unity/kit/shoe_rack_small.glb",
+   "check": "글자 없음 · 물건 하나 · 3D 구멍 없음"
+  }
+ ]
+}

@@ -922,6 +922,27 @@ B.plant_step=(o)=>{
   return addSlots(g, sl, tiers, dep);
 };
 
+/* 가게 진열대 — 앞(낮음)에서 뒤(높음)로 오르는 세 단 (2026-10-10 [house] · plan 식물 가게 D59 · 투룸 가게)
+   단마다 깊이 0.25(= 바닥 칸 하나) · 폭 1.25(칸 다섯) · 판 윗면 0.315 / 0.565 / 0.815 · 단마다 자리 셋(칸 한가운데 · tierSlots).
+   옆판은 단마다 그 높이까지(계단꼴) · 앞 가림판이 판 밑을 막는다(진열대 결 — 선반과 다르게 «꽉 찬 계단»으로 읽힌다) */
+B.shop_display=(o)=>{
+  const w=o.w??1.25, d=o.d??0.75, n=o.tiers??3, t=0.03;
+  const g=new THREE.Group();
+  const m=furnMat(o.color??'#e0d5c2','matte');
+  const side=furnMat(o.accent??'#c3b49c','satin');
+  const dd=d/n, tiers=[], sl=[], dep=[];
+  for(let i=0;i<n;i++){                                   // i=0 앞(낮음) → 뒤(높음)
+    const y=0.30+i*0.25, z=d/2-dd*(i+0.5), top=+(y+t/2).toFixed(3);
+    g.add(panel(w-2*t,t,dd,m,0,y,z,0.01));                                // 판(옆판 사이)
+    g.add(bx(w-2*t,y,t*0.6,side,0,y/2,z+dd/2-t*0.3));                      // 앞 가림판(바닥 → 판)
+    for(const s of [-1,1]) g.add(bx(t,y+t/2,dd,side,s*(w/2-t/2),(y+t/2)/2,z)); // 옆판(계단꼴)
+    tiers.push(top); dep.push(dd);
+    sl.push(...tierSlots(w-2*t, top, 3, +z.toFixed(3)));
+  }
+  g.userData.size={w,h:+(0.30+(n-1)*0.25+t/2).toFixed(3),d};
+  return addSlots(g, sl, tiers, dep);
+};
+
 /* 높은 화분 받침(원형 스탠드) */
 B.plant_pedestal=(o)=>{
   const w=o.w??0.26, h=o.h??0.62;
