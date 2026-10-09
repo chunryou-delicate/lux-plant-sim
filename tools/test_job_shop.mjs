@@ -40,6 +40,11 @@ T('B 가게 첫날 — 첫 주문 · 첫 손님', () => {
   const on = r.events.find(e => e.id === 'order_new');
   assert.ok(/^반찬가게 사장님 — /.test(on.ko), on.ko);
   assert.strictEqual(JS.openShop(S).events.length, 0, '두 번 열렸다');
+  { const S4 = newS({ cuttings: [cut('c1')], tutorial: { enabled: true, lamp: { placed: 0 } } });   /* 첫 플레이가 켜진 판(꺼진 판은 상점이 다 보인다 — species §speciesShopOpen 규약) */
+    JS.startShopJob(S4); assert.strictEqual(JS.openShop(S4).events.find(e => e.id === 'shop_no_species').ppInShop, false, 'PP 가 상점에 없는 판인데 ppInShop'); }
+  { const S3 = newS({ cuttings: [cut('c1')], tutorial: { enabled: true, lamp: { placed: 0 } }, species: { pots: [], corms: [], trade: { declined: 2, done: false }, n: {}, seq: 0 } });
+    JS.startShopJob(S3); const e3 = JS.openShop(S3).events.find(e => e.id === 'shop_no_species');
+    assert.ok(e3 && e3.ppInShop === true, 'PP 를 두 번 거절한 판 — ppInShop 이 안 섰다(plan shopNoSpeciesPP)'); }
   /* 새 종이 하나라도 있으면(그루 · 가방 구근 · 산 재고) 권하지 않는다 */
   for (const give of [S2 => SP.addSpeciesPot(S2, 'alocasia_frydek', { origin: 'corm' }), S2 => { S2.shop.stock.al_corm = 1; }]) {
     const S2 = newS({ cuttings: [cut('c1')] }); give(S2); JS.startShopJob(S2);

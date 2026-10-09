@@ -10,7 +10,7 @@
    사건(turn.events · 대사는 plan dialogue): job_start · shop_open · order_new · order_done{newRegular} · order_expired · regulars_milestone{n} · shop_sign
    ⚠ 손님 이름이 드는 줄은 대사가 아니라 기록 줄·주문판 글(plan — 대사는 틀 글자를 못 채움): 붙을 때 «{ko} — {ask}» · 받아 갈 때 «{ko} — {thanks}» */
 import { cuttingPriceOf, potPriceOf } from './shop.js';
-import { speciesPriceOf, speciesPotsOf, speciesPlaced, SPECIES_GAME, speciesRules, speciesReady } from './species.js';
+import { speciesPriceOf, speciesPotsOf, speciesPlaced, SPECIES_GAME, speciesRules, speciesReady, speciesShopOpen } from './species.js';
 import { u01 } from '../growth/species_growth.js';
 import { seasonOf } from '../engine/weather.js';
 
@@ -248,7 +248,8 @@ export function openShop(S, ctx = {}) {
   J.openedOn = day;
   const ev = [{ id: 'shop_open', ko: '문 앞에 작은 주문판을 걸었습니다' }];
   /* ★ 10-10 총괄 (가) «가게는 새 두 종과 함께» — 가진 새 종(PP·AL 그루 · 심은 구근 · 가방 구근 · 산 재고)이 0 이면 몬이가 구근을 권한다(plan shopNoSpecies · 말만) */
-  if (speciesHeldCount(S) === 0) ev.push({ id: 'shop_no_species' });
+  /* ppInShop — PP 어린 그루가 지금 상점에 있나(교환을 두 번 거절한 판 · species §speciesShopOpen) — 있으면 plan 이 둘 다 권하는 줄(shopNoSpeciesPP)로 간다 */
+  if (speciesHeldCount(S) === 0) { let ppInShop = false; try { ppInShop = !!speciesShopOpen(S, 'pp_young'); } catch { ppInShop = false; } ev.push({ id: 'shop_no_species', ppInShop }); }
   const src = shopSources(S, ctx);
   const spec = rollOrder(S, src, { first: true, day });
   const cust = spec ? pickCustomer(S, { first: true }) : null;
