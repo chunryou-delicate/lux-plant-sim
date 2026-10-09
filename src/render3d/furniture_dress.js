@@ -197,10 +197,13 @@ const PROPS = {
     { id: 'backpack',file: 'props/backpack.glb',    x: -0.72, z: 1.64,  yaw: 90,  h: 0.36, preset: 'backpack' },
     { id: 'rack',    file: 'props/drying_rack.glb', x: -1.10, z: -1.42, yaw: 90,  h: 0.72, preset: 'drying_rack' }
   ],
-  /* ★ 2026-10-10 [house] 가게 입간판(plan D59 단골 10명 보상) — flag 가 켜질 때만(view.setShopSign). 투룸은 5층이라 창밖이 아니라
-       가게 방 안 문(앞벽 x −2.4) 오른쪽 옆 바닥 — 앞벽은 기본 카메라에서 깎여 그 자리가 보인다 · 문 앞 길(몸 반지름 0.38)은 비켰다 */
+  /* ★ 2026-10-10 [house] 가게 입간판(plan D59 단골 10명 보상) — flag 가 켜질 때만(view.setShopSign). 투룸은 5층이라 창밖이 아니라 가게 방 안.
+       자리 = 진열대 왼쪽 · 왼벽 앞 바닥(x −3.14 · z −0.95 · 앞 +Z). 처음엔 문(앞벽 x −2.4) 옆 바닥(−1.62, 1.98)이었는데
+       가게 진로 «집 보기»(game.html SHOP_FRAME_UIDS 진열대·다단 선반·주문판 · pad 0.7 → x −3.5~−0.9 · z −2.5~−0.7)가 그 자리를 안 담아
+       단골 10 뒤에 서도 첫 화면에 안 보였다(core 한 판 걸음 10-10). 상자 안으로 옮겼다 — 벽 안쪽 면(−3.4)에서 반폭 0.25 + 1cm 띄움(yaw 30 은 상자 반폭 0.354 라 벽에 박혀 뺐다) ·
+       진열대 앞(z −1.375) 서는 자리와 안 겹친다 · 가구·화분이 그 자리에 오면 늘 하던 대로 비켜 숨는다(applyYield) */
   tworoom: [
-    { id: 'shop_sign', file: 'furniture/shop_sign_aframe.glb', x: -1.62, z: 1.98, yaw: 0, h: 0.85, flag: 'shopSign' }
+    { id: 'shop_sign', file: 'furniture/shop_sign_aframe.glb', x: -3.14, z: -0.95, yaw: 0, h: 0.85, flag: 'shopSign' }
   ]
 };
 
