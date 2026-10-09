@@ -3183,7 +3183,10 @@ import { setLampAim, clearLampAim } from './src/game/state.js';
 /* ★ 2026-10-08 A·B 덧([plan]) — 놓는 순간 빛 경고의 자: real 판은 날씨 기댓값(weatherE) · 무늬 삽수는 뿌리낸 날 등급의 자(varieLightStepOfBand) */
 import { modeOf } from './src/game/state.js';
 import { varieLightStepOfBand } from './src/game/shop.js';
-import { potLeafGradesOf, potLeafGradesSeenOf } from './src/game/shop.js';   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
+import { potLeafGradesOf, potLeafGradesSeenOf } from './src/game/shop.js';
+/* ★ 2026-10-09 D47(총괄) — 가구점을 화면에 잇는다(줄 · 주문 · 가방 · 놓기). 셈·값·해금은 전부 코어(shop §furnitureCatalogList · state §placeBoughtFurniture) */
+import { furnitureCatalogList, isFurnitureItemId } from './src/game/shop.js';
+import { placeBoughtFurniture } from './src/game/state.js';   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
 import { weatherE } from './src/engine/weather.js';
 import * as save from './src/game/save.js';
 import {
@@ -8116,9 +8119,22 @@ function drawBag() {
     const esc2 = v => String(v == null ? '' : v).replace(/[&<>"]/g, c =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const bag = carriedFurniture(S);
-    if (bag.length) {
+    /* ★ 2026-10-09 D47 — 상점에서 산 가구(재고 furn_*). 도착하면 재고로 들고, 누르면 방에 놓인다(§startPhonePlaceFurnitureStock) */
+    const bought = Object.entries(st.stock || {}).filter(([id, n]) => isFurnitureItemId(id) && n > 0);
+    if (bag.length || bought.length) {
       anyPlaceable = true;
       html += `<div class="grouphead">가구</div><div class="baggrid">` +
+        bought.map(([id, n]) => {
+          const preset = id.slice(5);
+          const ko = (furnPresets[preset] && furnPresets[preset].name_ko) || preset;
+          const th = (FURN_THUMBS || {})[preset] && (FURN_THUMBS || {})[preset].file;
+          return `<button class="bagslot act" data-furnstock="${esc2(id)}" type="button"` +
+                 ` title="${esc2(ko)}" aria-label="${esc2(ko)}">` +
+                 (th ? `<span class="art"><img src="./${esc2(th)}" alt="" onerror="this.remove()"></span>` : `<i class="ltr">🪑</i>`) +
+                 (n > 1 ? `<i class="cnt">×${n}</i>` : '') +
+                 `<span class="nm">${esc2(ko)}</span>` +
+                 `<span class="eta">산 가구 · 눌러서 방에 놓으세요</span></button>`;
+        }).join('') +
         bag.map(f => {
           /* ★ 이름은 `name_ko` 가 정본이다(data/furniture_presets.json) —
              처음에 `.ko` 로 읽어 칸에 «bed_single» 이 뗴다(재서 잡았다). */
@@ -8155,6 +8171,11 @@ function drawBag() {
     for (const b of grid.querySelectorAll('[data-furnbag]')) {
       const uid = b.getAttribute('data-furnbag');
       b.onclick = guard(() => startPhonePlaceFurnitureBag(uid));
+    }
+    /* ★ 2026-10-09 D47 — 산 가구. 누르기만(가방 가구와 같은 손) */
+    for (const b of grid.querySelectorAll('[data-furnstock]')) {
+      const itemId = b.getAttribute('data-furnstock');
+      b.onclick = guard(() => startPhonePlaceFurnitureStock(itemId));
     }
     for (const id of Object.keys(BAG_PLACEABLE)) {
       const p = BAG_PLACEABLE[id];
@@ -8225,6 +8246,7 @@ const SHOP_GROUPS = Object.freeze([
   { id: 'grow',  ko: '채소 키우는 그릇' },
   { id: 'pot',   ko: '화분' },
   { id: 'lamp',  ko: '식물등' },
+  { id: 'furn',  ko: '가구' },      /* ★ 2026-10-09 D47 — 가구점(해금: 식물등과 같이 가을 · shop §furnitureShopOpen) */
   { id: 'all',   ko: '전체' }
 ]);
 /* 「몬스테라 쪽 그릇」 — 카탈로그가 갈래를 안 갖고 있어 **id 로 가른다.**
@@ -8241,6 +8263,7 @@ const SHOP_LAMP_ID = '__lamp__';
 function shopGroupOf(it) {
   if (!it) return 'grow';
   if (String(it.id).startsWith(SHOP_LAMP_ID)) return 'lamp';
+  if (it.preset) return 'furn';       /* D47 — 가구 줄(furnitureCatalogList 품목만 preset 을 든다) */
   if (it.kind === 'seed') return 'seed';
   if (SHOP_DECOR_POTS.test(it.id) || SHOP_MONSTERA_VESSELS.has(it.id)) return 'pot';
   return 'grow';
@@ -8399,6 +8422,8 @@ function drawShop() {
     : [];
   const lampRow = null;
   for (const r of lampRows) shown.push(r);
+  /* ★ 2026-10-09 D47 — 가구 줄. 문이 닫혀 있으면 빈 목록이다(코어가 정한다 · 식물등이 열리는 가을) · 값은 크기 규칙 그대로 */
+  try { for (const r of furnitureCatalogList(S)) shown.push(r); } catch (e) { console.warn('[가구점]', e && e.message); }
   /* ★ 하부 탭 — 지금 화면에 있는 것만으로 짓는다. 빈 갈래는 안 만든다(누르면 빈 칸이 된다) */
   drawShopGroups(shown);
   $('shopList').innerHTML = shown.filter(it => shopGroupOf(it) === shopGroup || shopGroup === 'all').map(it => {
@@ -8420,7 +8445,7 @@ function drawShop() {
     }
     const have = st.stock[it.id] || 0;
     /* ★ 2026-10-09 [house] B — 가구 줄 그림(방에 놓였을 때와 같은 모습 · assets/v2/thumbs/furn) · 없으면 글만 · 둘째 줄 한 줄 소개(.intro · [plan]) */
-    const fth = (it.preset && FURN_THUMBS[it.preset] && FURN_THUMBS[it.preset].file) || null;
+    const fth = (it.preset && (FURN_THUMBS || {})[it.preset] && (FURN_THUMBS || {})[it.preset].file) || null;
     return `<div class="shopRow">
       ${fth ? `<img class="fthumb" src="./${fth}" alt="" loading="lazy" onerror="this.remove()">` : ''}
       <div class="nm">${it.ko}<small>${it.leadDays}일 뒤 도착</small>${it.intro ? `<small>${it.intro}</small>` : ''}</div>
@@ -8621,7 +8646,13 @@ function rememberOrderQty(itemId, qty) {
 }
 
 /* 품목 한 줄. 모르는 id 면 null 이다 — 지어내지 않는다 */
-const buyItemOf = (id) => (id ? catalogList().find(x => x.id === id) : null) || null;
+/* ★ 2026-10-09 D47 — 가구 품목(furn_*)도 찾는다. 예전엔 CATALOG 만 봐서 가구 [주문]을 누르면 창이 안 떴다 */
+const buyItemOf = (id) => {
+  if (!id) return null;
+  const c = catalogList().find(x => x.id === id);
+  if (c) return c;
+  try { return furnitureCatalogList(S).find(x => x.id === id) || null; } catch { return null; }
+};
 /* ★ 소지금으로 몇 개까지 살 수 있나. **이 셈은 여기 한 곳에만 있다** —
    [＋]가 멈추는 자리와 [전부]가 가는 자리와 「왜 못 올리나」가 전부 이 값을 본다. */
 function buyMaxQty(it) {
@@ -11707,9 +11738,9 @@ function siruPick(id) {
 
 /* ★ 2026-10-09 (char 추천 · core 정함) — 주인공 낮 옷. 반지하 = 늘 summer(빛이 여름·맑음 고정 D1 — 옷만 바뀌면 «한 낱말 두 방») ·
      원룸부터 = 빛과 같은 달력 계절(io.light.skyFor) · 눕기 동안 pajama 는 방뷰가 맡는다 · rain 은 보류(사람이 늘 방 안) */
-let heroOutfitAsked = null;
+var heroOutfitAsked = null;
 /* ★ 2026-10-09 [house] B — 가구점 줄 그림 목록(열쇠 = 프리셋 id). 부팅을 안 막는다(받으면 다음 그리기부터) · 못 받으면 글만 */
-let FURN_THUMBS = {};
+var FURN_THUMBS = {};   /* var — 부팅 중 이 줄보다 먼저 가방·상점이 그려져도 TDZ 로 안 던지게 */
 fetch('./assets/v2/thumbs/furn/index.json').then(r => (r.ok ? r.json() : null)).then(j => { if (j && typeof j === 'object') FURN_THUMBS = j; }).catch(() => { });
 function syncHeroOutfit() {
   if (!roomView || typeof roomView.setHeroOutfit !== 'function') return;
@@ -15182,6 +15213,28 @@ async function startPhonePlaceFurnitureBag(uid) {
   } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
   return { ok: true, uid, preset: row.preset };
 }
+
+/* ★ 2026-10-09 D47 — 산 가구(재고)를 방에 놓는다. 가방 가구(§startPhonePlaceFurnitureBag)와 «같은 손»이다:
+     방 한가운데 바닥에 세우고 그 자리에서 [옮기기]로 넘긴다. 재고 하나를 쓰고 자리 이름은 코어가 짓는다(state §placeBoughtFurniture · add-<프리셋>-n) */
+async function startPhonePlaceFurnitureStock(itemId) {
+  let row = null;
+  try { row = placeBoughtFurniture(S, itemId, { x: 0, z: 0, rot: 0 }, { size: io.light.room.size }); }
+  catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false }; }
+  try { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); }
+  catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
+  const ko = (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.ko || row.preset;
+  pushLog(S, `🪑 ${josa(ko, '을', '를')} 방에 놓았습니다 — 눌러서 [옮기기]로 자리를 고르세요`);
+  banner(`${josa(ko, '을', '를')} 놓았습니다`, '눌러서 [옮기기]로 자리를 고를 수 있습니다');
+  try { window.__byeotSheet.close(); } catch { }
+  try { sfx.thud(); } catch { }
+  draw();
+  try {
+    if (roomView && roomView.refreshFurniture) await roomView.refreshFurniture();
+    else await remountRoomView();
+  } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
+  return { ok: true, uid: row.uid, preset: row.preset };
+}
+window.__placeFurnStock = (id) => startPhonePlaceFurnitureStock(id);   /* 재는 손잡이 */
 
 function placeLampFromBag() {
   const L = S.tutorial && S.tutorial.lamp;
