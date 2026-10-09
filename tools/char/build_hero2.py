@@ -10,6 +10,8 @@
        crouchHand  쭈그리기 클립의 오른손 높이 표 [[t, 게임 m], …] (v2_hero crouchEnd 가 쓰던 HAND 표)
        walkMps     걷기 클립 지면 속도 [m/s] — 옛 몸 걷기와 «같은 자»로 잰 비 × 0.76 (v2_hero HERO_WALK_MPS 와 같은 셈)
        emoteWin    cheer 의 «팔이 가장 높은 3초» 구간 — 새 cheer(Motivational_Cheer)는 9초라 통째로 틀면 길다
+       breakWin    잠깐 몸짓(scratch·nod·listen)에서 틀 구간 — core room_view IDLE_BREAK 가 그 구간만 튼다(10-09 core 청)
+■ --update-extras <hero2.glb> : 다시 엮지 않고 extras 만 다시 잰다
 ■ 자기시험 (--selftest) — 옛 hero.glb 의 crouch 로 손 높이 표를 다시 재 v2_hero 의 HAND 표가 나오는가
 
 쓰기
@@ -126,6 +128,50 @@ def cheer_window(path, clip='cheer', win=3.0, step=0.1):
     return [round(best * step, 2), round(best * step + win, 2)], float(sp[best:best + n].mean())
 
 
+UPPER = ('Spine', 'Spine01', 'Spine02', 'neck', 'Head', 'LeftShoulder', 'RightShoulder', 'LeftArm', 'RightArm',
+         'LeftForeArm', 'RightForeArm', 'LeftHand', 'RightHand')
+
+
+def break_window(path, clip, lo=3.0, hi=6.0, step=0.1):
+    """윗몸 뼈가 클립 첫 자세(쉬는 자세)에서 벗어난 각의 평균 d(t) 로, «많이 움직이되 시작·끝은 쉬는 자세에 가까운» 구간을 고른다.
+    점수 = 구간 안 d 평균 − 1.5 × (d(시작) + d(끝)). idle 과 0.3초 섞어 넘기므로 끝이 쉬는 자세에 가까워야 덜 튄다."""
+    from probe_anim_hands import sample
+    c = Clip(path)
+    use_animation(c, clip_index(c, clip))
+    idx = [c.find(n) for n in UPPER]
+    idx = [i for i in idx if i is not None and i in c.tracks and 'rotation' in c.tracks[i]]
+    base = {i: np.array(sample(*c.tracks[i]['rotation'], 0.0, True)) for i in idx}
+    ts = np.arange(0, c.duration, step)
+
+    def dev(t):
+        return float(np.mean([math.degrees(2 * math.acos(min(1.0, abs(float(np.dot(base[i], np.array(sample(*c.tracks[i]['rotation'], t, True)))))))) for i in idx]))
+    d = np.array([dev(t) for t in ts])
+    best, bw = -1e9, (0.0, min(c.duration, hi))
+    n_lo, n_hi = int(lo / step), int(hi / step)
+    for a in range(len(ts)):
+        for b in range(a + n_lo, min(len(ts), a + n_hi + 1)):
+            sc = d[a:b].mean() - 1.5 * (d[a] + d[b - 1])
+            if sc > best:
+                best, bw = sc, (round(ts[a], 2), round(ts[b - 1], 2))
+    i0, i1 = int(round(bw[0] / step)), int(round(bw[1] / step))
+    return list(bw), round(float(d[i0:i1 + 1].mean()), 1), round(float(d[i0]), 1), round(float(d[i1]), 1)
+
+
+def update_extras(path):
+    js, bn = read_glb(path)
+    ex = js['scenes'][js.get('scene', 0)].setdefault('extras', {})
+    bw = {}
+    for nm in ('scratch', 'nod', 'listen'):
+        if any(a.get('name') == nm for a in js.get('animations', [])):
+            w, m, d0, d1 = break_window(path, nm)
+            bw[nm] = w
+            print('■ %-8s 구간 %s · 벗어남 평균 %.1f° · 시작 %.1f° · 끝 %.1f°' % (nm, w, m, d0, d1))
+    ex['breakWin'] = bw
+    write_glb(path, js, bn)
+    print('썼다: %s · extras 열쇠 %s' % (path, sorted(ex)))
+    return 0
+
+
 def selftest():
     old = 'assets/v2/char/hero.glb'
     tab = hand_table(old)
@@ -140,6 +186,8 @@ def selftest():
 def main():
     if '--selftest' in sys.argv:
         return selftest()
+    if '--update-extras' in sys.argv:
+        return update_extras([a for a in sys.argv[1:] if not a.startswith('--')][0])
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     if len(args) < 3:
         print(__doc__); return 1
@@ -178,6 +226,7 @@ def main():
         'hero': 'hero2', 'rig': '01a11e7a-322a-748f-9f2e-b72090b5f5b3',
         'crouchHand': tab, 'walkMps': mps, 'emoteWin': {'cheer': w}}
     write_glb(dst, js, bn2)
+    update_extras(dst)
     print('■ 키(파일) %.3f · 쭈그리기 오른손 표 %s' % (fileH, tab))
     print('■ 걷기 디딘 발 속도  옛 %.3f · 새 %.3f m/s(같은 자) ⇒ walkMps %.3f (옛 0.76 × 비)' % (v_old, v_new, mps))
     print('■ cheer 팔이 가장 높은 3초 %s (벌림 평균 %.1f°)' % (w, s))
