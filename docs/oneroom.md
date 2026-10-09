@@ -104,6 +104,9 @@ return !!(S.tutorial && S.tutorial.enabled && !S.tutorial.movedOut);   // ← �
 ---
 
 # 2. ⏸ 원룸 살림 값 — 후보와 근거
+> ★★ **2026-10-09 D8 확정 — 원룸 월세 20만 원**(박사님). `data/balance/homes.json` homes[oneroom].rent 350,000 → 200,000 · `cost_provisional` 뗌.
+> 근거: [core] b5ba10df 장부(고친 자 · 안내대로 500만 중앙) 월세 20만 405일 · 27.5만 445일 · 35만 555일. 아래 «35만» 줄들은 옛 후보다 — **안 쓴다**.
+> ⚠ 하루 지출 짝: 같은 식(월세/30 + 관리비/30 + 식비 7,500)에 원룸 줄을 넣으면 16,833원/일(관리비 80,000 · 반지하 75,000 과 166원 차이). 게임이 원룸 값을 읽게 잇는 것은 [core].
 
 `story_arc.md` §5: *"③ 원룸 이후의 슬롯 수·월세·판매가"* 는 미확정이다.
 코드에는 `null` 을 두었고(`TUTORIAL_RULES.oneroomRentWon` · `ONEROOM_RULES.rentWon`),

@@ -455,8 +455,10 @@ check('J 원룸 규칙 — homes.json 에서 읽고, 잠정값이면 잠정이�
   info(`homes.json 원룸 — 월세 ${r.rentWon.toLocaleString()}원 · ` +
        `보증금 ${(r.depositWon || 0).toLocaleString()}원 · ` +
        `이사비 ${r.moveCostWon.toLocaleString()}원 · 잠정 ${r.provisional}`);
-  assert.equal(r.provisional, true,
-    '★ homes.json 이 원룸 값을 확정으로 바꿨습니다 — docs/oneroom.md §2 를 갱신하세요');
+  /* ★ 2026-10-09 D8 — 박사님 원룸 월세 20만 확정 · provisional 뗌(검사가 적어 둔 대로 docs/oneroom.md §2 갱신함) */
+  assert.equal(r.provisional, false,
+    '★ homes.json 원룸 값이 다시 잠정이 됐습니다 — D8(박사님 10-09 · 월세 20만) 확정과 다릅니다');
+  assert.equal(r.rentWon, 200_000, '★ 원룸 월세가 D8(박사님 10-09 · 20만)과 다릅니다');
   assert.throws(() => oneroomRulesFromHomes({ homes: [] }), /없습니다/);
 });
 

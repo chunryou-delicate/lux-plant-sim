@@ -1178,10 +1178,11 @@ const VARIE_GRADES_FALLBACK = Object.freeze({
       { id: 'heart_halfmoon_v2_stem' }
   ] },
   sale: { cuttingMult: 1.0, potMult: 1.4, synergy: { 0: 1.0, 1: 1.0, 2: 1.25, 3: 1.5 } },
+  /* ★ 2026-10-09 D30([plan] · 박사님 «적당히 비싼 것 확률을 올려») — 파일(varie_grades.json lightGrade)과 한 톨도 안 다르게(test_variegrade A-2) */
   lightGrade: {
-    dark:   { sanban: 0.90, halfmoon: 0.09, fullmoon: 0.01 },
-    mid:    { sanban: 0.70, halfmoon: 0.25, fullmoon: 0.05 },
-    bright: { sanban: 0.45, halfmoon: 0.40, fullmoon: 0.15 }
+    dark:   { sanban: 0.80, halfmoon: 0.19, fullmoon: 0.01 },
+    mid:    { sanban: 0.55, halfmoon: 0.40, fullmoon: 0.05 },
+    bright: { sanban: 0.35, halfmoon: 0.50, fullmoon: 0.15 }
   },
   lightBands: {
     critical: 'dark', poor: 'dark', stagnant: 'dark',

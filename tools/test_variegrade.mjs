@@ -209,9 +209,10 @@ t('C-6 ★ 떼어 팔기가 절대 이득이 아니다 (그루 ×1.4 와 시너�
 /* ══════════════════════════════════════════════════════════════════════════
    D. ★ 빛이 등급을 정한다 (확정문 §3)
    ══════════════════════════════════════════════════════════════════════════ */
-const WANT_EXPECT = { dark: 394_000, mid: 490_000, bright: 630_000 };
+/* ★ 2026-10-09 D30 — 하프문 확률을 올렸다(박사님 · varie_grades.json _doc_lightGrade). 옛 394,000 · 490,000 · 630,000 */
+const WANT_EXPECT = { dark: 434_000, mid: 550_000, bright: 670_000 };
 
-t('D-1 ★★ 무늬 1장 기대값 — 어두움 394,000 · 중간 490,000 · 밝음 630,000', () => {
+t('D-1 ★★ 무늬 1장 기대값 — 어두움 434,000 · 중간 550,000 · 밝음 670,000 (D30)', () => {
   const got = {};
   for (const step of Object.keys(WANT_EXPECT)) {
     got[step] = varieGradeExpectedWon(step);
@@ -221,13 +222,14 @@ t('D-1 ★★ 무늬 1장 기대값 — 어두움 394,000 · 중간 490,000 · �
   return Object.entries(got).map(([k, v]) => `${k} ${won(Math.round(v))}`).join(' · ');
 });
 
-t('D-2 ★ 밝은 자리가 어두운 자리의 1.6배다 (확정문 §3 의 결론)', () => {
+/* ★ 2026-10-09 D30 — 옛 결론 «1.6배»(확정문 §3)는 옛 값의 것이다. 새 값은 670,000/434,000 = 1.544배 — 밝음이 여전히 크게 앞선다 */
+t('D-2 ★ 밝은 자리가 어두운 자리의 1.54배다 (D30 · 옛 1.6배)', () => {
   const r = varieGradeExpectedWon('bright') / varieGradeExpectedWon('dark');
-  assert.ok(Math.abs(r - 1.6) < 0.02, `비가 ${r.toFixed(3)} 배다 — 확정문은 1.6배라 했다`);
+  assert.ok(Math.abs(r - 1.544) < 0.02, `비가 ${r.toFixed(3)} 배다 — D30 값은 1.544배다`);
   return `${varieGradeExpectedWon('bright').toLocaleString()} / ${varieGradeExpectedWon('dark').toLocaleString()} = ${r.toFixed(3)}배`;
 });
 
-t('D-3 ★ 어두운 자리에서도 풀문이 난다 (1%) · 밝은 자리에서도 산반이 제일 흔하다', () => {
+t('D-3 ★ 어두운 자리에서도 풀문이 난다 (1%) · 밝은 자리에선 하프문이 산반보다 잦다 (D30)', () => {
   const N = 20000;
   const cnt = {};
   for (const step of ['dark', 'mid', 'bright']) {
@@ -235,7 +237,8 @@ t('D-3 ★ 어두운 자리에서도 풀문이 난다 (1%) · 밝은 자리에�
     for (let i = 0; i < N; i++) cnt[step][varieGradeFromLight(step, (i + 0.5) / N)]++;
   }
   assert.ok(cnt.dark.fullmoon > 0, '어두운 자리에서 풀문이 한 번도 안 났다');
-  assert.ok(cnt.bright.sanban >= cnt.bright.halfmoon, '밝은 자리에서 산반이 하프문보다 드물다');
+  /* ★ 2026-10-09 D30 — 옛 단언 «밝은 자리에서도 산반이 제일 흔하다»는 하프문을 올리며 뒤집혔다(밝음 .35/.50) */
+  assert.ok(cnt.bright.halfmoon > cnt.bright.sanban, '밝은 자리에서 하프문이 산반보다 드물다 — D30 값이 안 닿았다');
   assert.equal(varieGradeFromLight('unknown', 0.5), null, '모르는 밝기는 null 이라야 한다(안 정한다)');
   return Object.entries(cnt).map(([k, v]) =>
     `${k} 산반 ${(v.sanban / N * 100).toFixed(0)}% · 하프문 ${(v.halfmoon / N * 100).toFixed(0)}% · 풀문 ${(v.fullmoon / N * 100).toFixed(0)}%`
