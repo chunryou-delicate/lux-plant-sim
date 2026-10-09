@@ -24,7 +24,9 @@ import { QUESTS, QUEST_IDS, questOf, questTodo, questView, stepQuests,
          /* ★ 2026-08-16 — 초반 사슬(§초반 사슬). 줄 수를 이 파일에 안 박는다 */
          FIRST_PLAY_CHAIN_IDS, questSpeaks, stageOfQuest,
          /* ★ 2026-08-17 — 느린 줄 둘(§긴 줄). 줄 수를 이 파일에 안 박는다 */
-         SLOW_QUEST_IDS } from '../src/game/quest.js';
+         SLOW_QUEST_IDS,
+         /* ★ 2026-10-10 [plan] — 물린 줄(이름만 남김). 대사 지도에 남은 옛 열쇠를 «물린 줄»로 가른다 */
+         RETIRED_QUESTS } from '../src/game/quest.js';
 import { QUEST_OPEN_SCRIPT, QUEST_DONE_SCRIPT, SCRIPTS, REPEATABLE,
          createStoryteller } from '../src/game/dialogue.js';
 import { STAMINA_RULES, createStaminaState, grantStaminaQuest, staminaView } from '../src/game/stamina.js';
@@ -68,11 +70,15 @@ check('⑴ ★ 조용하기로 한 줄은 **정말로** 대사가 없다 (표와
   const mute = QUESTS.filter(q => !questSpeaks(q)).map(q => q.id);
   if (mute.length) info(`⚠ 아직 조용한 줄 ${mute.length}개 — ${mute.join(' · ')}`);
 });
-check('⑴ 대사 지도에 표에 없는 줄이 없다', () => {
-  for (const id of Object.keys(QUEST_OPEN_SCRIPT))
-    assert.ok(QUEST_IDS.includes(id), `표에 없는 퀘스트 대사: '${id}'`);
-  for (const id of Object.keys(QUEST_DONE_SCRIPT))
-    assert.ok(QUEST_IDS.includes(id), `표에 없는 퀘스트 대사: '${id}'`);
+/* ★ 2026-10-10 [plan] 빨간 검사 정리(총괄) — 물린 줄의 옛 열쇠는 대사 지도에 남아도 된다(열리지 않으니 말도 안 난다).
+     resow_siru(「한 시루를 2바퀴째」) — 2026-09-04 7346fbc6 에서 물림(박사님 「1바퀴 더 돌리는 퀘는 없애」 · 첫 수확 바로 뒤가 씨앗 주문).
+   ⚠ 물린 줄이 아니면서 표에 없는 열쇠는 여전히 빨갛다. */
+const RETIRED_IDS = RETIRED_QUESTS.map(q => q.id);
+check('⑴ 대사 지도에 표에 없는 줄이 없다 (물린 줄은 따로 센다)', () => {
+  for (const id of [...Object.keys(QUEST_OPEN_SCRIPT), ...Object.keys(QUEST_DONE_SCRIPT)])
+    assert.ok(QUEST_IDS.includes(id) || RETIRED_IDS.includes(id), `표에 없는 퀘스트 대사: '${id}'`);
+  const old = [...new Set(Object.keys(QUEST_OPEN_SCRIPT).filter(id => RETIRED_IDS.includes(id)))];
+  if (old.length) info(`물린 줄의 옛 대사 열쇠 ${old.length} — ${old.join(' · ')} (열리지 않아 말도 안 난다)`);
 });
 /* ══ ⚠ 2026-08-16 — **재는 것을 옮겼다** ═══════════════════════════════════
    예전: *"줄마다 `stamina.quests` 에 값이 있어야 한다"*.
@@ -126,7 +132,9 @@ check('⑷ 할 일 문구가 **정의에서 수를 읽는다**', () => {
   assert.ok(q.need && q.need.sirus > 0, 'need 가 없습니다');
   assert.ok(questTodo(q).includes(String(q.need.sirus)),
     '할 일 문구가 시루 수를 안 말합니다 — 손으로 박힌 문구입니다');
-  assert.ok(questTodo(q).includes(String(q.need.cycles)), '할 일 문구가 바퀴 수를 안 말합니다');
+  /* ★ 2026-10-10 [plan] — «바퀴»는 2026-09-04 bfaeefab(사슬을 다시 짰다)에서 이 줄에서 빠졌다(시루 수만 센다). 남아 있으면 그때 다시 잰다 */
+  if (q.need.cycles != null)
+    assert.ok(questTodo(q).includes(String(q.need.cycles)), '할 일 문구가 바퀴 수를 안 말합니다');
 });
 
 /* ══ ⑵⑶⑸ 실제 판을 굴린다 ═══════════════════════════════════════════
@@ -185,6 +193,20 @@ const H3 = pot({ placed: true, watered: true, harvestCount: 3 });
       **총 3회전**이다(`first_play.MONSTERA_ARRIVAL_RULE.harvestCount = 3`).
       1회전에 도착시킨 것은 옛 걸음표가 틀린 것이었고, `crop_mix` 가 도착을 보게 된
       지금은 그 틀림이 **첫 플레이가 끝나기 전에 본 줄기가 열리는** 모양으로 드러난다. */
+/* ★ 2026-10-10 [plan] 본 줄기 · 원룸 · 새 종 걸음의 손잡이(아래 §본 줄기) */
+const bean  = n => Array.from({ length: n }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true, watered: true }));
+const musun = n => Array.from({ length: n }, () => ({ kind: 'musun', harvestCount: 1, placed: true }));
+const MS = (day, o = {}) => ({ ...S0, day, firstPlayDone: true, monsteraArrived: true, monsteraHomed: true, monsteraGrowing: true,
+                               motherLeaves: 3, cropHarvestTotal: 20, cropPots: bean(16), ...o });
+const LATE = { cropPots: [...bean(16), ...musun(5)], lampUnlocked: true };
+const CW = { method: 'water', status: 'rooted', varieFromCut: false, varieLightBand: 'mid', gen: 1, rootedOnDay: 74 };
+const VB = { method: 'water', status: 'rooted', varieFromCut: true, varieLightBand: 'bright', gen: 1, rootedOnDay: 90 };
+const ES = { method: 'soil', status: 'established', varieFromCut: true, varieLightBand: 'bright', gen: 1, rootedOnDay: 125, at: true };
+const OR = (day, o = {}) => MS(day, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, varieSaleCount: 1,
+                                     movedOut: true, movedInOnDay: 110, targetWon: 5_000_000, cashWon: 300_000, varieSalesSinceMove: 0,
+                                     bagPlants: 0, bagCuttings: 0, cuttings: [CW, VB], ...o });
+const SPEC = { cuttings: [CW, VB, ES, { ...ES, gen: 2 }], varieSalesSinceMove: 1,
+               ppPlants: 0, ppPinkHoldCuts: 0, alDormantNow: false, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0 };
 const steps = [
   /* ─ 초반 사슬 ─────────────────────────────────────────────────────── */
   /* 1  ★★ 켠 그 순간 — **여기서 ①이 열려야 한다**(예전엔 0줄이었다) */
@@ -226,54 +248,58 @@ const steps = [
   /* 18 ★ 잎이 셋 — ㉡ 완료. 박사님이 *"잎 3개 날 때까지"* 라고 하신 그 끝이다 */
   fp(33, { pots: [H3, P1], arrived: true, homed: true, leaves: 3 }),
 
-  /* ─ 본 줄기 — 예전 그대로다(값도 차례도 안 건드렸다) ────────────────── */
-  /* 19 첫 플레이가 도는 중 */
-  { ...S0, day: 33, cropHarvestTotal: 1, cropPots: [{ kind: 'beansprout', harvestCount: 1 }] },
-  /* 18 ★ 첫 플레이가 끝났다 — `crop_mix` 가 열린다 */
-  { ...S0, day: 33, firstPlayDone: true, cropHarvestTotal: 5,
-    cropPots: [{ kind: 'beansprout', harvestCount: 5 }] },
-  /* 19 무순을 길러 한 상에 올렸다 — `crop_mix` 완료 */
-  { ...S0, day: 46, firstPlayDone: true, mealKinds: ['beansprout', 'musun'],
-    cropPots: [{ kind: 'beansprout', harvestCount: 6 }, { kind: 'musun', harvestCount: 1 }] },
-  /* 20 `siru5_cycle5` 가 열린 뒤 시루를 늘려 돌린다 — 아직 모자란다 */
-  { ...S0, day: 60, firstPlayDone: true, motherLeaves: 1,
-    cropPots: Array.from({ length: 5 }, () => ({ kind: 'beansprout', harvestCount: 4 })) },
-  /* 20-b ★ 무순 판을 다섯 놓았다 — `radish5` 완료 (2026-08-24 박사님 확정)
-     ⚠ `placed: true` 라야 닫힌다. 이 줄은 **자리가 전부**라 가방에 다섯 넣고 닫히면
-       뜻이 통째로 없어진다(quest.js §②-a). */
-  { ...S0, day: 62, firstPlayDone: true, motherLeaves: 1,
-    cropPots: [...Array.from({ length: 5 }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true })),
-               ...Array.from({ length: 5 }, () => ({ kind: 'musun', harvestCount: 1, placed: true }))] },
-  /* 21 ★ 시루를 여덟까지 늘린다 — `siru8` 완료 (2026-08-16 신설) */
-  { ...S0, day: 64, firstPlayDone: true, lampUnlocked: false,
-    /* ★ 2026-08-24 — `placed: true` 를 붙였다. `siru8`·`siru16` 이 **놓인 것만** 세게
-       바뀌었기 때문이다(박사님 확정: "놓인것만 센다"). 걸음표가 옛 세상을 재고 있었다 —
-       가방에 쟁여 둔 시루로도 줄이 닫히던 시절의 값이다. */
-    cropPots: Array.from({ length: 8 }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true })) },
-  /* 22 ★ 열여섯까지 — `siru16` 완료. 여기서 살림이 본전을 넘는다(실측) */
-  { ...S0, day: 66, firstPlayDone: true,
-    cropPots: Array.from({ length: 16 }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true })) },
-  /* 23 `siru5_cycle5` 완료 · 모주 잎이 둘이 됐다 → `first_cut` 열림.
-        ★ 가을이 왔다 — 식물등이 풀린다(`ts.lamp.unlocked`) → `buy_lamp` 열림 */
-  { ...S0, day: 70, firstPlayDone: true, motherLeaves: 2, lampUnlocked: true,
-    cropPots: Array.from({ length: 16 }, () => ({ kind: 'beansprout', harvestCount: 5, placed: true })) },
-  /* 24 물꽂이가 뿌리를 냈다 — `first_cut` 완료. ★ 등을 샀다 — `buy_lamp` 완료.
-        무늬 잎이 났다 → `varie_bright` 열림 */
-  { ...S0, day: 84, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 1,
-    lampUnlocked: true, lampOwned: 1,
-    cuttings: [{ method: 'water', status: 'rooted', varieFromCut: false, varieLightBand: 'mid' }] },
-  /* 25 무늬 삽수를 잘랐다 → `sell_varie` 열림. 아직 어두운 데 있다 */
-  { ...S0, day: 90, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 2,
-    lampUnlocked: true, lampOwned: 1,
-    cuttings: [{ method: 'water', status: 'rooting', varieFromCut: true, varieLightBand: null }] },
-  /* 26 ★ 밝은 자리에서 뿌리내렸다 — `varie_bright` 완료. **등을 산 덕에 생긴 자리다** */
-  { ...S0, day: 102, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 2,
-    lampUnlocked: true, lampOwned: 1,
-    cuttings: [{ method: 'water', status: 'rooted', varieFromCut: true, varieLightBand: 'bright' }] },
-  /* 27 팔았다 — `sell_varie` 완료 = 탈출의 둘째 축 */
-  { ...S0, day: 112, firstPlayDone: true, motherLeaves: 3, motherVarieLeaves: 2, varieSaleCount: 1,
-    lampUnlocked: true, lampOwned: 1,
-    cuttings: [{ method: 'water', status: 'rooted', varieFromCut: true, varieLightBand: 'bright' }] }
+  /* ─ 본 줄기 — ★ 2026-10-10 [plan] 지금 규칙으로 다시 짰다(총괄 «빨간 검사 정리») ─────────────
+     예전 걸음은 08-17 사슬(crop_mix 가 첫 플레이 끝에 열리고 siru5 가 «다섯 바퀴»)을 걸었다 — 2026-09-04 bfaeefab 에서
+     사슬이 «시루 다섯 → 한 상에 두 가지 → 무순 다섯 · 여덟 → 열여섯»으로 바뀌어 crop_mix 가 영영 안 열렸고, 그 뒤 칸이 줄줄이 빨갰다.
+     ⚠ 하루에 새로 여는 줄은 하나다(stepQuests 「한 번에 하나」) — 그래서 날을 하루씩 벌렸다.
+     ★ 이사 · 원룸 여섯 · 새 종 셋까지 이어 걷는다 — 「전부 열리고 전부 끝난다」가 표 전체를 재게. */
+  MS(34, { cropPots: bean(2) }),
+  /* 시루 다섯 — siru5 완료 → crop_mix 열림(siru8 은 이튿날 이후) */
+  MS(36, { cropPots: bean(5) }),
+  MS(37, { cropPots: bean(5) }),
+  MS(38, { cropPots: bean(5) }),
+  /* 무순을 길러 한 상에 — crop_mix 완료 → radish5 */
+  MS(46, { cropPots: [...bean(5), ...musun(1)], mealKinds: ['beansprout', 'musun'] }),
+  MS(47, { cropPots: [...bean(5), ...musun(1)], mealKinds: ['beansprout', 'musun'] }),
+  MS(48, { cropPots: [...bean(5), ...musun(5)], mealKinds: ['beansprout', 'musun'] }),
+  /* 여덟 · 열여섯(놓인 것만 센다) */
+  MS(50, { cropPots: [...bean(8), ...musun(5)] }),
+  MS(51, { cropPots: [...bean(8), ...musun(5)] }),
+  MS(56, { cropPots: [...bean(16), ...musun(5)] }),
+  /* 가을 — 등이 풀린다 · 무늬 잎이 다 자랐다(D25 · 둘) — 등 → 자르기 → 무늬 차례로 하루씩 */
+  MS(60, { ...LATE, motherVarieMatured: 2, motherVarieLeaves: 2 }),
+  MS(61, { ...LATE, motherVarieMatured: 2, motherVarieLeaves: 2 }),
+  MS(62, { ...LATE, motherVarieMatured: 2, motherVarieLeaves: 2 }),
+  /* 등을 놓았다 · 물꽂이가 뿌리를 냈다 — buy_lamp · first_cut 완료 */
+  MS(75, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, cuttings: [CW] }),
+  /* 무늬 삽수를 잘랐다 → sell_varie 열림 */
+  MS(80, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, cuttings: [CW, { ...VB, status: 'rooting', varieLightBand: null }] }),
+  /* 밝은 데서 뿌리냈다 — varie_bright 완료 */
+  MS(92, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, cuttings: [CW, VB] }),
+  /* 팔았다 — sell_varie 완료 */
+  MS(100, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, cuttings: [CW, VB], varieSaleCount: 1 }),
+
+  /* ─ 이사 · 원룸 여섯 줄(D41 차례) ─────────────────────────────────── */
+  OR(110, { bagPlants: 1, bagCuttings: 1 }),
+  OR(111, { bagPlants: 0, bagCuttings: 0 }),
+  OR(112), OR(113), OR(114), OR(115),
+  /* 원룸에서 뿌리내린 무늬 삽수를 흙에 옮겨 키웠다 — settle 완료 */
+  OR(140, { cuttings: [CW, VB, ES] }),
+  OR(141, { cuttings: [CW, VB, ES] }),
+  /* 키운 그루에서 다시 잘랐다(gen 2) — recut 완료 */
+  OR(170, { cuttings: [CW, VB, ES, { ...ES, gen: 2 }] }),
+  /* 이사 뒤 무늬를 팔았다 — oneroom_sell 완료 */
+  OR(180, { cuttings: [CW, VB, ES, { ...ES, gen: 2 }], varieSalesSinceMove: 1 }),
+
+  /* ─ 새 종 곁줄 셋(D45 · D52) ────────────────────────────────────────── */
+  OR(190, { ...SPEC, ppPlants: 1 }),
+  OR(220, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1 }),
+  OR(290, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alDormantNow: true, alCormsFound: 1 }),
+  OR(291, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alDormantNow: true, alCormsFound: 1 }),
+  OR(300, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alDormantNow: true, alCormsFound: 1, alFoundCormsPlanted: 1 }),
+  OR(360, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alDormantNow: false, alCormsFound: 1, alFoundCormsPlanted: 1, alWokeCount: 1 }),
+  /* 내 집 자금이 모였다 — home_fund 완료(마지막) */
+  OR(400, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alCormsFound: 1, alFoundCormsPlanted: 1, alWokeCount: 1, cashWon: 5_000_000 })
 ];
 steps.forEach((s, i) => step(i + 1, s));
 
@@ -316,9 +342,10 @@ check('⑶ ★★★ 느린 줄은 **다른 줄이 열려 있는 동안 「지�
   const b = newBoard();
   /* 초반 사슬을 다 끝낸 판 = 잎 줄과 `crop_mix` 가 **같이** 열려 있는 그 자리다 */
   b.stamina.questsTaken = [...FIRST_PLAY_CHAIN_IDS];
-  const v = questView(b, { ...S0, day: 25, monsteraArrived: true, motherLeaves: 1 });
+  /* ★ 2026-10-10 [plan] — 사슬 뒤 짧은 줄은 이제 siru5_cycle5 다(2026-09-04 bfaeefab · crop_mix 는 그 뒤). 시루 둘을 놓고 몬스테라 자리를 잡은 판 */
+  const v = questView(b, { ...S0, day: 25, monsteraArrived: true, monsteraHomed: true, motherLeaves: 1, cropPots: [P1W, P1W] });
   assert.ok(v.open.includes('leaf_two'), `잎 줄이 안 열렸습니다: ${v.open}`);
-  assert.ok(v.open.includes('crop_mix'), `짧은 줄이 안 열렸습니다: ${v.open}`);
+  assert.ok(v.open.includes('siru5_cycle5'), `짧은 줄이 안 열렸습니다: ${v.open}`);
   assert.ok(!SLOW_QUEST_IDS.includes(v.next.id),
     `느린 줄이 「지금 할 일」을 차지했습니다: ${v.next.id}`);
   info(`같이 열린 줄 ${v.open.length}개 · 「지금 할 일」은 「${v.next.ko}」`);
@@ -411,7 +438,8 @@ check('⑶ ★ 끝난 것이 열린 것보다 먼저 말한다', () => {
      ⇒ 버그가 아니라 **한 박자**다. 두 안내가 한 화면에 겹치지 않아 오히려 낫다.
      여기서 재는 것은 그래도 **말의 앞뒤가 안 뒤집히는가**다 —
      `EVENT_ORDER` 의 `quest_done → quest_opened` 가 같은 날 겹칠 때를 지킨다. */
-  const i = said.indexOf('questDoneCropMix'), j = said.indexOf('questSiru5');
+  /* ★ 2026-10-10 [plan] — 지금 사슬은 «시루 다섯 끝 → 한 상에 두 가지 열림»(2026-09-04 bfaeefab). 열쇠는 지도에서 읽는다 */
+  const i = said.indexOf(QUEST_DONE_SCRIPT.siru5_cycle5), j = said.indexOf(QUEST_OPEN_SCRIPT.crop_mix);
   assert.ok(i >= 0 && j >= 0, `둘 다 안 나왔습니다: ${said}`);
   assert.ok(i < j, `열림이 완료보다 먼저 나왔습니다 — ${said.join(' → ')}`);
 });
@@ -435,8 +463,9 @@ check('⑸ ★ 세이브에 새 칸을 안 만들었다', () => {
 });
 
 /* ══ ⑹ 말이 실제로 나온다 ═══════════════════════════════════════════ */
-check('⑹ 열여섯 가지 대사가 전부 화면까지 나온다', () => {
-  for (const id of [...Object.values(QUEST_OPEN_SCRIPT), ...Object.values(QUEST_DONE_SCRIPT)])
+check('⑹ 퀘스트 대사가 전부 화면까지 나온다 (물린 줄 빼고)', () => {
+  const live = id => !RETIRED_IDS.includes(id);
+  for (const id of [...Object.entries(QUEST_OPEN_SCRIPT), ...Object.entries(QUEST_DONE_SCRIPT)].filter(([q]) => live(q)).map(([, v]) => v))
     assert.ok(said.includes(id), `'${id}' 가 사건은 났는데 대사가 안 나왔습니다`);
   info(`나온 대사 ${said.length}가지`);
 });
