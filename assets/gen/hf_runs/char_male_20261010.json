@@ -1,0 +1,89 @@
+{
+ "_what": "Higgsfield 결과(총괄 hf_fetch)",
+ "entries": [
+  {
+   "name": "portrait_jachwi_m_neutral_candA_a",
+   "job_id": "f7d1458d-f633-411f-b493-99f946cc5e4b",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_151308_f7d1458d-f633-411f-b493-99f946cc5e4b.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "남자 주인공 후보 A(옛 결 · 참조 [여 정본 neutral be4f952f · 옛 남 neutral 흰 바탕 7de363fd]) · gpt_image_2_5 max 2k 3:4",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_a.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_neutral_candA_b",
+   "job_id": "6e993950-bf61-4dfc-8838-97c309db46c9",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_151307_6e993950-bf61-4dfc-8838-97c309db46c9.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "후보 A",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candA_b.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_neutral_candB_a",
+   "job_id": "bc5828cc-a6d1-44b0-a8d6-e5843cfb58b2",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_151309_bc5828cc-a6d1-44b0-a8d6-e5843cfb58b2.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "후보 B(부드러운 · 참조 여 정본 neutral 하나)",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candB_a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candB_a.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_neutral_candB_b",
+   "job_id": "7ceee3d9-da70-4d6a-b12d-59d0daf5fa95",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_151308_7ceee3d9-da70-4d6a-b12d-59d0daf5fa95.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "후보 B",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candB_b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candB_b.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_neutral_candC_a",
+   "job_id": "e9396866-cca1-40e1-ba62-bf639e4435f1",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_151307_e9396866-cca1-40e1-ba62-bf639e4435f1.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "후보 C(단정한 · 참조 여 정본 neutral 하나)",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candC_a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candC_a.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "portrait_jachwi_m_neutral_candC_b",
+   "job_id": "d54cb2de-22f3-44f3-8672-8ee51a1b2b74",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_151307_d54cb2de-22f3-44f3-8672-8ee51a1b2b74.png",
+   "dir": "assets/characters/portraits/_hf",
+   "note": "후보 C",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candC_b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_m_neutral_candC_b.png",
+   "size": [
+    1744,
+    2336
+   ],
+   "has_alpha": false
+  }
+ ]
+}
