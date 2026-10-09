@@ -1,0 +1,2481 @@
+{
+ "_what": "[house] Higgsfield 3D 주문 10-10 — C(원화) 단계만 · n 4~9(가구·간판) · 12·13·17(유니티 겉감 4k) · 18~25(유니티 방 키트) · 일꾼 창이 돌림(2026-10-09 23:11~23:31 KST)",
+ "_order": "docs/handoff/higgsfield-3d-order-house-20261010.json",
+ "_not_run": "T 1~3(총괄이 이미 돌림 · house_20261010_3d_T.json) · 10·11·14·15·16(앞 주문 ③ 고른 2k 를 기다림) · 3D(mesh) 단계 전부",
+ "_next": "고른 원화의 job_id 를 3D 의 medias:[{value:job_id, role:\"image_references\"}] 로 바로 넣는다(올리기 없음). picks 는 첫 거름일 뿐 — 최종 고르기는 house",
+ "model": {
+  "requested": "nano_banana_2_1",
+  "used": "nano_banana_2_1",
+  "substituted": false
+ },
+ "cost_check": {
+  "nano_banana_2_1_2k_per_image": 2,
+  "nano_banana_2_1_4k_per_image": 3,
+  "note": "get_cost(count 1) 장당 값"
+ },
+ "refs": {
+  "assets/gen/v2_furn/ref_shop_display.png": {
+   "media_id": "90f4444b-bde3-4685-a99f-12cf897ce966",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_shop_display.png",
+   "check": "git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_order_board.png": {
+   "media_id": "ee883fa3-757b-43e7-8389-0881613a85c7",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_order_board.png",
+   "check": "git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_nightstand.png": {
+   "media_id": "4079d56f-77b7-4ef0-916b-e1a3beb40834",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_nightstand.png",
+   "check": "git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_furn/ref_bench.png": {
+   "media_id": "707c337d-d70b-4587-975d-8c284ee6ca92",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_furn/ref_bench.png",
+   "check": "git hash-object == origin/main blob"
+  },
+  "assets/gen/v2_room/style_keyframe_a.png": {
+   "media_id": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+   "method": "media_import_url",
+   "source_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/gen/v2_room/style_keyframe_a.png",
+   "check": "git hash-object == origin/main blob"
+  }
+ },
+ "credits_before": 1171.5,
+ "credits_after": 794.5,
+ "credits_spent": 92,
+ "credits_note": "이 주문 몫 92 = 첫 40장(2k 34×2 + 4k 6×3 = 86) + 콘크리트 벽 재시도 4k 2×3 = 6. transactions 에서 시각·금액으로 맞춰 셌다(14:11:48~52 · 14:12:40~44 · 14:13:28~33 · 14:14:05~06 · 14:31:11/17 UTC, 환불 없음). 잔액 차 377 중 나머지 약 285 는 같은 때 돈 다른 창(GPT Image 2.5 Flare · Tripo multiview · Multi-Image to 3D · Meshy remesh · 14:14:25~27 nano_banana_2_1 넷 중 둘 환불)",
+ "budget_cap": 130,
+ "retries": [
+  {
+   "n": 12,
+   "id": "u_tex_concrete_wall",
+   "why": "k1·k2 둘 다 타일 안 됨",
+   "indices": [
+    123,
+    124
+   ],
+   "result": "k3(같은 프롬프트) 실패 · k4(이음 강조 한 문장 더함) 통과(옅은 위아래 경고)"
+  }
+ ],
+ "qa_method": {
+  "repaint_items_4_7": "회색 상자 참조와 같은 크기 실루엣 IoU(1024) + 겹침 그림 · 단 수·다리 수는 눈으로",
+  "objects": "전경 덩이 수(1024 · ≥0.05%) · 바탕 색·고름 · 가장자리 닿음 · 글자는 판 앞면을 크게 잘라 눈으로",
+  "textures": "2×2 깔기 · 반 칸 밀어 이음 십자를 1:1·1:8 로 · 가장자리 짝 차이(seam_x/y = 짝 차 / 이웃 차) · 512 저역 d*(짝 차가 몇 px 떨어진 이웃 차와 같은가) · 네 귀퉁이 밝기 차(주문 자 ≤5%) · 가장자리 비네트",
+  "previews": "scratchpad hf_house3d/qa_*.jpg (≤768px)"
+ },
+ "picks": {
+  "4": {
+   "id": "shop_display",
+   "variant": 1,
+   "job_id": "b905652d-01fc-4557-8ba2-9fb71c56674b",
+   "saved_path": "assets/gen/v2_furn/c_shop_display_1.jpg",
+   "why": "세 단·옆판 이음선까지 참조대로, 턱 셋이 또렷, 색이 가장 가깝다",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_display_1.png"
+  },
+  "5": {
+   "id": "order_board",
+   "variant": 2,
+   "job_id": "e36be6c8-a3d3-4491-9513-42a0a4719216",
+   "saved_path": "assets/gen/v2_furn/c_order_board_2.jpg",
+   "why": "크림 쪽지가 참조 A·B·C 자리에 있어 주문판으로 가장 잘 읽힌다(넷째 쪽지·집게 튀어나옴은 감안)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_order_board_2.png"
+  },
+  "6": {
+   "id": "nightstand",
+   "variant": 2,
+   "job_id": "65452108-cacb-4d3c-b225-57d8d318aa07",
+   "saved_path": "assets/gen/v2_furn/c_nightstand_2.jpg",
+   "why": "서랍이 가장 또렷하고 면이 반듯해 화이트·민트 변형에 좋다, 색이 가장 가깝다",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_nightstand_2.png"
+  },
+  "7": {
+   "id": "bench",
+   "variant": 3,
+   "job_id": "f546279e-5a28-4137-98a5-72ec9f5fefb8",
+   "saved_path": "assets/gen/v2_furn/c_bench_3.jpg",
+   "why": "IoU 최고, 판 하나, 색이 가장 가깝다",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bench_3.png"
+  },
+  "8": {
+   "id": "shop_sign_blade",
+   "variant": 2,
+   "job_id": "0f2e8cae-72a2-4808-b30f-faf59b4129f4",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_blade_2.jpg",
+   "why": "받침이 단순하고 판이 가장 크다 — 다만 간판 둘 중 3D 는 입간판을 권함",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_sign_blade_2.png"
+  },
+  "9": {
+   "id": "shop_sign_aframe",
+   "variant": 1,
+   "job_id": "a5f2e4b5-3874-429b-8001-84a886e9eca0",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_aframe_1.jpg",
+   "why": "3D 로 낼 간판은 이것을 권함 — 단단한 판·틀이라 이미지→3D 에 쉽고, 칠판 대부분이 비어 가게 이름을 캔버스로 얹기 좋다",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_sign_aframe_1.png"
+  },
+  "12": {
+   "id": "u_tex_concrete_wall",
+   "variant": 4,
+   "job_id": "39e7f4b7-a798-4884-862c-6b67bb52d31c",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_wall_4.jpg",
+   "why": "넷 중 유일하게 타일 됨(좌우 이음 없음, 위아래 옅음, 귀퉁이 3.1%)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_concrete_wall_4.png"
+  },
+  "13": {
+   "id": "u_tex_concrete_ceiling",
+   "variant": 1,
+   "job_id": "5fe80f06-dd79-44aa-a069-fd5c50f0cba0",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_ceiling_1.jpg",
+   "why": "이음 잔여가 가장 작다",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_concrete_ceiling_1.png"
+  },
+  "17": {
+   "id": "u_tex_stair_terrazzo",
+   "variant": 1,
+   "job_id": "ab7868a1-a061-4ae4-be5c-28e305c17597",
+   "saved_path": "assets/gen/v2_hf/unity/tex_stair_terrazzo_1.jpg",
+   "why": "이음 없고 비네트 없음",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_stair_terrazzo_1.png"
+  },
+  "18": {
+   "id": "u_kit_wall_pipes",
+   "variant": 2,
+   "job_id": "e39b1930-3a7c-4628-9e78-5f45d026e04d",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_pipes_2.jpg",
+   "why": "평행 배관이 벽 배관으로 더 잘 읽히고 3D 로 쉽다",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_wall_pipes_2.png"
+  },
+  "19": {
+   "id": "u_kit_meter_box",
+   "variant": 1,
+   "job_id": "9c29f78d-0526-4f9c-b5c0-d0b310127401",
+   "saved_path": "assets/gen/v2_hf/unity/c_meter_box_1.jpg",
+   "why": "글자 없는 쪽(k2 는 가짜 숫자)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_meter_box_1.png"
+  },
+  "20": {
+   "id": "u_kit_window_well_grate",
+   "variant": 2,
+   "job_id": "1ead83e7-9ce5-4010-b9d0-a183670a82e8",
+   "saved_path": "assets/gen/v2_hf/unity/c_window_well_grate_2.jpg",
+   "why": "물건 하나(k1 은 떨어진 조각)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_window_well_grate_2.png"
+  },
+  "21": {
+   "id": "u_kit_wall_shelf_bracket",
+   "variant": 1,
+   "job_id": "485ad66c-12b7-452d-b397-e98505d510b7",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_shelf_bracket_1.jpg",
+   "why": "받침쇠가 또렷하고 더 크다",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_wall_shelf_bracket_1.png"
+  },
+  "22": {
+   "id": "u_kit_wall_clothes_rail",
+   "variant": 2,
+   "job_id": "29467939-df63-4128-9096-fb39383386b8",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_clothes_rail_2.jpg",
+   "why": "선이 굵어 3D 에 덜 불리",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_wall_clothes_rail_2.png"
+  },
+  "23": {
+   "id": "u_kit_door_mat",
+   "variant": 1,
+   "job_id": "f8ad5344-8551-4b14-8dcc-bc845751098e",
+   "saved_path": "assets/gen/v2_hf/unity/c_door_mat_1.jpg",
+   "why": "가장자리가 깔끔해 3D 외곽이 깨끗",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_door_mat_1.png"
+  },
+  "24": {
+   "id": "u_kit_pendant_lamp",
+   "variant": 2,
+   "job_id": "8b5463f5-a87e-475e-8ec2-2789bf476a4f",
+   "saved_path": "assets/gen/v2_hf/unity/c_pendant_lamp_2.jpg",
+   "why": "갓이 커서 게임 크기에서 잘 읽힌다",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_pendant_lamp_2.png"
+  },
+  "25": {
+   "id": "u_kit_shoe_rack_small",
+   "variant": 2,
+   "job_id": "45def063-f9d4-432c-8594-035de3feebe4",
+   "saved_path": "assets/gen/v2_hf/unity/c_shoe_rack_small_2.jpg",
+   "why": "물건 하나(k1 은 떨어진 조각)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_shoe_rack_small_2.png"
+  }
+ },
+ "total_bytes": 412513054,
+ "jobs": [
+  {
+   "n": 4,
+   "id": "shop_display",
+   "step": "concept",
+   "variant": 1,
+   "index": 41,
+   "job_id": "b905652d-01fc-4557-8ba2-9fb71c56674b",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light warm wood #e0d5c2 step boards, slightly darker #c3b49c side panels and front risers, a thin chalk-ledge strip along each step front. All three steps empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "90f4444b-bde3-4685-a99f-12cf897ce966",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light warm wood #e0d5c2 step boards, slightly darker #c3b49c side panels and front risers, a thin chalk-ledge strip along each step front. All three steps empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141149_b905652d-01fc-4557-8ba2-9fb71c56674b.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_display_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5864795,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "세 단 그대로 · 실루엣 IoU 0.994 · 옆판 세로 이음선까지 참조대로 · 단 앞 턱 셋 · 단 비움 · 글자 없음 · 윗판 색 (234,207,175) 셋 중 #e0d5c2 에 가장 가깝다(ΔRGB 21.5)",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.994,
+    "bbox_1024": [
+     52,
+     92,
+     971,
+     931
+    ],
+    "ref_bbox_1024": [
+     54,
+     92,
+     968,
+     931
+    ],
+    "bg_rgb": [
+     251,
+     248,
+     241
+    ],
+    "fg_components_1024": [
+     549839
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 4,
+   "id": "shop_display",
+   "step": "concept",
+   "variant": 2,
+   "index": 42,
+   "job_id": "d6f7e245-5ad5-410f-a48a-8d3eb9f1d487",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light warm wood #e0d5c2 step boards, slightly darker #c3b49c side panels and front risers, a thin chalk-ledge strip along each step front. All three steps empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "90f4444b-bde3-4685-a99f-12cf897ce966",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light warm wood #e0d5c2 step boards, slightly darker #c3b49c side panels and front risers, a thin chalk-ledge strip along each step front. All three steps empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141149_d6f7e245-5ad5-410f-a48a-8d3eb9f1d487.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_display_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5913192,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "세 단 · IoU 0.993 · 모서리가 둥글고 만화풍이 세다 · 턱 있음 · 색이 더 주황(ΔRGB 30.8)",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.993,
+    "bbox_1024": [
+     51,
+     92,
+     971,
+     932
+    ],
+    "ref_bbox_1024": [
+     54,
+     92,
+     968,
+     931
+    ],
+    "bg_rgb": [
+     255,
+     252,
+     247
+    ],
+    "fg_components_1024": [
+     550796
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_display_2.png"
+  },
+  {
+   "n": 4,
+   "id": "shop_display",
+   "step": "concept",
+   "variant": 3,
+   "index": 43,
+   "job_id": "d238e642-5aef-4c2b-af30-5bfe0825c229",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light warm wood #e0d5c2 step boards, slightly darker #c3b49c side panels and front risers, a thin chalk-ledge strip along each step front. All three steps empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "90f4444b-bde3-4685-a99f-12cf897ce966",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light warm wood #e0d5c2 step boards, slightly darker #c3b49c side panels and front risers, a thin chalk-ledge strip along each step front. All three steps empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141151_d238e642-5aef-4c2b-af30-5bfe0825c229.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_display_3.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5683767,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "세 단 · IoU 0.995 · 차분한 색(ΔRGB 30.0) · 턱 있음",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.995,
+    "bbox_1024": [
+     52,
+     93,
+     971,
+     932
+    ],
+    "ref_bbox_1024": [
+     54,
+     92,
+     968,
+     931
+    ],
+    "bg_rgb": [
+     245,
+     242,
+     235
+    ],
+    "fg_components_1024": [
+     548750
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_display_3.png"
+  },
+  {
+   "n": 5,
+   "id": "order_board",
+   "step": "concept",
+   "variant": 1,
+   "index": 51,
+   "job_id": "6b1e5793-5ee9-4d1e-98aa-1c0cb5b20878",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: cork board #c9a77c inside a simple light wood frame #d8c3a0, three pinned cream paper order slips with tiny doodles of a leaf, a pot and a watering can, one wooden clothes-peg clip. No letters or numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "ee883fa3-757b-43e7-8389-0881613a85c7",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: cork board #c9a77c inside a simple light wood frame #d8c3a0, three pinned cream paper order slips with tiny doodles of a leaf, a pot and a watering can, one wooden clothes-peg clip. No letters or numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141150_6b1e5793-5ee9-4d1e-98aa-1c0cb5b20878.png",
+   "saved_path": "assets/gen/v2_furn/c_order_board_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5980267,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "qa_notes": "틀·판 두께·비율·카메라 그대로(IoU 0.995) · 글자 없음 · 참조 쪽지 A·B 를 코르크색 판으로 칠해 크림 쪽지는 둘만 읽힌다(한 장에 가로줄 둘 — 글자 아님) · 쪽지 조각은 넷",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.995,
+    "bbox_1024": [
+     125,
+     60,
+     918,
+     951
+    ],
+    "ref_bbox_1024": [
+     127,
+     60,
+     915,
+     952
+    ],
+    "bg_rgb": [
+     248,
+     242,
+     233
+    ],
+    "fg_components_1024": [
+     474714,
+     1973,
+     746
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_order_board_1.png"
+  },
+  {
+   "n": 5,
+   "id": "order_board",
+   "step": "concept",
+   "variant": 2,
+   "index": 52,
+   "job_id": "e36be6c8-a3d3-4491-9513-42a0a4719216",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: cork board #c9a77c inside a simple light wood frame #d8c3a0, three pinned cream paper order slips with tiny doodles of a leaf, a pot and a watering can, one wooden clothes-peg clip. No letters or numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "ee883fa3-757b-43e7-8389-0881613a85c7",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: cork board #c9a77c inside a simple light wood frame #d8c3a0, three pinned cream paper order slips with tiny doodles of a leaf, a pot and a watering can, one wooden clothes-peg clip. No letters or numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141149_e36be6c8-a3d3-4491-9513-42a0a4719216.png",
+   "saved_path": "assets/gen/v2_furn/c_order_board_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5558482,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "qa_notes": "IoU 0.992 · 크림 쪽지 셋이 참조 A·B·C 자리(잎·빈칸·화분) + 오른쪽 아래 넷째 쪽지(물뿌리개)가 더해짐 · 집게가 위 틀을 물고 틀 위로 약 2% 튀어나옴(box fit 높이 약간 줄어듦) · 글자 없음",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.992,
+    "bbox_1024": [
+     125,
+     60,
+     917,
+     953
+    ],
+    "ref_bbox_1024": [
+     127,
+     60,
+     915,
+     952
+    ],
+    "bg_rgb": [
+     253,
+     249,
+     237
+    ],
+    "fg_components_1024": [
+     524012
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 5,
+   "id": "order_board",
+   "step": "concept",
+   "variant": 3,
+   "index": 53,
+   "job_id": "fdf59ef4-ca7a-4a8f-8c96-2251dec29307",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: cork board #c9a77c inside a simple light wood frame #d8c3a0, three pinned cream paper order slips with tiny doodles of a leaf, a pot and a watering can, one wooden clothes-peg clip. No letters or numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "ee883fa3-757b-43e7-8389-0881613a85c7",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: cork board #c9a77c inside a simple light wood frame #d8c3a0, three pinned cream paper order slips with tiny doodles of a leaf, a pot and a watering can, one wooden clothes-peg clip. No letters or numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141148_fdf59ef4-ca7a-4a8f-8c96-2251dec29307.png",
+   "saved_path": "assets/gen/v2_furn/c_order_board_3.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5672914,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "qa_notes": "IoU 0.992 · 종이 조각 다섯(코르크가 거의 덮임) · 글자 없음",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.992,
+    "bbox_1024": [
+     124,
+     60,
+     918,
+     952
+    ],
+    "ref_bbox_1024": [
+     127,
+     60,
+     915,
+     952
+    ],
+    "bg_rgb": [
+     245,
+     241,
+     235
+    ],
+    "fg_components_1024": [
+     253751,
+     1116,
+     889,
+     564
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_order_board_3.png"
+  },
+  {
+   "n": 6,
+   "id": "nightstand",
+   "step": "concept",
+   "variant": 1,
+   "index": 61,
+   "job_id": "145709bc-1b7e-4ec9-86d3-5e834ceb41da",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm light wood #e6dccd body with one drawer and a small round knob, slightly darker #c8b18a short legs. Top empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "4079d56f-77b7-4ef0-916b-e1a3beb40834",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm light wood #e6dccd body with one drawer and a small round knob, slightly darker #c8b18a short legs. Top empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141150_145709bc-1b7e-4ec9-86d3-5e834ceb41da.png",
+   "saved_path": "assets/gen/v2_furn/c_nightstand_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5323864,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "다리 셋 보임(참조대로) · IoU 0.990 · 서랍 앞판+둥근 손잡이 또렷 · 몸이 부풀어 오른쪽 면이 불룩 · 옹이 결이 많아 화이트·민트 변형에 시끄럽다 · ΔRGB 34.0",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.99,
+    "bbox_1024": [
+     90,
+     64,
+     950,
+     937
+    ],
+    "ref_bbox_1024": [
+     92,
+     63,
+     947,
+     934
+    ],
+    "bg_rgb": [
+     248,
+     245,
+     236
+    ],
+    "fg_components_1024": [
+     496980
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_nightstand_1.png"
+  },
+  {
+   "n": 6,
+   "id": "nightstand",
+   "step": "concept",
+   "variant": 2,
+   "index": 62,
+   "job_id": "65452108-cacb-4d3c-b225-57d8d318aa07",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm light wood #e6dccd body with one drawer and a small round knob, slightly darker #c8b18a short legs. Top empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "4079d56f-77b7-4ef0-916b-e1a3beb40834",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm light wood #e6dccd body with one drawer and a small round knob, slightly darker #c8b18a short legs. Top empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141151_65452108-cacb-4d3c-b225-57d8d318aa07.png",
+   "saved_path": "assets/gen/v2_furn/c_nightstand_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5407074,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "IoU 0.990 · 서랍 앞판 테두리와 손잡이가 셋 중 가장 또렷 · 면이 반듯해 화이트·민트 변형에 좋다 · 윗판 색 #e6dccd 에 가장 가깝다(ΔRGB 17.8)",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.99,
+    "bbox_1024": [
+     89,
+     63,
+     950,
+     937
+    ],
+    "ref_bbox_1024": [
+     92,
+     63,
+     947,
+     934
+    ],
+    "bg_rgb": [
+     249,
+     244,
+     237
+    ],
+    "fg_components_1024": [
+     497802
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 6,
+   "id": "nightstand",
+   "step": "concept",
+   "variant": 3,
+   "index": 63,
+   "job_id": "48d8cf71-36aa-48b8-a7d2-395ac0713fa0",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm light wood #e6dccd body with one drawer and a small round knob, slightly darker #c8b18a short legs. Top empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "4079d56f-77b7-4ef0-916b-e1a3beb40834",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm light wood #e6dccd body with one drawer and a small round knob, slightly darker #c8b18a short legs. Top empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141152_48d8cf71-36aa-48b8-a7d2-395ac0713fa0.png",
+   "saved_path": "assets/gen/v2_furn/c_nightstand_3.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5660410,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "IoU 0.990 · k2 와 비슷, 결 줄무늬가 많고 가장 주황(ΔRGB 41.6)",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.99,
+    "bbox_1024": [
+     89,
+     64,
+     949,
+     936
+    ],
+    "ref_bbox_1024": [
+     92,
+     63,
+     947,
+     934
+    ],
+    "bg_rgb": [
+     249,
+     249,
+     247
+    ],
+    "fg_components_1024": [
+     497723
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_nightstand_3.png"
+  },
+  {
+   "n": 7,
+   "id": "bench",
+   "step": "concept",
+   "variant": 1,
+   "index": 71,
+   "job_id": "5ddde609-ca89-4f21-9a0d-eef7c14dcee8",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 seat board, two slightly darker #c3b49c panel legs. Seat empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "707c337d-d70b-4587-975d-8c284ee6ca92",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 seat board, two slightly darker #c3b49c panel legs. Seat empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141151_5ddde609-ca89-4f21-9a0d-eef7c14dcee8.png",
+   "saved_path": "assets/gen/v2_furn/c_bench_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5040414,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "앉음판 하나+판 다리 둘 · IoU 0.983 · ΔRGB 10.9",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.983,
+    "bbox_1024": [
+     52,
+     199,
+     971,
+     811
+    ],
+    "ref_bbox_1024": [
+     54,
+     197,
+     968,
+     810
+    ],
+    "bg_rgb": [
+     250,
+     247,
+     240
+    ],
+    "fg_components_1024": [
+     251489
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bench_1.png"
+  },
+  {
+   "n": 7,
+   "id": "bench",
+   "step": "concept",
+   "variant": 2,
+   "index": 72,
+   "job_id": "f87b3242-5ea2-49a1-a41b-f95334fd231e",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 seat board, two slightly darker #c3b49c panel legs. Seat empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "707c337d-d70b-4587-975d-8c284ee6ca92",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 seat board, two slightly darker #c3b49c panel legs. Seat empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141150_f87b3242-5ea2-49a1-a41b-f95334fd231e.png",
+   "saved_path": "assets/gen/v2_furn/c_bench_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 4950101,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "IoU 0.981 · 다리가 아래로 살짝 좁아짐 · ΔRGB 18.2",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.981,
+    "bbox_1024": [
+     54,
+     200,
+     971,
+     812
+    ],
+    "ref_bbox_1024": [
+     54,
+     197,
+     968,
+     810
+    ],
+    "bg_rgb": [
+     250,
+     249,
+     247
+    ],
+    "fg_components_1024": [
+     252318
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_bench_2.png"
+  },
+  {
+   "n": 7,
+   "id": "bench",
+   "step": "concept",
+   "variant": 3,
+   "index": 73,
+   "job_id": "f546279e-5a28-4137-98a5-72ec9f5fefb8",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 seat board, two slightly darker #c3b49c panel legs. Seat empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "707c337d-d70b-4587-975d-8c284ee6ca92",
+      "role": "image_references"
+     },
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 seat board, two slightly darker #c3b49c panel legs. Seat empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141151_f546279e-5a28-4137-98a5-72ec9f5fefb8.png",
+   "saved_path": "assets/gen/v2_furn/c_bench_3.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5490841,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "IoU 0.985(셋 중 최고) · 판 하나(앞쪽 줄은 나뭇결) · 색 #e0d5c2 에 가장 가깝다(ΔRGB 7.4)",
+   "qa_metrics": {
+    "silhouette_iou_vs_ref": 0.985,
+    "bbox_1024": [
+     53,
+     199,
+     971,
+     811
+    ],
+    "ref_bbox_1024": [
+     54,
+     197,
+     968,
+     810
+    ],
+    "bg_rgb": [
+     247,
+     247,
+     245
+    ],
+    "fg_components_1024": [
+     251755
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 8,
+   "id": "shop_sign_blade",
+   "step": "concept",
+   "variant": 1,
+   "index": 81,
+   "job_id": "4a35f85b-052b-4165-9c2c-f13b205a483a",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A hanging blade sign for a tiny neighborhood plant shop: a round-cornered wooden board hung by two short chains from a black iron wall bracket; the board face shows a painted monstera leaf in a small terracotta pot on cream. No letters, no numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A hanging blade sign for a tiny neighborhood plant shop: a round-cornered wooden board hung by two short chains from a black iron wall bracket; the board face shows a painted monstera leaf in a small terracotta pot on cream. No letters, no numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141243_4a35f85b-052b-4165-9c2c-f13b205a483a.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_blade_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5592926,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "글자 없음 · 쇠 받침+긴 벽판·소용돌이 장식 · 사슬 둘 · 판이 작다",
+   "qa_metrics": {
+    "bg_rgb": [
+     248,
+     243,
+     236
+    ],
+    "fg_components_1024": [
+     135976
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_sign_blade_1.png"
+  },
+  {
+   "n": 8,
+   "id": "shop_sign_blade",
+   "step": "concept",
+   "variant": 2,
+   "index": 82,
+   "job_id": "0f2e8cae-72a2-4808-b30f-faf59b4129f4",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A hanging blade sign for a tiny neighborhood plant shop: a round-cornered wooden board hung by two short chains from a black iron wall bracket; the board face shows a painted monstera leaf in a small terracotta pot on cream. No letters, no numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A hanging blade sign for a tiny neighborhood plant shop: a round-cornered wooden board hung by two short chains from a black iron wall bracket; the board face shows a painted monstera leaf in a small terracotta pot on cream. No letters, no numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141242_0f2e8cae-72a2-4808-b30f-faf59b4129f4.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_blade_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5331475,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "글자 없음 · 받침이 짧고 단순 · 판이 셋 중 가장 크다(3D 텍스처에 유리)",
+   "qa_metrics": {
+    "bg_rgb": [
+     247,
+     243,
+     234
+    ],
+    "fg_components_1024": [
+     225042
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 8,
+   "id": "shop_sign_blade",
+   "step": "concept",
+   "variant": 3,
+   "index": 83,
+   "job_id": "681a9800-b07c-493b-bb25-fbf1a9915dd9",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A hanging blade sign for a tiny neighborhood plant shop: a round-cornered wooden board hung by two short chains from a black iron wall bracket; the board face shows a painted monstera leaf in a small terracotta pot on cream. No letters, no numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A hanging blade sign for a tiny neighborhood plant shop: a round-cornered wooden board hung by two short chains from a black iron wall bracket; the board face shows a painted monstera leaf in a small terracotta pot on cream. No letters, no numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141241_681a9800-b07c-493b-bb25-fbf1a9915dd9.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_blade_3.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5323551,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "글자 없음 · 긴 팔 끝 화살 장식(가는 부품) · 판 테두리 깔끔",
+   "qa_metrics": {
+    "bg_rgb": [
+     245,
+     244,
+     239
+    ],
+    "fg_components_1024": [
+     243134
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_sign_blade_3.png"
+  },
+  {
+   "n": 9,
+   "id": "shop_sign_aframe",
+   "step": "concept",
+   "variant": 1,
+   "index": 91,
+   "job_id": "a5f2e4b5-3874-429b-8001-84a886e9eca0",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden A-frame standing sidewalk sign for a tiny plant shop with a dark green chalkboard face framed in light wood; a little potted plant drawn in chalk at the bottom corner, the rest of the board blank. No letters, no numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden A-frame standing sidewalk sign for a tiny plant shop with a dark green chalkboard face framed in light wood; a little potted plant drawn in chalk at the bottom corner, the rest of the board blank. No letters, no numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141241_a5f2e4b5-3874-429b-8001-84a886e9eca0.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_aframe_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5615653,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "글자 없음 · 칠판이 비고 오른쪽 아래에 분필 화분만 · 경첩·사슬 없음(3D 쉬움) · 판이 셋 중 가장 크다 · 바탕이 미색이 아니라 옅은 회색(245,245,245)",
+   "qa_metrics": {
+    "bg_rgb": [
+     245,
+     245,
+     245
+    ],
+    "fg_components_1024": [
+     304722
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 9,
+   "id": "shop_sign_aframe",
+   "step": "concept",
+   "variant": 2,
+   "index": 92,
+   "job_id": "dabdee33-32a0-4ccf-a231-ef67e38b94ea",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden A-frame standing sidewalk sign for a tiny plant shop with a dark green chalkboard face framed in light wood; a little potted plant drawn in chalk at the bottom corner, the rest of the board blank. No letters, no numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden A-frame standing sidewalk sign for a tiny plant shop with a dark green chalkboard face framed in light wood; a little potted plant drawn in chalk at the bottom corner, the rest of the board blank. No letters, no numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141242_dabdee33-32a0-4ccf-a231-ef67e38b94ea.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_aframe_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5115465,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "글자 없음 · 경첩 · 화면에서 작다",
+   "qa_metrics": {
+    "bg_rgb": [
+     247,
+     243,
+     233
+    ],
+    "fg_components_1024": [
+     240816
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_sign_aframe_2.png"
+  },
+  {
+   "n": 9,
+   "id": "shop_sign_aframe",
+   "step": "concept",
+   "variant": 3,
+   "index": 93,
+   "job_id": "eeea29a8-0cf5-4da1-8aef-f375ee578e1d",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden A-frame standing sidewalk sign for a tiny plant shop with a dark green chalkboard face framed in light wood; a little potted plant drawn in chalk at the bottom corner, the rest of the board blank. No letters, no numbers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden A-frame standing sidewalk sign for a tiny plant shop with a dark green chalkboard face framed in light wood; a little potted plant drawn in chalk at the bottom corner, the rest of the board blank. No letters, no numbers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141243_eeea29a8-0cf5-4da1-8aef-f375ee578e1d.png",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_aframe_3.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5597912,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "글자 없음 · 경첩+다리 사이 가는 사슬(3D 에서 뭉개질 위험)",
+   "qa_metrics": {
+    "bg_rgb": [
+     250,
+     246,
+     236
+    ],
+    "fg_components_1024": [
+     284386
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_furn/c_shop_sign_aframe_3.png"
+  },
+  {
+   "n": 12,
+   "id": "u_tex_concrete_wall",
+   "step": "concept",
+   "variant": 1,
+   "index": 121,
+   "job_id": "3ce6eb1f-6863-4c57-9114-dcbaa0689caa",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks.",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141240_3ce6eb1f-6863-4c57-9114-dcbaa0689caa.png",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_wall_1.jpg",
+   "size": [
+    4096,
+    4096
+   ],
+   "bytes": 29517720,
+   "credits": 3,
+   "qa_pass": false,
+   "qa_grade": "FAIL",
+   "qa_notes": "타일 안 됨 — 위/아래 이음매가 1:8 에서도 가로줄로 보인다(512 저역 d*y 42.5px ≈ 4k 340px) · 네 귀퉁이 밝기 차 13.8%(>5%) · 큰 얼룩이 반복돼 보인다",
+   "qa_metrics": {
+    "seam_x": 2.49,
+    "seam_y": 3.51,
+    "seam_x_vs_p99": 1.65,
+    "seam_y_vs_p99": 2.39,
+    "step_x": 0.0022,
+    "step_y": 0.0066,
+    "corners": 0.1379,
+    "rim_ratio": 1.0063,
+    "mean_rgb": [
+     139,
+     136,
+     134
+    ],
+    "d_star_512": [
+     3.0,
+     42.5
+    ],
+    "excess_levels": [
+     2.26,
+     6.9
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_concrete_wall_1.png"
+  },
+  {
+   "n": 12,
+   "id": "u_tex_concrete_wall",
+   "step": "concept",
+   "variant": 2,
+   "index": 122,
+   "job_id": "149931b8-0ebf-4452-a0eb-12620ccfc694",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks.",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141242_149931b8-0ebf-4452-a0eb-12620ccfc694.png",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_wall_2.jpg",
+   "size": [
+    4096,
+    4096
+   ],
+   "bytes": 27261345,
+   "credits": 3,
+   "qa_pass": false,
+   "qa_grade": "FAIL",
+   "qa_notes": "타일 안 됨 — 가로·세로 이음매(512 저역 d* 12/24px) · 1:8 에서 가로줄 · 귀퉁이 5.2%",
+   "qa_metrics": {
+    "seam_x": 3.06,
+    "seam_y": 2.89,
+    "seam_x_vs_p99": 1.97,
+    "seam_y_vs_p99": 2.29,
+    "step_x": 0.0003,
+    "step_y": 0.0083,
+    "corners": 0.0523,
+    "rim_ratio": 0.9942,
+    "mean_rgb": [
+     137,
+     132,
+     128
+    ],
+    "d_star_512": [
+     12.3,
+     24.5
+    ],
+    "excess_levels": [
+     3.04,
+     2.98
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_concrete_wall_2.png"
+  },
+  {
+   "n": 12,
+   "id": "u_tex_concrete_wall",
+   "step": "concept",
+   "variant": 3,
+   "index": 123,
+   "job_id": "22553fc7-80d5-4047-9b2b-96f9ee51a8ac",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks.",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_143111_22553fc7-80d5-4047-9b2b-96f9ee51a8ac.png",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_wall_3.jpg",
+   "size": [
+    4096,
+    4096
+   ],
+   "bytes": 27820101,
+   "credits": 3,
+   "qa_pass": false,
+   "qa_grade": "FAIL",
+   "qa_notes": "재시도(주문 프롬프트 그대로) — 두 축 이음매(512 저역 d* ≈15px) · 귀퉁이 5.7%",
+   "retry": true,
+   "prompt_note": "order prompt unchanged (retry)",
+   "qa_metrics": {
+    "seam_x": 3.5,
+    "seam_y": 2.99,
+    "seam_x_vs_p99": 2.3,
+    "seam_y_vs_p99": 2.27,
+    "step_x": 0.0233,
+    "step_y": 0.0076,
+    "corners": 0.057,
+    "rim_ratio": 0.9966,
+    "mean_rgb": [
+     146,
+     142,
+     137
+    ],
+    "d_star_512": [
+     14.9,
+     14.6
+    ],
+    "excess_levels": [
+     4.34,
+     3.23
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_concrete_wall_3.png"
+  },
+  {
+   "n": 12,
+   "id": "u_tex_concrete_wall",
+   "step": "concept",
+   "variant": 4,
+   "index": 124,
+   "job_id": "39e7f4b7-a798-4884-862c-6b67bb52d31c",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks. Strictly tileable: the left edge continues exactly into the right edge and the top edge into the bottom edge; keep stains small, soft and evenly spread, with no large blotch or brightness change near any edge.",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Grey poured concrete wall with soft stains, faint form-tie dots and hairline cracks. Strictly tileable: the left edge continues exactly into the right edge and the top edge into the bottom edge; keep stains small, soft and evenly spread, with no large blotch or brightness change near any edge.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_143117_39e7f4b7-a798-4884-862c-6b67bb52d31c.png",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_wall_4.jpg",
+   "size": [
+    4096,
+    4096
+   ],
+   "bytes": 29270300,
+   "credits": 3,
+   "qa_pass": true,
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "qa_notes": "재시도(주문 프롬프트+이음 강조 한 문장) — 좌우 이음 없음(d*x 1.0) · 위아래는 옅은 결 바뀜이 남음(저역 1.3 계조 · 1:8 에서 겨우 보임) · 귀퉁이 3.1%",
+   "retry": true,
+   "prompt_note": "order prompt + seamless reinforcement sentence (retry hedge)",
+   "qa_metrics": {
+    "seam_x": 1.48,
+    "seam_y": 2.18,
+    "seam_x_vs_p99": 0.89,
+    "seam_y_vs_p99": 1.68,
+    "step_x": 0.0041,
+    "step_y": 0.008,
+    "corners": 0.031,
+    "rim_ratio": 0.9989,
+    "mean_rgb": [
+     136,
+     133,
+     129
+    ],
+    "d_star_512": [
+     1.0,
+     7.9
+    ],
+    "excess_levels": [
+     -0.55,
+     1.26
+    ]
+   }
+  },
+  {
+   "n": 13,
+   "id": "u_tex_concrete_ceiling",
+   "step": "concept",
+   "variant": 1,
+   "index": 131,
+   "job_id": "5fe80f06-dd79-44aa-a069-fd5c50f0cba0",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Pale grey-white painted concrete ceiling, subtle roller texture.",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Pale grey-white painted concrete ceiling, subtle roller texture.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141241_5fe80f06-dd79-44aa-a069-fd5c50f0cba0.png",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_ceiling_1.jpg",
+   "size": [
+    4096,
+    4096
+   ],
+   "bytes": 20805889,
+   "credits": 3,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "좌우 이음 없음(d*x 1.0) · 위아래 잔여 0.8 계조(안 보임) · 귀퉁이 1.6% · 아주 밝다(평균 249) · 옅은 무늬가 그림 안에서 되풀이",
+   "qa_metrics": {
+    "seam_x": 1.47,
+    "seam_y": 2.0,
+    "seam_x_vs_p99": 0.98,
+    "seam_y_vs_p99": 1.59,
+    "step_x": 0.0011,
+    "step_y": 0.0022,
+    "corners": 0.0162,
+    "rim_ratio": 1.0057,
+    "mean_rgb": [
+     249,
+     248,
+     246
+    ],
+    "d_star_512": [
+     1.0,
+     23.4
+    ],
+    "excess_levels": [
+     -0.35,
+     0.83
+    ]
+   }
+  },
+  {
+   "n": 13,
+   "id": "u_tex_concrete_ceiling",
+   "step": "concept",
+   "variant": 2,
+   "index": 132,
+   "job_id": "5f9d7cc0-17f8-418a-b0df-f2a6c1f41f11",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Pale grey-white painted concrete ceiling, subtle roller texture.",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Pale grey-white painted concrete ceiling, subtle roller texture.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141241_5f9d7cc0-17f8-418a-b0df-f2a6c1f41f11.png",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_ceiling_2.jpg",
+   "size": [
+    4096,
+    4096
+   ],
+   "bytes": 27677051,
+   "credits": 3,
+   "qa_pass": true,
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "qa_notes": "1:1 에서 한 사분면에 옅은 이음선(약 1 계조) · 귀퉁이 1.1%",
+   "qa_metrics": {
+    "seam_x": 2.1,
+    "seam_y": 2.21,
+    "seam_x_vs_p99": 1.55,
+    "seam_y_vs_p99": 1.74,
+    "step_x": 0.0021,
+    "step_y": 0.0011,
+    "corners": 0.011,
+    "rim_ratio": 0.9972,
+    "mean_rgb": [
+     251,
+     250,
+     249
+    ],
+    "d_star_512": [
+     11.1,
+     6.9
+    ],
+    "excess_levels": [
+     0.93,
+     0.65
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_concrete_ceiling_2.png"
+  },
+  {
+   "n": 17,
+   "id": "u_tex_stair_terrazzo",
+   "step": "concept",
+   "variant": 1,
+   "index": 171,
+   "job_id": "ab7868a1-a061-4ae4-be5c-28e305c17597",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Old Korean terrazzo stair surface, grey with small light chips.",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Old Korean terrazzo stair surface, grey with small light chips.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141242_ab7868a1-a061-4ae4-be5c-28e305c17597.png",
+   "saved_path": "assets/gen/v2_hf/unity/tex_stair_terrazzo_1.jpg",
+   "size": [
+    4096,
+    4096
+   ],
+   "bytes": 30745341,
+   "credits": 3,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "이음 없음(512 저역 d* 1.0/1.8) · 귀퉁이 3.65% · 가장자리 어둡기 없음(−0.7%) · 밝은 회색+크림 알",
+   "qa_metrics": {
+    "seam_x": 2.25,
+    "seam_y": 2.5,
+    "seam_x_vs_p99": 1.66,
+    "seam_y_vs_p99": 1.76,
+    "step_x": 0.0042,
+    "step_y": 0.0196,
+    "corners": 0.0365,
+    "rim_ratio": 0.9934,
+    "mean_rgb": [
+     170,
+     160,
+     153
+    ],
+    "d_star_512": [
+     1.0,
+     1.8
+    ],
+    "excess_levels": [
+     -0.11,
+     2.23
+    ]
+   }
+  },
+  {
+   "n": 17,
+   "id": "u_tex_stair_terrazzo",
+   "step": "concept",
+   "variant": 2,
+   "index": 172,
+   "job_id": "61896cb8-d69e-424a-a7f7-c43960f7d0d1",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Old Korean terrazzo stair surface, grey with small light chips.",
+    "aspect_ratio": "1:1",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "Seamless tileable texture at high resolution: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges. Hand-painted matte style of the reference room. Old Korean terrazzo stair surface, grey with small light chips.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141243_61896cb8-d69e-424a-a7f7-c43960f7d0d1.png",
+   "saved_path": "assets/gen/v2_hf/unity/tex_stair_terrazzo_2.jpg",
+   "size": [
+    4096,
+    4096
+   ],
+   "bytes": 31771730,
+   "credits": 3,
+   "qa_pass": true,
+   "qa_grade": "PASS_WITH_WARNINGS",
+   "qa_notes": "이음 없음(d* 1.0/1.1) · 귀퉁이 0.8% · 가장자리가 3.4% 어둡고 가운데가 1% 밝은 옅은 비네트 — 깔면 옅은 격자 · 진한 회색+흰 알",
+   "qa_metrics": {
+    "seam_x": 1.67,
+    "seam_y": 2.24,
+    "seam_x_vs_p99": 1.3,
+    "seam_y_vs_p99": 1.76,
+    "step_x": 0.0146,
+    "step_y": 0.0328,
+    "corners": 0.008,
+    "rim_ratio": 0.9745,
+    "mean_rgb": [
+     124,
+     117,
+     112
+    ],
+    "d_star_512": [
+     1.0,
+     1.1
+    ],
+    "excess_levels": [
+     -1.8,
+     0.47
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_stair_terrazzo_2.png"
+  },
+  {
+   "n": 18,
+   "id": "u_kit_wall_pipes",
+   "step": "concept",
+   "variant": 1,
+   "index": 181,
+   "job_id": "5752889d-045b-4c08-8624-2abe08368d2d",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A cluster of exposed grey wall pipes with elbows and wall clamps, like in a Korean semi-basement stairwell.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A cluster of exposed grey wall pipes with elbows and wall clamps, like in a Korean semi-basement stairwell.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141330_5752889d-045b-4c08-8624-2abe08368d2d.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_pipes_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5835812,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "물건 하나 · 글자 없음 · 얽힌 무더기",
+   "qa_metrics": {
+    "bg_rgb": [
+     250,
+     247,
+     240
+    ],
+    "fg_components_1024": [
+     178441
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_wall_pipes_1.png"
+  },
+  {
+   "n": 18,
+   "id": "u_kit_wall_pipes",
+   "step": "concept",
+   "variant": 2,
+   "index": 182,
+   "job_id": "e39b1930-3a7c-4628-9e78-5f45d026e04d",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A cluster of exposed grey wall pipes with elbows and wall clamps, like in a Korean semi-basement stairwell.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A cluster of exposed grey wall pipes with elbows and wall clamps, like in a Korean semi-basement stairwell.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141329_e39b1930-3a7c-4628-9e78-5f45d026e04d.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_pipes_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5332669,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "물건 하나 · 글자 없음 · 평행 배관+클램프·엘보 — 벽 배관으로 더 잘 읽힌다",
+   "qa_metrics": {
+    "bg_rgb": [
+     250,
+     246,
+     235
+    ],
+    "fg_components_1024": [
+     227898
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 19,
+   "id": "u_kit_meter_box",
+   "step": "concept",
+   "variant": 1,
+   "index": 191,
+   "job_id": "9c29f78d-0526-4f9c-b5c0-d0b310127401",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small grey metal electric meter box with a little window and two cables, wall-mounted.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small grey metal electric meter box with a little window and two cables, wall-mounted.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141328_9c29f78d-0526-4f9c-b5c0-d0b310127401.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_meter_box_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5422020,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "계량 창 숫자칸이 비었다(작은 표시 하나, 안 읽힘) · 전선 둘",
+   "qa_metrics": {
+    "bg_rgb": [
+     248,
+     246,
+     239
+    ],
+    "fg_components_1024": [
+     189389
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 19,
+   "id": "u_kit_meter_box",
+   "step": "concept",
+   "variant": 2,
+   "index": 192,
+   "job_id": "641d2555-c89d-4848-a8b0-274632cb2ad1",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small grey metal electric meter box with a little window and two cables, wall-mounted.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small grey metal electric meter box with a little window and two cables, wall-mounted.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141331_641d2555-c89d-4848-a8b0-274632cb2ad1.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_meter_box_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 4855967,
+   "credits": 2,
+   "qa_pass": false,
+   "qa_grade": "FAIL",
+   "qa_notes": "계량칸에 «13» 같은 가짜 숫자가 읽힌다(글자) · 전선 끝 셋",
+   "qa_metrics": {
+    "bg_rgb": [
+     249,
+     245,
+     233
+    ],
+    "fg_components_1024": [
+     183783
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_meter_box_2.png"
+  },
+  {
+   "n": 20,
+   "id": "u_kit_window_well_grate",
+   "step": "concept",
+   "variant": 1,
+   "index": 201,
+   "job_id": "53988d39-dac5-4248-a521-a5c839b09faa",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular metal grate over a semi-basement window well with weeds poking through.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular metal grate over a semi-basement window well with weeds poking through.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141329_53988d39-dac5-4248-a521-a5c839b09faa.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_window_well_grate_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 6305490,
+   "credits": 2,
+   "qa_pass": false,
+   "qa_grade": "FAIL",
+   "qa_notes": "위쪽에 떨어진 풀·흙 조각(전경 덩이 둘) — 물건 하나 아님",
+   "qa_metrics": {
+    "bg_rgb": [
+     248,
+     246,
+     235
+    ],
+    "fg_components_1024": [
+     322122,
+     17918
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_window_well_grate_1.png"
+  },
+  {
+   "n": 20,
+   "id": "u_kit_window_well_grate",
+   "step": "concept",
+   "variant": 2,
+   "index": 202,
+   "job_id": "1ead83e7-9ce5-4010-b9d0-a183670a82e8",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular metal grate over a semi-basement window well with weeds poking through.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular metal grate over a semi-basement window well with weeds poking through.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141329_1ead83e7-9ce5-4010-b9d0-a183670a82e8.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_window_well_grate_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5905867,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "물건 하나 · 쇠 덮개+풀 · 글자 없음",
+   "qa_metrics": {
+    "bg_rgb": [
+     244,
+     240,
+     228
+    ],
+    "fg_components_1024": [
+     370465
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 21,
+   "id": "u_kit_wall_shelf_bracket",
+   "step": "concept",
+   "variant": 1,
+   "index": 211,
+   "job_id": "485ad66c-12b7-452d-b397-e98505d510b7",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden wall shelf on two black metal brackets, empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden wall shelf on two black metal brackets, empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141331_485ad66c-12b7-452d-b397-e98505d510b7.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_shelf_bracket_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5020822,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "받침쇠에 사선 버팀 · 화면에서 더 크다 · 비었다",
+   "qa_metrics": {
+    "bg_rgb": [
+     249,
+     245,
+     234
+    ],
+    "fg_components_1024": [
+     122838
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 21,
+   "id": "u_kit_wall_shelf_bracket",
+   "step": "concept",
+   "variant": 2,
+   "index": 212,
+   "job_id": "781a9cdb-da54-4719-847c-77cc9fb31a29",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden wall shelf on two black metal brackets, empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small wooden wall shelf on two black metal brackets, empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141333_781a9cdb-da54-4719-847c-77cc9fb31a29.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_shelf_bracket_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 4886373,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "단순 ㄱ자 받침 · 비었다",
+   "qa_metrics": {
+    "bg_rgb": [
+     250,
+     244,
+     235
+    ],
+    "fg_components_1024": [
+     132310
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_wall_shelf_bracket_2.png"
+  },
+  {
+   "n": 22,
+   "id": "u_kit_wall_clothes_rail",
+   "step": "concept",
+   "variant": 1,
+   "index": 221,
+   "job_id": "57b9e95f-8158-47c2-b24a-c4a16ee21c39",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A wall-mounted metal clothes rail with a few empty wire hangers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A wall-mounted metal clothes rail with a few empty wire hangers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141329_57b9e95f-8158-47c2-b24a-c4a16ee21c39.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_clothes_rail_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5737706,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "선이 가늘다 · 옷걸이가 왼쪽에 뭉침",
+   "qa_metrics": {
+    "bg_rgb": [
+     246,
+     243,
+     236
+    ],
+    "fg_components_1024": [
+     97986
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_wall_clothes_rail_1.png"
+  },
+  {
+   "n": 22,
+   "id": "u_kit_wall_clothes_rail",
+   "step": "concept",
+   "variant": 2,
+   "index": 222,
+   "job_id": "29467939-df63-4128-9096-fb39383386b8",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A wall-mounted metal clothes rail with a few empty wire hangers.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A wall-mounted metal clothes rail with a few empty wire hangers.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141330_29467939-df63-4128-9096-fb39383386b8.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_clothes_rail_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 4753427,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "선이 굵고 버팀 달린 받침 · 옷걸이가 고루 · 가는 철사는 어느 쪽이든 3D 에서 어렵다",
+   "qa_metrics": {
+    "bg_rgb": [
+     247,
+     245,
+     238
+    ],
+    "fg_components_1024": [
+     121624
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 23,
+   "id": "u_kit_door_mat",
+   "step": "concept",
+   "variant": 1,
+   "index": 231,
+   "job_id": "f8ad5344-8551-4b14-8dcc-bc845751098e",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular coir door mat with a simple leaf border, no letters.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular coir door mat with a simple leaf border, no letters.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141333_f8ad5344-8551-4b14-8dcc-bc845751098e.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_door_mat_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5699741,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "가장자리 깔끔 · 잎 테두리 · 글자 없음",
+   "qa_metrics": {
+    "bg_rgb": [
+     248,
+     245,
+     240
+    ],
+    "fg_components_1024": [
+     258541
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 23,
+   "id": "u_kit_door_mat",
+   "step": "concept",
+   "variant": 2,
+   "index": 232,
+   "job_id": "e0930c5e-c376-46d8-8068-0bbd68284c73",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular coir door mat with a simple leaf border, no letters.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A rectangular coir door mat with a simple leaf border, no letters.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141332_e0930c5e-c376-46d8-8068-0bbd68284c73.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_door_mat_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 6528798,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "잎 테두리 · 글자 없음 · 털 가장자리가 거칠어 3D 외곽이 지저분할 수 있다",
+   "qa_metrics": {
+    "bg_rgb": [
+     246,
+     243,
+     233
+    ],
+    "fg_components_1024": [
+     271136
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_door_mat_2.png"
+  },
+  {
+   "n": 24,
+   "id": "u_kit_pendant_lamp",
+   "step": "concept",
+   "variant": 1,
+   "index": 241,
+   "job_id": "a658432b-27de-47e4-b0e9-37208b55f026",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A simple ceiling pendant lamp with a cream cone shade and a fabric cord.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A simple ceiling pendant lamp with a cream cone shade and a fabric cord.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141406_a658432b-27de-47e4-b0e9-37208b55f026.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_pendant_lamp_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5408258,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "갓이 작다 · 꼰 천 줄",
+   "qa_metrics": {
+    "bg_rgb": [
+     247,
+     245,
+     240
+    ],
+    "fg_components_1024": [
+     63352
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_pendant_lamp_1.png"
+  },
+  {
+   "n": 24,
+   "id": "u_kit_pendant_lamp",
+   "step": "concept",
+   "variant": 2,
+   "index": 242,
+   "job_id": "8b5463f5-a87e-475e-8ec2-2789bf476a4f",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A simple ceiling pendant lamp with a cream cone shade and a fabric cord.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A simple ceiling pendant lamp with a cream cone shade and a fabric cord.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141406_8b5463f5-a87e-475e-8ec2-2789bf476a4f.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_pendant_lamp_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5082546,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "갓이 크고 놋쇠 이음 · 꼰 천 줄",
+   "qa_metrics": {
+    "bg_rgb": [
+     248,
+     243,
+     236
+    ],
+    "fg_components_1024": [
+     109656
+    ],
+    "touches_border": false
+   }
+  },
+  {
+   "n": 25,
+   "id": "u_kit_shoe_rack_small",
+   "step": "concept",
+   "variant": 1,
+   "index": 251,
+   "job_id": "f0345ad6-de9f-45d8-9099-26cfd73f93ae",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small open two-tier wooden shoe rack, empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small open two-tier wooden shoe rack, empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141405_f0345ad6-de9f-45d8-9099-26cfd73f93ae.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_shoe_rack_small_1.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 6147170,
+   "credits": 2,
+   "qa_pass": false,
+   "qa_grade": "FAIL",
+   "qa_notes": "위쪽에 떨어진 판 조각(전경 덩이 둘) — 물건 하나 아님",
+   "qa_metrics": {
+    "bg_rgb": [
+     248,
+     246,
+     237
+    ],
+    "fg_components_1024": [
+     248977,
+     49807
+    ],
+    "touches_border": false
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/c_shoe_rack_small_1.png"
+  },
+  {
+   "n": 25,
+   "id": "u_kit_shoe_rack_small",
+   "step": "concept",
+   "variant": 2,
+   "index": 252,
+   "job_id": "45def063-f9d4-432c-8594-035de3feebe4",
+   "model_used": "nano_banana_2_1",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small open two-tier wooden shoe rack, empty.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "6f2128d3-cdbb-4af1-963c-0bea428af52f",
+      "role": "image_references"
+     }
+    ],
+    "use_unlim": false
+   },
+   "prompt_used": "One object alone on a plain off-white background. No floor, room, frame, border, text, letters or shadow. 3/4 isometric view from front-left above, front facing lower-left, centered. Cozy hand-painted matte style exactly like the reference room image, soft brown outlines. A small open two-tier wooden shoe rack, empty.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141405_45def063-f9d4-432c-8594-035de3feebe4.png",
+   "saved_path": "assets/gen/v2_hf/unity/c_shoe_rack_small_2.jpg",
+   "size": [
+    2048,
+    2048
+   ],
+   "bytes": 5597808,
+   "credits": 2,
+   "qa_pass": true,
+   "qa_grade": "PASS",
+   "qa_notes": "두 단 열린 신발장 · 물건 하나 · 비었다",
+   "qa_metrics": {
+    "bg_rgb": [
+     249,
+     246,
+     239
+    ],
+    "fg_components_1024": [
+     259195
+    ],
+    "touches_border": false
+   }
+  }
+ ],
+ "_storage": "opaque → JPEG q95 4:4:4 in repo, PNG master moved to C:/Users/pc/Desktop/빛식물/_hf_masters/ (same relative path) · transparent stays PNG"
+}
