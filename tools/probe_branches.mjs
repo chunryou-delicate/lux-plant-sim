@@ -9,6 +9,8 @@
      node tools/probe_branches.mjs --targets 5000000,10000000 --days 660
      node tools/probe_branches.mjs --noprologue           (잎 2·3 무늬 보장 끔 — 게임은 켠다 · 견주기용)
      node tools/probe_branches.mjs --rent 275000          (D8 — 이사하는 순간 원룸 월세 R 을 «짝»으로 꽂는다 · 없으면 게임 그대로(원룸 월세 미정 = 반지하 월세))
+     node tools/probe_branches.mjs --persona guide --seeds g --targets 5000000 --days 1500 --rent 275000 --ledger
+                                                           (이사 뒤 30일마다 장부 — 들어온 돈 · 나간 돈 · 판 삽수 · 달말 지갑)
 
    ══ 무엇을 하나 ═══════════════════════════════════════════════════════════
    브라우저 없이(tools/lib/byeot_harness · 진짜 생장 수) 반지하 → 이사 → 원룸 → 엔딩을 «사람 성격 손잡이»대로 하루씩 굴린다.
@@ -107,7 +109,19 @@ export async function play(name, seed, opt = {}) {
                 rentWon: null, minCashAfterMove: null, firstBrokeAfterMove: null,
                 talk: { daysAfterMove: 0, silentAfterMove: 0, longestSilence: 0, linesAfterMove: 0 } };   /* 이사 뒤 말 없는 날 · 최장 침묵(연속) · 줄 수 */
   const story = createStoryteller();
-  let silentRun = 0, saidToday = 0;   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
+  let silentRun = 0, saidToday = 0;
+  /* ★ 2026-10-09 (총괄 · 박사님 «왜 못 닿아? 돈이 안 벌려?») — 이사 뒤 30일마다 장부. 지갑이 움직이는 부름마다 앞뒤 차이를 칸에 적고,
+       그날 끝 지갑 − 그날 첫 지갑 − 적은 칸 = «기타»(퀘스트 보상 · 하루 결산 수입 등 칸 없는 것). ⇒ 칸을 다 더하면 달 차이와 꼭 맞는다 */
+  let LG = null;   // { start, today } — 이사한 순간부터
+  const bucket = () => {
+    const i = Math.max(0, Math.floor((S.day - out.moveDay - 1) / 30));
+    while (out.ledger.length <= i) out.ledger.push({ m: out.ledger.length + 1, days: 0, varie: 0, mother: 0, plain: 0, veg: 0, other: 0,
+                                                     rent: 0, living: 0, power: 0, buy: 0, relief: 0, nVarie: 0, nPlain: 0, endCash: null });
+    return out.ledger[i];
+  };
+  const book = (cat, dw) => { if (!LG || !dw) return; bucket()[cat] += dw; LG.today += dw; };
+  const led = (cat, fn) => { const c0 = ts.cashWon; const r = fn(); book(cat, ts.cashWon - c0); return r; };
+  const ord = (id, n) => led('buy', () => orderItem(S, id, n));   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
   /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
   const qOpen = new Map();          // id → { since, run }
   const seenRoot = new Set();       // 뿌리내림을 이미 센 삽수 id
@@ -130,6 +144,10 @@ export async function play(name, seed, opt = {}) {
     if (!rest) { try { waterPot(S); } catch { } }
     let turn = null;
     try { turn = nextDay(S, io).turn; } catch (e) { out.crash = (e && e.message) || String(e); break; }
+    if (LG) { const t = (turn && turn.tutorial) || {};   /* 하루 결산 — 월세 · 생활비(밥값 − 콩나물로 아낀 것) · 전기 */
+              book('rent', -(t.rentWon || 0)); book('power', -(t.electricityWon || 0)); book('living', -((t.spentWon || 0) - (t.electricityWon || 0)));
+              /* ⚠ 구호금(tutorial §reliefWon · 처음 0원이 된 그날 한 번)은 결산 «안에서» 지갑을 메운다 — 끝 지갑만 보면 0원이 된 날이 안 보인다 */
+              for (const e of t.events || []) if (e && e.id === 'relief') { book('relief', e.won || 0); if (out.firstBrokeAfterMove == null) out.firstBrokeAfterMove = S.day; out.reliefAfterMove = S.day; } }
     /* 하루 대사(game.html: noteQuestWaits → homeTarget → story.turn) — 퀘스트 사건 대사는 아래 §퀘스트 에서 더한다 */
     saidToday = 0;
     let saidIds = [];
@@ -144,15 +162,15 @@ export async function play(name, seed, opt = {}) {
       /* ★ 2026-10-08 (총괄 13:55) — 안내를 따르는 사람의 손버릇은 night_play guided 와 같게: 시루는 «시키는 수 > 놓인 수 · 재고 0 · 오는 중 0»일 때 하루 하나 ·
            씨앗은 놓인 시루 수만큼. 열리자마자 다 사들이면 사람보다 가난한 판이 된다(첫 판 d60 364,830 ↔ 봇 d45 741,666) */
       if (P.follow) {
-        if (want > b.sirus && stockOf(S, 'siru') === 0 && incomingOf(S, 'siru') === 0) { try { orderItem(S, 'siru', 1); } catch { } }
+        if (want > b.sirus && stockOf(S, 'siru') === 0 && incomingOf(S, 'siru') === 0) { try { ord('siru', 1); } catch { } }
       } else {
         const needSiru = want - b.sirus - stockOf(S, 'siru') - incomingOf(S, 'siru');
-        if (needSiru > 0) { try { orderItem(S, 'siru', needSiru); } catch { } }
+        if (needSiru > 0) { try { ord('siru', needSiru); } catch { } }
       }
       const target = Math.min(want, b.sirus + stockOf(S, 'siru'));
       const needSeed = (P.follow ? b.sirus : target * 2) - stockOf(S, 'bean_seed') - incomingOf(S, 'bean_seed');
-      if (needSeed > 0) { try { orderItem(S, 'bean_seed', needSeed); } catch { } }
-      let hv = null; if (beansproutReady(S.firstPlay)) { try { hv = harvestCrop(S, io); } catch { } }
+      if (needSeed > 0) { try { ord('bean_seed', needSeed); } catch { } }
+      let hv = null; if (beansproutReady(S.firstPlay)) { try { hv = led('veg', () => harvestCrop(S, io)); } catch { } }
       if (hv && hv.arrived) { setPotSlot(S, pot0(S), SILL, light.room.slots); moveMonstera(S.firstPlay, SILL, { slots: light.room.slots }); }
       try { resowCrop(S, { sirus: target, at: moved ? 'banjiha-dresser:1' : DARK, slots: light.room.slots }); } catch { }
       try { waterCrop(S, { all: true }); } catch { }
@@ -160,22 +178,22 @@ export async function play(name, seed, opt = {}) {
         const mw = (openQ('radish5') || doneQ('radish5')) ? 5 : 1;
         const site = (S.firstPlay.crops || []).find(x => x && x.kind === 'musun');
         const have = site ? (site.pots || []).length : 0;
-        if (mw > have && stockOf(S, 'sprout_tray') === 0 && incomingOf(S, 'sprout_tray') === 0) { try { orderItem(S, 'sprout_tray', 1); } catch { } }   /* 하루 하나 */
+        if (mw > have && stockOf(S, 'sprout_tray') === 0 && incomingOf(S, 'sprout_tray') === 0) { try { ord('sprout_tray', 1); } catch { } }   /* 하루 하나 */
         const needRad = Math.max(1, have) - stockOf(S, 'radish_seed') - incomingOf(S, 'radish_seed');   /* 씨앗은 놓인 판 수만큼 */
-        if (needRad > 0) { try { orderItem(S, 'radish_seed', needRad); } catch { } }
+        if (needRad > 0) { try { ord('radish_seed', needRad); } catch { } }
         const mt = Math.min(mw, have + stockOf(S, 'sprout_tray'));
         if (mt > 0) { try { resowCrop(S, { kind: 'musun', sirus: mt, at: MUSUN_AT, slots: light.room.slots }); } catch { } }
         try { waterCrop(S, { kind: 'musun', all: true }); } catch { }
       }
-      if (!P.follow || S.day % 5 === 0) { try { sellCropSurplus(S); } catch { } }   /* 안내대로는 닷새마다 남는 채소를 판다(night_play 와 같게) */
+      if (!P.follow || S.day % 5 === 0) { try { led('veg', () => sellCropSurplus(S)); } catch { } }   /* 안내대로는 닷새마다 남는 채소를 판다(night_play 와 같게) */
       /* ★ 보유 채소 팔기 — night_play §sellSurplus 손버릇: 닷새마다 · 이레치 밥값(10판)은 남기고 나머지를 판다(값은 안 건드린다) */
       if (P.follow && S.day % 5 === 0) {
         try { const q = pantrySaleQuote(S.firstPlay, 0); const n = (q && q.maxLots || 0) - PANTRY_KEEP;
-              if (n > 0) { const r = sellPantryCrop(S, n); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
+              if (n > 0) { const r = led('veg', () => sellPantryCrop(S, n)); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
       }
       /* ── 등 ── */
       if (P.lamps >= 1 && ts.lamp.unlocked && (ts.lamp.owned || 0) < P.lamps && ts.cashWon >= (ts.rules.lampPriceWon || 0)) {
-        try { buyLamp(ts); S.lamps.count = ts.lamp.owned; if (ts.lamp) ts.lamp.placed = ts.lamp.owned; light.clearCache(); } catch { }
+        try { led('buy', () => buyLamp(ts)); S.lamps.count = ts.lamp.owned; if (ts.lamp) ts.lamp.placed = ts.lamp.owned; light.clearCache(); } catch { }
       }
     }
     /* ── 자르기(막은 말은 쉬는 날에도 센다 — 규칙이 막는지가 물음이다) ── */
@@ -193,8 +211,8 @@ export async function play(name, seed, opt = {}) {
         if (cand) { try { why = cutBlockedReason(S, v.all, cand.nodeId, { potId: pot0(S).id, varieMaturedLeaves: vm }) || '자를 수 있음'; } catch (e) { why = (e && e.message) || '알 수 없음'; } }
         const k = reasonKey(why); out.cutWhy[room][k] = (out.cutWhy[room][k] || 0) + 1;
         if (!rest && P.cut !== 'none') {
-          if (stockOf(S, 'jar') + incomingOf(S, 'jar') < 1) { try { orderItem(S, 'jar', 1); } catch { } }
-          if (stockOf(S, 'pot') + incomingOf(S, 'pot') < 1) { try { orderItem(S, 'pot', 1); } catch { } }
+          if (stockOf(S, 'jar') + incomingOf(S, 'jar') < 1) { try { ord('jar', 1); } catch { } }
+          if (stockOf(S, 'pot') + incomingOf(S, 'pot') < 1) { try { ord('pot', 1); } catch { } }
           let node = pickNode(v.nodes, v.budget, false);
           if (node && P.cut === 'keep1' && node.variegatedLeaves > 0 && ((v.stats && v.stats.variegatedLeaves) || 0) - node.variegatedLeaves < 1) node = null;
           if (node && stockOf(S, 'jar') >= 1) {
@@ -245,7 +263,10 @@ export async function play(name, seed, opt = {}) {
         try { const st = io.growth.leafStats(); if (st.leaves >= 3) listPot(S, { leaves: st.leaves, variegatedLeaves: st.variegatedLeaves }); } catch { }
       }
       for (const l of (() => { try { return marketStatus(S).contacted; } catch { return []; } })()) {
-        try { const r = dealListing(S, l.listingId); if (r.kind === 'pot') out.sold.pot++; else if (l.variegatedLeaves > 0) out.sold.varie++; else out.sold.plain++; } catch { }
+        try { const c0 = ts.cashWon; const r = dealListing(S, l.listingId), dw = ts.cashWon - c0;
+              const cat = r.kind === 'pot' ? 'mother' : (l.variegatedLeaves > 0 ? 'varie' : 'plain');
+              if (r.kind === 'pot') out.sold.pot++; else if (l.variegatedLeaves > 0) out.sold.varie++; else out.sold.plain++;
+              book(cat, dw); if (LG && cat === 'varie') bucket().nVarie++; if (LG && cat === 'plain') bucket().nPlain++; } catch { }
       }
       /* ── 이사 ── */
       if (!ts.movedOut) { const c = canMoveOut(ts); if (c.varie && out.varieDay == null) out.varieDay = S.day; if (c.money && out.moneyDay == null) out.moneyDay = S.day; }
@@ -264,6 +285,7 @@ export async function play(name, seed, opt = {}) {
               ts.rules = Object.freeze({ ...base, oneroomRentWon: opt.rent, dailySpendWon: Math.round(base.dailySpendWon + (opt.rent - base.rentWon) / per) });
             }
             out.rentWon = Number.isFinite(opt.rent) ? opt.rent : null;
+            out.ledger = []; LG = { start: ts.cashWon, today: 0 }; out.cashAtMove = ts.cashWon;
             if (pot0(S)) { try { setPotSlot(S, pot0(S), ONE_SILL, light.room.slots); } catch { } }
             S.lamps.count = ts.lamp.owned || 0; if (ts.lamp) ts.lamp.placed = S.lamps.count; light.clearCache();
           } catch (e) { out.moveErr = (e && e.message) || String(e); }
@@ -294,6 +316,10 @@ export async function play(name, seed, opt = {}) {
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
     out.cashDaily.push(cash);
+    if (LG) { const b = bucket(); const rest0 = cash - LG.start - LG.today; if (rest0) b.other += rest0;
+              if (rest0 && (out.otherLog = out.otherLog || []).length < 10)
+                out.otherLog.push({ day: S.day, won: rest0, ev: [...new Set([...((turn && turn.events) || []), ...(((turn && turn.tutorial) || {}).events || [])].map(e => e && e.id).filter(Boolean))] });
+              b.days++; b.endCash = cash; LG.start = cash; LG.today = 0; }
     if (ts.movedOut) {
       const T = out.talk; T.daysAfterMove++; T.linesAfterMove += saidToday;
       T.ids = T.ids || {}; for (const id of saidIds) T.ids[id] = (T.ids[id] || 0) + 1;
@@ -310,6 +336,7 @@ export async function play(name, seed, opt = {}) {
     if (ts.movedOut) {
       let net = null; try { net = endingProgress(S, io, { rules: eRules, nodes: pot0(S) ? io.growth.cuttableNodes() : null, stats: pot0(S) ? io.growth.leafStats() : null }).netWorthWon; } catch { }
       for (const t of targets) { if (out.reach[t] == null && cash >= t) out.reach[t] = S.day; if (out.reachNet[t] == null && net != null && net >= t) out.reachNet[t] = S.day; }
+      if (LG && net != null) bucket().netWorth = net;   /* 장부 — 달말 «다 팔면»(엔딩 netWorth · 모주·삽수 값까지) */
       if (targets.every(t => out.reach[t] != null)) { out.endDay = S.day; break; }
     }
   }
@@ -384,6 +411,7 @@ for (const name of NAMES) {
   /* D8 — 이사 뒤 살림(월세 후보 판정용): 이사 뒤 첫 0원 · 굶음 · 이사 뒤 최저 지갑 중앙 */
   { const mv = rs.filter(r => r.moveDay != null);
     if (mv.length) console.log(`  ▣ 이사 뒤 — 월세 ${won(mv[0].rentWon ?? null)} · 첫 0원 ${mv.filter(r => r.firstBrokeAfterMove != null).length}/${mv.length}` +
+                               `(그중 구호금으로 메움 ${mv.filter(r => r.reliefAfterMove != null).length} · 이사 뒤 날 중앙 ${med(mv.filter(r => r.firstBrokeAfterMove != null).map(r => r.firstBrokeAfterMove - r.moveDay)) ?? '—'})` +
                                ` · 굶음 ${mv.filter(r => r.starvedDay != null).length}/${mv.length} · 최저 지갑 중앙 ${won(med(mv.map(r => r.minCashAfterMove)))}` +
                                ` · 제일 낮은 판 ${won(Math.min(...mv.map(r => r.minCashAfterMove ?? Infinity)))}`); }
   /* 대사 — 이사 뒤 말 없는 날(story.turn · 퀘스트 사건 둘 다 빈 날) · 최장 침묵 */
@@ -394,6 +422,20 @@ for (const name of NAMES) {
     const tot = {}; for (const r of mv) for (const [k, v] of Object.entries(r.talk.ids || {})) tot[k] = (tot[k] || 0) + v;
     const top = Object.entries(tot).sort((a, b) => b[1] - a[1]);
     if (top.length) console.log(`    줄 종류 ${top.length} · 판당 자주 나온 줄: ` + top.slice(0, 8).map(([k, v]) => `${k} ${Math.round(v / mv.length)}`).join(' · ')); }
+  /* 장부(--ledger) — 판마다 이사 뒤 30일씩 · 단위 만 원 */
+  if (arg('ledger', false)) for (const r of rs.filter(x => x.ledger && x.ledger.length)) {
+    const m = v => (v / 1e4).toFixed(1).replace(/\.0$/, '');
+    const avg = (w, n) => n ? m(w / n) : '—';
+    console.log(`  ▤ 장부 — 씨앗 ${r.seed} · 월세 ${won(r.rentWon ?? null)} · 이사 ${r.moveDay}일(지갑 ${m(r.cashAtMove)}만) · 단위 만 원` +
+                ` · 5백만 ${(r.reach || {})[5000000] ?? '못 닿음'}일`);
+    console.log('    달 | 날 | 무늬삽수 개·평균·합 | 민삽수 개·합 | 모주 | 채소·무순 | 구호금 | 기타(0원 밑 지움) | 월세 | 생활비 | 전기 | 산 것 | 남은 돈 | 달말 지갑 | 다 팔면');
+    for (const b of r.ledger) {
+      const inn = b.varie + b.mother + b.plain + b.veg + b.relief, outt = b.rent + b.living + b.power + b.buy, net = inn + outt + b.other;
+      console.log(`    ${String(b.m).padStart(2)} | ${String(b.days).padStart(2)} | ${b.nVarie}개·${avg(b.varie, b.nVarie)}·${m(b.varie)} | ${b.nPlain}개·${m(b.plain)} | ${m(b.mother)} | ${m(b.veg)} | ${m(b.relief)} | ${m(b.other)}` +
+                  ` | ${m(b.rent)} | ${m(b.living)} | ${m(b.power)} | ${m(b.buy)} | ${m(net)} | ${m(b.endCash)} | ${b.netWorth == null ? '—' : m(b.netWorth)}`);
+    }
+    if (r.otherLog && r.otherLog.length) console.log('    기타 — ' + r.otherLog.map(o => `${o.day}일 ${won(o.won)}(${o.ev.join(',') || '사건 없음'})`).join(' · '));
+  }
   const stay = rs.filter(r => r.moveDay == null && r.starvedDay == null);
   if (stay.length) console.log(`  이사 못 한 판 ${stay.length} — 무늬 잎을 낸 적 없음 ${stay.filter(r => r.varieDay == null).length} · 이사 자금 모자람 ${stay.filter(r => r.moneyDay == null).length}` +
                                ` · (이사한 판의 무늬 첫날 중앙 ${med(rs.filter(r => r.moveDay != null).map(r => r.varieDay))}일)`);
