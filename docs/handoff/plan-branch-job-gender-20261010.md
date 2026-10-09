@@ -35,7 +35,7 @@
 | 무엇 | 지금 | 갈릴 때 |
 |---|---|---|
 | 초상 | `portrait_jachwi_{키}.png`(여 · 15장) · 남 `portrait_jachwi_m_{키}.png` 아홉(cry happy neutral numb proud surprise think tired worry) — FACE_FILE 주석: «jachwi_m 9장은 안 잇는다(사용자 결정)» | 성별 앞말로 찾기(§3-3) · 모자란 남 키 §4 |
-| 3D 몸 | v2 `assets/v2/char/hero2.glb`(여) · 옛 판 lq `char_jachwi_f_*` · 남 `char_namja_{jachwi|gajang|jubu|researcher}_*`(옛 판 · A포즈) | v2 남 몸 `hero2_m.glb`(같은 뼈 24 이름 계약 · T포즈) |
+| 3D 몸 | v2 `assets/v2/char/hero2.glb`(여) · 옛 판 lq `char_jachwi_f_*` · 남 `char_namja_{jachwi|gajang|jubu|researcher}_*`(옛 판 · A포즈) | v2 남 몸 `hero2_m.glb`(같은 뼈 24 이름 계약 · **A포즈** — hero2 와 같게) |
 | 옷 | `assets/v2/char/outfit/*.jpg`(hero2 UV · 봄·가을·겨울·잠옷·비 · 앞치마) | 남 몸 UV 가 다르면 옷 텍스처도 따로(`outfit/m/…`) |
 | 장면 원화 | `assets/illust/ev_*`(주인공이 보이는 장면) | ⚖ §5-4 — 두 벌 / 성별이 안 드러나는 구도(뒷모습·손) |
 | 이름·호칭 | 주인공 이름이 없다(«자취생» · 몬이는 «너») | 이름 입력을 둘지 ⚖ §5-5 |
@@ -65,7 +65,7 @@
 |---|---|---|
 | 남 초상 | 아홉(cry happy neutral numb proud surprise think tired worry) | **curious · scissors · bulb · beam · winter · apron** 여섯 + (가게 판 앞치마 판을 뽑게 되면 beam·think·surprise·happy 의 `_apron`) |
 | 남 턴어라운드 | 없음(여: char_jachwi_f_v2_front/back/left/right) | 앞·뒤·왼·오른 넷 |
-| 남 3D 몸 | 옛 lq 넷(A포즈) | v2 `hero2_m.glb` 하나(T포즈 · 뼈 24 이름 계약 · character_base_spec §12 «남녀 2벌»의 둘째) |
+| 남 3D 몸 | 옛 lq 넷(A포즈) | v2 `hero2_m.glb` 하나(**A포즈** · 뼈 24 이름 계약 · 키 리그 1.4 — hero2 와 같게 · char-male-hero-plan-20261010) — ⚠ character_base_spec §12 의 «T포즈»는 옛 판(lq 128 클립) 말이다: hero2 를 T포즈로 리그하면 머리가 팔 무게를 받았다(55.8% · A포즈 0.4% · char 10-10) |
 | 남 옷 | 없음 | 여름(기본)·봄·가을·겨울·잠옷·비·앞치마 일곱(hero2_m UV) |
 | 장면 원화 | 여 판 | ⚖ §5-4 — 두 벌이면 주인공이 보이는 ev_* 전부 · 중립 구도면 0 |
 
