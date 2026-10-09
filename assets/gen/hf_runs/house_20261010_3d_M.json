@@ -1,0 +1,325 @@
+{
+ "_what": "Higgsfield 결과(총괄 hf_fetch)",
+ "entries": [
+  {
+   "name": "tex_banjiha_wallpaper_1",
+   "job_id": "28f74671-58dc-431c-bbbd-5f35d3da182f",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_145017_28f74671-58dc-431c-bbbd-5f35d3da182f.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U10 반지하 벽지 4k · 첫 참조 = 2D 고름 banjiha_wallpaper_3(bf00e808) + style_keyframe_a",
+   "saved_path": "assets/gen/v2_hf/unity/tex_banjiha_wallpaper_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_banjiha_wallpaper_1.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "tex_banjiha_wallpaper_2",
+   "job_id": "93df418d-8bfb-4224-bacb-a51c2a2bdc04",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_145018_93df418d-8bfb-4224-bacb-a51c2a2bdc04.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U10",
+   "saved_path": "assets/gen/v2_hf/unity/tex_banjiha_wallpaper_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_banjiha_wallpaper_2.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "tex_banjiha_lino_1",
+   "job_id": "57c4fd30-d720-42cd-b23b-b6ef5f9d092a",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_145019_57c4fd30-d720-42cd-b23b-b6ef5f9d092a.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U11 반지하 장판 4k · 첫 참조 = banjiha_lino_4(a65cbe21)",
+   "saved_path": "assets/gen/v2_hf/unity/tex_banjiha_lino_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_banjiha_lino_1.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "tex_banjiha_lino_2",
+   "job_id": "7ead149f-5266-4795-96ff-5dd83d93af25",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_145016_7ead149f-5266-4795-96ff-5dd83d93af25.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U11",
+   "saved_path": "assets/gen/v2_hf/unity/tex_banjiha_lino_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_banjiha_lino_2.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "tex_oneroom_oak_1",
+   "job_id": "0eb30046-a249-4f12-a2e4-f86e8e4a6901",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_145019_0eb30046-a249-4f12-a2e4-f86e8e4a6901.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U15 원룸 마루 4k · 첫 참조 = oneroom_oak_4(a9d4d8e6)",
+   "saved_path": "assets/gen/v2_hf/unity/tex_oneroom_oak_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_oneroom_oak_1.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "tex_oneroom_oak_2",
+   "job_id": "c78b64c3-42cd-42e1-ac72-250906f37422",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_145019_c78b64c3-42cd-42e1-ac72-250906f37422.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U15",
+   "saved_path": "assets/gen/v2_hf/unity/tex_oneroom_oak_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_oneroom_oak_2.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "tex_villa_brick_1",
+   "job_id": "f52b6dbd-2401-474d-800b-ce0068794a67",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_145017_f52b6dbd-2401-474d-800b-ce0068794a67.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U16 빌라 벽돌 4k · 첫 참조 = outside_villa_brick_3(386f8927) · 창 빼고 벽돌만",
+   "saved_path": "assets/gen/v2_hf/unity/tex_villa_brick_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_villa_brick_1.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "tex_villa_brick_2",
+   "job_id": "add917a8-4f27-4981-a628-87a42bfa323e",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_145021_add917a8-4f27-4981-a628-87a42bfa323e.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U16",
+   "saved_path": "assets/gen/v2_hf/unity/tex_villa_brick_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_villa_brick_2.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "shop_display",
+   "job_id": "d67cf3fb-aa05-4237-8624-9b87b31b2e10",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144722_d67cf3fb-aa05-4237-8624-9b87b31b2e10.glb",
+   "path": "assets/gen/v2_furn/raw_shop_display.glb",
+   "note": "웹 · Tripo standard 9 · pbr false · 8000 · 입력 c_shop_display_1(b905652d)",
+   "bytes": 826300,
+   "tris": 5891,
+   "dims_xyz": [
+    0.624,
+    0.679,
+    1.0
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "order_board",
+   "job_id": "7c15e0f0-8507-4746-ad2c-26e4f192b38f",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144817_7c15e0f0-8507-4746-ad2c-26e4f192b38f.glb",
+   "path": "assets/gen/v2_furn/raw_order_board.glb",
+   "note": "웹 · 입력 c_order_board_2(e36be6c8)",
+   "bytes": 1011292,
+   "tris": 5992,
+   "dims_xyz": [
+    0.161,
+    0.949,
+    1.0
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "nightstand_r2",
+   "job_id": "0f37fd4d-2288-42b5-8abb-fcfc751b4713",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144821_0f37fd4d-2288-42b5-8abb-fcfc751b4713.glb",
+   "path": "assets/gen/v2_furn/raw_nightstand_r2.glb",
+   "note": "웹 · 입력 c_nightstand_2(65452108)",
+   "bytes": 675384,
+   "tris": 7120,
+   "dims_xyz": [
+    1.0,
+    0.853,
+    0.886
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "bench",
+   "job_id": "8806ebc5-ad24-4cb0-afe7-5b8f788a957b",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144824_8806ebc5-ad24-4cb0-afe7-5b8f788a957b.glb",
+   "path": "assets/gen/v2_furn/raw_bench.glb",
+   "note": "웹 · 입력 c_bench_3(f546279e)",
+   "bytes": 721884,
+   "tris": 7618,
+   "dims_xyz": [
+    1.0,
+    0.372,
+    0.427
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "shop_sign_aframe",
+   "job_id": "861670f1-d619-4fd5-be7e-d1998a2c9548",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144826_861670f1-d619-4fd5-be7e-d1998a2c9548.glb",
+   "path": "assets/gen/v2_furn/raw_shop_sign_aframe.glb",
+   "note": "웹 · 입력 c_shop_sign_aframe_1(a5f2e4b5)",
+   "bytes": 961952,
+   "tris": 7397,
+   "dims_xyz": [
+    0.587,
+    1.0,
+    0.645
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "u_kit_wall_pipes",
+   "job_id": "1980b9b9-6d35-4a5c-9f09-3bc8f1d29e65",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144846_1980b9b9-6d35-4a5c-9f09-3bc8f1d29e65.glb",
+   "path": "assets/gen/v2_hf/unity/kit_wall_pipes.glb",
+   "note": "유니티 · Tripo detailed 12 · pbr true · 8000 · 입력 c_wall_pipes_2(e39b1930)",
+   "bytes": 10425992,
+   "tris": 7536,
+   "dims_xyz": [
+    0.158,
+    0.652,
+    1.0
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "u_kit_meter_box",
+   "job_id": "268fa8d3-6fa2-448e-bab9-988596059626",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144851_268fa8d3-6fa2-448e-bab9-988596059626.glb",
+   "path": "assets/gen/v2_hf/unity/kit_meter_box.glb",
+   "note": "유니티 · 입력 c_meter_box_1(9c29f78d)",
+   "bytes": 10486656,
+   "tris": 7578,
+   "dims_xyz": [
+    0.528,
+    1.0,
+    0.246
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "u_kit_window_well_grate",
+   "job_id": "32d57681-af69-4598-82bd-f101c45d59f1",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144854_32d57681-af69-4598-82bd-f101c45d59f1.glb",
+   "path": "assets/gen/v2_hf/unity/kit_window_well_grate.glb",
+   "note": "유니티 · 입력 c_window_well_grate_2(1ead83e7)",
+   "bytes": 9768108,
+   "tris": 7663,
+   "dims_xyz": [
+    0.753,
+    0.425,
+    1.0
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "u_kit_wall_shelf_bracket",
+   "job_id": "782ba1fb-4643-4ce3-ab4e-3dc87ed56b5d",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144857_782ba1fb-4643-4ce3-ab4e-3dc87ed56b5d.glb",
+   "path": "assets/gen/v2_hf/unity/kit_wall_shelf_bracket.glb",
+   "note": "유니티 · 입력 c_wall_shelf_bracket_1(485ad66c)",
+   "bytes": 8237484,
+   "tris": 7262,
+   "dims_xyz": [
+    0.417,
+    0.498,
+    1.0
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "u_kit_wall_clothes_rail",
+   "job_id": "fb62c527-2650-4690-8973-71c671e5be76",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144932_fb62c527-2650-4690-8973-71c671e5be76.glb",
+   "path": "assets/gen/v2_hf/unity/kit_wall_clothes_rail.glb",
+   "note": "유니티 · 입력 c_wall_clothes_rail_2(29467939)",
+   "bytes": 9078244,
+   "tris": 6810,
+   "dims_xyz": [
+    0.658,
+    0.399,
+    1.0
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "u_kit_door_mat",
+   "job_id": "841fc156-639f-498e-8410-37ab9a95492c",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144940_841fc156-639f-498e-8410-37ab9a95492c.glb",
+   "path": "assets/gen/v2_hf/unity/kit_door_mat.glb",
+   "note": "유니티 · 입력 c_door_mat_1(f8ad5344)",
+   "bytes": 12129004,
+   "tris": 7472,
+   "dims_xyz": [
+    0.807,
+    0.066,
+    1.0
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "u_kit_pendant_lamp",
+   "job_id": "f6983396-8b41-4829-ae6d-dad152e13217",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144942_f6983396-8b41-4829-ae6d-dad152e13217.glb",
+   "path": "assets/gen/v2_hf/unity/kit_pendant_lamp.glb",
+   "note": "유니티 · 입력 c_pendant_lamp_1(a658432b · house 고름)",
+   "bytes": 6131104,
+   "tris": 7636,
+   "dims_xyz": [
+    0.376,
+    1.0,
+    0.374
+   ],
+   "images": 3,
+   "magic_ok": true
+  },
+  {
+   "name": "u_kit_shoe_rack_small",
+   "job_id": "c2a5b205-209c-4d46-8d1e-e25d0645f231",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_144945_c2a5b205-209c-4d46-8d1e-e25d0645f231.glb",
+   "path": "assets/gen/v2_hf/unity/kit_shoe_rack_small.glb",
+   "note": "유니티 · 입력 c_shoe_rack_small_2(45def063)",
+   "bytes": 7672532,
+   "tris": 6677,
+   "dims_xyz": [
+    1.0,
+    0.766,
+    0.467
+   ],
+   "images": 3,
+   "magic_ok": true
+  }
+ ]
+}
