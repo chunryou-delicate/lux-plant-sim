@@ -209,8 +209,8 @@ export const SCRIPTS = {
        **어디 있는지도, 왜 키워야 하는지도** 없어서 받고 나서 할 일이 안 잡혔다.
      ★ 마지막 줄이 **손짓 하나**로 끝난다 — 「가방에서 꺼내서 밝은 데」. 손가락(§updateHint)이
        같은 순간에 그 칸을 짚으므로 **말과 손이 같은 것**을 가리킨다.
-     ⚠ 「이 방을 나가는 돈」은 실제 규칙이다(§quest sell_varie: *탈출 = 돈 + 무늬 판 적*) —
-       지어낸 말이 아니다. 규칙이 바뀌면 이 줄도 같이 고쳐야 한다. */
+     ⚠ 「이 방을 나가는 돈」은 실제 규칙이다(이사 = 돈 + 무늬 — tutorial §canMoveOut · 둘째 축은 «무늬 잎을 낸 적 ∨ 판 적»(2026-08-24)) —
+       지어낸 말이 아니다. 규칙이 바뀌면 이 줄도 같이 고쳐야 한다. (10-10 [plan] 옛 «탈출 = 돈 + 무늬 판 적» 은 낡은 말이었다) */
   /* ★ 2026-09-25 [plan] 다듬기 — 10줄 → 12줄, **모두 25자 이하**(폰 한 줄). 긴 두 줄을 나눴다.
      「줄기 하나 … 네 머리 잎이랑 닮았다」는 몬이의 머리 잎과 처음 잇는 줄이다(보이는 것만 말한다). */
   monsteraArrived: [
@@ -1107,24 +1107,24 @@ export const SCRIPTS = {
      ⇒ 여기가 그 자리다. 다섯 줄 중 유일하게 여덟 줄인 까닭이 그것이다.
      ⚠ 이사비 금액을 안 박았다 — `shortMoney` 가 이미 「이백만 원」을 말하고, 두 곳이
        같은 수를 말하면 값이 움직일 때 한쪽만 낡는다(2026-08-11 에 실제로 그랬다). */
+  /* ★★ 2026-10-10 [plan] 총괄 ⓐ — 옛 아홉 줄은 «무늬 삽수를 팔아 본 적 = 이 방의 마지막 문»이라 했다 — **거짓**이었다
+     (이사 둘째 축은 2026-08-24 부터 «무늬 잎을 낸 적 ∨ 판 적» · 프롤로그가 잎 2 무늬를 보장). 그 말대로 하나뿐인 무늬 삽수를 팔면
+     원룸에 빈손으로 간다. ⇒ 이 줄은 이제 무늬 삽수가 «둘»일 때 열리고(quest §sell_varie), 파는 배움(«값이 매겨져 봐야 그게 값»)은 살리되
+     «하나는 남긴다»를 같이 말한다(D41 · sell_keep_one 과 같은 말). 이사 얘기는 안 한다 — 이사 문은 돈과 무늬 잎이다(canMoveOut). */
   questSellVarie: [
-    { who: 'moni',   face: 'teach', text: '이제 이 방을 **나가는 얘기**를 하자.' },
-    { who: 'jachwi', face: 'surprise', text: '돈만 모으면 되는 거 아니야?' },
-    { who: 'moni',   text: '아니야. 둘이야.' },
-    { who: 'moni',   text: '하나는 이사비.' },
-    { who: 'moni',   text: '하나는 **무늬 삽수를 팔아 본 적.**' },
-    { who: 'jachwi', face: 'curious', text: '팔아 본 적? 갖고만 있으면 안 돼?' },
-    { who: 'moni',   face: 'sad', text: '안 돼. **값이 매겨져 봐야 그게 값이야.**' },
-    { who: 'jachwi', face: 'think', text: '…한 장을 떼야 한다는 소리네.' },
-    { who: 'moni',   face: 'teach', text: '응. 그게 이 방의 마지막 문이야.' }
+    { who: 'moni',   face: 'teach', text: '무늬 삽수가 둘이네. 하나는 팔아 보자.' },
+    { who: 'jachwi', face: 'curious', text: '갖고만 있으면 안 돼?' },
+    { who: 'moni',   face: 'teach', text: '**값이 매겨져 봐야 그게 값이야.**' },
+    { who: 'jachwi', face: 'think', text: '나머지 하나는?' },
+    { who: 'moni',   face: 'calm',  text: '그건 남겨. 다음 방에서 늘릴 밑천이야.' }
   ],
   /* ★ 마지막 줄이 **다음 판을 가리킨다** — 한 번 팔아 봤으면 그 길을 다시 걸으면 된다.
      이 구간에서 「그래서 이제 뭘 하지」가 다시 나오지 않게 하는 유일한 줄이다. */
   questDoneSellVarie: [
     { who: 'jachwi', text: '팔렸다.' },
-    { who: 'moni',   face: 'calm', text: '이제 남은 건 돈뿐이야.' },
-    { who: 'jachwi', face: 'tired', text: '그건 제일 안 되는 건데.' },
-    { who: 'moni',   face: 'proud', text: '아까 그거 한 번 더 하면 돼. **길은 이제 알잖아.**' }
+    { who: 'moni',   face: 'calm', text: '이게 무늬 값이야. 이사비에 보태자.' },
+    { who: 'jachwi', face: 'think', text: '남은 하나는?' },
+    { who: 'moni',   face: 'proud', text: '꼭 들고 가. **다음 방에서 늘리는 건 그거야.**' }
   ],
 
   /* ═══ ★★ §5.9 원룸 다섯 줄 (2026-10-07 · [plan] · quest.js §원룸 다섯 줄 · 명세 plan-oneroom-quests-v2.md) ═══
@@ -1475,7 +1475,8 @@ export const SCRIPTS = {
   nudgeVarieOffer:    [ { who: 'moni', face: 'teach', text: '무늬 있는 마디는 밝은 데서 뿌리내려야 좋은 무늬가 나.' } ],
   nudgeVariePush:     [ { who: 'moni', face: 'teach', text: '무늬 마디를 잘라서 밝은 자리에 꽂아 봐.' } ],
   nudgeSellOffer:     [ { who: 'moni', face: 'teach', text: '무늬 삽수는 값이 나가. 내놓아 봐.' } ],
-  nudgeSellPush:      [ { who: 'moni', face: 'teach', text: '무늬를 팔아야 이사비가 모여.' } ],
+  /* ★ 2026-10-10 [plan] 총괄 ⓐ — «팔아야»는 반쯤 거짓(이사 문은 돈 — 파는 것은 돈을 모으는 한 길). 열림이 «둘 이상»이라 하나를 팔아도 하나가 남는다 */
+  nudgeSellPush:      [ { who: 'moni', face: 'teach', text: '무늬 삽수 하나 팔면 이사비에 큰 보탬이 돼.' } ],
   nudgeHarvestPush:   [ { who: 'moni', face: 'worry', text: '다 자란 게 시루에서 기다려. 거두면 밥이 돼.' } ],
   nudgeSeedPush:      [ { who: 'moni', face: 'worry', text: '씨앗이 떨어졌어. 상점에서 시키면 하루면 와.' } ],
   /* ★ 2026-10-08 [plan] #12 — 퀘스트별 독촉 앞줄(§CHATTER 의 같은 이름). 공통 넷보다 먼저 맞는다 */
@@ -1514,8 +1515,8 @@ export const SCRIPTS = {
   /* ★ 2026-10-10 [plan] D27 갈래 셋 — **이사 «전» 마지막 무늬 삽수를 팔려 할 때** 한 줄(사건 `sell_keep_one` · [core] 팔기 확인 · D22 결 · 막지 않음).
      까닭([core] guide g·1-9): 이사 날 9/10 판이 «무늬 삽수 0 · 자를 무늬 마디 0 · 무늬 모주 있음» — 이사 둘째 축(무늬를 판 적)을 채우느라 다 팔았고,
        이사 날엔 모주가 잎 예산 문에 막혀 move_no_cutting 이 «할 수 없는 일»이 되어 안 섰다. 말은 «팔 때» 서야 닿는다.
-     때([core]): 반지하(!movedOut) · 이미 무늬를 판 적 있음(이사 둘째 축이 섰다 — 첫 판매는 sell_varie 가 가르치는 일이라 안 말린다) ·
-       이 판매로 «안 죽은 무늬 삽수»가 0 이 됨. D22 sellLastVarie(마지막 무늬 «원천»)와 같은 날 겹치면 D22 가 말한다(더 센 말). 수는 안 말한다. */
+     때([core]): 반지하(!movedOut) · 이 판매로 «안 죽은 무늬 삽수»가 0 이 됨. ★ 10-10 총괄 ⓐ — «이미 판 적 있음» 조건은 걷었다:
+       판 적이 이사 문이라는 말이 거짓이었고(canMoveOut 둘째 축 = 잎 낸 적 ∨ 판 적), sell_varie 는 이제 «둘 이상»일 때만 연다 — 첫 판매도 마지막 하나면 말린다. D22 sellLastVarie(마지막 무늬 «원천»)와 같은 날 겹치면 D22 가 말한다(더 센 말). 수는 안 말한다. */
   sellKeepOne: [
     { who: 'moni', face: 'teach', text: '이건 남겨 두자. 이사할 때 들고 가면 원룸에서 바로 늘릴 수 있어.' }
   ],

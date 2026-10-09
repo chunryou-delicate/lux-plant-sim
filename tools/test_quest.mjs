@@ -276,8 +276,8 @@ const steps = [
   MS(62, { ...LATE, motherVarieMatured: 2, motherVarieLeaves: 2 }),
   /* 등을 놓았다 · 물꽂이가 뿌리를 냈다 — buy_lamp · first_cut 완료 */
   MS(75, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, cuttings: [CW] }),
-  /* 무늬 삽수를 잘랐다 → sell_varie 열림 */
-  MS(80, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, cuttings: [CW, { ...VB, status: 'rooting', varieLightBand: null }] }),
+  /* 무늬 삽수를 둘 잘랐다 → sell_varie 열림(★ 10-10 총괄 ⓐ — «둘 이상»일 때 · 하나는 남기고 판다) */
+  MS(80, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, cuttings: [CW, { ...VB, status: 'rooting', varieLightBand: null }, { ...VB, status: 'rooting', varieLightBand: null, gen: 1 }] }),
   /* 밝은 데서 뿌리냈다 — varie_bright 완료 */
   MS(92, { ...LATE, motherVarieMatured: 2, lampOwned: 1, lampPlaced: 1, cuttings: [CW, VB] }),
   /* 팔았다 — sell_varie 완료 */
