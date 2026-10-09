@@ -66,7 +66,7 @@ import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning,
          noteVarieLeaf } from './tutorial.js';
 import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
-import { rehomeCuttings, stepCuttings, cuttableNow } from './propagation.js';
+import { rehomeCuttings, stepCuttings, cuttableNow, cutBlockedReason } from './propagation.js';
 import { stepShop, stepMarket } from './shop.js';
 /* ★ 2026-10-08 [plan] 지도 13 — turn.cropNow(콩 씨앗 재고 · 빈 시루)를 짓는 데 쓴다(§attachEvents) */
 import { stockOf as shopStockOf } from './shop.js';
@@ -1371,7 +1371,25 @@ function nextDayBody(S, io) {
   }
 
   turn.tutorial = stepTutorial(S, turn, io);
+  /* ★ 2026-10-09 [plan] — 오늘 «문에 안 막힌» 모주 자를 마디 수. 화면 자르기 목록과 같은 자다(cuttableNow + cutBlockedReason ·
+       무늬 다 자란 잎 수까지 = game.html §drawCuttings). nudge_wait §first_cut 이 읽는다 — 0 이면 사람이 할 것이 없다(독촉 안 함).
+       S.cutOpenToday 는 세이브 안 함(하루짜리) · 못 세면 null */
+  turn.cutOpenNow = cutOpenCountOf(S, io);
+  S.cutOpenToday = { day: S.day, n: turn.cutOpenNow };
   return { S, turn: attachEvents(S, turn, fpBefore) };
+}
+
+function cutOpenCountOf(S, io) {
+  try {
+    const p = pot0(S);
+    if (!p || !io || !io.growth || typeof io.growth.cuttableNodes !== 'function') return null;
+    const nodes = io.growth.cuttableNodes();
+    if (!Array.isArray(nodes)) return null;
+    let vm = null;
+    try { const ls = io.growth.leafState && io.growth.leafState(); if (Array.isArray(ls)) vm = ls.filter(r => r && r.varie && r.matured && !r.dropped).length; } catch { vm = null; }
+    const opt = { potId: p.id, ...(Number.isInteger(vm) ? { varieMaturedLeaves: vm } : {}) };
+    return cuttableNow(S, nodes, { potId: p.id }).filter(n => !cutBlockedReason(S, nodes, n.nodeId, opt)).length;
+  } catch { return null; }
 }
 
 /* ============================================================

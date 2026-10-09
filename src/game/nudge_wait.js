@@ -15,6 +15,7 @@
      oneroom_settle_cutting  뿌리는 냈는데(rooted) 혹(node)이 아직이면 기다림        ← 2026-10-08 [plan] 청
                              뿌리낸(rooted · node) 무늬 삽수가 하나도 없어도 기다림  ← 2026-10-09 [plan] 7d3b2e4f 청
      first_cut               잘라 물에 꽂아 «뿌리내리는 중»(water · rooting)이면 기다림 ← 2026-10-08 D25(총괄)
+                             오늘 «문에 안 막힌» 자를 마디가 하나도 없어도 기다림 ← 2026-10-09 [plan] (loop §cutOpenCountOf)
      varie_bright            무늬 원천(무늬 잎 단 그루 + 안 죽은 무늬 삽수)이 0 이면 기다림 ← 2026-10-08 [plan] be02f66a
      oneroom_recut           키운 그루(established 삽수)에 자를 수 있는 무늬 마디가 없으면 기다림 ← 2026-10-09 [plan] D41 7abbc23d
    ⚠ 그 밖의 퀘스트는 «할 수 있다»로 본다(false). 모르는 것을 기다림으로 치면 독촉이 영영 안 나온다 —
@@ -64,6 +65,10 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
   /* ★ 2026-10-08 D25(총괄) — first_cut 은 «뿌리를 냈다»로 끝난다. 잘라 물에 꽂은 뒤로는 사람이 할 것이 없다.
      ⚠ «자르기 문이 잠긴 동안»(무늬 다 자란 잎 < 2)은 여기서 안 센다 — [plan] c07263f1 이 그동안 퀘스트를 «안 연다»(열린 것만 독촉한다). */
   if (id === 'first_cut') {
+    /* ★ 2026-10-09 [plan] — 자를 수 있는 마디가 하나도 없으면(모주 잎 예산 · 초보 문 · 자르기 문이 다 막음) 사람이 할 것이 없다.
+         «수경병은 상점에 있어. 잎 한 장짜리 마디를 잘라 꽂아 봐.»가 할 수 없는 일을 시키지 않게. 값은 하루 결산이 센다(그날 것만 믿는다) */
+    const g = S && S.cutOpenToday;
+    if (g && g.day === day && g.n === 0) return true;
     return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.method === 'water' && c.status === 'rooting' && (c.at || c.slotId));   /* 놓인 것만(위와 같은 까닭) */
   }
   if (id === 'oneroom_settle_cutting') {

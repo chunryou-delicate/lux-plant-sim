@@ -561,7 +561,7 @@ check('G 초보 — 유예 2배(16일) · 경고 더 많음 · 모주를 끝내�
   const only = [{ nodeId: 'last', stem: 'pink', leaves: 1, variegatedLeaves: 0 }];
   const Sn = newNovice();
   assert.throws(() => P.takeCutting(Sn, { nodes: only, nodeId: 'last', container: 'jar' }),
-    /초보 모드에서는 이 마디를 자를 수 없습니다/, '초보에서 모주가 끝나는 자르기가 통과했습니다');
+    /모주 잎이 더 늘면 자를 수 있습니다/, '초보에서 모주가 끝나는 자르기가 통과했습니다');   /* 2026-10-09 [plan] 문구 */
   assert.equal(Sn.cuttings.length, 0);
 
   /* 자유 모드에서는 열린다 — 경고만 하고 플레이어가 정한다 */
