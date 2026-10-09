@@ -150,7 +150,17 @@
       "AL2": "01a12010-afd4-722f-abac-bbd6cd4d97a1",
       "AL3": "01a12010-b43f-74f3-a518-4beaa41f0f99",
       "AL4": "01a12010-b85c-7742-9684-a3ec7bc99b79",
-      "AL5": "01a12010-bcdb-7732-9adb-de0611797d0f"
+      "AL5": "01a12010-bcdb-7732-9adb-de0611797d0f",
+      "AL3b(다시 · 견본 AL2_clean)": "01a12028-1a80-7457-9b6f-f9e63b3b3230"
+    },
+    "new_species_i23d": {
+      "_note": "meshy-6 · remove_lighting · image_enhancement false · remesh 4000 · 입력 _clean.png",
+      "pp_leaf_young(PP1)": "01a12028-1e8a-76aa-9b21-29a1deda529d",
+      "pp_leaf_mid(PP2)": "01a12028-22a9-7040-a730-30f4f9bee06d",
+      "pp_leaf_mature(PP3)": "01a12028-2770-7088-95db-db27ddc97572",
+      "al_leaf_young(AL1)": "01a12028-2c00-7737-a3d7-723154369c66",
+      "al_leaf_mid(AL2)": "01a12028-2f9b-71f1-be18-6b6913ebf1c4",
+      "al_leaf_mature(AL3b)": "01a1202b-88d5-742a-bcff-761e511da08d"
     }
   },
   "char_illust_20261009": {
@@ -164,6 +174,10 @@
     "ev_moveout_sold": "01a12023-5c89-76ea-b889-b979ef19e2f8",
     "ev_first_varie_sanban": "01a12023-609d-7647-a01b-697fd8ae3865",
     "ev_first_varie_halfmoon": "01a12023-654f-7190-9ea1-f7c4d5af3a11",
-    "ev_monstera_arrive_v2": "01a12023-69bc-702c-8338-2672720a86a8"
+    "ev_monstera_arrive_v2": "01a12023-69bc-702c-8338-2672720a86a8",
+    "ev_first_varie_sanban_r2": "01a12029-a80d-70a1-824c-fd067cf324ae",
+    "ev_oneroom_firstday_r2": "01a12029-adcd-7621-84a0-37ea596df8a7",
+    "ev_moveout_keep_r2": "01a12029-b1f6-71f7-a390-5d95687e0800",
+    "ev_monstera_arrive_v2_r2": "01a12029-b5cc-73f6-9c53-e7484f6146ec"
   }
 }
