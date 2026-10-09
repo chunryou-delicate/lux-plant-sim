@@ -48,6 +48,8 @@ import { endingRulesFrom, endingProgress } from '../src/game/ending.js';
 import { stepQuests } from '../src/game/quest.js';
 import { nudgeWaiting, noteQuestWaits } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
+/* ★ 2026-10-09 (총괄 · plan 청) — 대사 고르기도 같이 돌린다(화면과 무관한 순수 함수 · game.html §story 와 같은 것) */
+import { createStoryteller } from '../src/game/dialogue.js';
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i >= 0 ? (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true) : d; };
 const list = v => String(v).split(',').map(x => x.trim()).filter(Boolean);
@@ -102,7 +104,10 @@ export async function play(name, seed, opt = {}) {
                 cuts: { banjiha: 0, oneroom: 0, fromCutting: 0 }, cutWhy: { banjiha: {}, oneroom: {} }, recut: { tried: 0, ok: 0, why: {} },
                 stuck: [], questDone: {}, questOpen: {}, sold: { varie: 0, plain: 0, pot: 0 }, cashAt: {},
                 varieDay: null, moneyDay: null, leafAt: {}, cashDaily: [], rootBands: {},
-                rentWon: null, minCashAfterMove: null, firstBrokeAfterMove: null };   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
+                rentWon: null, minCashAfterMove: null, firstBrokeAfterMove: null,
+                talk: { daysAfterMove: 0, silentAfterMove: 0, longestSilence: 0, linesAfterMove: 0 } };   /* 이사 뒤 말 없는 날 · 최장 침묵(연속) · 줄 수 */
+  const story = createStoryteller();
+  let silentRun = 0, saidToday = 0;   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
   /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
   const qOpen = new Map();          // id → { since, run }
   const seenRoot = new Set();       // 뿌리내림을 이미 센 삽수 id
@@ -125,6 +130,10 @@ export async function play(name, seed, opt = {}) {
     if (!rest) { try { waterPot(S); } catch { } }
     let turn = null;
     try { turn = nextDay(S, io).turn; } catch (e) { out.crash = (e && e.message) || String(e); break; }
+    /* 하루 대사(game.html: noteQuestWaits → homeTarget → story.turn) — 퀘스트 사건 대사는 아래 §퀘스트 에서 더한다 */
+    saidToday = 0;
+    let saidIds = [];
+    try { noteQuestWaits(S, S.day); turn.homeTarget = targets[0]; saidIds = story.turn(turn, S) || []; saidToday += saidIds.length; } catch { }
     meals = ((turn && turn.firstPlayEvent && turn.firstPlayEvent.portions) || []).map(p => p && p.kind).filter(Boolean);
     try { if (S.pots && S.pots.length) marketGate(S, { leaves: io.growth.leafStats().leaves }); } catch { }
     if (!rest) {
@@ -266,6 +275,7 @@ export async function play(name, seed, opt = {}) {
       const snap = questSnapshotOf(S, io, { mealKinds: meals, targetWon: targets[0] });
       const qr = stepQuests(S, snap);
       for (const id of (qr && qr.finished) || []) { try { grantStaminaQuest(S, id); } catch { } }   /* 게임 checkQuests 와 같다 — 끝낸 것은 stamina.questsTaken 이 기억한다 */
+      try { if (qr && qr.events && qr.events.length) { const q2 = story.events(qr.events) || []; saidToday += q2.length; saidIds = saidIds.concat(q2); } } catch { }
       noteQuestWaits(S, S.day);
       const stm = S.stamina || {}, done = new Set(stm.questsTaken || []);
       for (const [id, on] of Object.entries(stm.questsOpenedOn || {})) {
@@ -284,6 +294,11 @@ export async function play(name, seed, opt = {}) {
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
     out.cashDaily.push(cash);
+    if (ts.movedOut) {
+      const T = out.talk; T.daysAfterMove++; T.linesAfterMove += saidToday;
+      T.ids = T.ids || {}; for (const id of saidIds) T.ids[id] = (T.ids[id] || 0) + 1;
+      if (saidToday === 0) { T.silentAfterMove++; silentRun++; if (silentRun > T.longestSilence) T.longestSilence = silentRun; } else silentRun = 0;
+    }
     if (ts.movedOut) {
       if (out.minCashAfterMove == null || cash < out.minCashAfterMove) out.minCashAfterMove = cash;
       if (out.firstBrokeAfterMove == null && (ts.bankrupt || cash <= 0)) out.firstBrokeAfterMove = S.day;
@@ -371,6 +386,14 @@ for (const name of NAMES) {
     if (mv.length) console.log(`  ▣ 이사 뒤 — 월세 ${won(mv[0].rentWon ?? null)} · 첫 0원 ${mv.filter(r => r.firstBrokeAfterMove != null).length}/${mv.length}` +
                                ` · 굶음 ${mv.filter(r => r.starvedDay != null).length}/${mv.length} · 최저 지갑 중앙 ${won(med(mv.map(r => r.minCashAfterMove)))}` +
                                ` · 제일 낮은 판 ${won(Math.min(...mv.map(r => r.minCashAfterMove ?? Infinity)))}`); }
+  /* 대사 — 이사 뒤 말 없는 날(story.turn · 퀘스트 사건 둘 다 빈 날) · 최장 침묵 */
+  { const mv = rs.filter(r => r.moveDay != null && r.talk && r.talk.daysAfterMove);
+    if (mv.length) console.log(`  ✎ 이사 뒤 대사 — 날 중앙 ${med(mv.map(r => r.talk.daysAfterMove))} · 말 없는 날 중앙 ${med(mv.map(r => r.talk.silentAfterMove))}` +
+                               `(${Math.round(100 * med(mv.map(r => r.talk.silentAfterMove / r.talk.daysAfterMove)))}%) · 최장 침묵 중앙 ${med(mv.map(r => r.talk.longestSilence))}일 · 제일 긴 판 ${Math.max(...mv.map(r => r.talk.longestSilence))}일` +
+                               ` · 줄 수 중앙 ${med(mv.map(r => r.talk.linesAfterMove))}`);
+    const tot = {}; for (const r of mv) for (const [k, v] of Object.entries(r.talk.ids || {})) tot[k] = (tot[k] || 0) + v;
+    const top = Object.entries(tot).sort((a, b) => b[1] - a[1]);
+    if (top.length) console.log(`    줄 종류 ${top.length} · 판당 자주 나온 줄: ` + top.slice(0, 8).map(([k, v]) => `${k} ${Math.round(v / mv.length)}`).join(' · ')); }
   const stay = rs.filter(r => r.moveDay == null && r.starvedDay == null);
   if (stay.length) console.log(`  이사 못 한 판 ${stay.length} — 무늬 잎을 낸 적 없음 ${stay.filter(r => r.varieDay == null).length} · 이사 자금 모자람 ${stay.filter(r => r.moneyDay == null).length}` +
                                ` · (이사한 판의 무늬 첫날 중앙 ${med(rs.filter(r => r.moveDay != null).map(r => r.varieDay))}일)`);
