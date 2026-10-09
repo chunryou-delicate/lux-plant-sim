@@ -7496,7 +7496,21 @@ const reallyRepot = guard((id) => {
    돈은 연락이 온 뒤 [상점] 탭의 중고 거래 칸 [거래하기](§doDeal)에서 들어온다.
    ⚠ 「무늬 삽수를 판 적이 있다」 깃발(반지하 탈출의 둘째 축)도 **거기서** 선다 —
      여기서 서면 올렸다 내리기만 해도 문이 열린다(shop.js §⑦-2 가 그 판단을 적어 두었다). */
+/* ★ 2026-10-10 [plan] fdd7bb53 ㉠ — **반지하에서 마지막 무늬 삽수를 내놓으려 할 때** 몬이 한 줄(sell_keep_one · 막지 않음 · 그 손에서 한 번).
+     때(넷 다): 반지하 · 무늬를 판 적 있음(이사 둘째 축이 섰음 — 첫 판매는 sell_varie 가 가르친다) · 지금 것이 무늬 삽수 ·
+     이것을 내놓으면 «안 죽고 안 올린» 무늬 삽수가 0. D22(sell_last_varie)와 같은 손이면 D22 만 말한다(plan · scriptsForEvents 가 거른다) */
+function sellKeepOneHit(c) {
+  try {
+    const ts = S.tutorial;
+    if (!ts || ts.movedOut || !c || !c.varieFromCut) return false;
+    if (!(ts.varieSale && ts.varieSale.count >= 1)) return false;
+    const others = cuttingsOf(S).filter(x => x && x !== c && x.varieFromCut && x.status !== 'dead' && !listingFor(S, x)).length;
+    return others === 0;
+  } catch { return false; }
+}
 const doListCutting = guard((id) => {
+  { const c0 = cuttingsOf(S).find(x => x && x.id === id);
+    if (sellKeepOneHit(c0)) { try { dlgOpen(story.events([{ id: 'sell_keep_one' }], S)); } catch (e) { console.warn('[남겨 두자]', e && e.message); } } }
   let r;
   try { r = listCutting(S, id, { log: m => pushLog(S, m) }); }
   catch (e) { e.tutorialInput = true; throw e; }

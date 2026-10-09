@@ -365,6 +365,9 @@ export async function play(name, seed, opt = {}) {
         if (growNow && c.id === out.keeperId) continue;
         const varie = (c.variegatedLeaves || 0) > 0 || !!c.varieFromCut;
         if (varie && keepVarie) continue;
+        /* ★ 2026-10-10 [plan] fdd7bb53 — 안내대로(follow)는 sell_keep_one 을 따른다: 반지하 · 무늬를 판 적 있음 · 이것이 마지막 «안 올린» 무늬 삽수면 남긴다 */
+        if (P.follow && !ts.movedOut && c.varieFromCut && ts.varieSale && ts.varieSale.count >= 1 &&
+            !cuttingsOf(S).some(x => x && x !== c && x.varieFromCut && x.status !== 'dead' && !listingFor(S, x))) { out.keptOne = (out.keptOne || 0) + 1; continue; }
         try { listCutting(S, c.id); } catch { }
       }
       if (P.sellMother === 'early' && pot0(S) && !listingFor(S, pot0(S))) {
