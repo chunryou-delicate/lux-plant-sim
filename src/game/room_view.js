@@ -1116,7 +1116,7 @@ export async function createRoomView(canvas, opts = {}) {
         .filter(Boolean);
     }
     if (!built || !built.room) throw new Error(`방 조립 결과가 비었습니다: ${id}`);
-    try { applyRoomMaterials(built, id); }   // v2: 겉감을 먼저 입히고 아래 dim 이 그 바탕에서 누른다
+    try { applyRoomMaterials(built, id, { onChange: () => { needsRender = true; } }); }   // v2: 겉감을 먼저 입히고 아래 dim 이 그 바탕에서 누른다 · 그림 겉감이 늦게 오면 다시 그림([house] 10-10)
     catch (e) { console.warn('[v2mat] 겉감을 못 입혔습니다 —', e.message); }
     furnDress.dress(built, roomDef);        // v2: 옷 입히기 — dim 앞이라 옷도 같이 눌린다
     dimRoomMaterials(built);

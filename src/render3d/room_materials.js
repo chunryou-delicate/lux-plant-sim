@@ -40,8 +40,13 @@ const STYLES = {
   banjiha: {
     /* tint: dimRoomMaterials 가 누르기 «전» 바탕색. 1 보다 크면 그만큼 덜 눌린다.
        노랑은 ACES 발밑(toe)에서 올리브로 가라앉는다 — 회색과 같은 밝기로 읽히게 조금 올린다 */
-    wall:  { tileM: 0.30, rough: 0.92, grime: 1.0, baseH: 0.075, tint: [1.26, 1.20, 1.06] },
-    floor: { tileM: 1.20, rough: 0.58, grime: 1.0, tint: [1.34, 1.24, 0.98] },
+    /* img: Higgsfield 이음 없는 그림(10-10 · 기준 그림 결) — 받는 대로 절차 그림 자리에 바꿔 낀다. imgTileM = 그 그림 한 장의 실제 크기(m).
+         평균 색은 절차 바탕색에 맞춰 구웠다(tools/tex_room_tile.py --mean) — 위 tint·dim 손질이 그대로 맞게.
+         벽지: 그림 한 장에 꽃가지가 줄마다 ~10 → 1.5m 면 15cm 간격(절차 그림과 같은 간격) */
+    wall:  { tileM: 0.30, rough: 0.92, grime: 1.0, baseH: 0.075, tint: [1.26, 1.20, 1.06],
+             img: 'textures/room/banjiha_wallpaper.webp', imgTileM: 1.5 },
+    floor: { tileM: 1.20, rough: 0.58, grime: 1.0, tint: [1.34, 1.24, 0.98],
+             img: 'textures/room/banjiha_lino.webp', imgTileM: 1.4 },
     ceil:  { tileM: 1.00, rough: 0.96, tint: [1, 1, 1] },
     capHex: '#9b958b',          // 잘린 단면 콘크리트
     woodHex: '#a57650',         // 걸레받이 나무
@@ -270,7 +275,28 @@ let _tex = null;
 function shared(st) {
   if (_tex) return _tex;
   _tex = { noise: makeNoise(), wall: makeWallpaper(st.wall.tileM), lino: makeLino(), conc: makeConcrete() };
+  loadImg('wall', _tex.wall, st.wall.img, st.wall.imgTileM);
+  loadImg('floor', _tex.lino, st.floor.img, st.floor.imgTileM);
   return _tex;
+}
+
+/* ---- 그림 겉감 (2026-10-10 · [house]) — 절차 그림을 먼저 입히고, 그림이 오면 **같은 텍스처**의 image 를 바꾼다.
+     tileM 은 그 그림 크기로 바꿔야 해서 v2Kind(Vector4)를 슬롯마다 모아 두고 .y 를 고친다. 못 받으면 절차 그림 그대로 */
+const ASSET = p => new URL('../../assets/v2/' + p, import.meta.url).href;
+const _kinds = { wall: [], floor: [] };      // 입힌 재질들의 v2Kind 값(Vector4)
+const _imgTile = { wall: null, floor: null };
+let _onChange = null;
+function loadImg(slot, tex, file, tileM) {
+  if (!file || !(tileM > 0) || typeof Image === 'undefined') return;
+  const img = new Image();
+  img.onload = () => {
+    tex.image = img; tex.needsUpdate = true;
+    _imgTile[slot] = tileM;
+    for (const v of _kinds[slot]) v.y = tileM;
+    if (_onChange) _onChange();
+  };
+  img.onerror = () => console.warn('[v2 겉감] 그림을 못 받았습니다 — 절차 그림 그대로:', file);
+  img.src = ASSET(file);
 }
 
 /* ============================================================
@@ -553,13 +579,15 @@ function paintedFrame(src, hex, tint = 1) {
    applyRoomMaterials(built, roomId) — room_view.assemble 에서 dimRoomMaterials 바로 앞에 부른다.
    같은 built 를 두 번 받아도 한 번만 칠한다. 반환: 칠한 재질 수(끄면 0)
 ============================================================ */
-export function applyRoomMaterials(built, roomId) {
+export function applyRoomMaterials(built, roomId, opt = {}) {
   if (!built || !built.shells || typeof THREE === 'undefined' || typeof document === 'undefined') return 0;
   if (!v2Flag('v2mat')) return 0;
   const st = STYLES[roomId];
   if (!st) return 0;
+  if (typeof opt.onChange === 'function') _onChange = opt.onChange;     // 그림이 늦게 오면 다시 그려 달라고(room_view needsRender)
   const t0 = (typeof performance !== 'undefined') ? performance.now() : 0;
   const T = shared(st);
+  const kindOf = (slot, v) => { _kinds[slot].push(v); if (_kinds[slot].length > 64) _kinds[slot].splice(0, _kinds[slot].length - 64); return v; };
   const size = built.size || { w: 5, d: 4, h: 2.3 };
   let WT = 0.2;
   const cap = linColor(st.capHex), wood = linColor(st.woodHex);
@@ -594,7 +622,7 @@ export function applyRoomMaterials(built, roomId) {
     const uni = {
       v2Grime: { value: wallGrime(key, rect, uAx, stains) },
       v2Noise: { value: T.noise },
-      v2Kind: { value: new THREE.Vector4(1, st.wall.tileM, st.wall.baseH, st.wall.grime) },
+      v2Kind: { value: kindOf('wall', new THREE.Vector4(1, _imgTile.wall || st.wall.tileM, st.wall.baseH, st.wall.grime)) },
       v2In: { value: new THREE.Vector3(-out[0], -out[1], -out[2]) },
       v2UAx: { value: new THREE.Vector3(uAx[0], 0, uAx[2]) },
       v2Rect: { value: new THREE.Vector4(...rect) },
@@ -617,7 +645,7 @@ export function applyRoomMaterials(built, roomId) {
     const uni = {
       v2Grime: { value: grimeTex || T.noise },
       v2Noise: { value: T.noise },
-      v2Kind: { value: new THREE.Vector4(kind, tileM, 0, grime) },
+      v2Kind: { value: kind === 2 ? kindOf('floor', new THREE.Vector4(kind, _imgTile.floor || tileM, 0, grime)) : new THREE.Vector4(kind, tileM, 0, grime) },
       v2In: { value: new THREE.Vector3(0, kind === 2 ? 1 : -1, 0) },
       v2UAx: { value: new THREE.Vector3(1, 0, 0) },
       v2Rect: { value: new THREE.Vector4(-size.w / 2, size.w / 2, -size.d / 2, size.d / 2) },
