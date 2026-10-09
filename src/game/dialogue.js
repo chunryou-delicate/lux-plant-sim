@@ -1637,6 +1637,13 @@ export const SCRIPTS = {
      PP 사건: pp_trade_offer(ev.again — 두 번째 물음) · pp_trade_done · pp_trade_declined(ev.last — 두 번째 거절 → 상점에 진열)
               pp_pink_warn(위 잎 «분홍 잎» 둘 연달아) · pp_tip_withered(셋 연달아 → 줄기 끝 시듦) · pp_reverted(초록 잎이 이어짐 · 빛 모자람)
      AL 사건: al_sprout(ev.varie true/false — 구근 첫 싹이 무늬인가) · 겨울잠·깸은 사건 대신 퀘스트 열림·끝 대사가 싣는다(§quest al_keep_winter) */
+  /* ★ 2026-10-10 [plan] D55(총괄) — 원룸에서 안 자르고 키운 그루가 칸 한도의 2배를 넘게 컸다(사건 `cut_too_wide` · [core] 75a785d6 · 그 그루·그 칸에서 한 번).
+     결: 혼내지 않고 «많이 컸네»로 — 칸을 넓혀 주자. ⚠ «바닥»을 권하지 않는다: 원룸 바닥은 등을 다 켜도 안 자라는 자리(가구 빛 D · house-decor §C 잰 닻)라
+     거기로 옮기면 그루가 멈춘다. 옮기면 «더 큰다»고도 약속하지 않는다(칸 넓이가 자람을 막는다는 규칙은 없다 — 그림이 겹칠 뿐). */
+  cutTooWide: [
+    { who: 'jachwi', face: 'surprise', text: '키운 그루가 칸 밖으로 잎을 뻗었다.' },
+    { who: 'moni',   face: 'cheer',    text: '많이 컸네! 이 칸이 좁아졌어. 더 넓고 밝은 자리로 옮겨 주자.' }
+  ],
   /* ★ 2026-10-09 [plan] D47(총괄) — 가구점이 처음 열린 날(사건 `furniture_shop_open` · [core] · 식물등이 풀리는 날과 같은 날).
      등 장면이 길어 «한 줄만» 붙인다(EVENT_ORDER — lamp_unlocked 바로 뒤). 거짓 없는 말만: 선반·받침대는 자리(slots)를 더한다.
      «밝은 자리»라고는 안 한다 — 밝은지는 놓을 때 D39 C 빛 한 줄이 말한다. 한 판에 한 번(REPEATABLE 아님). */
@@ -2240,6 +2247,8 @@ export const REPEATABLE = new Set(
              'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove', 'movedInBagCuttings',
              /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 판마다 여러 번 난다(구근마다 싹 · 잎마다 경고). 교환·퀘스트는 한 번 */
              'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping', 'alAsleepCorms', 'alWakeAgain',
+             /* ★ D55 — 그루마다·칸마다 한 번(core 가 거른다) — 그루가 여럿이면 여러 번 */
+             'cutTooWide',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear', 'statusHomeQuarter', 'statusHomeThreeQuarter',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
@@ -2302,6 +2311,8 @@ export const EVENT_SCRIPT = Object.freeze({
   pp_trade_offer:      'ppTradeOffer',
   /* ★ 2026-10-09 [plan] D47 — 가구점 첫 날(§furnitureShopOpen) */
   furniture_shop_open: 'furnitureShopOpen',
+  /* ★ 2026-10-10 [plan] D55 — 키운 그루가 칸보다 크게 자람(§cutTooWide) */
+  cut_too_wide:        'cutTooWide',
   pp_trade_done:       'ppTradeDone',
   pp_trade_declined:   'ppTradeDeclined',
   pp_pink_warn:        'ppPinkWarn',
@@ -2490,7 +2501,7 @@ const EVENT_ORDER = [
   /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 퀘스트 «앞»이다: 교환(pp_trade_done) 뒤에 «분홍을 붙잡는다»가 열리는 날,
      「바꿨다」가 먼저 와야 「분홍이 고운 잎이 나면…」이 그 뒤에 선다. 시듦은 경고보다 앞(같은 날 둘은 안 남) */
   'pp_trade_offer', 'pp_trade_declined', 'pp_trade_done',
-  'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake',
+  'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake', 'cut_too_wide',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
      한 판에서 「①을 끝냈다 → 그래서 ②가 열린다」가 같은 날 난다(`siru5_cycle5` 의 여는
      조건이 `crop_mix` 완료라서). 순서가 뒤집히면 **열리고 나서 끝난 것을 축하한다.**
