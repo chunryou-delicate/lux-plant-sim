@@ -13037,6 +13037,12 @@ function sceneArtOf(line) {
     case 'alSproutVarie':     return 'ev_al_sprout_varie';   /* alSproutPlain 은 그림 없음 */
     case 'shopOpen':          return 'ev_shop_open';
     case 'questDoneShopSign': return 'ev_shop_sign';
+    /* ★ 2026-10-10 [leaf] 잎 단계 원화(11b3391f · 1024²) — 상태 줄 다섯에 하나씩 · ev_leaf_stage_strip 은 도움말·문서 띠라 안 건다 */
+    case 'statusPhaseOpening': return 'ev_leaf_stage_opening';
+    case 'statusPhaseYoung':   return 'ev_leaf_stage_young';
+    case 'statusPhaseMid':     return 'ev_leaf_stage_mid';
+    case 'statusPhaseMature':  return 'ev_leaf_stage_mature';
+    case 'statusPhaseAxis':    return 'ev_leaf_stage_axis';
     default: return null;
   }
 }

@@ -118,7 +118,8 @@ try {
   ok(back.room === 'tworoom' && back.job === 'shop' && back.done === 1 && back.regulars === 1 && !back.overlay, '세이브 왕복 — 가게가 그대로 · 덮개 없음');
   await shot('4_reload');
   /* ⑤ status 줄 · 새 사건 그림 — 대사 상자(#sceneArt) 길로 뜨나(줄 art 칸 · sceneArtOf) */
-  for (const [id, want] of [['statusHomeQuarter', 'ev_home_mark_quarter'], ['ppTradeDone', 'ev_pp_trade_done'], ['alSproutVarie', 'ev_al_sprout_varie']]) {
+  for (const [id, want] of [['statusHomeQuarter', 'ev_home_mark_quarter'], ['ppTradeDone', 'ev_pp_trade_done'], ['alSproutVarie', 'ev_al_sprout_varie'],
+                            ['statusPhaseOpening', 'ev_leaf_stage_opening'], ['statusPhaseAxis', 'ev_leaf_stage_axis']]) {   /* [leaf] 잎 단계 원화 */
     await page.eval(`(()=>window.__dlgOpen([${JSON.stringify(id)}]))()`, false); await sleep(1200);
     const a = await J(`(()=>({ ...window.__sceneArt(), loaded: (()=>{ const i=document.getElementById('sceneArtImg'); return !!(i && i.complete && i.naturalWidth > 0); })() }))()`);
     if (id === 'statusHomeQuarter') await shot('5_status_art');
