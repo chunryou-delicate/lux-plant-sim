@@ -1420,6 +1420,150 @@
     "added_max_blob_px": 0,
     "touches_border": false
    }
+  },
+  {
+   "name": "bed_double",
+   "job_id": "439d5e5c-be63-4f73-8ae8-4310f3e6a5aa",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162842_439d5e5c-be63-4f73-8ae8-4310f3e6a5aa.glb",
+   "path": "assets/gen/v2_furn/raw_bed_double.glb",
+   "note": "Tripo standard 9 · pbr false · 8000 · 입력 c_bed_double_1(007b71e5 · house 고름)",
+   "bytes": 942632,
+   "tris": 6980,
+   "dims_xyz": [
+    1.0,
+    0.301,
+    0.766
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "bed_bunk",
+   "job_id": "5c397481-4968-4c35-8d1c-070abf6e1149",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162847_5c397481-4968-4c35-8d1c-070abf6e1149.glb",
+   "path": "assets/gen/v2_furn/raw_bed_bunk.glb",
+   "note": "입력 c_bed_bunk_1(ee0c4730 · house 고름 · 일꾼 qa 는 k2 권함)",
+   "bytes": 1129476,
+   "tris": 6383,
+   "dims_xyz": [
+    1.0,
+    0.995,
+    0.523
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "bed_loft",
+   "job_id": "bdfa8b0e-7287-40e5-8936-e0143eda3b1d",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162853_bdfa8b0e-7287-40e5-8936-e0143eda3b1d.glb",
+   "path": "assets/gen/v2_furn/raw_bed_loft.glb",
+   "note": "입력 c_bed_loft_1(8d8116e1)",
+   "bytes": 975816,
+   "tris": 6459,
+   "dims_xyz": [
+    1.0,
+    0.804,
+    0.533
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "table",
+   "job_id": "930f78f5-b55d-4f71-b13b-3956840615ea",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162856_930f78f5-b55d-4f71-b13b-3956840615ea.glb",
+   "path": "assets/gen/v2_furn/raw_table.glb",
+   "note": "입력 c_table_1(4799a67d)",
+   "bytes": 591188,
+   "tris": 7728,
+   "dims_xyz": [
+    1.0,
+    0.595,
+    0.643
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "vanity",
+   "job_id": "4a2a183b-d0ec-4955-9fd4-9f85703c79bf",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162859_4a2a183b-d0ec-4955-9fd4-9f85703c79bf.glb",
+   "path": "assets/gen/v2_furn/raw_vanity.glb",
+   "note": "입력 c_vanity_2(fa3c77af)",
+   "bytes": 785352,
+   "tris": 7378,
+   "dims_xyz": [
+    0.402,
+    1.0,
+    0.625
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "mirror",
+   "job_id": "7a83b329-d422-44dd-b17a-9de851fad3df",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162902_7a83b329-d422-44dd-b17a-9de851fad3df.glb",
+   "path": "assets/gen/v2_furn/raw_mirror.glb",
+   "note": "입력 c_mirror_2(3e08c910 · house 고름 · 일꾼 qa 는 k1 권함)",
+   "bytes": 893712,
+   "tris": 7365,
+   "dims_xyz": [
+    0.343,
+    1.0,
+    0.369
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "shoe_cabinet",
+   "job_id": "5ce20482-a589-43e9-b7ec-b5e2e4e565eb",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162905_5ce20482-a589-43e9-b7ec-b5e2e4e565eb.glb",
+   "path": "assets/gen/v2_furn/raw_shoe_cabinet.glb",
+   "note": "입력 c_shoe_cabinet_1(e2b3c003)",
+   "bytes": 750712,
+   "tris": 6627,
+   "dims_xyz": [
+    0.346,
+    1.0,
+    0.814
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "tv_stand",
+   "job_id": "d82e351e-801d-4405-98fc-7491cb482499",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162908_d82e351e-801d-4405-98fc-7491cb482499.glb",
+   "path": "assets/gen/v2_furn/raw_tv_stand.glb",
+   "note": "입력 c_tv_stand_2(c0c8b8ec)",
+   "bytes": 786864,
+   "tris": 7398,
+   "dims_xyz": [
+    1.0,
+    0.31,
+    0.341
+   ],
+   "images": 1,
+   "magic_ok": true
+  },
+  {
+   "name": "room_divider",
+   "job_id": "752ed943-0247-4415-8377-418fa93d122b",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_162914_752ed943-0247-4415-8377-418fa93d122b.glb",
+   "path": "assets/gen/v2_furn/raw_room_divider.glb",
+   "note": "입력 c_room_divider_1(18664134)",
+   "bytes": 1157804,
+   "tris": 6368,
+   "dims_xyz": [
+    0.858,
+    1.0,
+    0.259
+   ],
+   "images": 1,
+   "magic_ok": true
   }
  ],
  "_storage": "opaque → JPEG q95 4:4:4 in repo, PNG master moved to C:/Users/pc/Desktop/빛식물/_hf_masters/ (same relative path) · 18장 다 불투명(RGBA 로 온 것도 알파 전부 255)"
