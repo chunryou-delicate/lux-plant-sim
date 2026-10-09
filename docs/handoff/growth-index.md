@@ -291,6 +291,26 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-10-10 · D59 투룸 — 측정판 굽기 · 빛 표 · 가게 주문 기한이 «키워서 맞출 수 있는 길이»인가 (총괄)
+
+```
+굽기   house a3f78c57(가게 기준 배치 + 등 자리 셋) 뒤 gen_room_profile --rooms=tworoom --write — 자리 20 → 29 · 등 0~3 (de332692)
+       반지하·원룸 파일 바이트 그대로(sha1) · 반지하 DIFF 는 measured 메모 한 줄뿐이라 안 실음(총괄: 얼린 표는 값이 같아도 안 건드림)
+       얼린 표 다른 한 벌(house_rooms 투룸 measured.slots) = test_measured_fresh 가 잰 값 8.12 · 5.22 · 29(옛 값 _was_2026_08_29) — house d5d55c61 에 실려 올라감
+       ⚠ test_floorlight ①-3(«skyViewK 선형 — 표본이 너무 적다»)은 원래 붉음(HEAD · a3f78c57~1 사본 둘 다)
+[잰 것] tools/probe_tworoom_shop.mjs · JSON docs/handoff/growth-tworoom-shop.json · real · 판 씨앗 12 · 주문은 철 첫날(또는 가을 끝 — 겨울이 낌)에 열림
+  ② 한 해 내내(겨울 첫 60일에도) 자라는 자리 — 등3: 다단 선반 윗단 셋(etagere:6~8) + 진열대 5·7·8 · 등2: 윗단 :7·:8 + 진열대 :7(100%)
+  ③ 새로 키워 맞추는 몫 ≥ 0.5 인 자리 수 / 29 — 겨울 첫날(등 0/1/2/3)
+     몬스테라 삽수 보통 잎≥2 · 30일        0 / 0 / 3 / 6
+     몬스테라 삽수 어려움 무늬≥산반 · 45일   0 / 1 / 5 / 5
+     몬스테라 삽수 어려움 무늬≥하프문 · 45일 0 / 0 / 1 / 4     (봄·여름·가을도 등 0~1 이면 0 — 가장 좋은 자리 0.42)
+     PP 보통 새 잎 분홍 마블↑ · 30일        0 / 0 / 5 / 7
+     PP 어려움 분홍 많음↑ · 45일            맨 위 분홍 0.35 → 어느 철·어느 등에도 0 · 0.5 → 겨울 등3 2자리 · 여름 등0 3자리
+     AL 보통 잎≥2 · 30일                    겨울 0(잠 · plan 은 겨울 al 주문을 안 냄) · 가을은 등 1 이상(가을 잎 간격 33일 > 30)
+⇒ plan 겨울 가드(80dd6cb4)와 같이 볼 것: 겨울 «자람이 드는» 주문은 «등 2개 이상 + 등 자리에 놓을 수 있을 때»만 · PP 분홍 많음은 맨 위 분홍 ≥ 0.5 일 때만 ·
+  AL 보통은 가을에 등이 없으면 내지 않기. 기한·조건 값은 plan 몫(growth 는 안 바꿈).
+```
+
 ### 2026-10-09 · D59 낙엽 켜기 창구 setHealthDrop (core 청 · 식물 가게 «초보 보호 끝»)
 
 ```
