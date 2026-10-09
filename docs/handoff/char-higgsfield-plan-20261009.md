@@ -1120,3 +1120,123 @@
 - ⚠ 팔이 몸에 더 붙었다(벌림 0.245 대 0.323). 그래서 뒷머리 끝이 아래팔 높이에서 닿는 정점이 hero2 의 3.4배다(닿는 «자리»는 hero2 와 같다 — 그림 빨강). ⇒ 리그 뒤 **G3** 에서 «팔 무게 받는 머리 정점 %»를 hero2 와 같은 자로 재고, 넘치면 `fix_hair_weights.py`(hero2 에서 55.8%→0.4% 로 고친 길 · 0 크레딧)
 - ⚠ 머리가 hero2 날것보다 더 어둡다(27.9) — 리그 뒤 `recolor_hero_tex.py` 로 정본 머리 [95,78,80] 에 맞춘다(0 크레딧 · hero2 와 같은 길)
 - Tripo 3만 면 판이 오면 같은 자로 한 줄 더 잰다. 견줄 것은 «팔 벌림»과 «머리–팔 2%» — Tripo 가 둘 다 확실히 낫지 않으면 Meshy 로 간다(리그·동작·다이어트 길이 hero2 에서 검증됨)
+
+
+---
+
+## 앞치마 판 낯 넷 (plan 96500c11 · 2026-10-09 char · 뽑는 때는 총괄)
+
+- 까닭: 가게 판에서 자취생 얼굴은 앞치마 한 줄(apron) 말고는 앞치마 없는 옷으로 뜬다(3D 몸은 core 가 가게 판에서 앞치마로 바꿈). plan 이 가게 판 표정 키를 셌다: beam 5 · think 5 · apron 3 · surprise 3 · happy 3 · scissors 2 · winter 2 · tired 2 · curious 1 · worry 1 · bulb 1
+- ⇒ **beam · think · surprise · happy 넷**이면 가게 판 줄의 대부분이 덮인다(winter 는 겨울 옷이라 안 바꾼다 · 나머지는 한두 줄)
+- 참조: image 1 = 그 키의 지금 초상을 흰 바탕에 눕힌 것 `assets/characters/ref/apron_src/portrait_jachwi_<키>_white.png`(얼굴·표정·손을 지킨다) · image 2 = 앞치마 초상 a(옷만 가져온다)
+- 글마다 2장 ⇒ 8장. 검수: ① 표정이 원래 키와 같나(특히 beam 눈물 · surprise 벌린 입) ② 머리·얼굴이 원래 초상과 같나 ③ 앞치마가 세이지 초록 · 끈이 목에 걸림 ④ 손가락
+- 받으면: fit_portrait(위 `then`) → `portrait_jachwi_<키>_apron.png` → core 에 한 줄 청 «가게 판(story.job.id==='shop')이면 FACE 파일에 `_apron` 이 있으면 그것 먼저»
+
+```json
+[
+ {
+  "name": "portrait_jachwi_beam_apron",
+  "kind": "portrait",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_beam_apron.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_beam_apron.png --ref assets/characters/portraits/portrait_jachwi_neutral.png --tol 8 --pockets",
+  "used_in": "가게 판 자취생 beam 5줄 — 첫 손님 · 간판 · «동네에서 식물 하면 여기래» (plan 96500c11 셈)",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 2,
+   "prompt": "Redraw image 1 exactly - SAME woman, SAME facial expression, SAME pose, SAME hands, SAME framing and size, SAME hair (long straight, blunt bangs, same color as image 1) - and change ONLY her clothes: she now wears the plain sage-green work apron over her cream round-neck tee exactly like image 2. Flat 2D anime bust portrait in the art style of image 1 (clean thin lines, soft flat shading), plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/ref/apron_src/portrait_jachwi_beam_white.png",
+     "role": "image_references"
+    },
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_apron_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ },
+ {
+  "name": "portrait_jachwi_think_apron",
+  "kind": "portrait",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_think_apron.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_think_apron.png --ref assets/characters/portraits/portrait_jachwi_neutral.png --tol 8 --pockets",
+  "used_in": "가게 판 자취생 think 5줄 — 가게 잡담 둘 포함 (plan 96500c11 셈)",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 2,
+   "prompt": "Redraw image 1 exactly - SAME woman, SAME facial expression, SAME pose, SAME hands, SAME framing and size, SAME hair (long straight, blunt bangs, same color as image 1) - and change ONLY her clothes: she now wears the plain sage-green work apron over her cream round-neck tee exactly like image 2. Flat 2D anime bust portrait in the art style of image 1 (clean thin lines, soft flat shading), plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/ref/apron_src/portrait_jachwi_think_white.png",
+     "role": "image_references"
+    },
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_apron_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ },
+ {
+  "name": "portrait_jachwi_surprise_apron",
+  "kind": "portrait",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_surprise_apron.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_surprise_apron.png --ref assets/characters/portraits/portrait_jachwi_neutral.png --tol 8 --pockets",
+  "used_in": "가게 판 자취생 surprise 3줄 (plan 96500c11 셈)",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 2,
+   "prompt": "Redraw image 1 exactly - SAME woman, SAME facial expression, SAME pose, SAME hands, SAME framing and size, SAME hair (long straight, blunt bangs, same color as image 1) - and change ONLY her clothes: she now wears the plain sage-green work apron over her cream round-neck tee exactly like image 2. Flat 2D anime bust portrait in the art style of image 1 (clean thin lines, soft flat shading), plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/ref/apron_src/portrait_jachwi_surprise_white.png",
+     "role": "image_references"
+    },
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_apron_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ },
+ {
+  "name": "portrait_jachwi_happy_apron",
+  "kind": "portrait",
+  "save_as": "assets/characters/portraits/_hf/portrait_jachwi_happy_apron.png",
+  "then": "python tools/char/fit_portrait.py <받은.png> assets/characters/portraits/portrait_jachwi_happy_apron.png --ref assets/characters/portraits/portrait_jachwi_neutral.png --tol 8 --pockets",
+  "used_in": "가게 판 자취생 happy 3줄 (plan 96500c11 셈)",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "3:4",
+   "quality": "max",
+   "resolution": "2k",
+   "count": 2,
+   "prompt": "Redraw image 1 exactly - SAME woman, SAME facial expression, SAME pose, SAME hands, SAME framing and size, SAME hair (long straight, blunt bangs, same color as image 1) - and change ONLY her clothes: she now wears the plain sage-green work apron over her cream round-neck tee exactly like image 2. Flat 2D anime bust portrait in the art style of image 1 (clean thin lines, soft flat shading), plain pure white background, no text.",
+   "medias": [
+    {
+     "value": "assets/characters/ref/apron_src/portrait_jachwi_happy_white.png",
+     "role": "image_references"
+    },
+    {
+     "value": "assets/characters/portraits/_hf/portrait_jachwi_apron_a.jpg",
+     "role": "image_references"
+    }
+   ]
+  }
+ }
+]
+```
