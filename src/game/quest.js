@@ -912,9 +912,12 @@ const ONEROOM_QUESTS = Object.freeze([
       ? '무늬 삽수에 혹이 나면 흙에 옮겨 심으세요' : '무늬 삽수 하나는 팔지 말고 키우세요',
     after: 'oneroom_root_bright',
     opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
-    done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
-                arr(s.cuttings).some(c => c && c.varieFromCut && c.status === 'established' &&
-                                          Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
+    /* ★★ 2026-10-10 [plan] — **들고 온 무늬 삽수를 흙에 옮겨도 끝난다**(언제 뿌리냈든 · D41 ② 와 같은 결).
+       있던 조건 «이사 뒤에 뿌리낸 것만»은 D41 의 줄기(«들고 온 것 하나는 팔지 말고 키우자» · 할 일 «혹이 나면 흙에 옮겨 심으세요»)와
+       어긋났다 — 시키는 대로 들고 온 삽수를 흙에 옮겨도 이 줄이 안 끝났다(숨은 막다른 길 · 갈래 판 37판: ③ 끝 7판 — 다시 자른 사람뿐).
+       후보: ㉠ 그대로 · ㉡ 언제 뿌리냈든 흙에 자리 잡으면(택함) · ㉢ «이사 뒤 흙에 옮긴 것만»(칸 establishedOnDay 가 없다 — core 칸이 필요) */
+    done:  s => yes(s.movedOut) &&
+                arr(s.cuttings).some(c => c && c.varieFromCut && c.status === 'established')
   }),
   /* ★★ 2026-10-09 [plan] D41(총괄 · 값 0) — **원룸의 안내 줄기는 «키워서 늘리기»다.** 흙에 자리 잡은 삽수(③)도 그루다 —
      그 그루에서 무늬 마디를 다시 잘라(삽수 [병에]·[흙에] · core 4e70d1e9) 뿌리내리면 무늬 그루가 하나씩 는다. «내 화분대가 커지는 맛».

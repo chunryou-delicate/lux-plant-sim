@@ -479,6 +479,15 @@ check('⑹ 모르는 퀘스트는 **조용히** 지나간다 (안 던진다)', (
   assert.deepEqual(s2.events([{ id: 'quest_done', questId: '없는줄' }]), []);
 });
 
+/* ★ 2026-10-10 [plan] — ③ «한 그루가 둘이 된다»: 들고 온 무늬 삽수(이사 «전»에 뿌리냄)를 원룸에서 흙에 옮겨도 끝난다.
+     옛 조건(«이사 뒤에 뿌리낸 것만»)은 D41 할 일(«혹이 나면 흙에 옮겨 심으세요»)을 따른 사람을 막았다. 옛 조건이면 이 칸이 빨갛다. */
+check('③ 들고 온 무늬 삽수를 흙에 옮겨도 «한 그루가 둘이 된다»가 끝난다', () => {
+  const q = questOf('oneroom_settle_cutting');
+  const brought = { method: 'soil', status: 'established', varieFromCut: true, varieLightBand: 'bright', gen: 1, rootedOnDay: 90 };
+  assert.ok(q.done({ ...S0, movedOut: true, movedInOnDay: 110, cuttings: [brought] }), '들고 온 삽수를 흙에 옮겼는데 안 끝납니다');
+  assert.ok(!q.done({ ...S0, movedOut: true, movedInOnDay: 110, cuttings: [{ ...brought, status: 'rooted' }] }), '흙에 안 옮겼는데 끝납니다');
+  assert.ok(!q.done({ ...S0, movedOut: true, movedInOnDay: 110, cuttings: [{ ...brought, varieFromCut: false }] }), '무늬 아닌 삽수로 끝납니다');
+});
 /* ══ 보상이 실제로 붙었나 ═════════════════════════════════════════════ */
 check('보상 — 체력이 밑값에서 딱 「주기로 한 만큼」 올랐다', () => {
   const want = QUEST_IDS.reduce((a, id) => a + (STAMINA_RULES.quests[id] || 0), 0);
