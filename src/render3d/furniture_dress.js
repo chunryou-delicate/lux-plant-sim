@@ -52,7 +52,8 @@ const FURN = {
   desk:       { file: 'furniture/desk.glb', yaw: 0 },
   chair:      { file: 'furniture/chair.glb', yaw: 0, probes: [[0.5, 0.6], [0.4, 0.66], [0.6, 0.66]] },
   dresser:    { file: 'furniture/drawer.glb', yaw: 0 },
-  nightstand: { file: 'furniture/cabinet.glb', yaw: 0 },
+  /* 협탁 r2(10-10 · Higgsfield 원화 k2 → Tripo standard) — 옛 cabinet.glb 는 방 안에서도 갈색 상자로 보였다(서랍이 안 읽힘) */
+  nightstand: { file: 'furniture/nightstand_r2.glb', yaw: -90 },   // Tripo 가 서랍을 +X 로 냈다 → 앞(+Z)으로
   /* ★ 2026-10-04 — 소품이 «진짜 가구»가 됐다(박사님 「진짜 가구로」 · [house] 프리셋·uid·크기).
        크기를 GLB 실측 비율 × k 로 뽑았으므로 uniform — 세로도 가로·깊이와 같은 배율(찌그러지지 않게).
        yaw 0: 그림의 방향은 방 정의의 rot 에 들어 있다([house]).
@@ -94,6 +95,9 @@ const FURN = {
   shelf_low:           { file: 'furniture/shelf_low.glb',           yaw: 0, lazy: true, tiers: true },
   floor_cushion:       { file: 'furniture/floor_cushion.glb',       yaw: 0, lazy: true, uniform: true },
   storage_box:         { file: 'furniture/storage_box.glb',         yaw: 0, lazy: true },
+  /* 10-10 Higgsfield 3D(Tripo standard · 가장 긴 변을 1.0 으로 낸다 — yaw·축척은 GLB 마다 잼) */
+  bench:               { file: 'furniture/bench.glb',               yaw: 0, lazy: true },
+  shop_display:        { file: 'furniture/shop_display.glb',        yaw: -90, lazy: true, tiers: true },  // GLB 가 Z 로 길다(0.62 × 1.0) · +90 이면 앞뒤가 뒤집힌다(앞단 +0.49m)
   /* 식물등 — 몸통만 옷(LED 는 코드 것 · dressLamp). lazy — 부팅 미리 받기를 안 늘린다(방이 뜬 뒤 입는다) */
   /* 러그 — GLB 가 아니라 «윗면 그림»(topTex · 10-10 · Higgsfield 위에서 본 그림 · 둘레 흰 바탕은 투명으로 · tools/tex_rug_cutout.py).
        1.2cm 깔개라 3D 를 뽑으면 눌려 무늬만 남는다 — 처음부터 무늬만. 코드 러그(대리)는 숨기고 발자국 크기 판 하나를 윗면에 깐다 */

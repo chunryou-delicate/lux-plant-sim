@@ -190,7 +190,7 @@
  },
  "bench": {
   "file": "assets/v2/thumbs/furn/bench.webp",
-  "v2": false
+  "v2": true
  },
  "bed_bunk": {
   "file": "assets/v2/thumbs/furn/bed_bunk.webp",
