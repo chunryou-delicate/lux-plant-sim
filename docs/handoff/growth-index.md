@@ -59,6 +59,7 @@
 | `test_prologue_leaf3_unlocked.mjs` | ★ **첫 그루 잎2·잎3 은 중간잎 확정에 안 걸린다**(박사님 2026-10-04 · 잎3 다음 잎2도) — 다른 그루·잎4+ 로 «새면» 붉고, 예전에 잠기던 판에서 ✂ 가 실제로 열리는지도 본다 |
 | `test_varie_boost.mjs` | ★ **D40 성숙 전 무늬 ×2 · 상한 0.9** — 파일 값이 실렸나 · 갈라진 잎 한 장이면 꺼지나 · 무늬가 줄지 않나 (크롬 없음) |
 | `test_skin_room_matches_zoom.mjs` | ★ **방이 그리는 그림 == 확대가 그리는 그림** — 이미 두 번 난 사고를 지킨다 |
+| `test_young_plant.mjs` | ★ **D46 흙에 자리 잡은 삽수 = «작은 그루»(조립기 youngPlantOf)** — 잎 N 장 = 그린 잎 N 장 · 화분만 걷힘 · 밑동 y=0 · 정본 무늬만 무늬 · 모주 조립을 안 흔듦 · 사진 |
 | `test_species_growth.mjs` | ★ **새 두 종(PP · AL) 생장 규칙** — 잎 간격 · 분홍 흐름 · 분홍 잎 줄 시듦 · 자르기 · 구근 · 겨울잠 · 무늬 몫 · 판 표 (크롬 없음 · 값은 파일에서 읽음) |
 | `test_prologue_varie.mjs` | 프롤로그 무늬 보장이 캐논(20% · 난수 스트림)을 안 깨나 — ⚠ §E 씨앗 92158 → **92231**(10-09 · D40 뒤 92158 은 잎1·2 가 굴림으로 무늬라 보장이 안 쓰임) |
 
@@ -209,6 +210,22 @@ plant_grow 헤드리스 · 씨앗 40판 · 코어와 같은 걸음(밝기 1.25�
         예전에 잎2 가 잠기던 59판을 첫 그루로 400일 ⇒ ✂ 열림 59/59 · 중앙 122일(10% 102 · 90% 182)
         표준 40판 ⇒ 잎3 갈라짐 중앙 114 · ✂ 중앙 118 그대로
 ```
+
+### 2026-10-09 · D46 자리 잡은 삽수를 «작은 그루»로 — 조립기 입구 youngPlantOf ([core] 청 · 칸 이름 core 안)
+
+✅ 총괄 D46 · leaf 발견(방의 흙 포트 삽수가 «자른 날의 모주 가지»를 그대로 그려 흙에서 난 잎을 모름).
+```
+src/render3d/plant_assemble.js  getPlantAssembler() 의 youngPlantOf(o) → THREE.Group(밑동 y=0) | null
+  o = { seed, leaves:[{varie, grade, midSkin, matSkin, matured}](아래→위), nextLeaf01, ageDays, potD, lightAz, photo, species, withPot }
+  ★ 그리기 규칙이 없다 — «같은 씨앗의 그루가 N 번째 잎을 낸 때»를 원본(plant_grow)이 그대로 그린다:
+     난 때(원본 위상) → 나이 = 난때[N−1] + nextLeaf01 × (난때[N] − 난때[N−1]) → 생장일(dayOfAge) → assemble(leafState·leafSkins) → 화분만 걷기
+  잰 것: 생장일이 캐논 누적 30·70·120·190·290·440 에 그대로 앉는다(N=1~6 · 다음 잎 0) — 시간 축을 새로 안 만들었다는 뜻
+  ageDays 는 받아 적기만 한다(꼴을 안 정함 — 빛이 막은 날은 안 자랐다). 꼴 = 잎 수 + 다음 잎까지 몫(core c.leafDays / CUTTING_LEAF_DAYS)
+  species: 몬스테라만 — PP·AL 은 아직 그리개가 없어 null(D45 그림 차례에 이 입구에 붙인다)
+  TAIL 읽기 둘: __leafBirthsOf(seed, g)(SEED 를 잠깐 꽂고 topologyNow) · __soilY()
+```
+⚠ 삽수가 모주에서 들고 온 잎도 «이 그루의 1·2… 번째 잎»으로 그려진다 — D46 «작은 그루» 결정의 뜻. 병 삽수(뿌리내리는 중)는 branchOf 그대로.
+사진: docs/handoff/img/young_plant_row.png (잎 1~6 · 잎 2·3 무늬)
 
 ### 2026-10-09 · D45 새 식물 두 종 — 핑크프린세스(PP) · 알로카시아 프라이덱(AL) 생장 규칙 첫 판
 

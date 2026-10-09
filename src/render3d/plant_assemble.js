@@ -182,7 +182,20 @@ const TAIL = `
     return n;
   },
   __params(){ return { seedEnd:P.seedEnd, sproutEnd:P.sproutEnd, spawnStep:P.spawnStep,
-                       matSpan:P.matSpan, stageYoung:P.stageYoung, stageMid:P.stageMid }; }
+                       matSpan:P.matSpan, stageYoung:P.stageYoung, stageMid:P.stageMid }; },
+  /* ★ 2026-10-09 (총괄 D46 · youngPlantOf) — 읽기 둘. 그리기 규칙 없음.
+     __leafBirthsOf: 그 씨앗의 그루가 나이 g 까지 낸 잎의 «난 때»(leafBirth · 나이 단위) — 난 차례대로, 겹치면 한 번.
+       원본 topologyNow 를 «그 씨앗으로» 잠깐 부를 뿐이다(SEED 를 꽂았다 되돌린다).
+       ⚠ growTopology 는 잎마다 varieRoll 로 VARIE_STATE 칸을 만든다 — 부르는 쪽(youngPlantOf)은 곧바로
+         assemble 을 불러 plantSeed(matResetAll)로 그 칸을 비운다. 따로 부르지 마라.
+     __soilY: 흙 높이(원본 단위) — 화분을 걷어 낸 뒤 밑동을 y=0 에 앉힐 때 쓴다(원본 addPot 이 정한 값 그대로). */
+  __leafBirthsOf(seed, g){
+    const keep=SEED; SEED=seed>>>0;
+    try{ const s=new Set(); for(const ax of topologyNow(g)) if(Number.isFinite(ax.leafBirth)) s.add(ax.leafBirth);
+         return [...s].sort((a,b)=>a-b); }
+    finally{ SEED=keep; }
+  },
+  __soilY(){ return SOIL_Y; }
 };`;
 
 /* ============================================================
@@ -303,6 +316,8 @@ async function build(opt) {
 
   /* 마지막으로 조립한 값 — 같은 값이면 두 번 안 짓는다 */
   let lastKey = null, lastResult = null;
+  /* youngPlantOf — 씨앗·빛 방향마다 «난 때» 목록(§youngBirthsOf) */
+  const youngBirthCache = new Map();
 
   /* ── ★ 무늬가 도착하면 알린다 (2026-08-18) ──
      ------------------------------------------------------------
@@ -668,9 +683,132 @@ async function build(opt) {
       g.userData.skinsPending = G.skinsPending();
       if (g.userData.skinsPending) watchSkins();
       return g;
+    },
+
+    /* ══════════════════════════════════════════════════════════════════════
+       ★★★ youngPlantOf — 흙에 자리 잡은 삽수를 «작은 그루»로 (2026-10-09 · 총괄 D46 · [core] 청 · [growth])
+       ══════════════════════════════════════════════════════════════════════
+       leaf 가 찾은 것: 방의 흙 포트 삽수는 branchOf(자른 날의 모주 가지)를 그대로 다시 지어,
+       삽수가 흙에서 키운 잎을 모른다(120일에 잎 1→2장인데 그림 0.08% 차이).
+
+       ★ 지어낼 것이 하나도 없다 — branchOf 와 같은 생각이다. **같은 씨앗의 그루가 N 번째 잎을 낸 때**를
+         원본(plant_grow)이 그대로 그리게 하고, 화분만 걷어 낸다. 줄기 길이·잎 크기·잎 단계(어린→중간)·
+         잎 붙는 차례는 전부 원본의 시간 축이 정한다. 여기에 그리기 규칙·크기 표·단계 문턱이 **없다.**
+           ① 그 씨앗의 잎 «난 때»를 원본 위상에서 읽는다(__leafBirthsOf · 난 차례 = leafRankOf 의 차례)
+           ② 나이 gA = 난때[N−1] + nextLeaf01 × (난때[N] − 난때[N−1])  — N 번째 잎은 나 있고 N+1 번째는 아직
+           ③ 생장일 = dayOfAge(gA) 를 올림(원본 ageOf 로 되짚어 [난때[N−1], 난때[N]) 안에 드는지 확인)
+           ④ 잎 상태(무늬·갈라짐)와 그림(midSkin·matSkin)은 **정본이 준 대로** 난때[i] 에 앉힌다(assemble 의 leafState·leafSkins)
+           ⑤ 화분·흙(원본 addPot 이 단 것 — part 표가 없는 것)을 걷고 밑동을 y=0 에 둔다(원본 SOIL_Y)
+       ⚠ 삽수가 모주에서 들고 온 잎도 «이 그루의 1·2… 번째 잎»으로 그려진다 — D46 결정(«작은 그루로 그린다»)의 뜻이다.
+         모주 가지 그대로가 필요하면 branchOf(병 삽수 · 뿌리내리는 중)를 쓴다.
+
+       인자 o
+         seed        그루마다 다른 꼴 — core 가 (S.sim.seed, 삽수 id) 에서 만든 정수
+         leaves      [{ varie, grade, midSkin, matSkin, matured }]  아래(오래된 잎) → 위(생장점) · 길이 = 잎 수
+                     (정본 propagation c.leafVarie · c.leafGrade · shop.leafSkinsFor(...).midSkin/matSkin)
+         nextLeaf01  다음 잎까지 온 몫 0..1 — core c.leafDays / CUTTING_LEAF_DAYS. 안 주면 0(막 난 잎)으로 짓고
+                     userData.nextLeaf01Given=false 로 적는다(조용히 메꾸지 않는다)
+         ageDays     받아서 userData 에 적기만 한다 — ★ 꼴을 정하지 않는다. 자리 잡은 뒤 지난 날이 같아도
+                     빛이 막은 날은 안 자랐다. 꼴은 «잎 수 + 다음 잎까지의 몫»이 정한다(core 장부와 한 축)
+         potD        놓일 그릇 지름[m] — 원본 그루의 화분이 이 지름이 되게 줄인 뒤 화분만 걷는다(그루와 화분의 비가 원본 그대로)
+         lightAz · photo   방의 창 방향(모주 assemble 과 같은 뜻)
+         species     'monstera'(기본). 다른 종(D45 pink_princess · alocasia_frydek)은 아직 그리개가 없어 **null** —
+                     그 그리개가 서면 이 입구에 붙는다(core 는 칸만 넘기면 된다)
+         withPot     true 면 화분을 안 걷는다(검사·견줌용). 기본 false — 화분은 core 가 그린다
+
+       반환
+         THREE.Group(밑동 y=0) · 또는 **null** — 잎 0장 · 모르는 종 · 그 씨앗이 GMAX 안에 N 장을 못 냄 · 조립 실패
+       userData
+         kind:'youngPlant' · species · seed · growthDays · ageG(나이) · ageDays(받은 값)
+         leafCountWanted(N) · leafCount(실제로 그린 잎 — 잎 표가 붙은 축 가짓수) · leafBirths(N 장의 난때 · 아래→위)
+         nextLeaf01 · nextLeaf01Given
+         leaves:[]            모주 assemble 과 같은 규약(원본은 잎을 피벗으로 안 묶는다 — 처짐 없음 · 색만)
+         varieLeafKeys · (메시마다) varieSkin   무늬 잎 표 — 틴트를 씌우지 말 것(assemble 과 같은 규약)
+         sizeM {h, d}          화분을 걷은 뒤의 실제 높이·회전무관 지름[m]
+         droppedParts          걷어 낸 것의 이름(검사용 — 'pot' 하나여야 한다 · 폴백 화분이면 '(무표)' 둘)
+         skinsPending          아직 못 받은 무늬가 있나(있으면 도착 뒤 다시 지어야 한다)
+    */
+    youngPlantOf(o = {}) {
+      const species = (o && o.species) || 'monstera';
+      if (species !== 'monstera') return null;               // 그리개가 없는 종 — 지어내지 않는다
+      const leaves = Array.isArray(o.leaves) ? o.leaves : [];
+      const N = leaves.length;
+      if (N < 1) return null;
+      const seed = (o.seed ?? 0) >>> 0;
+      const given = Number.isFinite(o.nextLeaf01);
+      const f = given ? Math.max(0, Math.min(0.999, o.nextLeaf01)) : 0;
+      const az = o.lightAz ?? Math.PI * 0.5, photo = o.photo ?? 0.5;
+
+      /* ① 난 때 — N+1 장이 보일 때까지 나이를 늘려 읽는다(원본 최대 나이까지) */
+      const births = youngBirthsOf(seed, az, photo, N + 1);
+      if (births.length < N) return null;
+      const b0 = births[N - 1], b1 = births.length > N ? births[N] : null;
+
+      /* ②③ 나이 → 생장일. 원본 ageOf 로 되짚어 [b0, b1) 안에 들게 맞춘다(반올림이 경계를 넘지 않게) */
+      const gA = b1 != null ? b0 + f * (b1 - b0) : b0;
+      let days = Math.max(0, Math.min(G.GMAX, Math.ceil(G.dayOfAge(gA) - 1e-9)));
+      while (days < G.GMAX && G.ageOf(days) < b0) days++;
+      while (b1 != null && days > 0 && G.ageOf(days) >= b1 && G.ageOf(days - 1) >= b0) days--;
+
+      /* ④ 잎 상태·그림 — 정본이 준 대로 */
+      const leafState = leaves.map((l, i) => ({ leafBirth: births[i], varie: !!(l && l.varie), matured: !!(l && l.matured) }));
+      const leafSkins = [];
+      leaves.forEach((l, i) => { if (l && l.varie && (l.midSkin || l.matSkin)) leafSkins.push({ leafBirth: births[i], mid: l.midSkin || null, mat: l.matSkin || null }); });
+
+      let plant;
+      try {
+        plant = assembler.assemble({ growthDays: days, seed, potD: o.potD, lightAz: az, photo, leafState, leafSkins });
+      } catch (e) { return null; }
+      lastResult = null;
+      const inner = plant.children[0];
+      if (!inner) { disposeTree(plant); return null; }
+      const s = inner.scale.x;
+
+      /* ⑤ 화분 걷기 — 원본이 그루에 단 것(part: stem·bump·leaf)만 남긴다 */
+      const droppedParts = [];
+      if (!o.withPot) {
+        for (const c of [...inner.children]) {
+          if (c.userData && c.userData.part) continue;
+          droppedParts.push((c.userData && c.userData.assetKey) || '(무표)');
+          inner.remove(c); disposeTree(c);
+        }
+        inner.position.y = -G.__soilY() * s;                // 밑동(흙 높이)을 y=0 에
+        delete plant.userData.potPart;
+      }
+
+      const leafAx = new Set();
+      inner.traverse(c => { const u = c.userData || {}; if (u.part === 'leaf' && u.axisKey) leafAx.add(u.axisKey); });
+      const bb = new THREE.Box3().setFromObject(plant);
+      Object.assign(plant.userData, {
+        kind: 'youngPlant', species, seed, growthDays: days, ageG: gA,
+        ageDays: Number.isFinite(o.ageDays) ? o.ageDays : null,
+        leafCountWanted: N, leafCount: leafAx.size, leafBirths: births.slice(0, N),
+        nextLeaf01: f, nextLeaf01Given: given,
+        leaves: [], droppedParts,
+        sizeM: { h: bb.isEmpty() ? 0 : (bb.max.y - bb.min.y), d: rotSafeDiameter(plant, plant) }
+      });
+      return plant;
     }
   };
   return assembler;
+
+  /* youngPlantOf 의 손 — 그 씨앗의 난 때를 «필요한 장수»까지만 읽고 담아 둔다(위상 읽기는 싸지 않다).
+     나이를 두 배씩 늘린다 · 원본 최대 나이(ageOf(GMAX))에서 멈춘다. */
+  function youngBirthsOf(seed, az, photo, want) {
+    const key = `${seed}|${az.toFixed(3)}|${photo.toFixed(2)}`;
+    const hit = youngBirthCache.get(key);
+    const gMax = G.ageOf(G.GMAX);
+    if (hit && (hit.list.length >= want || hit.g >= gMax)) return hit.list;
+    G.__setLight(az, photo);
+    let g = hit ? Math.min(gMax, hit.g * 2) : Math.min(gMax, 400), list = [];
+    for (;;) {
+      list = G.__leafBirthsOf(seed, g);
+      if (list.length >= want || g >= gMax) break;
+      g = Math.min(gMax, g * 2);
+    }
+    youngBirthCache.set(key, { g, list });
+    return list;
+  }
 
   /* ── 이 아래는 branchOf 의 손발이다. 그리기 규칙을 한 개도 안 갖고 있다 ── */
 
