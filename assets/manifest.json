@@ -19408,36 +19408,124 @@
         "credits": 44,
         "balance_after": 56,
         "note": "장부 assets/v2/char/_src/hero_unity/clips/_clips.json"
+      },
+      {
+        "date": "2026-10-10",
+        "window": "master(house 주문)",
+        "service": "higgsfield",
+        "use": "유니티 원룸 벽지 4k 둘(U14)",
+        "qty": 2,
+        "credits": 6,
+        "balance_after": null,
+        "note": "장부 assets/gen/hf_runs/house_20261010_3d_M.json"
+      },
+      {
+        "date": "2026-10-10",
+        "window": "master(char 주문)",
+        "service": "higgsfield",
+        "use": "남자 주인공 정본 후보 셋 × 2(max 2k)",
+        "qty": 6,
+        "credits": 54,
+        "balance_after": null,
+        "note": "장부 assets/gen/hf_runs/char_male_20261010.json"
+      },
+      {
+        "date": "2026-10-10",
+        "window": "master(leaf 주문)",
+        "service": "higgsfield",
+        "use": "다시 뽑기 3줄 6장 · 자세한 판 시험 1단계 2 · 새 종 바탕 메시 5(Tripo 12) · retexture 12 번 failed(돌려받음)",
+        "qty": 13,
+        "credits": 82,
+        "balance_after": null,
+        "note": "장부 assets/gen/hf_runs/leaf_20261009_r2_3d.json"
+      },
+      {
+        "date": "2026-10-10",
+        "window": "master(leaf 주문)",
+        "service": "higgsfield",
+        "use": "새 종 무늬 판 Tripo 넷(fallback · retexture 먹통) · 멀쩡한 Meshy GLB retexture 시험 1(failed · 돌려받음)",
+        "qty": 4,
+        "credits": 48,
+        "balance_after": null,
+        "note": "장부 assets/gen/hf_runs/leaf_20261009_r2_3d.json"
+      },
+      {
+        "date": "2026-10-10",
+        "window": "master(char 주문)",
+        "service": "higgsfield",
+        "use": "남자 낯 여섯(max 2k) + 장난감 턴어라운드 둘(max 4k)",
+        "qty": 8,
+        "credits": 84,
+        "balance_after": null,
+        "note": "장부 assets/gen/hf_runs/char_male_20261010.json"
+      },
+      {
+        "date": "2026-10-10",
+        "window": "master(leaf 주문)",
+        "service": "higgsfield",
+        "use": "자세한 판 시험 r2·r3(2.75 × 4) · 3D(Tripo 12) · SC_young(Tripo 12)",
+        "qty": 6,
+        "credits": 35,
+        "balance_after": null,
+        "note": "장부 unity_kit/plants/kit_log.json(저장소 밖) · leaf_20261009_r2_3d.json"
+      },
+      {
+        "date": "2026-10-10",
+        "window": "master(char 주문)",
+        "service": "higgsfield",
+        "use": "남자 주인공 3D 두 판(Meshy multi-image 30 · Tripo multiview 18)",
+        "qty": 2,
+        "credits": 48,
+        "balance_after": null,
+        "note": "장부 assets/gen/hf_runs/char_male_20261010.json"
+      },
+      {
+        "date": "2026-10-10",
+        "window": "master(house 주문)",
+        "service": "higgsfield",
+        "use": "가구점 마지막 아홉 원화 18(nano 2) + 3D 아홉(Tripo standard 9)",
+        "qty": 27,
+        "credits": 117,
+        "balance_after": 61.02,
+        "note": "장부 assets/gen/hf_runs/house_20261010_last9.json · ★ 박사님 «이제 힉스필드 사용은 마무리»(10-10) — 이것이 마지막"
       }
     ],
     "balance_checked": {
-      "date": "2026-10-09",
-      "meshy": 56,
-      "higgsfield": 551.5,
-      "_measured_by": "총괄 — meshy_check_balance · Higgsfield balance(10-09 23:5x)",
-      "_delta_note": "higgsfield 2388.75 → 551.5 = 1837.25 = 위 higgsfield 줄 열하나(324+330+54+72+66+407+279.25+6+42+92+165). 빈 곳 없음 · meshy 100 → 56 = rig 5 + animate 39",
-      "_rule": "저장소엔 JPEG q95(불투명) · PNG(투명, 2k 넘으면 1024) — 원본 PNG 는 저장소 밖 C:/Users/pc/Desktop/빛식물/_hf_masters/(같은 상대 경로) · 다시 받을 작업 번호는 장부(assets/gen/hf_runs)",
+      "date": "2026-10-10",
+      "meshy": 12,
+      "higgsfield": 61.02,
+      "_measured_by": "총괄 — Higgsfield balance · transactions(10-10 01:3x)",
+      "_delta_note": "higgsfield 551.5 → 61.02 = 490.48 = 위 10-10 줄 여덟(474) + 줄에 안 적은 12(다른 창 Tripo 1 · 내역 15:04Z 무렵 · 누가 썼는지 장부로는 못 가림) + «AI Influencer Sheet» 4건 4.48(16:31Z · 이 프로젝트 창이 돌린 것 아님). 하루 합 2388.75 → 61.02 = 2,327.73",
+      "_cost_lesson": "그림이 약 80% · 가장 큰 몫은 캐릭터 그림 약 110장을 max(2k 9 · 4k 15)로 돌린 것(약 920 · high 였으면 약 300). 다음엔 기본 high · max 는 고른 판만",
       "_prev": {
         "date": "2026-10-09",
-        "meshy": 100,
-        "higgsfield": 2388.75,
-        "_measured_by": "총괄 — meshy_check_balance · Higgsfield balance(10-09 22:5x · plan ultra)",
-        "_delta_note": "meshy 464 → 110 = 354 = 위 줄 둘(81+270) + 줄 없는 3. higgsfield 는 10-09 처음 잼(2406.75) → 18 = ev_neighbor_order 2장 · 뒤이어 앞치마 retexture 10 → 100",
-        "_higgsfield_caution": "10-09 Higgsfield 커넥터 이어짐(ultra). 박사님이 웹에서 켠 언리미티드는 커넥터에 안 잡힌다(unlim available:false). get_cost 는 장당 값(count 무시)",
+        "meshy": 56,
+        "higgsfield": 551.5,
+        "_measured_by": "총괄 — meshy_check_balance · Higgsfield balance(10-09 23:5x)",
+        "_delta_note": "higgsfield 2388.75 → 551.5 = 1837.25 = 위 higgsfield 줄 열하나(324+330+54+72+66+407+279.25+6+42+92+165). 빈 곳 없음 · meshy 100 → 56 = rig 5 + animate 39",
+        "_rule": "저장소엔 JPEG q95(불투명) · PNG(투명, 2k 넘으면 1024) — 원본 PNG 는 저장소 밖 C:/Users/pc/Desktop/빛식물/_hf_masters/(같은 상대 경로) · 다시 받을 작업 번호는 장부(assets/gen/hf_runs)",
         "_prev": {
           "date": "2026-10-09",
-          "meshy": 464,
-          "higgsfield": null,
+          "meshy": 100,
+          "higgsfield": 2388.75,
+          "_measured_by": "총괄 — meshy_check_balance · Higgsfield balance(10-09 22:5x · plan ultra)",
+          "_delta_note": "meshy 464 → 110 = 354 = 위 줄 둘(81+270) + 줄 없는 3. higgsfield 는 10-09 처음 잼(2406.75) → 18 = ev_neighbor_order 2장 · 뒤이어 앞치마 retexture 10 → 100",
+          "_higgsfield_caution": "10-09 Higgsfield 커넥터 이어짐(ultra). 박사님이 웹에서 켠 언리미티드는 커넥터에 안 잡힌다(unlim available:false). get_cost 는 장당 값(count 무시)",
           "_prev": {
-            "date": "2026-10-08",
-            "meshy": 2009,
+            "date": "2026-10-09",
+            "meshy": 464,
             "higgsfield": null,
-            "_gap_note": "⚠ 08-30 4470 → 10-08 2009(총괄이 잰 값). 그 사이 2,461 은 이 장부에 줄이 없다 — 이 파일로는 누가 썼는지 모른다. 짐작해서 적지 않는다"
-          },
-          "_delta_note": "✔ 2009 → 464 = 1,545 = 위 10-09 줄 열여섯(53+39+153+354+99+165+50+10+30+170+90+189+36+18+80+9). 빈 곳 없다(21:0x)",
-          "_measured_by": "총괄 — meshy_check_balance(10-09 20:5x)",
-          "_higgsfield_caution": "10-09 Higgsfield 커넥터가 «not connected» 라 못 쟀다(Kling 은 이어짐). ⚠ 08-03 에 791 이었던 것이 0 이 됐다. 그 사이 기록은 한 줄도 없다. 쓴 것인지 플랜이 만료돼 날아간 것인지 모른다(지금 plan_type=free). 짐작해서 적지 않는다",
-          "_note": "다음에 재는 창은 이 값과 비교해라. 값이 늘어 있으면 누군가 충전한 것이고, 줄어 있는데 entries 가 그대로면 누군가 쓰고 안 적은 것이다"
+            "_prev": {
+              "date": "2026-10-08",
+              "meshy": 2009,
+              "higgsfield": null,
+              "_gap_note": "⚠ 08-30 4470 → 10-08 2009(총괄이 잰 값). 그 사이 2,461 은 이 장부에 줄이 없다 — 이 파일로는 누가 썼는지 모른다. 짐작해서 적지 않는다"
+            },
+            "_delta_note": "✔ 2009 → 464 = 1,545 = 위 10-09 줄 열여섯(53+39+153+354+99+165+50+10+30+170+90+189+36+18+80+9). 빈 곳 없다(21:0x)",
+            "_measured_by": "총괄 — meshy_check_balance(10-09 20:5x)",
+            "_higgsfield_caution": "10-09 Higgsfield 커넥터가 «not connected» 라 못 쟀다(Kling 은 이어짐). ⚠ 08-03 에 791 이었던 것이 0 이 됐다. 그 사이 기록은 한 줄도 없다. 쓴 것인지 플랜이 만료돼 날아간 것인지 모른다(지금 plan_type=free). 짐작해서 적지 않는다",
+            "_note": "다음에 재는 창은 이 값과 비교해라. 값이 늘어 있으면 누군가 충전한 것이고, 줄어 있는데 entries 가 그대로면 누군가 쓰고 안 적은 것이다"
+          }
         }
       }
     }
