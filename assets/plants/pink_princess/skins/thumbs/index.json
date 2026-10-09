@@ -4,6 +4,15 @@
  "tool": "tools/glb_thumb.mjs",
  "updated": "2026-10-09",
  "thumbs": {
+  "pp_leaf_mature_allpink.glb": {
+   "png": "pp_leaf_mature_allpink.png",
+   "m": {
+    "x": 1.682,
+    "z": 1.7403,
+    "y": 1.8981
+   },
+   "view": "top"
+  },
   "pp_leaf_mature_pinkheavy.glb": {
    "png": "pp_leaf_mature_pinkheavy.png",
    "m": {
@@ -22,12 +31,30 @@
    },
    "view": "top"
   },
+  "pp_leaf_mid_allpink.glb": {
+   "png": "pp_leaf_mid_allpink.png",
+   "m": {
+    "x": 1.267,
+    "z": 1.4375,
+    "y": 1.8975
+   },
+   "view": "top"
+  },
   "pp_leaf_mid_pinkmarble.glb": {
    "png": "pp_leaf_mid_pinkmarble.png",
    "m": {
     "x": 1.267,
     "z": 1.4375,
     "y": 1.8975
+   },
+   "view": "top"
+  },
+  "pp_leaf_young_allpink.glb": {
+   "png": "pp_leaf_young_allpink.png",
+   "m": {
+    "x": 1.5666,
+    "z": 1.848,
+    "y": 1.8986
    },
    "view": "top"
   },
