@@ -140,10 +140,14 @@ const FLOOR = (x, z) => ({ x, y: 0, z });
 const PLACE = { size: room.size, slots: room.slots, snapDist: 0.05 };
 
 /* 하루씩 진행 — 조도·growth 없이 삽수만 돌린다(뿌리내림은 빛과 무관하므로 이게 맞다) */
+/* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings · «놓인 것만»).
+     이 검사는 뿌리·혹·기한을 재는 판이라 **용기에 담긴 삽수는 놓인 것으로 둔다**(방이 없는 순수 코어 판 · 자리 이름 하나).
+     용기 안 고른 «가방 조각»(status 'bag' · method 없음)은 그대로 둔다 */
+const placeCutsForTest = (S) => { for (const c of (S && S.cuttings) || []) if (c && c.method && !c.at && !c.slotId) c.slotId = 'test-sill:0'; };
 function runDays(S, n, logs, lightOf) {
   const out = [];
   for (let i = 0; i < n; i++) {
-    S.day++;
+    S.day++; placeCutsForTest(S);
     out.push(P.stepCuttings(S, { log: m => (logs ? logs.push(m) : null), lightOf: lightOf || null }));
   }
   return out;

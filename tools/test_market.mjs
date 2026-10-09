@@ -67,8 +67,12 @@ const nodesOf = (leaves, varie) => ([
   { nodeId: 'n0#0', stem: 'pink', leaves: 3, variegatedLeaves: 0, growthDays: 100 },
   { nodeId: 'n0#1', stem: 'pink', leaves, variegatedLeaves: varie, growthDays: 100 }
 ]);
+/* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings · «놓인 것만»).
+     이 검사는 뿌리·혹·기한을 재는 판이라 **용기에 담긴 삽수는 놓인 것으로 둔다**(방이 없는 순수 코어 판 · 자리 이름 하나).
+     용기 안 고른 «가방 조각»(status 'bag' · method 없음)은 그대로 둔다 */
+const placeCutsForTest = (S) => { for (const c of (S && S.cuttings) || []) if (c && c.method && !c.at && !c.slotId) c.slotId = 'test-sill:0'; };
 /* 뿌리내릴 때까지 하루씩 흘린다. ★ `stepMarket` 도 같이 돈다 — 하루의 일이다 */
-function tick(S) { S.day += 1; S.tutorial.day += 1; stepCuttings(S); return stepMarket(S); }
+function tick(S) { S.day += 1; S.tutorial.day += 1; placeCutsForTest(S); stepCuttings(S); return stepMarket(S); }
 function rootedCutting(S, { leaves = 1, varie = 0 } = {}) {
   give(S, 'jar');
   const c = takeCutting(S, { nodes: nodesOf(leaves, varie), nodeId: 'n0#1', container: 'jar' });

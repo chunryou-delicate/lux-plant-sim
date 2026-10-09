@@ -7432,9 +7432,11 @@ function drawCuttings() {
     const why = lst
       ? (lst.status === 'contacted' ? '📩 연락이 왔습니다 — [상점]에서 거래하세요'
                                     : '중고 거래에 내놓았습니다 · ' + marketWaitKo())
-      : (v.status === 'rooting'
+      : ((v.status === 'rooting'
           ? (METHODS[c.method].rootDays + '일짜리 · ' + v.days + '일째')
-          : v.statusKo);
+          : v.statusKo)
+         /* ★ 2026-10-08 — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings) — 왜 그대로인지 그 줄에서 말한다 */
+         + ((c.method && !c.at && !c.slotId) ? ' · 가방에선 멈춰 있습니다 — 방에 놓아야 자랍니다' : ''));
     mine.push('<div class="cutRow' + (dying || (lst && lst.status === 'contacted') ? ' warn' : '') +
       '"><div class="nm">' +
       v.containerKo + ' · 잎 ' + v.leaves + '장' + (v.variegated ? ' · 무늬' : '') +
@@ -7803,6 +7805,7 @@ const CUT_ART = Object.freeze({
 const isCutPlace = (what) => /^cutting:/.test(String(what || ''));
 const cutIdOf = (what) => String(what || '').split(':')[1] || null;
 const cutThumbId = (id) => 'cutThumb_' + String(id).replace(/[^\w]/g, '_');
+const BAG_CUT_PAUSED_KO = '가방 안 삽수는 자라지 않습니다 — 방에 놓아 주세요';   /* D29 · [plan] 19358f22 문안 */
 /* 아직 방에 안 선 삽수들 */
 function bagCuttings() {
   return cuttingsOf(S).filter(c => c && !c.at && !c.slotId);
@@ -8077,6 +8080,8 @@ function drawBag() {
   /* ★★★ **자른 삽수** (2026-08-16 · §cuttingBagHTML). 거둔 채소보다 **앞**에 둔다 —
      삽수는 놓아야 할 물건이고 채소는 보여 주는 물건이다. 할 일이 먼저다. */
   html += cuttingBagHTML();
+  /* ★ 2026-10-09 D29(총괄 11:35) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings). 왜 그대로인지 가방이 말한다(글은 [plan] 몫 · BAG_CUT_PAUSED_KO) */
+  try { if (bagCuttings().some(c => c && c.method && c.status !== 'dead')) html += '<div class="bagmore">' + BAG_CUT_PAUSED_KO + '</div>'; } catch { }
   /* ★★★ **거둔 채소** (2026-08-16 · 박사님: *"수확하면 채소가 인벤에 들어와야되는데 안들어오네"*) */
   html += harvestedCropHTML();
   /* ⚠ **끄는 중에는 다시 그리지 않는다.** 칸이 곧 손잡이라 `innerHTML` 로 갈아 끼우면

@@ -278,7 +278,11 @@ function playToEnding(opt = {}) {
       const node = pickNode(v.nodes, v.budget);
       if (node && stockOf(S, 'jar') >= 1) {
         try {
-          takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar' });
+          /* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다. 사람이 [병에] 뒤 끌어 놓듯 **방의 빈 칸에 놓는다**(선반 칸부터) */
+          const free = (light.room.slots || []).filter(x => /etagere|desk|nightstand/.test(x.slotId))
+            .find(x => !cuttingsOf(S).some(c => c && c.slotId === x.slotId) && !(S.pots || []).some(q => q && q.slotId === x.slotId));
+          takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar',
+                           ...(free ? { at: { x: free.x, y: free.y, z: free.z }, slots: light.room.slots, size: light.room.size, snapDist: 0 } : {}) });
           trace.cutsTaken++;
           if (trace.firstCutDay == null) trace.firstCutDay = S.day;
         } catch { /* 체력·재고·초보 규칙 */ }

@@ -1882,6 +1882,12 @@ export function stepCuttings(S, opt = {}) {
        ★ 굶기는 것이 아니다. 자리도 빛도 없는 물건이라 셀 것이 없을 뿐이고,
          시계는 `putCuttingIn` 이 켠다(그것이 박사님 ② 의 뜻이다). */
     if (c.status === 'bag' || !c.method) { alive.push(c); continue; }
+    /* ★★ 2026-10-08 (총괄 11:12 ② · [plan] 갈래 지도 16) — **용기에 담겼어도 방에 안 놓인 삽수는 하루가 안 간다.**
+         ⛔ 병·흙에 담아 «[가방]에 넣었습니다» 한 삽수가 자리 없이 뿌리 → 혹 → 시듦 기한까지 갔다(총괄 봇 cut1008c — 방 자리를
+           시루로 다 채워 «no-slot» 인데도 가방에서 분갈이까지) · 이사 뒤 자리를 잃은 삽수는 가방 그림인데 기한이 돌아 죽을 수 있었다.
+         ★ 박사님 08-17 규칙 그대로다 — «가방으로 회수되면 성장은 멈춰 있는 것으로»(game.html §pickTake) · 화분도 가방이면 안 돈다(loop §inBag).
+           한쪽만 멈추면 «놓기»가 뜻이 없어진다. 놓는 순간(setCuttingAt) 그날부터 다시 센다. */
+    if (!c.at && !c.slotId) { alive.push(c); continue; }
     c.days++;
     const m = METHODS[c.method];
     if (!m) throw new Error(`[삽수] ${c.id} 의 방식이 이상합니다: ${c.method}`);

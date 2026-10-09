@@ -85,6 +85,9 @@ const nodesOf = (leaves, varie) => ([
 /* 삽수 하나를 **팔 수 있는 데까지** 굴린다. 날짜는 propagation 이 정한다 —
    여기서 12 를 적지 않는다(그 값이 바뀌면 이 검사가 조용히 거짓말한다). */
 function growUntilSellable(S, c) {
+  /* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings · «놓인 것만»). 그래서 **먼저 놓는다** —
+       방이 없는 순수 코어 검사라 자리 이름 하나만 준다(빛은 안 묻는다 · 뿌리내림은 빛과 무관) */
+  if (!c.at && !c.slotId) c.slotId = 'test-sill:0';
   for (let i = 0; i < 400 && c.status === 'rooting'; i++) { S.day += 1; stepCuttings(S); }
   return c;
 }

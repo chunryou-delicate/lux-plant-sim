@@ -55,16 +55,17 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
   /* ★ 2026-10-08 원룸 줄([plan] f39fbddb 청) — 사람이 할 일을 «이미 해 놓고» 몸이 자라기를 기다리는 동안은 독촉하지 않는다 */
   if (id === 'oneroom_root_bright') {
     /* 무늬 삽수를 잘라 꽂아 «뿌리내리는 중»이면 기다림(밝은 자리에 두는 것까지 했다) */
-    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.varieFromCut && c.status === 'rooting');
+    /* ⚠ 2026-10-08 — 방에 «놓인» 삽수만(가방 속 삽수는 하루가 안 간다 · propagation §stepCuttings) — 가방에 둔 것을 기다림으로 치면 «놓으라»가 영영 안 나온다 */
+    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.varieFromCut && c.status === 'rooting' && (c.at || c.slotId));
   }
   /* ★ 2026-10-08 D25(총괄) — first_cut 은 «뿌리를 냈다»로 끝난다. 잘라 물에 꽂은 뒤로는 사람이 할 것이 없다.
      ⚠ «자르기 문이 잠긴 동안»(무늬 다 자란 잎 < 2)은 여기서 안 센다 — [plan] c07263f1 이 그동안 퀘스트를 «안 연다»(열린 것만 독촉한다). */
   if (id === 'first_cut') {
-    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.method === 'water' && c.status === 'rooting');
+    return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.method === 'water' && c.status === 'rooting' && (c.at || c.slotId));   /* 놓인 것만(위와 같은 까닭) */
   }
   if (id === 'oneroom_settle_cutting') {
     /* 뿌리는 냈는데 아직 «혹»이 안 났으면 기다림 — 혹이 나야 흙으로 옮길 수 있다(혹이 나면 할 수 있음) */
-    const cs = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.varieFromCut);
+    const cs = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.varieFromCut && (c.at || c.slotId));   /* 놓인 것만 */
     return cs.some(c => c.status === 'rooted') && !cs.some(c => c.status === 'node');
   }
   /* ★ 2026-10-08 [plan] be02f66a 청 — 반지하 varie_bright 는 «무늬 원천 0»이면 기다림.

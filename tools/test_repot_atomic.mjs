@@ -36,6 +36,10 @@ const NODES = () => ([
 ]);
 
 /* 뿌리를 낸 삽수 하나가 물꽂이에 있는 판 */
+/* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings · «놓인 것만»).
+     이 검사는 뿌리·혹·기한을 재는 판이라 **용기에 담긴 삽수는 놓인 것으로 둔다**(방이 없는 순수 코어 판 · 자리 이름 하나).
+     용기 안 고른 «가방 조각»(status 'bag' · method 없음)은 그대로 둔다 */
+const placeCutsForTest = (S) => { for (const c of (S && S.cuttings) || []) if (c && c.method && !c.at && !c.slotId) c.slotId = 'test-sill:0'; };
 function rooted() {
   const S = newState({ room: 'banjiha', mode: 'real' });
   S.pots.push({ id: 'pot_01', plantId: 'monstera_deliciosa', slotId: null, at: null,
@@ -43,7 +47,7 @@ function rooted() {
   S.shop.stock.jar = 5;
   S.shop.stock.pot = 5;
   const c = takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar' });
-  for (let i = 0; i < 12; i++) { S.day++; stepCuttings(S); }
+  for (let i = 0; i < 12; i++) { S.day++; placeCutsForTest(S); stepCuttings(S); }
   return { S, c };
 }
 
@@ -88,9 +92,12 @@ check('C ★던진 뒤 제대로 된 자리로 다시 하면 된다 — 「이�
 /* ══ D · ★자리를 안 주는 옛 경로는 그대로다 (규칙을 새로 만들지 않았다) ══════ */
 check('D 자리를 안 주면 예전처럼 자리 없이 분갈이된다 (경로를 안 없앴다)', () => {
   const { S, c } = rooted();
+  /* D29 — 뿌리내리려면 놓여 있어야 해서(rooted §placeCutsForTest) 자리가 이미 있다. 뜻은 «분갈이가 자리를 안 만든다·안 바꾼다» 그대로 */
+  const before = { slotId: c.slotId, at: c.at };
   repotCutting(S, c.id);
   assert.equal(c.potted, true, '자리 없는 분갈이가 막혔습니다');
-  assert.equal(c.slotId, null, '자리를 안 줬는데 자리가 생겼습니다');
+  assert.equal(c.slotId, before.slotId, '자리를 안 줬는데 자리가 바뀌었습니다');
+  assert.equal(c.at, before.at, '자리를 안 줬는데 좌표가 생겼습니다');
 });
 
 let fail = 0;

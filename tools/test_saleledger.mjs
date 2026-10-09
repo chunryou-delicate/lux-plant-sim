@@ -75,12 +75,16 @@ const nodes = () => ([
   { nodeId: 'n0#1', stem: 'pink', leaves: 1, variegatedLeaves: 0, growthDays: 100 }
 ]);
 
+/* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings · «놓인 것만»).
+     이 검사는 뿌리·혹·기한을 재는 판이라 **용기에 담긴 삽수는 놓인 것으로 둔다**(방이 없는 순수 코어 판 · 자리 이름 하나).
+     용기 안 고른 «가방 조각»(status 'bag' · method 없음)은 그대로 둔다 */
+const placeCutsForTest = (S) => { for (const c of (S && S.cuttings) || []) if (c && c.method && !c.at && !c.slotId) c.slotId = 'test-sill:0'; };
 /* 판매 세 갈래를 실제로 한 번씩 돌린다. 반환 { S, potWon, cutWon, cropWon } */
 function sellAllThree() {
   const S = newGame();
   give(S, 'jar');
   const c = takeCutting(S, { nodes: nodes(), nodeId: 'n0#1', container: 'jar' });
-  for (let i = 0; i < 400 && c.status === 'rooting'; i++) { S.day += 1; stepCuttings(S); }
+  for (let i = 0; i < 400 && c.status === 'rooting'; i++) { S.day += 1; placeCutsForTest(S); stepCuttings(S); }
   const cutWon = sellCuttingNow(S, c.id).won;
   const cropWon = creditCropSurplus(S, 3_000).won;
   const potWon = sellPotNow(S, { leaves: 3, variegatedLeaves: 0 }).won;

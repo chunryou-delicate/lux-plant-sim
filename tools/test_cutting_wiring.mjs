@@ -81,6 +81,10 @@ const node = (id, leaves, varie = 0, stem = 'thick') =>
 const mother = (total, cut = 1) => [node('n0#0', total, 0, 'main'), node('n0#1', cut)];
 const PIECE = 'n0#1';
 
+/* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings · «놓인 것만»).
+     이 검사는 뿌리·혹·기한을 재는 판이라 **용기에 담긴 삽수는 놓인 것으로 둔다**(방이 없는 순수 코어 판 · 자리 이름 하나).
+     용기 안 고른 «가방 조각»(status 'bag' · method 없음)은 그대로 둔다 */
+const placeCutsForTest = (S) => { for (const c of (S && S.cuttings) || []) if (c && c.method && !c.at && !c.slotId) c.slotId = 'test-sill:0'; };
 /* 하루를 넘긴다 — loop.nextDay 와 **같은 순서**다(날짜를 올린 뒤 상점, 그 다음 삽수). */
 function tick(S, log) {
   S.day++;
@@ -89,6 +93,7 @@ function tick(S, log) {
      부른다 · shop.js §⑦-1). 여기 없으면 이 하네스에서는 연락이 영영 안 와서
      「올려 두면 팔린다」가 하네스 안에서만 거짓이 된다 — 실제로 그렇게 한 번 헛짚었다. */
   SH.stepMarket(S, { log });
+  placeCutsForTest(S);
   return P.stepCuttings(S, { log });
 }
 

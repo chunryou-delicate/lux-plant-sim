@@ -83,9 +83,13 @@ const PIECE2 = 'n0#2';
 /* ★빛 — **하네스가 정한다.** 코어는 빛을 안 재고(`opt.lightOf` 로 받는다) 여기서는
    「자라는 빛」을 늘 준다. 안 주면 잎이 한 장도 안 나서 ④ 가 통째로 무의미해진다.
    ⚠ 밴드는 `best` 다 — 무늬 소질을 정하는 축(propagation §③)도 이 값을 본다. */
+/* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings · «놓인 것만»).
+     이 검사는 뿌리·혹·기한을 재는 판이라 **용기에 담긴 삽수는 놓인 것으로 둔다**(방이 없는 순수 코어 판 · 자리 이름 하나).
+     용기 안 고른 «가방 조각»(status 'bag' · method 없음)은 그대로 둔다 */
+const placeCutsForTest = (S) => { for (const c of (S && S.cuttings) || []) if (c && c.method && !c.at && !c.slotId) c.slotId = 'test-sill:0'; };
 const LIT = () => ({ dli: 8, grows: true, band: 'best' });
 function tick(S, opt = {}) {
-  S.day++;
+  S.day++; placeCutsForTest(S);
   return P.stepCuttings(S, { lightOf: LIT, ...opt });
 }
 /* 자리 하나 — 방 밖 검사를 안 타는 자유 좌표(place.resolvePlacement 의 free 길) */
@@ -460,7 +464,7 @@ check('⑧ **옛 세이브**(용기를 정해 자른 판 · 새 칸이 통째로
   assert.equal(c2.clockOnDay, null, '없던 기준일이 지어내졌습니다');
   assert.equal(P.clockDayOf(c2), c2.cutOnDay, '기준일이 없으면 자른 날로 읽어야 합니다');
   /* 이어서 굴려도 예전 기한 그대로 */
-  while (c2.status !== 'node' && S2.day < 200) { S2.day++; P.stepCuttings(S2, { lightOf: LIT }); }
+  while (c2.status !== 'node' && S2.day < 200) { S2.day++; placeCutsForTest(S2); P.stepCuttings(S2, { lightOf: LIT }); }
   assert.equal(c2.deadlineDay,
     c2.cutOnDay + P.METHODS.water.nodeDays + P.METHODS.water.graceDaysNovice,
     `옛 판의 기한이 Day ${c2.deadlineDay} 로 달라졌습니다`);

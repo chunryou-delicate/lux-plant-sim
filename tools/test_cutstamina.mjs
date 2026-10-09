@@ -64,6 +64,10 @@ const NODES = () => ([
 
 /* 자를 수 있는 판 하나. **자유 모드**다 — 초보에서는 모주를 끝내는 자르기가 따로 막히는데
    여기서 재는 것은 체력이지 초보 규칙이 아니다(그건 test_propagation §G 가 본다). */
+/* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings · «놓인 것만»).
+     이 검사는 뿌리·혹·기한을 재는 판이라 **용기에 담긴 삽수는 놓인 것으로 둔다**(방이 없는 순수 코어 판 · 자리 이름 하나).
+     용기 안 고른 «가방 조각»(status 'bag' · method 없음)은 그대로 둔다 */
+const placeCutsForTest = (S) => { for (const c of (S && S.cuttings) || []) if (c && c.method && !c.at && !c.slotId) c.slotId = 'test-sill:0'; };
 function cuttable({ jars = 5, pots = 5 } = {}) {
   const S = newState({ room: 'banjiha', mode: 'real' });
   S.pots.push({ id: 'pot_01', plantId: 'monstera_deliciosa', slotId: null, at: null,
@@ -87,7 +91,7 @@ check('A-2 분갈이가 체력을 쓴다 (ACT_COST.repot)', () => {
   assert.equal(costOf('repot'), 1, 'stamina.js 의 repot 비용이 1이 아닙니다');
   const S = cuttable();
   const c = takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar' });
-  for (let i = 0; i < 12; i++) { S.day++; stepCuttings(S); }   // 뿌리를 낼 때까지
+  for (let i = 0; i < 12; i++) { S.day++; placeCutsForTest(S); stepCuttings(S); }   // 뿌리를 낼 때까지
   staminaOf(S).left = STAMINA_MAX;                             // 자르기 몫을 지운다 — repot 만 잰다
   staminaOf(S).spentToday = 0;
   repotCutting(S, c.id);
@@ -116,7 +120,7 @@ check('B-1 ★바닥이면 자르기가 막힌다 — 그때 상태가 **하나�
 check('B-2 ★바닥이면 분갈이가 막힌다 — 포트도 안 나가고 삽수도 병에 그대로다', () => {
   const S = cuttable();
   const c = takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar' });
-  for (let i = 0; i < 12; i++) { S.day++; stepCuttings(S); }
+  for (let i = 0; i < 12; i++) { S.day++; placeCutsForTest(S); stepCuttings(S); }
   staminaOf(S).left = 0;
   const before = { pot: stockOf(S, 'pot'), jar: stockOf(S, 'jar'), snap: JSON.stringify(c) };
   assert.throws(() => repotCutting(S, c.id), /손이 다 떨어졌습니다/, '바닥인데 분갈이됐습니다');
@@ -128,7 +132,7 @@ check('B-2 ★바닥이면 분갈이가 막힌다 — 포트도 안 나가고 �
 check('C-1 ★막힌 것은 고장이 아니라 안내다 — 자르기·분갈이 둘 다 tutorialInput 이 붙는다', () => {
   const S = cuttable();
   const c = takeCutting(S, { nodes: NODES(), nodeId: 'ax0#0', container: 'jar' });
-  for (let i = 0; i < 12; i++) { S.day++; stepCuttings(S); }
+  for (let i = 0; i < 12; i++) { S.day++; placeCutsForTest(S); stepCuttings(S); }
   staminaOf(S).left = 0;
   for (const [what, fn] of [
     ['자르기', () => takeCutting(S, { nodes: NODES(), nodeId: 'ax1#0', container: 'jar' })],

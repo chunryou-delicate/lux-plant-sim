@@ -695,6 +695,12 @@ function attachEvents(S, turn, fpBefore) {
       emptySiru: rows.some(r => r && (r.kind || 'beansprout') === 'beansprout' && r.placed && (!r.sown || r.harvested))
     };
   } catch { turn.cropNow = null; }
+  /* ★ 2026-10-09 D29 ([plan] 19358f22) — 가방에 든(방에 안 놓인) 안 죽은 삽수 수. 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings) —
+       몬이 «가방에 든 삽수는 하루가 안 가. 방에 놓아 줘.»가 이 값 > 0 일 때 선다. 못 세면 null */
+  try {
+    turn.bagCuttings = (Array.isArray(S.cuttings) ? S.cuttings : [])
+      .filter(c => c && c.status !== 'dead' && c.method && !c.at && !c.slotId).length;
+  } catch { turn.bagCuttings = null; }
   return turn;
 }
 
