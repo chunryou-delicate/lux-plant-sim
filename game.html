@@ -808,6 +808,14 @@
   #dlg{position:absolute;z-index:34;left:0;right:0;bottom:0;display:none;
        padding:0 10px calc(var(--safe-b) + 10px);pointer-events:none}
   #dlgBox,#dlgSkip{pointer-events:auto}
+  /* ★ 2026-10-09 사건 원화 카드 — 대사 상자 위 가운데 · 정사각(원화 1024²) · 초상화가 그 앞에 선다(뒤 형제가 위에 그려진다) */
+  #sceneArt{position:absolute;left:50%;bottom:calc(100% - 10px);transform:translateX(-50%);
+       width:var(--artS);height:var(--artS);--artS:min(84vw, 40vh, 460px);
+       border-radius:16px;overflow:hidden;opacity:0;transition:opacity .35s ease;pointer-events:none;
+       box-shadow:0 10px 40px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.14);background:#120f1a}
+  #sceneArt.on{opacity:1}
+  #sceneArt img{width:100%;height:100%;object-fit:cover;display:block}
+  @media (min-width:1000px) and (min-aspect-ratio:13/10){ #sceneArt{--artS:min(46vh, 520px)} }
   #stage.talking #dlg{display:block}
   #dlgBox{position:relative;display:flex;gap:10px;align-items:flex-end;
        min-height:100px;padding:12px 14px 14px;border-radius:16px;
@@ -2018,6 +2026,8 @@
            .noface 가 붙으면 얼굴 자리에 빛만 돈다. 얼굴을 그려 넣지 말 것. -->
     <div id="dlg">
       <button id="dlgSkip">건너뛰기</button>
+      <!-- ★ 2026-10-09 (char 사건 원화) — 큰 장면 대사 위 그림 카드(§sceneArtOf). 그림이 없으면 안 뜬다(onerror) · 손짓을 안 먹는다 -->
+      <div id="sceneArt" aria-hidden="true"><img id="sceneArtImg" alt="" onerror="this.closest('#sceneArt').classList.remove('on'); this.dataset.bad='1'"></div>
       <div id="dlgBox">
         <div id="dlgFace"></div>
         <div id="dlgMain">
@@ -3172,6 +3182,7 @@ import { setLampAim, clearLampAim } from './src/game/state.js';
 /* ★ 2026-10-08 A·B 덧([plan]) — 놓는 순간 빛 경고의 자: real 판은 날씨 기댓값(weatherE) · 무늬 삽수는 뿌리낸 날 등급의 자(varieLightStepOfBand) */
 import { modeOf } from './src/game/state.js';
 import { varieLightStepOfBand } from './src/game/shop.js';
+import { potLeafGradesOf, potLeafGradesSeenOf } from './src/game/shop.js';   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
 import { weatherE } from './src/engine/weather.js';
 import * as save from './src/game/save.js';
 import {
@@ -9808,6 +9819,9 @@ function closeHomeAsk() { $('homePanel').classList.remove('on'); $('homePanel').
 /* [계약한다] → 그림이 밝아지고 열세 줄 → 대사가 끝나면 마무리 카드(②-D) → [다음] */
 let homeCardPending = false;
 function doFinishHome() {
+  /* ★ 2026-10-09 (char · plan 답) — 엔딩 그림은 «계약 단추를 누른 순간» 가진 몬스테라(그루 + 자리 잡은 삽수 그루)로 고른다(마무리 카드와 같은 셈) */
+  try { const plantsNow = (S.pots || []).length + (cuttingsOf(S) || []).filter(c => c && (c.potted || c.status === 'established')).length;
+        const art = $('homeArt'); if (art) { art.style.display = ''; art.src = './assets/illust/' + (plantsNow > 0 ? 'ev_home_ending' : 'ev_home_ending_noplant') + '.png'; } } catch { }
   const f = finishEnding(S, io, endingOptNow());
   closeHomeAsk();
   document.documentElement.classList.add('homescene');
@@ -12584,8 +12598,53 @@ try {
   }
   auditFacePortraits(FACE_FILE);          /* 파일이 실제로 있나 — 결과는 조금 늦게 찍힌다 */
 } catch (e) { console.warn('[표정] 자가검사를 못 돌렸다 —', e && e.message); }
+/* ══ ★★ 2026-10-09 사건 원화 (char · docs/handoff/char-illust-plan-20261008.md) ══════════════════════════════
+   큰 장면 대사가 떠 있는 동안 대사 상자 위에 그림 카드. 고르는 값은 plan 갈래 지도·char 계획 그대로:
+     monsteraArrived → ev_monstera_arrive_v2
+     movedOut        → story.branchAtMove 로 ev_moveout_keep · _cuttings · _sold (모르면 안 띄운다)
+     movedInOneroom  → 도착 ev_oneroom_arrive · «바깥이 그대로 들어와» 줄부터 첫날 ev_oneroom_firstday
+     varieSeen       → 처음 드러난 무늬 등급: 산반 ev_first_varie_sanban · 하프문/풀문 ev_first_varie_halfmoon
+   ★ 대사 줄에 `art` 칸이 있으면 그것이 먼저다(plan 이 줄마다 못박을 수 있게 · 위 «바깥» 글 맞추기보다 굳다).
+   ⚠ 대사는 갈래를 안 읽는다 — 그림만 갈래를 탄다(char 계획 §83·86). 그림이 없으면 카드가 안 뜬다(onerror). */
+const SCENE_ART_DIR = './assets/illust/';
+let sceneArtStick = null;   /* 한 대본 안에서 «여기부터 다른 그림»을 붙잡는다 { scriptId, art } */
+function firstSeenGradeOf() {
+  try {
+    const p = pot0(S); if (!p) return null;
+    const seen = potLeafGradesSeenOf(p) || {}, led = potLeafGradesOf(p) || {};
+    const births = Object.keys(seen).filter(k => seen[k]).map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+    for (const b of births) if (led[b]) return led[b];
+  } catch { }
+  return null;
+}
+function sceneArtOf(line) {
+  if (!line) { sceneArtStick = null; return null; }
+  if (line.art) return line.art;
+  if (sceneArtStick && sceneArtStick.scriptId !== line.scriptId) sceneArtStick = null;
+  switch (line.scriptId) {
+    case 'monsteraArrived': return 'ev_monstera_arrive_v2';
+    case 'movedOut': { const b = S.story && S.story.branchAtMove; return b ? 'ev_moveout_' + b : null; }
+    case 'movedInOneroom':
+      if (/바깥이 그대로/.test(String(line.text || ''))) sceneArtStick = { scriptId: line.scriptId, art: 'ev_oneroom_firstday' };
+      return (sceneArtStick && sceneArtStick.art) || 'ev_oneroom_arrive';
+    case 'varieSeen': { const g = firstSeenGradeOf(); return (g === 'halfmoon' || g === 'fullmoon') ? 'ev_first_varie_halfmoon' : 'ev_first_varie_sanban'; }
+    default: return null;
+  }
+}
+function paintSceneArt(line) {
+  const box = $('sceneArt'), img = $('sceneArtImg');
+  if (!box || !img) return;
+  const name = sceneArtOf(line);
+  if (!name) { box.classList.remove('on'); return; }
+  const src = SCENE_ART_DIR + name + '.png';
+  if (img.dataset.src !== src) { img.dataset.src = src; img.dataset.bad = ''; img.src = src; }
+  if (img.dataset.bad === '1') { box.classList.remove('on'); return; }
+  box.classList.add('on');
+}
+window.__sceneArt = () => { const b = $('sceneArt'), i = $('sceneArtImg'); return { on: !!(b && b.classList.contains('on')), src: i ? i.dataset.src || null : null }; };   /* 재는 손잡이 */
 function dlgPaint() {
   const line = dlg.current();
+  try { paintSceneArt(line); } catch (e) { console.warn('[원화]', e && e.message); }
   if (!line) {
     $('stage').classList.remove('talking'); refreshOverlays();
     /* ★ 2026-08-18 — 대사 줄이 비었다. 기다리던 한 달 가계부가 있으면 **여기서** 뜬다

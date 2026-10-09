@@ -964,6 +964,9 @@ function packStory(story) {
     movedInOnDay: optDay(story.movedInOnDay, 'story.movedInOnDay'),
     /* ★ 2026-10-08 — 이사 날의 무늬 삽수 판 횟수(원룸 줄 oneroom_sell 이 «이 방에서 판 것»을 센다). 옛 세이브는 null */
     varieSaleAtMove: story.varieSaleAtMove == null ? null : needInt(story.varieSaleAtMove, 'story.varieSaleAtMove', { min: 0 }),
+    /* ★ 2026-10-09 — 이사 순간 손에 든 것(oneroom §branchAtMove · 반지하 떠나기 그림). 옛 세이브는 null(그림은 바탕만) */
+    branchAtMove: story.branchAtMove == null ? null
+      : (['keep', 'cuttings', 'sold'].includes(story.branchAtMove) ? story.branchAtMove : null),
     ending: {
       reachedOnDay: optDay(end.reachedOnDay, 'story.ending.reachedOnDay'),
       doneOnDay: optDay(end.doneOnDay, 'story.ending.doneOnDay'),

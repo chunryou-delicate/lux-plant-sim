@@ -155,7 +155,7 @@ export function newState(opt = {}) {
        ★ **단계(stage)를 여기 안 적는다.** 단계를 정하는 사실은 이미 상태에 둘 다 있다 —
          `tutorial.movedOut`(②를 했나)과 아래 `ending.doneOnDay`(④를 봤나)다.
          적어 두면 「이사는 했는데 단계는 반지하」인 어긋난 판이 생기고 고칠 길이 없다. */
-    story: { schema: 'story/1', movedInOnDay: null,
+    story: { schema: 'story/1', movedInOnDay: null, branchAtMove: null,
              ending: { reachedOnDay: null, doneOnDay: null, dippedOnDay: null } },   /* oneroom.createStoryState 와 같은 꼴(test_oneroom A) */
 
     /* 인터넷 주문 상점 — 배송 중인 주문과 도착한 재고 (2026-08-03).

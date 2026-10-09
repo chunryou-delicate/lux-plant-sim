@@ -78,6 +78,9 @@ export function createStoryState() {
     /* 원룸에 들어온 게임일. `null` 이면 아직 반지하다. `ts.movedOut` 과 같은 사실을
        가리키지만 **날짜**를 갖는다 — 「며칠부터 원룸이었나」는 여기밖에 없다. */
     movedInOnDay: null,
+    /* ★ 2026-10-09 (char 원화 · plan 갈래 지도) — 이사 순간 손에 든 것: 'keep'(모주 화분이 있다) · 'cuttings'(모주 없음 · 무늬 삽수 있음) ·
+         'sold'(둘 다 없음). 반지하 떠나기 그림 셋을 고른다(대사는 이 값을 안 읽는다). null = 아직 반지하 · 옛 세이브 */
+    branchAtMove: null,
     /* ④ 는 ending.js 가 쓴다. 상태의 모양만 여기서 만든다 —
        state.newState 가 부르는 팩토리가 하나여야 세이브 규약도 하나가 된다. */
     ending: { reachedOnDay: null, doneOnDay: null, dippedOnDay: null }   /* dippedOnDay: 2026-10-08 닿았다가 다시 모자라진 날(ending §stepEnding) */
@@ -245,6 +248,9 @@ export function moveIntoOneroom(S, io = {}, opt = {}) {
   story.movedInOnDay = S.day;
   /* ★ 2026-10-08 — 이사 날의 «무늬 삽수 판 횟수». 원룸 줄(oneroom_sell)이 «이 방에서 판 것»만 센다([plan] f39fbddb) */
   story.varieSaleAtMove = (ts.varieSale && Number.isInteger(ts.varieSale.count)) ? ts.varieSale.count : 0;
+  /* ★ 2026-10-09 — 이사 순간 손에 든 것(§createStoryState branchAtMove) · 자리를 비우기(③) 전에 센다 */
+  story.branchAtMove = (S.pots || []).length > 0 ? 'keep'
+    : (S.cuttings || []).some(c => c && c.status !== 'dead' && (c.varieFromCut || (c.variegatedLeaves || 0) > 0)) ? 'cuttings' : 'sold';
 
   /* ★★ 2026-10-08 D1(박사님 답) — **원룸 이사 때 «빛의 초보»를 끈다: 날씨·계절이 흐르기 시작한다.**
        후보: 원룸 이사 때 · 반지하 가을(45일) · 엔딩 뒤 ⇒ 고른 것: 원룸 이사 때(박사님).
