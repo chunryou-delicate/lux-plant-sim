@@ -2000,8 +2000,6 @@
       "intro_ko": "구멍 난 잎 그림 — 종이가 바랬다",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.01,
@@ -2020,8 +2018,6 @@
       "intro_ko": "흰 등대가 선 바닷가 — 창이 하나 더 생긴 듯",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.4,
         "d": 0.01,
@@ -2040,8 +2036,6 @@
       "intro_ko": "볕 드는 창턱에 웅크린 고양이",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.01,
@@ -2060,8 +2054,6 @@
       "intro_ko": "아침 안개가 걸린 능선",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.01,
@@ -2080,8 +2072,6 @@
       "intro_ko": "남색 밤에 차고 기우는 달",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.01,
@@ -2100,8 +2090,6 @@
       "intro_ko": "레몬과 복숭아, 유리 주전자",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.01,
@@ -2120,8 +2108,6 @@
       "intro_ko": "작은 화분이 빽빽한 선반 — 언젠가 이렇게",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.01,
@@ -2140,8 +2126,6 @@
       "intro_ko": "겨자·하늘·크림 빛 둥근 도형",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.01,
@@ -2160,8 +2144,6 @@
       "intro_ko": "저녁 골목에 우산 하나",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.01,
@@ -2180,8 +2162,6 @@
       "intro_ko": "빨간 지붕 집이 있는 들판",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.42,
         "d": 0.03,
@@ -2200,8 +2180,6 @@
       "intro_ko": "토분에 앉은 몬스테라 한 그루",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.25,
         "d": 0.03,
@@ -2220,8 +2198,6 @@
       "intro_ko": "흰 강아지가 고개를 갸웃",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.25,
         "d": 0.03,
@@ -2240,8 +2216,6 @@
       "intro_ko": "들꽃을 눌러 말린 표본",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.32,
         "d": 0.03,
@@ -2260,8 +2234,6 @@
       "intro_ko": "나무·찻잔·산 — 테이프로 붙인 엽서들",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.36,
         "d": 0.01,
@@ -2280,8 +2252,6 @@
       "intro_ko": "철이 바뀌면 그림도 넘어간다 — 창으로 드는 빛처럼",
       "_wall": "★ 2026-10-10 [house] 벽 걸이 v1(총괄 «걸이 자리» · 값=크기 규칙) — Higgsfield 그림(v2 textures/wall · 옷 층 faceTex). 이름·소개 plan bcf8dda3.",
       "mount": "wall-hang",
-      "shop_listed": false,
-      "_shop": "★ 10-10 core 가 가방 «산 그림» → 걸이 자리 고르기를 붙이면 true(그 전에 팔면 산 그림이 바닥 한가운데에 선다).",
       "size_m": {
         "w": 0.3,
         "d": 0.015,

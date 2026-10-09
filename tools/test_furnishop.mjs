@@ -9,7 +9,7 @@
 
      A 크기   141개를 빌더로 다시 지어 `size_m` 과 **한 톨이라도 다르면 깨진다**
               ⇒ 「값 매기기가 쓴 크기」와 「빌더가 내는 크기」가 두 벌이 될 수 없다
-     B 거르기 가구 87 · 안 내는 가구 18 · 걸러 낸 것 36. 걸러 낸 것이 정말 가구가 아닌가
+     B 거르기 가구 102 · 안 내는 가구 3 · 걸러 낸 것 36. 걸러 낸 것이 정말 가구가 아닌가
      C 값     규칙대로 나오나 · 제일 싼 것~제일 비싼 것 · 되사는 값
      D 문     등 해금 **전에는 목록에 없고** 주문도 막힌다 · 해금 뒤에는 있다
      E 사기   재고가 늘고 돈이 그만큼 나간다
@@ -100,8 +100,8 @@ console.log('\nB. 거르기 — 가구가 아닌 것이 안 들어왔나');
      2026-10-09 총괄 D44 — 브라운관 TV(tv_crt · v2 monitor.glb)가 새 가구로: 120 → 121 · 가구점 83 → 84 (값은 크기 규칙 그대로)
      2026-10-10 [house] 가게 진열대(shop_display · plan D59 · 투룸 가게 방에 처음부터) — 가구점에 안 낸다: 121 → 122 · 안 내는 가구 1 → 2 · 가구점 84 그대로 
      2026-10-10 [house] 새 러그 셋(체크 · 잎무늬 · 러너 · 총괄 «B 넣습니다» · 값은 크기 규칙): 122 → 125 · 가구점 84 → 87 
-     2026-10-10 [house] 벽 걸이 v1 열다섯(포스터·액자·엽서·달력 · mount wall-hang · 총괄) + 가게 주문판(안 냄): 125 → 141 · 가구점 87 그대로(벽 걸이는 core 가 걸이 자리 고르기를 붙일 때까지 안 냄 → 그때 102) · 안 내는 가구 2 → 18 */
-  ok('가구 87 · 안 내는 가구 18 · 전체 141', listedN === 87 && unlistedN === 18 && all.length === 141,
+     2026-10-10 [house] 벽 걸이 v1 열다섯(포스터·액자·엽서·달력 · mount wall-hang · 총괄) + 가게 주문판(안 냄): 125 → 141 · 가구점 87 → 102(core 2ca46715 가 걸이 자리 고르기를 붙인 뒤 켬) · 안 내는 가구 2 → 3 */
+  ok('가구 102 · 안 내는 가구 3 · 전체 141', listedN === 102 && unlistedN === 3 && all.length === 141,
      `가구 ${listedN} · 안 내는 가구 ${unlistedN} / 전체 ${all.length}`);
 
   /* ★ 조명은 **`lighting_presets.fixtures` 로 되짚어 확인한다** — 규칙이 코드에 있으므로
@@ -137,7 +137,7 @@ console.log('\nC. 값');
   const R = shop.FURNITURE_RULES;
   const open = { tutorial: { enabled: true, lamp: { unlocked: true } } };
   const list = shop.furnitureCatalogList(open);
-  ok('열리면 87줄', list.length === 87, String(list.length));
+  ok('열리면 102줄', list.length === 102, String(list.length));
   /* 2026-10-09 [plan] 한 줄 소개(intro_ko) — 칸이 있는 가구만 실린다 */
   { const crt = list.find(r => r.preset === 'tv_crt');
     ok('브라운관 TV 한 줄 소개가 목록에 실린다 · 칸 없는 가구는 null', !!crt && crt.intro === '안 켜지는 옛 TV — 화면에 작은 집 하나'
@@ -201,7 +201,7 @@ console.log('\nD. 문 — 등 기구 해금될 때 열린다');
   ok('막혀도 돈이 안 나갔다', S.tutorial.cashWon === 1_000_000);
 
   S.tutorial.lamp.unlocked = true;
-  ok('해금 뒤 목록에 87줄이 뜬다', shop.furnitureCatalogList(S).length === 87);
+  ok('해금 뒤 목록에 102줄이 뜬다', shop.furnitureCatalogList(S).length === 102);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -410,8 +410,8 @@ console.log('\nH. 안 내는 가구 · 프리셋이 정한 되파는 값 (2026-1
   } finally {
     shop.installFurniturePresets(PRESETS);                // 진짜 표로 되돌린다
   }
-  ok('진짜 표로 되돌렸다 — 가구점 87줄',
-     shop.furnitureCatalogList({ tutorial: { enabled: true, lamp: { unlocked: true } } }).length === 87);
+  ok('진짜 표로 되돌렸다 — 가구점 102줄',
+     shop.furnitureCatalogList({ tutorial: { enabled: true, lamp: { unlocked: true } } }).length === 102);
 }
 
 console.log(`\n${fail === 0 ? '✅' : '❌'} 통과 ${pass} · 실패 ${fail}`);

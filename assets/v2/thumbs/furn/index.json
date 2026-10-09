@@ -439,5 +439,65 @@
  "rug_runner_stripe": {
   "file": "assets/v2/thumbs/furn/rug_runner_stripe.webp",
   "v2": true
+ },
+ "poster_monstera": {
+  "file": "assets/v2/thumbs/furn/poster_monstera.webp",
+  "v2": true
+ },
+ "poster_seaside": {
+  "file": "assets/v2/thumbs/furn/poster_seaside.webp",
+  "v2": true
+ },
+ "poster_windowcat": {
+  "file": "assets/v2/thumbs/furn/poster_windowcat.webp",
+  "v2": true
+ },
+ "poster_mountain": {
+  "file": "assets/v2/thumbs/furn/poster_mountain.webp",
+  "v2": true
+ },
+ "poster_moon": {
+  "file": "assets/v2/thumbs/furn/poster_moon.webp",
+  "v2": true
+ },
+ "poster_fruit": {
+  "file": "assets/v2/thumbs/furn/poster_fruit.webp",
+  "v2": true
+ },
+ "poster_plantshelf": {
+  "file": "assets/v2/thumbs/furn/poster_plantshelf.webp",
+  "v2": true
+ },
+ "poster_shapes": {
+  "file": "assets/v2/thumbs/furn/poster_shapes.webp",
+  "v2": true
+ },
+ "poster_rainyalley": {
+  "file": "assets/v2/thumbs/furn/poster_rainyalley.webp",
+  "v2": true
+ },
+ "frame_field": {
+  "file": "assets/v2/thumbs/furn/frame_field.webp",
+  "v2": true
+ },
+ "frame_tinymonstera": {
+  "file": "assets/v2/thumbs/furn/frame_tinymonstera.webp",
+  "v2": true
+ },
+ "frame_dog": {
+  "file": "assets/v2/thumbs/furn/frame_dog.webp",
+  "v2": true
+ },
+ "frame_pressedflower": {
+  "file": "assets/v2/thumbs/furn/frame_pressedflower.webp",
+  "v2": true
+ },
+ "postcards": {
+  "file": "assets/v2/thumbs/furn/postcards.webp",
+  "v2": true
+ },
+ "calendar_season": {
+  "file": "assets/v2/thumbs/furn/calendar_season.webp",
+  "v2": true
  }
 }
