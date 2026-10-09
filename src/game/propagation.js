@@ -723,6 +723,59 @@ export function cutBudgetOf(S, nodes, opt = {}) {
   };
 }
 
+/* ══ ★★★ 2026-10-09 D36(총괄) — **같은 잎은 한 번만 잘린다** («유령 잎») ══════════════════
+   ------------------------------------------------------------
+   ⛔ 났던 일: growth(형태 정본)는 자른 것을 모르고 잎을 안 지운다 — 그 가지도 계속 자란다. 예전엔 «자른 마디 이름»만 뺐으므로
+     같은 줄기의 다른 마디(이미 잘려 나간 끝잎을 그대로 싣는다)가 목록에 남아 **같은 잎을 또 팔았다.**
+     화면에서 재현: n0#2 를 자른 뒤 n0#3 · #4 · #5 가 같은 잎(열쇠 "n0")을 싣고 [병에] 가 열려 있었다(tools/probe_ghost_cut.mjs).
+     갈래 판 g·1~9: 안내대로 모주 자르기 67번 중 41번이 그랬다(프롤로그 하프문 잎을 세 번 판 판도 있다).
+   ★ 무엇으로 재나 — 자를 때 실려 나간 잎의 **열쇠**(growth `leafKeys` · 축 경로 · 잎마다 유일)를 `pot.cuts[].leafKeys` 에 적고,
+     실은 잎 중 하나라도 이미 잘려 나간 마디는 뺀다(위쪽 마디 · 그 잎을 함께 싣는 아래쪽 마디 모두).
+     ⚠ 아래쪽 마디를 «남은 잎만» 세어 살려 두지 않는다 — 형태가 그 잎을 안 지우므로 마디의 잎 수·무늬·등급을 코어가 다시 짜야 하는데,
+       그건 형태를 지어내는 일이다. 모르면 안 한다(이 저장소의 규약).
+   ★ 옛 세이브(열쇠가 없는 기록) — 같은 마디를 지금 목록에서 찾아 그 열쇠로 갈음한다(growth 는 마디를 안 지우므로 같은 마디가 있다).
+     (그 마디가 싣는 열쇠가 곧 «그 마디 위 줄기»의 잎이다.) 못 찾으면 «그 마디 이름 + 같은 줄기의 그 위 마디»
+     (nodeId `축#번호` 의 번호가 크거나 같은 것)로 갈음한다. 열쇠를 모르는 마디는 안 막는다(§isGhostCutNode).
+   ⚠ 삽수 모주(motherCutting)는 안 탄다 — 그 마디는 코어 장부에서 나오고 자르면 잎이 실제로 빠진다(§takeCutting). */
+const AXIS_IDX_RE = /^(.*)#(\d+)$/;
+function axisIdxOf(nodeId) {
+  const m = AXIS_IDX_RE.exec(String(nodeId || ''));
+  return m ? { axis: m[1], idx: Number(m[2]) } : null;
+}
+export function cutGoneOf(S, nodes, opt = {}) {
+  const none = { keys: new Set(), axisCuts: [], cutIds: [] };
+  if (opt.motherCuttingId || opt.motherCutting) return none;
+  const pot = opt.pot || (opt.potId ? (S && S.pots || []).find(p => p.id === opt.potId) : (S && S.pots || [])[0]);
+  const cuts = (pot && Array.isArray(pot.cuts)) ? pot.cuts : [];
+  if (!cuts.length) return none;
+  const byId = new Map();
+  for (const n of nodes || []) if (n && typeof n.nodeId === 'string') byId.set(n.nodeId, n);
+  const keys = new Set(), axisCuts = [], cutIds = [];
+  for (const c of cuts) {
+    if (!c || typeof c.nodeId !== 'string') continue;
+    cutIds.push(c.nodeId);
+    let k = Array.isArray(c.leafKeys) ? c.leafKeys : null;
+    if (!k) { const n = byId.get(c.nodeId); if (n && Array.isArray(n.leafKeys)) k = n.leafKeys; }   // 옛 기록 — 같은 마디에서 갈음
+    if (k && k.length) for (const x of k) keys.add(x);
+    else axisCuts.push(c.nodeId);                                                                      // 그것도 못 하면 «줄기 + 위»
+  }
+  return { keys, axisCuts, cutIds };
+}
+function aboveOnAxis(nodeId, ids) {
+  const a = axisIdxOf(nodeId);
+  if (!a) return false;
+  for (const id of ids) { const b = axisIdxOf(id); if (b && b.axis === a.axis && a.idx >= b.idx) return true; }
+  return false;
+}
+export function isGhostCutNode(n, gone) {
+  if (!n || !gone) return false;
+  /* ⚠ 열쇠를 모르는 마디(합성 시험 마디 · 열쇠 칸 없는 옛 plant_grow)는 **안 막는다** — 모르면 안 막는다.
+       (처음엔 «줄기 + 위»로 막았더니 test_propagation L · test_ending_flow 의 합성 마디가 통째로 막혔다 — 그 마디들은 잎을 따로 단다) */
+  if (!Array.isArray(n.leafKeys) || !n.leafKeys.length) return false;
+  if (n.leafKeys.some(k => gone.keys.has(k))) return true;
+  return aboveOnAxis(n.nodeId, gone.axisCuts);   // 열쇠도 같은 마디도 못 찾은 옛 기록 — «마디 이름 + 같은 줄기의 그 위»
+}
+
 /* growth 가 낸 목록에서 **지금 실제로 자를 수 있는 것만** 남긴다.
    ★ `takeCutting` 이 자기 안에서 이걸 한 번 더 돌린다 — 호출부가 잊어도 새지 않는다.
    ★ 걸러 내는 사유를 같이 낸다(`why`) — 화면이 "왜 이 마디는 회색인가"를 말할 수 있게. */
@@ -730,12 +783,14 @@ export function cuttableNow(S, nodes, opt = {}) {
   if (!Array.isArray(nodes)) return [];
   const b = cutBudgetOf(S, nodes, opt);
   const cut = new Set(b.cutNodeIds);
+  const gone = cutGoneOf(S, nodes, opt);
   const out = [];
   for (const n of nodes) {
     if (!n || typeof n !== 'object') continue;
     if (!isCuttableStem(n.stem)) continue;                       // 잎꽂이는 안 된다(§①)
     if (!Number.isInteger(n.leaves) || n.leaves < 1) continue;   // 잎 없는 조각은 상품이 아니다
     if (cut.has(n.nodeId)) continue;                             // 이미 잘라낸 마디
+    if (isGhostCutNode(n, gone)) continue;                       // ★ D36 — 실은 잎이 이미 잘려 나간 마디(§cutGoneOf)
     if (n.leaves > b.leftLeaves) continue;                       // ★총량 — 없는 잎을 잘라낼 수 없다
     out.push(n);
   }
@@ -828,6 +883,9 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
   const b = cutBudgetOf(S, nodes, opt);
   if (b.cutNodeIds.includes(nodeId))
     return `${nodeId} 는 이미 잘라낸 마디입니다 — 같은 마디가 두 번 나오지 않습니다`;
+  /* ★ D36 — 실은 잎이 이미 잘려 나간 마디(§cutGoneOf). 문구는 plan 몫(지금은 뜻만) */
+  if (isGhostCutNode(node, cutGoneOf(S, nodes, opt)))
+    return `${nodeId} 의 잎은 이미 잘라 냈습니다 — 같은 잎을 두 번 자를 수 없습니다`;
   if (node.leaves > b.leftLeaves)
     return `${nodeId} 는 잎 ${node.leaves}장짜리인데 모주에 ${b.leftLeaves}장만 남았습니다 ` +
            `(잎 ${b.motherLeaves}장 중 ${b.lostLeaves}장을 이미 잘랐습니다) — ` +
@@ -1299,7 +1357,9 @@ export function takeCutting(S, opt = {}) {
           `${whereKo} · ${momCut.id} 에 잎 ${momCut.leaves}장이 남았습니다`);
   } else {
     if (!Array.isArray(pot.cuts)) pot.cuts = [];
-    pot.cuts.push({ day: S.day, cuttingId: id, nodeId: node.nodeId, stem: node.stem, leaves: node.leaves });
+    pot.cuts.push({ day: S.day, cuttingId: id, nodeId: node.nodeId, stem: node.stem, leaves: node.leaves,
+                    /* ★ D36 — 실려 나간 잎의 열쇠(§cutGoneOf). growth 가 열쇠를 안 내면(옛 plant_grow) 안 적는다 — 지어내지 않는다 */
+                    ...(Array.isArray(node.leafKeys) && node.leafKeys.length ? { leafKeys: node.leafKeys.map(String) } : {}) });
     pot.pendingCutLoss = {
       leaves: ((pot.pendingCutLoss && pot.pendingCutLoss.leaves) || 0) + node.leaves,
       nodes: ((pot.pendingCutLoss && pot.pendingCutLoss.nodes) || 0) + 1

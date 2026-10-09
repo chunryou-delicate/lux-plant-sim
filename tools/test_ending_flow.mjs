@@ -197,7 +197,8 @@ const SILL = 'banjiha-sill:0';
 /* 자를 마디 고르기 — probe_economy_gap.pickNode 와 같은 규칙(무늬 있는 작은 것부터) */
 function viewOf(S, io) {
   const v = varieView(S, { nodes: io.growth.cuttableNodes(), stats: io.growth.leafStats() });
-  return { nodes: cuttableNow(S, v.nodes || []), stats: motherStatsNow(S, v.stats),
+  /* ⚠ 2026-10-09 (총괄 · b5ba10df 구멍) — all = growth 가 낸 «전체» 마디. takeCutting 에는 이것을 넘긴다(game.html §cutNodesNow 와 같게) */
+  return { nodes: cuttableNow(S, v.nodes || []), all: v.nodes || [], stats: motherStatsNow(S, v.stats),
            budget: cutBudgetOf(S, v.nodes || []) };
 }
 function pickNode(nodes, budget) {
@@ -281,7 +282,7 @@ function playToEnding(opt = {}) {
           /* ★ 2026-10-09 D29(총괄) — 가방 속 삽수는 하루가 안 간다. 사람이 [병에] 뒤 끌어 놓듯 **방의 빈 칸에 놓는다**(선반 칸부터) */
           const free = (light.room.slots || []).filter(x => /etagere|desk|nightstand/.test(x.slotId))
             .find(x => !cuttingsOf(S).some(c => c && c.slotId === x.slotId) && !(S.pots || []).some(q => q && q.slotId === x.slotId));
-          takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar',
+          takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar',
                            ...(free ? { at: { x: free.x, y: free.y, z: free.z }, slots: light.room.slots, size: light.room.size, snapDist: 0 } : {}) });
           trace.cutsTaken++;
           if (trace.firstCutDay == null) trace.firstCutDay = S.day;

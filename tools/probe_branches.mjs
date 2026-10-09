@@ -128,6 +128,7 @@ export async function play(name, seed, opt = {}) {
   /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
   const qOpen = new Map();          // id → { since, run }
   const cutKeys = new Set();        // 모주에서 이미 잘려 나간 잎의 열쇠(leafKeys) — 진단용(§ghostCuts)
+  const seenBirth = new Set();      // 모주 잎(leafBirth) — 처음 본 날 센다(§leafMonths)
   const seenRoot = new Set();       // 뿌리내림을 이미 센 삽수 id
   /* 원룸 삽수 자리 — 안내대로(follow)는 «오늘 그 자리의 빛»을 재어 가장 밝은 빈 창턱을 고른다(퀘스트 «밝은 자리에서 뿌리내리세요»를 따르는 손).
      안 따르는 사람은 예전대로 ONE_BRIGHT 앞에서부터. 모주 자리(ONE_SILL)는 비운 자리로 안 본다 */
@@ -344,6 +345,18 @@ export async function play(name, seed, opt = {}) {
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
     out.cashDaily.push(cash);
+    /* ★ 2026-10-09 (총괄 D36 ③) — 원룸에서 «새 잎»이 달마다 몇 장 나나: 모주(leafState 의 새 leafBirth) · 삽수(cutting_leaf 사건) · 그중 무늬 */
+    { let ls = null; try { ls = pot0(S) ? io.growth.leafState() : null; } catch { }
+      const fresh = (Array.isArray(ls) ? ls : []).filter(r => r && Number.isFinite(r.leafBirth) && !seenBirth.has(r.leafBirth));
+      for (const r of fresh) seenBirth.add(r.leafBirth);
+      if (ts.movedOut && out.moveDay != null) {
+        const i = Math.max(0, Math.floor((S.day - out.moveDay - 1) / 30));
+        out.leafMonths = out.leafMonths || [];
+        while (out.leafMonths.length <= i) out.leafMonths.push({ mLeaves: 0, mVarie: 0, cLeaves: 0, cVarie: 0 });
+        const b = out.leafMonths[i];
+        for (const r of fresh) { b.mLeaves++; if (r.varie) b.mVarie++; }
+        for (const e of ((turn && turn.cuttings && turn.cuttings.events) || [])) if (e && e.id === 'cutting_leaf') { b.cLeaves++; if (e.variegated) b.cVarie++; }
+      } }
     if (LG) { const b = bucket(); const rest0 = cash - LG.start - LG.today; if (rest0) b.other += rest0;
               if (rest0 && (out.otherLog = out.otherLog || []).length < 10)
                 out.otherLog.push({ day: S.day, won: rest0, ev: [...new Set([...((turn && turn.events) || []), ...(((turn && turn.tutorial) || {}).events || [])].map(e => e && e.id).filter(Boolean))] });
@@ -468,6 +481,17 @@ for (const name of NAMES) {
     console.log(`  ◆ 무늬 삽수 판매 — 반지하 첫 판매 중앙 ${med(first) ?? '—'}일(${first.length}/${N}) · 원룸 판매 판당 ${(n1 / N).toFixed(1)}개 · 간격 중앙 ${med(gaps) ?? '—'}일` +
                 ` · 등급(잎) ${Object.entries(gc).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}${unk ? ` · 등급 모름 ${unk}개` : ''}` +
                 ` · 값 평균 ${won(Math.round(vs.flatMap(r => r.varieSales.map(x => x.won)).reduce((a, b) => a + b, 0) / Math.max(1, vs.reduce((a, r) => a + r.varieSales.length, 0))))}`); }
+  /* ★ 원룸 새 잎 — 달마다(판 평균) · 모주 / 자란 삽수 · 무늬 */
+  { const lm = rs.filter(r => (r.leafMonths || []).length);
+    if (lm.length) {
+      const M = Math.max(...lm.map(r => r.leafMonths.length));
+      const cell = (i, k) => { const v = lm.map(r => (r.leafMonths[i] || {})[k]).filter(x => x != null); return v.length ? (v.reduce((a, b) => a + b, 0) / v.length) : null; };
+      const f = x => x == null ? '—' : x.toFixed(1);
+      const rows = []; for (let i = 0; i < Math.min(M, 24); i++) rows.push(`${i + 1}달 ${f(cell(i, 'mLeaves'))}(${f(cell(i, 'mVarie'))})/${f(cell(i, 'cLeaves'))}(${f(cell(i, 'cVarie'))})`);
+      const tot = k => lm.reduce((a, r) => a + r.leafMonths.reduce((x, b) => x + b[k], 0), 0) / lm.reduce((a, r) => a + r.leafMonths.length, 0);
+      console.log(`  ✿ 원룸 새 잎 — 한 달 평균: 모주 잎 ${tot('mLeaves').toFixed(2)}장(무늬 ${tot('mVarie').toFixed(2)}) · 자란 삽수 잎 ${tot('cLeaves').toFixed(2)}장(무늬 ${tot('cVarie').toFixed(2)}) · 판 ${lm.length}`);
+      console.log(`    달마다 «모주 잎(무늬)/삽수 잎(무늬)»: ` + rows.join(' · '));
+    } }
   /* 장부(--ledger) — 판마다 이사 뒤 30일씩 · 단위 만 원 */
   if (arg('ledger', false)) for (const r of rs.filter(x => x.ledger && x.ledger.length)) {
     const m = v => (v / 1e4).toFixed(1).replace(/\.0$/, '');

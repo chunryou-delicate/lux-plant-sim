@@ -597,7 +597,8 @@ function play(opt = {}) {
              (`canMoveOut.why` · 퀘스트 줄). 그러니 **재는 자가 틀린 것**이다.
            ⇒ 그래서 **둘째 축이 열린 뒤에만 모주를 올린다.** 값은 한 글자도 안 바꿨다. */
         const axis2 = canMoveOut(ts).varie;
-        if (potWon && axis2 && ts.cashWon < MOVE_OUT_WON) {
+        /* ★ 2026-10-09 (총괄 D36 ④) — opt.keepMother 면 모주를 안 내놓는다(P90 — 무한 증식은 «살아 있는 모주»에서 잰다) */
+        if (potWon && axis2 && ts.cashWon < MOVE_OUT_WON && !opt.keepMother) {
           try { listPot(S, { leaves: v.stats.leaves, variegatedLeaves: v.stats.variegatedLeaves }); }
           catch { /* 이미 올렸거나 문이 아직 안 열렸다 */ }
         }
@@ -1118,7 +1119,9 @@ check('F 무늬 확률 — 반지하는 등을 켜도 무늬 최적 대역에 �
 });
 
 /* ══ P · ★삽수 판매 — 얼마에 · 얼마나 자주 · 남는가 ══════════════════════ */
-const P90 = play({ seed: 4, days: 90, cropSlot: DARK, plantSlot: SILL, noGrant: true });
+/* ⚠ 2026-10-09 (총괄 D36 ④) — keepMother: 예전엔 이 판이 90일 안에 모주를 팔아 P-2 가 «모주가 없습니다»로 늘 빨갰다(무한 증식을 잴 그루가 없음).
+     자 열 곳 구멍(b5ba10df · 615b8785)을 고친 뒤 자르기가 실제로 되면서 더 일찍 팔렸다. P-1 · P-3 도 같은 판이다(모주를 안 팔아도 뜻이 같다). */
+const P90 = play({ seed: 4, days: 90, cropSlot: DARK, plantSlot: SILL, noGrant: true, keepMother: true });
 
 check('P-1 삽수는 **뿌리내려야** 팔린다 — 자른 날 바로 못 판다', () => {
   assert.ok(P90.firstCutDay != null, '삽수를 한 번도 못 잘랐습니다 — 병이 안 왔거나 마디가 없습니다');

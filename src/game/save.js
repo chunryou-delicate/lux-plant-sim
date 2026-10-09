@@ -263,7 +263,11 @@ function packPot(p, i) {
         cuttingId: needStr(x.cuttingId, `${cp}.cuttingId`),
         nodeId: needStr(x.nodeId, `${cp}.nodeId`),
         stem: needStr(x.stem, `${cp}.stem`),
-        leaves: needInt(x.leaves ?? 0, `${cp}.leaves`, { min: 0 })
+        leaves: needInt(x.leaves ?? 0, `${cp}.leaves`, { min: 0 }),
+        /* ★ 2026-10-09 D36 — 실려 나간 잎의 열쇠(propagation §cutGoneOf · «같은 잎은 한 번만»). **없어도 된다**:
+             옛 세이브(이 칸 전)는 열쇠가 없고, 그때 코어는 같은 마디를 지금 목록에서 찾아 갈음하고,
+             못 찾으면 «마디 이름 + 같은 줄기의 그 위 마디»로 갈음한다. 그래서 옛 판이 안 깨진다 — 빈 배열로 메꾸지 않는다 */
+        ...(Array.isArray(x.leafKeys) ? { leafKeys: x.leafKeys.map((k, i) => needStr(k, `${cp}.leafKeys[${i}]`)) } : {})
       };
     }),
     pendingCutLoss: p.pendingCutLoss == null ? null : {
