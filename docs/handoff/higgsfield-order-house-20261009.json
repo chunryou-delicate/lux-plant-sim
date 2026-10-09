@@ -1,0 +1,1258 @@
+{
+ "_what": "[house] Higgsfield 주문 — 꾸미는 맛(총괄 10-09 · 박사님 «힉스필드 많이 써라») · 총괄이 위에서부터 돌린다. 문서: docs/handoff/house-higgsfield-order-20261009.md",
+ "_models": "nano_banana_2_1(Google · Meshy 원화를 낸 nano-banana-pro 와 같은 집안 — 기준 그림 결을 가장 잘 따름) · 투명 바탕이 필요한 것만 gpt_image_2_5(quality high · background transparent)",
+ "_cost_unit": {
+  "nano_banana_2_1": {
+   "1k": 1.5,
+   "2k": 2,
+   "4k": 3
+  },
+  "gpt_image_2_5": {
+   "1k": 1.5
+  }
+ },
+ "_cost_note": "get_cost 로 잰 값(10-09). count 는 고를 몫(한 프롬프트 여러 장)",
+ "_sum": {
+  "total": 227.5,
+  "by_group": {
+   "① 러그": 40,
+   "② 벽": 85.5,
+   "③ 방": 81,
+   "④ 카드": 21
+  },
+  "balance": 2406.75,
+  "later_B_cards84": 126
+ },
+ "_rule": "참조 순서 = refs 순서(첫째가 모양/구도, 마지막이 결) · {k} = 1..count · 고르는 것은 house(검수 기준 check) · after 가 있는 것은 앞 것을 고른 뒤",
+ "_after": "받으면 save_as 에 다 저장(고르지 않은 것도) · job_id 는 assets/gen/v2_tasks.json «house_hf_20261009» · 크레딧은 assets/manifest.json _credit_log. 고르기·잇기는 [house].",
+ "items": [
+  {
+   "n": 1,
+   "group": "① 러그",
+   "id": "rug",
+   "ko": "러그(크림)",
+   "use": "가게 3번째 줄 · 원룸·투룸 바닥",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A rug seen exactly from above (top-down, no perspective), the rug fills the entire frame edge to edge with no floor or background visible, flat even light, no shadow, no text. Flat-woven cream rug #e7ddd0 with a soft taupe #d3c3b2 border band inset from the edge and a faint woven texture; short fringe on the two short ends.",
+    "aspect_ratio": "4:3",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_rug_runner.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/rug/rug_{k}.png",
+   "out": "assets/v2/textures/rug/rug.webp",
+   "prompt_ko": "위에서 본 크림 평직 러그 · 안쪽 회갈색 테두리 띠 · 짧은 술(짧은 두 변)",
+   "check": "위에서 본 그림(원근 없음) · 러그가 틀을 꽉 채움(가장자리 2% 안 · 바닥 안 보임) · 글자 없음 · 몸 색이 프리셋 색 결 · 게임 카메라로 방에 깔아 보고 고른다",
+   "wire": "house: furniture_dress 에 «윗면 그림» 갈래(코드 러그 윗면에 map · 평면 UV) — 새 GLB 없이",
+   "credits": 8
+  },
+  {
+   "n": 2,
+   "group": "① 러그",
+   "id": "rug_mint",
+   "ko": "러그(민트)",
+   "use": "가게 2번째 줄",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A rug seen exactly from above (top-down, no perspective), the rug fills the entire frame edge to edge with no floor or background visible, flat even light, no shadow, no text. Soft mint #d6e2dc rug with a simple cream geometric border of small diamonds, faint woven texture.",
+    "aspect_ratio": "4:3",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_rug_runner.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/rug/rug_mint_{k}.png",
+   "out": "assets/v2/textures/rug/rug_mint.webp",
+   "prompt_ko": "위에서 본 민트 러그 · 크림 마름모 테두리",
+   "check": "위에서 본 그림(원근 없음) · 러그가 틀을 꽉 채움(가장자리 2% 안 · 바닥 안 보임) · 글자 없음 · 몸 색이 프리셋 색 결 · 게임 카메라로 방에 깔아 보고 고른다",
+   "wire": "house: furniture_dress 에 «윗면 그림» 갈래(코드 러그 윗면에 map · 평면 UV) — 새 GLB 없이",
+   "credits": 8
+  },
+  {
+   "n": 3,
+   "group": "① 러그",
+   "id": "rug_check_butter",
+   "ko": "러그(체크 · 버터) — 새 가구 1.6×1.2",
+   "use": "새 가구점 줄 — 총괄 OK 뒤 프리셋",
+   "plan": "B 새 가구(값=크기 규칙 · 러그 47,600 · 러너 43,700)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A rug seen exactly from above (top-down, no perspective), the rug fills the entire frame edge to edge with no floor or background visible, flat even light, no shadow, no text. Butter-yellow and cream gingham check rug, small checks, soft cotton look.",
+    "aspect_ratio": "4:3",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_rug_runner.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/rug/rug_check_butter_{k}.png",
+   "out": "assets/v2/textures/rug/rug_check_butter.webp",
+   "prompt_ko": "러그(체크 · 버터) — 새 가구 1.6×1.2",
+   "check": "위에서 본 그림(원근 없음) · 러그가 틀을 꽉 채움(가장자리 2% 안 · 바닥 안 보임) · 글자 없음 · 몸 색이 프리셋 색 결 · 게임 카메라로 방에 깔아 보고 고른다",
+   "wire": "house: furniture_dress 에 «윗면 그림» 갈래(코드 러그 윗면에 map · 평면 UV) — 새 GLB 없이 · 프리셋 하나(type rug · 크기) · test_furnishop 수 올림",
+   "credits": 8
+  },
+  {
+   "n": 4,
+   "group": "① 러그",
+   "id": "rug_leaf_sage",
+   "ko": "러그(잎무늬 · 세이지) — 새 가구 1.6×1.2",
+   "use": "새 가구점 줄 — 총괄 OK 뒤 프리셋",
+   "plan": "B 새 가구(값=크기 규칙 · 러그 47,600 · 러너 43,700)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A rug seen exactly from above (top-down, no perspective), the rug fills the entire frame edge to edge with no floor or background visible, flat even light, no shadow, no text. Sage green rug with scattered cream monstera leaf silhouettes (split leaves with holes), calm and sparse.",
+    "aspect_ratio": "4:3",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_rug_runner.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/rug/rug_leaf_sage_{k}.png",
+   "out": "assets/v2/textures/rug/rug_leaf_sage.webp",
+   "prompt_ko": "러그(잎무늬 · 세이지) — 새 가구 1.6×1.2",
+   "check": "위에서 본 그림(원근 없음) · 러그가 틀을 꽉 채움(가장자리 2% 안 · 바닥 안 보임) · 글자 없음 · 몸 색이 프리셋 색 결 · 게임 카메라로 방에 깔아 보고 고른다",
+   "wire": "house: furniture_dress 에 «윗면 그림» 갈래(코드 러그 윗면에 map · 평면 UV) — 새 GLB 없이 · 프리셋 하나(type rug · 크기) · test_furnishop 수 올림",
+   "credits": 8
+  },
+  {
+   "n": 5,
+   "group": "① 러그",
+   "id": "rug_runner_stripe",
+   "ko": "러너 러그(줄무늬) — 새 가구 0.62×1.1",
+   "use": "새 가구점 줄 — 총괄 OK 뒤 프리셋",
+   "plan": "B 새 가구(값=크기 규칙 · 러그 47,600 · 러너 43,700)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A rug seen exactly from above (top-down, no perspective), the rug fills the entire frame edge to edge with no floor or background visible, flat even light, no shadow, no text. Long grey-beige runner rug with thin warm stripes across, tassels on both short ends, like the runner in the reference room.",
+    "aspect_ratio": "9:16",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_rug_runner.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/rug/rug_runner_stripe_{k}.png",
+   "out": "assets/v2/textures/rug/rug_runner_stripe.webp",
+   "prompt_ko": "러너 러그(줄무늬) — 새 가구 0.62×1.1",
+   "check": "위에서 본 그림(원근 없음) · 러그가 틀을 꽉 채움(가장자리 2% 안 · 바닥 안 보임) · 글자 없음 · 몸 색이 프리셋 색 결 · 게임 카메라로 방에 깔아 보고 고른다",
+   "wire": "house: furniture_dress 에 «윗면 그림» 갈래(코드 러그 윗면에 map · 평면 UV) — 새 GLB 없이 · 프리셋 하나(type rug · 크기) · test_furnishop 수 올림",
+   "credits": 8
+  },
+  {
+   "n": 6,
+   "group": "② 벽",
+   "id": "poster_monstera",
+   "ko": "포스터-몬스테라 도감",
+   "use": "벽 · 크기 0.30×0.42",
+   "plan": "A 새 가구(값=크기 규칙 · 약 42,600~43,400원 → 가게 첫 줄들)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A vintage botanical plate of one fenestrated monstera leaf with its stem and a small aerial root, on aged cream paper, delicate hatching.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_monstera_{k}.png",
+   "out": "assets/v2/textures/wall/poster_monstera.webp",
+   "prompt_ko": "옛 식물 도감 그림 — 구멍 난 몬스테라 잎 하나 · 바랜 크림 종이",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 7,
+   "group": "② 벽",
+   "id": "poster_seaside",
+   "ko": "포스터-바닷가",
+   "use": "벽 · 크기 0.42×0.59",
+   "plan": "A 새 가구(값=크기 규칙 · 약 42,600~43,400원 → 가게 첫 줄들)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A calm pastel seaside: soft sun, a small white lighthouse on a green cliff, gentle waves, a few gulls.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_seaside_{k}.png",
+   "out": "assets/v2/textures/wall/poster_seaside.webp",
+   "prompt_ko": "파스텔 바닷가 · 해 · 작은 흰 등대 · 잔물결",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 8,
+   "group": "② 벽",
+   "id": "poster_windowcat",
+   "ko": "포스터-창가 고양이",
+   "use": "벽 · 크기 0.30×0.42",
+   "plan": "A 새 가구(값=크기 규칙 · 약 42,600~43,400원 → 가게 첫 줄들)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A sleepy orange tabby cat curled on a sunny windowsill next to two small potted plants, warm light.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_windowcat_{k}.png",
+   "out": "assets/v2/textures/wall/poster_windowcat.webp",
+   "prompt_ko": "햇볕 드는 창턱에 웅크린 고양이 · 화분 둘",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 9,
+   "group": "② 벽",
+   "id": "frame_field",
+   "ko": "액자-들판(그림만)",
+   "use": "벽 · 크기 0.35×0.47(틀 안)",
+   "plan": "A 새 가구(값=크기 규칙 · 약 42,600~43,400원 → 가게 첫 줄들)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A small painted landscape: green field, a gentle hill, one little house with a red roof, big soft clouds.",
+    "aspect_ratio": "3:4",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_frame_clock.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/frame_field_{k}.png",
+   "out": "assets/v2/textures/wall/frame_field.webp",
+   "prompt_ko": "들판·언덕·빨간 지붕 집 하나·뭉게구름",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 10,
+   "group": "② 벽",
+   "id": "frame_tinymonstera",
+   "ko": "액자-작은 몬스테라(그림만)",
+   "use": "벽 · 크기 0.20×0.25(틀 안)",
+   "plan": "A 새 가구(값=크기 규칙 · 약 42,600~43,400원 → 가게 첫 줄들)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A tiny watercolor of a young monstera in a terracotta pot, loose and charming.",
+    "aspect_ratio": "4:5",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_frame_clock.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/frame_tinymonstera_{k}.png",
+   "out": "assets/v2/textures/wall/frame_tinymonstera.webp",
+   "prompt_ko": "토분에 심은 어린 몬스테라 수채",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 11,
+   "group": "② 벽",
+   "id": "poster_mountain",
+   "ko": "포스터-산 능선",
+   "use": "벽 · 포스터 0.30×0.42 / 액자 틀 안",
+   "plan": "B 덤(새 가구 · 그림만 다른 프리셋)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. Layered soft blue-green mountain ridges at morning with a pale sun and mist.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_mountain_{k}.png",
+   "out": "assets/v2/textures/wall/poster_mountain.webp",
+   "prompt_ko": "포스터-산 능선",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 12,
+   "group": "② 벽",
+   "id": "poster_moon",
+   "ko": "포스터-달의 모양",
+   "use": "벽 · 포스터 0.30×0.42 / 액자 틀 안",
+   "plan": "B 덤(새 가구 · 그림만 다른 프리셋)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. Eight small moon phases in a gentle arc on a deep navy background with tiny stars.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_moon_{k}.png",
+   "out": "assets/v2/textures/wall/poster_moon.webp",
+   "prompt_ko": "포스터-달의 모양",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 13,
+   "group": "② 벽",
+   "id": "poster_fruit",
+   "ko": "포스터-과일 정물",
+   "use": "벽 · 포스터 0.30×0.42 / 액자 틀 안",
+   "plan": "B 덤(새 가구 · 그림만 다른 프리셋)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A simple still life of a lemon, two peaches and a glass jug on a cloth, warm light.",
+    "aspect_ratio": "3:4",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_fruit_{k}.png",
+   "out": "assets/v2/textures/wall/poster_fruit.webp",
+   "prompt_ko": "포스터-과일 정물",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 14,
+   "group": "② 벽",
+   "id": "poster_plantshelf",
+   "ko": "포스터-식물 선반",
+   "use": "벽 · 포스터 0.30×0.42 / 액자 틀 안",
+   "plan": "B 덤(새 가구 · 그림만 다른 프리셋)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A cozy illustration of a wooden shelf full of small houseplants in mismatched pots, a trailing pothos.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_plantshelf_{k}.png",
+   "out": "assets/v2/textures/wall/poster_plantshelf.webp",
+   "prompt_ko": "포스터-식물 선반",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 15,
+   "group": "② 벽",
+   "id": "poster_shapes",
+   "ko": "포스터-부드러운 도형",
+   "use": "벽 · 포스터 0.30×0.42 / 액자 틀 안",
+   "plan": "B 덤(새 가구 · 그림만 다른 프리셋)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. Soft abstract shapes in muted blue, mustard and cream like a mid-century print, calm composition.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_shapes_{k}.png",
+   "out": "assets/v2/textures/wall/poster_shapes.webp",
+   "prompt_ko": "포스터-부드러운 도형",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 16,
+   "group": "② 벽",
+   "id": "frame_dog",
+   "ko": "액자-강아지(그림만)",
+   "use": "벽 · 포스터 0.30×0.42 / 액자 틀 안",
+   "plan": "B 덤(새 가구 · 그림만 다른 프리셋)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A painted portrait of a fluffy white puppy sitting, cute and simple background.",
+    "aspect_ratio": "4:5",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_frame_clock.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/frame_dog_{k}.png",
+   "out": "assets/v2/textures/wall/frame_dog.webp",
+   "prompt_ko": "액자-강아지(그림만)",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 17,
+   "group": "② 벽",
+   "id": "frame_pressedflower",
+   "ko": "액자-눌린 꽃(그림만)",
+   "use": "벽 · 포스터 0.30×0.42 / 액자 틀 안",
+   "plan": "B 덤(새 가구 · 그림만 다른 프리셋)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A pressed wildflower specimen with a few small leaves on cream paper.",
+    "aspect_ratio": "3:4",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_frame_clock.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/frame_pressedflower_{k}.png",
+   "out": "assets/v2/textures/wall/frame_pressedflower.webp",
+   "prompt_ko": "액자-눌린 꽃(그림만)",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 18,
+   "group": "② 벽",
+   "id": "poster_rainyalley",
+   "ko": "포스터-비 오는 골목",
+   "use": "벽 · 포스터 0.30×0.42 / 액자 틀 안",
+   "plan": "B 덤(새 가구 · 그림만 다른 프리셋)",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no pins, no shadow. No text, no letters, no numbers, no logos. A narrow Korean alley on a rainy evening, umbrellas, warm shop light reflecting on wet ground, no signs.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_blue.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/poster_rainyalley_{k}.png",
+   "out": "assets/v2/textures/wall/poster_rainyalley.webp",
+   "prompt_ko": "포스터-비 오는 골목",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 19,
+   "group": "② 벽",
+   "id": "postcards",
+   "ko": "엽서 묶음(셋 · 알파)",
+   "use": "벽 · 0.36×0.26",
+   "plan": "A 새 가구",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Three small illustrated postcards (a tree, a cup of tea, a mountain) overlapping slightly, each held by a strip of washi tape, isolated on a transparent background, viewed straight-on, no shadow, no text.",
+    "aspect_ratio": "3:2",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/postcards_{k}.png",
+   "out": "assets/v2/textures/wall/postcards.webp",
+   "prompt_ko": "엽서 셋(나무·찻잔·산)이 살짝 겹치고 마스킹테이프 · 투명 바탕",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선) · 투명 바탕 가장자리 깨끗",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인",
+   "credits": 4.5
+  },
+  {
+   "n": 20,
+   "group": "② 벽",
+   "id": "calendar_spring",
+   "ko": "달력 — 봄 쪽",
+   "use": "벽 · 달력",
+   "plan": "A 새 가구 하나(달력 · 0.30×0.45) · 게임 계절(io.light.skyFor)로 쪽이 바뀐다",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A wall calendar page viewed straight-on filling the frame: the top 60% is an illustration of a narrow alley with cherry blossoms and a bicycle; the bottom 40% is a simple grid of 5 rows by 7 small empty squares drawn in faded ink, with two small binder rings at the very top. No numbers, no letters, no text. No wall, no shadow.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/calendar_spring_{k}.png",
+   "out": "assets/v2/textures/wall/calendar_spring.webp",
+   "prompt_ko": "달력 한 쪽 — 위 60% 봄 그림 · 아래 40% 빈 칸(5×7) · 위 고리 둘 · 숫자·글자 없음",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선) · 네 쪽이 같은 틀(칸 수·고리 자리)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인 · 달력은 계절이 바뀌면 그림을 갈아 끼운다(house)",
+   "credits": 4.5
+  },
+  {
+   "n": 21,
+   "group": "② 벽",
+   "id": "calendar_summer",
+   "ko": "달력 — 여름 쪽",
+   "use": "벽 · 달력",
+   "plan": "A 새 가구 하나(달력 · 0.30×0.45) · 게임 계절(io.light.skyFor)로 쪽이 바뀐다",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A wall calendar page viewed straight-on filling the frame: the top 60% is an illustration of an open window with bright sun, a fan and green plants; the bottom 40% is a simple grid of 5 rows by 7 small empty squares drawn in faded ink, with two small binder rings at the very top. No numbers, no letters, no text. No wall, no shadow.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "after": "봄 쪽을 고른 뒤 그 그림을 첫 참조로 더해 같은 틀(위 그림 · 아래 칸)로",
+   "save_as": "assets/gen/v2_hf/wall/calendar_summer_{k}.png",
+   "out": "assets/v2/textures/wall/calendar_summer.webp",
+   "prompt_ko": "달력 한 쪽 — 위 60% 여름 그림 · 아래 40% 빈 칸(5×7) · 위 고리 둘 · 숫자·글자 없음",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선) · 네 쪽이 같은 틀(칸 수·고리 자리)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인 · 달력은 계절이 바뀌면 그림을 갈아 끼운다(house)",
+   "credits": 4.5
+  },
+  {
+   "n": 22,
+   "group": "② 벽",
+   "id": "calendar_autumn",
+   "ko": "달력 — 가을 쪽",
+   "use": "벽 · 달력",
+   "plan": "A 새 가구 하나(달력 · 0.30×0.45) · 게임 계절(io.light.skyFor)로 쪽이 바뀐다",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A wall calendar page viewed straight-on filling the frame: the top 60% is an illustration of a street lined with yellow ginkgo trees and falling leaves; the bottom 40% is a simple grid of 5 rows by 7 small empty squares drawn in faded ink, with two small binder rings at the very top. No numbers, no letters, no text. No wall, no shadow.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "after": "봄 쪽을 고른 뒤 그 그림을 첫 참조로 더해 같은 틀(위 그림 · 아래 칸)로",
+   "save_as": "assets/gen/v2_hf/wall/calendar_autumn_{k}.png",
+   "out": "assets/v2/textures/wall/calendar_autumn.webp",
+   "prompt_ko": "달력 한 쪽 — 위 60% 가을 그림 · 아래 40% 빈 칸(5×7) · 위 고리 둘 · 숫자·글자 없음",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선) · 네 쪽이 같은 틀(칸 수·고리 자리)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인 · 달력은 계절이 바뀌면 그림을 갈아 끼운다(house)",
+   "credits": 4.5
+  },
+  {
+   "n": 23,
+   "group": "② 벽",
+   "id": "calendar_winter",
+   "ko": "달력 — 겨울 쪽",
+   "use": "벽 · 달력",
+   "plan": "A 새 가구 하나(달력 · 0.30×0.45) · 게임 계절(io.light.skyFor)로 쪽이 바뀐다",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. A wall calendar page viewed straight-on filling the frame: the top 60% is an illustration of snowy rooftops at dusk with warm lit windows; the bottom 40% is a simple grid of 5 rows by 7 small empty squares drawn in faded ink, with two small binder rings at the very top. No numbers, no letters, no text. No wall, no shadow.",
+    "aspect_ratio": "2:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "after": "봄 쪽을 고른 뒤 그 그림을 첫 참조로 더해 같은 틀(위 그림 · 아래 칸)로",
+   "save_as": "assets/gen/v2_hf/wall/calendar_winter_{k}.png",
+   "out": "assets/v2/textures/wall/calendar_winter.webp",
+   "prompt_ko": "달력 한 쪽 — 위 60% 겨울 그림 · 아래 40% 빈 칸(5×7) · 위 고리 둘 · 숫자·글자 없음",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선) · 네 쪽이 같은 틀(칸 수·고리 자리)",
+   "wire": "house: 새 프리셋(mount «wall-hang» — 사고팔고 옮김) · 빌더 poster/calendar · 그림 map · room_view 벽 걸기(가까운 벽면에 붙고 눈높이로) · core: 가게 갈래(FIXED_MOUNTS 밖이면 저절로 «가구») 확인 · 달력은 계절이 바뀌면 그림을 갈아 끼운다(house)",
+   "credits": 4.5
+  },
+  {
+   "n": 24,
+   "group": "② 벽",
+   "id": "bulletin_notes",
+   "ko": "게시판(코르크) 얼굴",
+   "use": "벽 · 1.1×0.8 (bulletin_board)",
+   "plan": "A 이미 있는 게시판 빌더에 입힘",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Flat artwork only, viewed straight-on, filling the entire frame edge to edge: no picture frame, no wall, no tape, no shadow. No text, no letters, no numbers, no logos. A cork board surface filling the frame with a few pinned paper notes with simple doodles (a leaf, a sun, a watering can), one small polaroid of a plant, and a pressed leaf.",
+    "aspect_ratio": "4:3",
+    "resolution": "1k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_poster_wall.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/wall/bulletin_notes_{k}.png",
+   "out": "assets/v2/textures/wall/bulletin_notes.webp",
+   "prompt_ko": "코르크 판 · 낙서 쪽지(잎·해·물뿌리개) · 식물 폴라로이드 · 눌린 잎",
+   "check": "글자·가짜 글씨 없음(포스터에 흔히 생김 — 있으면 버림) · 틀·벽·테이프 없이 그림만 꽉 · 기준 방 결(손그림·무광·갈색 선)",
+   "wire": "house: B.bulletin_board 판에 map",
+   "credits": 4.5
+  },
+  {
+   "n": 25,
+   "group": "③ 방",
+   "id": "banjiha_wallpaper",
+   "ko": "반지하 벽지(바랜 노랑 꽃)",
+   "use": "반지하 네 벽 — 지금은 점 격자처럼 보여 반복이 눈에 띈다",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Seamless tileable texture: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges and fills the whole frame. Faded pale-yellow wallpaper with small sparse sprigs of orange flowers and green leaves arranged in a loose offset pattern (about 7 flowers per row across the tile), slightly aged and uneven like the reference wall.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_wallpaper_left.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_wallpaper_back.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/banjiha_wallpaper_{k}.png",
+   "out": "assets/v2/textures/room/banjiha_wallpaper.webp",
+   "prompt_ko": "바랜 연노랑 벽지 · 주황 꽃·초록 잎 가지가 성글게 엇갈림 · 조금 낡음",
+   "check": "house 가 2×2 로 깔아 이음매를 본다(필요하면 tools 로 50% 밀어 메움) · 네 귀퉁이 밝기 차 5% 안 · 무늬 크기(꽃 6~8cm = 0.5m 판의 1/7 결)",
+   "wire": "house: room_materials 의 절차 캔버스 대신 이 판을 월드 좌표(m)로 찍는다(셰이더 그대로) · ?v2mat=0 대조",
+   "credits": 8
+  },
+  {
+   "n": 26,
+   "group": "③ 방",
+   "id": "banjiha_lino",
+   "ko": "반지하 장판(노랑)",
+   "use": "반지하 바닥 — 지금은 한 빛 주황으로 판판하다",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Seamless tileable texture: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges and fills the whole frame. Old yellow vinyl floor (linoleum) with soft mottled tone, faint scuffs and a few tiny scratches, matte.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_floor_lino.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/banjiha_lino_{k}.png",
+   "out": "assets/v2/textures/room/banjiha_lino.webp",
+   "prompt_ko": "낡은 노란 장판 · 얼룩덜룩한 결 · 옅은 긁힘",
+   "check": "house 가 2×2 로 깔아 이음매를 본다(필요하면 tools 로 50% 밀어 메움) · 네 귀퉁이 밝기 차 5% 안 · 무늬 크기(꽃 6~8cm = 0.5m 판의 1/7 결)",
+   "wire": "house: room_materials 의 절차 캔버스 대신 이 판을 월드 좌표(m)로 찍는다(셰이더 그대로) · ?v2mat=0 대조",
+   "credits": 8
+  },
+  {
+   "n": 27,
+   "group": "③ 방",
+   "id": "stain_drip",
+   "ko": "물 얼룩(흘러내림)",
+   "use": "반지하 창 밑·구석 — 기준 그림의 얼룩",
+   "plan": "A 얼룩 붙임(알파)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Only a grey water stain dripping down from the ceiling line, isolated on a transparent background, painted softly, no wall, no outline box, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_stain_back.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/stain_drip_{k}.png",
+   "out": "assets/v2/textures/room/stain_drip.webp",
+   "prompt_ko": "물 얼룩(흘러내림) · 투명 바탕",
+   "check": "투명 바탕 · 가장자리가 부드럽게 사라짐(딱 잘린 선 없음)",
+   "wire": "house: 벽에 얼룩 판(decal) 셋을 정한 자리에",
+   "credits": 3
+  },
+  {
+   "n": 28,
+   "group": "③ 방",
+   "id": "mold_corner",
+   "ko": "곰팡이(구석)",
+   "use": "반지하 창 밑·구석 — 기준 그림의 얼룩",
+   "plan": "A 얼룩 붙임(알파)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Only a patch of dark grey-green mold spots spreading from a corner, isolated on a transparent background, painted softly, no wall, no outline box, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_stain_back.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/mold_corner_{k}.png",
+   "out": "assets/v2/textures/room/mold_corner.webp",
+   "prompt_ko": "곰팡이(구석) · 투명 바탕",
+   "check": "투명 바탕 · 가장자리가 부드럽게 사라짐(딱 잘린 선 없음)",
+   "wire": "house: 벽에 얼룩 판(decal) 셋을 정한 자리에",
+   "credits": 3
+  },
+  {
+   "n": 29,
+   "group": "③ 방",
+   "id": "damp_under_window",
+   "ko": "눅눅한 자국(창 밑)",
+   "use": "반지하 창 밑·구석 — 기준 그림의 얼룩",
+   "plan": "A 얼룩 붙임(알파)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Only a soft brownish damp patch with a tide line, like under a window, isolated on a transparent background, painted softly, no wall, no outline box, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_stain_back.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/damp_under_window_{k}.png",
+   "out": "assets/v2/textures/room/damp_under_window.webp",
+   "prompt_ko": "눅눅한 자국(창 밑) · 투명 바탕",
+   "check": "투명 바탕 · 가장자리가 부드럽게 사라짐(딱 잘린 선 없음)",
+   "wire": "house: 벽에 얼룩 판(decal) 셋을 정한 자리에",
+   "credits": 3
+  },
+  {
+   "n": 30,
+   "group": "③ 방",
+   "id": "banjiha_window_view_day",
+   "ko": "반지하 창 너머(낮)",
+   "use": "반지하 뒷벽 창 2.2×0.55 바로 뒤 그림판 — 기준 그림처럼 창 우물의 풀",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. View through a semi-basement window at ground level, wide and low: a concrete window well with weeds, tall grass and small wildflowers in front, a strip of alley pavement and a low wall behind, bright soft daylight from above. Straight-on, no window frame, no glass reflections, no people, no text.",
+    "aspect_ratio": "4:1",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_window_well.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/banjiha_window_view_day_{k}.png",
+   "out": "assets/v2/textures/window/banjiha_day.webp",
+   "prompt_ko": "반지하 창 너머 낮 — 창 우물 콘크리트·잡초·풀·들꽃 · 뒤로 골목 바닥과 낮은 담 · 위에서 오는 밝은 빛 · 창틀 없음",
+   "check": "풀 줄기가 아래에서 올라옴(땅 높이 창) · 창틀·유리 비침 없음 · 사람 없음",
+   "wire": "house: 창 유리 바로 뒤 그림판(MeshBasic · 그림자 없음 · 레이캐스트 없음 · outside.js 안전선 셋) · 낮/밤은 시각으로 섞음",
+   "credits": 8
+  },
+  {
+   "n": 31,
+   "group": "③ 방",
+   "id": "banjiha_window_view_night",
+   "ko": "반지하 창 너머(밤)",
+   "use": "같은 자리 밤",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image as a quiet night: same composition, deep blue shadows, faint cool streetlight glow from above, a few fireflies-like specks. No text.",
+    "aspect_ratio": "4:1",
+    "resolution": "2k",
+    "count": 3
+   },
+   "refs": [
+    "<고른 낮 그림>",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "after": "낮을 고른 뒤 그 그림을 첫 참조로",
+   "save_as": "assets/gen/v2_hf/room/banjiha_window_view_night_{k}.png",
+   "out": "assets/v2/textures/window/banjiha_night.webp",
+   "prompt_ko": "고른 낮 그림 그대로 밤으로 — 짙은 푸른 그늘 · 위에서 옅은 가로등빛",
+   "check": "낮과 같은 구도(풀·담 자리)",
+   "wire": "위와 같음",
+   "credits": 6
+  },
+  {
+   "n": 32,
+   "group": "③ 방",
+   "id": "oneroom_wallpaper",
+   "ko": "원룸 벽지(크림)",
+   "use": "원룸 벽 — 지금은 판판한 회백이라 방이 비어 보인다",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Seamless tileable texture: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges and fills the whole frame. Clean warm cream wallpaper with a subtle linen weave texture and a very faint tone variation, almost plain.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_wallpaper_left.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/oneroom_wallpaper_{k}.png",
+   "out": "assets/v2/textures/room/oneroom_wallpaper.webp",
+   "prompt_ko": "따뜻한 크림 벽지 · 옅은 린넨 결 · 거의 무지",
+   "check": "house 가 2×2 로 깔아 이음매를 본다(필요하면 tools 로 50% 밀어 메움) · 네 귀퉁이 밝기 차 5% 안 · 무늬 크기(꽃 6~8cm = 0.5m 판의 1/7 결)",
+   "wire": "house: room_materials 의 절차 캔버스 대신 이 판을 월드 좌표(m)로 찍는다(셰이더 그대로) · ?v2mat=0 대조",
+   "credits": 8
+  },
+  {
+   "n": 33,
+   "group": "③ 방",
+   "id": "oneroom_oak",
+   "ko": "원룸 마루(참나무)",
+   "use": "원룸 바닥",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Seamless tileable texture: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges and fills the whole frame. Light warm oak plank floor, planks about 10 cm wide running in one direction with staggered joints, soft painted grain, matte.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\kf_crop_floor_lino.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/oneroom_oak_{k}.png",
+   "out": "assets/v2/textures/room/oneroom_oak.webp",
+   "prompt_ko": "밝은 참나무 마루 · 판 폭 10cm 쯤 · 엇갈린 이음 · 손그림 결",
+   "check": "house 가 2×2 로 깔아 이음매를 본다(필요하면 tools 로 50% 밀어 메움) · 네 귀퉁이 밝기 차 5% 안 · 무늬 크기(꽃 6~8cm = 0.5m 판의 1/7 결) · 판 방향 하나",
+   "wire": "house: room_materials 의 절차 캔버스 대신 이 판을 월드 좌표(m)로 찍는다(셰이더 그대로) · ?v2mat=0 대조",
+   "credits": 8
+  },
+  {
+   "n": 34,
+   "group": "③ 방",
+   "id": "oneroom_window_view_day",
+   "ko": "원룸 창 너머(낮)",
+   "use": "원룸 뒷벽 창 2.4×1.45 바로 뒤 그림판",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. View from a second-floor studio window in a Korean residential alley, bright clear day: the opposite low villa building with a brick wall and a few windows, a strip of sky above, one tree branch with leaves entering from the side, a couple of electric wires. Straight-on, no window frame, no glass reflection, no people, no text, no signs.",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "count": 4
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/oneroom_window_view_day_{k}.png",
+   "out": "assets/v2/textures/window/oneroom_day.webp",
+   "prompt_ko": "2층 원룸 창 너머(낮) — 건너편 낮은 빌라 벽돌·창 몇 · 하늘 띠 · 옆에서 들어온 나뭇가지 · 전깃줄 · 간판·글자 없음",
+   "check": "간판·글자 없음 · 셋이 같은 구도 · 창 아래쪽이 건너편 벽(높이가 맞게)",
+   "wire": "반지하 창 너머와 같음 · 낮→해질녘→밤을 시각으로 섞음",
+   "credits": 8
+  },
+  {
+   "n": 35,
+   "group": "③ 방",
+   "id": "oneroom_window_view_dusk",
+   "ko": "원룸 창 너머(해질녘)",
+   "use": "원룸 뒷벽 창 2.4×1.45 바로 뒤 그림판",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image with the same composition as a View from a second-floor studio window in a Korean residential alley, warm orange dusk with pink clouds: the opposite low villa building with a brick wall and a few windows, a strip of sky above, one tree branch with leaves entering from the side, a couple of electric wires. Straight-on, no window frame, no glass reflection, no people, no text, no signs.",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "count": 3
+   },
+   "refs": [
+    "<고른 낮 그림>",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "after": "낮을 고른 뒤 그 그림을 첫 참조로 («Repaint the FIRST reference image as …»)",
+   "save_as": "assets/gen/v2_hf/room/oneroom_window_view_dusk_{k}.png",
+   "out": "assets/v2/textures/window/oneroom_dusk.webp",
+   "prompt_ko": "2층 원룸 창 너머(해질녘) — 건너편 낮은 빌라 벽돌·창 몇 · 하늘 띠 · 옆에서 들어온 나뭇가지 · 전깃줄 · 간판·글자 없음",
+   "check": "간판·글자 없음 · 셋이 같은 구도 · 창 아래쪽이 건너편 벽(높이가 맞게)",
+   "wire": "반지하 창 너머와 같음 · 낮→해질녘→밤을 시각으로 섞음",
+   "credits": 6
+  },
+  {
+   "n": 36,
+   "group": "③ 방",
+   "id": "oneroom_window_view_night",
+   "ko": "원룸 창 너머(밤)",
+   "use": "원룸 뒷벽 창 2.4×1.45 바로 뒤 그림판",
+   "plan": "A",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image with the same composition as a View from a second-floor studio window in a Korean residential alley, quiet night with a few warm lit windows and a streetlight glow: the opposite low villa building with a brick wall and a few windows, a strip of sky above, one tree branch with leaves entering from the side, a couple of electric wires. Straight-on, no window frame, no glass reflection, no people, no text, no signs.",
+    "aspect_ratio": "16:9",
+    "resolution": "2k",
+    "count": 3
+   },
+   "refs": [
+    "<고른 낮 그림>",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "after": "낮을 고른 뒤 그 그림을 첫 참조로 («Repaint the FIRST reference image as …»)",
+   "save_as": "assets/gen/v2_hf/room/oneroom_window_view_night_{k}.png",
+   "out": "assets/v2/textures/window/oneroom_night.webp",
+   "prompt_ko": "2층 원룸 창 너머(밤) — 건너편 낮은 빌라 벽돌·창 몇 · 하늘 띠 · 옆에서 들어온 나뭇가지 · 전깃줄 · 간판·글자 없음",
+   "check": "간판·글자 없음 · 셋이 같은 구도 · 창 아래쪽이 건너편 벽(높이가 맞게)",
+   "wire": "반지하 창 너머와 같음 · 낮→해질녘→밤을 시각으로 섞음",
+   "credits": 6
+  },
+  {
+   "n": 37,
+   "group": "③ 방",
+   "id": "outside_villa_brick",
+   "ko": "건너편 빌라 외벽(벽돌·창)",
+   "use": "outside.js 건너편 빌라 상자 — 지금은 어두운 한 빛",
+   "plan": "B 창밖 상자 겉감",
+   "tool": "generate_image",
+   "params": {
+    "model": "nano_banana_2_1",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Seamless tileable texture: viewed perfectly flat and straight-on, even soft light, no shadows, no vignette, no perspective, no objects, no border; the pattern continues across all four edges and fills the whole frame. Red-brown brick wall of a Korean villa with one small white-framed window per tile, slightly weathered.",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 3
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/room/outside_villa_brick_{k}.png",
+   "out": "assets/v2/textures/outside/villa_brick.webp",
+   "prompt_ko": "빌라 붉은 갈색 벽돌 · 판마다 흰 창틀 작은 창 하나",
+   "check": "house 가 2×2 로 깔아 이음매를 본다(필요하면 tools 로 50% 밀어 메움) · 네 귀퉁이 밝기 차 5% 안 · 무늬 크기(꽃 6~8cm = 0.5m 판의 1/7 결)",
+   "wire": "house: outside.js 상자에 map(정점색 낮밤은 그대로 곱함)",
+   "credits": 6
+  },
+  {
+   "n": 38,
+   "group": "④ 카드",
+   "id": "card_nightstand",
+   "ko": "가게 카드 — 협탁",
+   "use": "가구점 줄 그림(갈색 상자처럼 보임(서랍·손잡이가 안 읽힘))",
+   "plan": "A 시험 일곱(좋으면 B: 84줄 전부 한 결 — Meshy 9점이 온 뒤)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image (a furniture shop icon) in the painted style of the second reference room. Keep its exact silhouette, proportions, camera angle and colors; only change the surface to cozy hand-painted matte with soft brown outlines and readable details. Transparent background, no floor, no shadow, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_hf\\ref_thumb_nightstand.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/card/nightstand_{k}.png",
+   "out": "assets/v2/thumbs/furn/nightstand.webp(같은 자리 바꿔 끼움 · 옛 것은 assets/gen 에)",
+   "prompt_ko": "첫째 참조(가게 그림)를 기준 방 결로 다시 칠 — 외곽·비율·각도·색 그대로 · 투명 바탕",
+   "check": "house 가 잼: 지금 그림과 외곽(알파) IoU ≥ 0.90 · 평균 색 차 ΔE ≤ 10 · 가게 화면에 나란히 놓고 고른다",
+   "wire": "house: 192px webp 로 줄여 같은 자리에 · index.json 에 painted:true · core 손댈 것 없음",
+   "credits": 3
+  },
+  {
+   "n": 39,
+   "group": "④ 카드",
+   "id": "card_desk",
+   "ko": "가게 카드 — 책상",
+   "use": "가구점 줄 그림(주황이 너무 진함)",
+   "plan": "A 시험 일곱(좋으면 B: 84줄 전부 한 결 — Meshy 9점이 온 뒤)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image (a furniture shop icon) in the painted style of the second reference room. Keep its exact silhouette, proportions, camera angle and colors; only change the surface to cozy hand-painted matte with soft brown outlines and readable details. Transparent background, no floor, no shadow, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_hf\\ref_thumb_desk.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/card/desk_{k}.png",
+   "out": "assets/v2/thumbs/furn/desk.webp(같은 자리 바꿔 끼움 · 옛 것은 assets/gen 에)",
+   "prompt_ko": "첫째 참조(가게 그림)를 기준 방 결로 다시 칠 — 외곽·비율·각도·색 그대로 · 투명 바탕",
+   "check": "house 가 잼: 지금 그림과 외곽(알파) IoU ≥ 0.90 · 평균 색 차 ΔE ≤ 10 · 가게 화면에 나란히 놓고 고른다",
+   "wire": "house: 192px webp 로 줄여 같은 자리에 · index.json 에 painted:true · core 손댈 것 없음",
+   "credits": 3
+  },
+  {
+   "n": 40,
+   "group": "④ 카드",
+   "id": "card_greenhouse_cabinet",
+   "ko": "가게 카드 — 미니 온실장",
+   "use": "가구점 줄 그림(유리가 뿌옇게 바래 모양이 흐림)",
+   "plan": "A 시험 일곱(좋으면 B: 84줄 전부 한 결 — Meshy 9점이 온 뒤)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image (a furniture shop icon) in the painted style of the second reference room. Keep its exact silhouette, proportions, camera angle and colors; only change the surface to cozy hand-painted matte with soft brown outlines and readable details. Transparent background, no floor, no shadow, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_hf\\ref_thumb_greenhouse_cabinet.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/card/greenhouse_cabinet_{k}.png",
+   "out": "assets/v2/thumbs/furn/greenhouse_cabinet.webp(같은 자리 바꿔 끼움 · 옛 것은 assets/gen 에)",
+   "prompt_ko": "첫째 참조(가게 그림)를 기준 방 결로 다시 칠 — 외곽·비율·각도·색 그대로 · 투명 바탕",
+   "check": "house 가 잼: 지금 그림과 외곽(알파) IoU ≥ 0.90 · 평균 색 차 ΔE ≤ 10 · 가게 화면에 나란히 놓고 고른다",
+   "wire": "house: 192px webp 로 줄여 같은 자리에 · index.json 에 painted:true · core 손댈 것 없음",
+   "credits": 3
+  },
+  {
+   "n": 41,
+   "group": "④ 카드",
+   "id": "card_heater",
+   "ko": "가게 카드 — 라디에이터 난방기",
+   "use": "가구점 줄 그림(사진 같은 잔결)",
+   "plan": "A 시험 일곱(좋으면 B: 84줄 전부 한 결 — Meshy 9점이 온 뒤)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image (a furniture shop icon) in the painted style of the second reference room. Keep its exact silhouette, proportions, camera angle and colors; only change the surface to cozy hand-painted matte with soft brown outlines and readable details. Transparent background, no floor, no shadow, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_hf\\ref_thumb_heater.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/card/heater_{k}.png",
+   "out": "assets/v2/thumbs/furn/heater.webp(같은 자리 바꿔 끼움 · 옛 것은 assets/gen 에)",
+   "prompt_ko": "첫째 참조(가게 그림)를 기준 방 결로 다시 칠 — 외곽·비율·각도·색 그대로 · 투명 바탕",
+   "check": "house 가 잼: 지금 그림과 외곽(알파) IoU ≥ 0.90 · 평균 색 차 ΔE ≤ 10 · 가게 화면에 나란히 놓고 고른다",
+   "wire": "house: 192px webp 로 줄여 같은 자리에 · index.json 에 painted:true · core 손댈 것 없음",
+   "credits": 3
+  },
+  {
+   "n": 42,
+   "group": "④ 카드",
+   "id": "card_backpack",
+   "ko": "가게 카드 — 배낭과 운동화",
+   "use": "가구점 줄 그림(사진 같은 잔결)",
+   "plan": "A 시험 일곱(좋으면 B: 84줄 전부 한 결 — Meshy 9점이 온 뒤)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image (a furniture shop icon) in the painted style of the second reference room. Keep its exact silhouette, proportions, camera angle and colors; only change the surface to cozy hand-painted matte with soft brown outlines and readable details. Transparent background, no floor, no shadow, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_hf\\ref_thumb_backpack.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/card/backpack_{k}.png",
+   "out": "assets/v2/thumbs/furn/backpack.webp(같은 자리 바꿔 끼움 · 옛 것은 assets/gen 에)",
+   "prompt_ko": "첫째 참조(가게 그림)를 기준 방 결로 다시 칠 — 외곽·비율·각도·색 그대로 · 투명 바탕",
+   "check": "house 가 잼: 지금 그림과 외곽(알파) IoU ≥ 0.90 · 평균 색 차 ΔE ≤ 10 · 가게 화면에 나란히 놓고 고른다",
+   "wire": "house: 192px webp 로 줄여 같은 자리에 · index.json 에 painted:true · core 손댈 것 없음",
+   "credits": 3
+  },
+  {
+   "n": 43,
+   "group": "④ 카드",
+   "id": "card_laundry_basket",
+   "ko": "가게 카드 — 빨래 바구니",
+   "use": "가구점 줄 그림(사진 같은 잔결)",
+   "plan": "A 시험 일곱(좋으면 B: 84줄 전부 한 결 — Meshy 9점이 온 뒤)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image (a furniture shop icon) in the painted style of the second reference room. Keep its exact silhouette, proportions, camera angle and colors; only change the surface to cozy hand-painted matte with soft brown outlines and readable details. Transparent background, no floor, no shadow, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_hf\\ref_thumb_laundry_basket.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/card/laundry_basket_{k}.png",
+   "out": "assets/v2/thumbs/furn/laundry_basket.webp(같은 자리 바꿔 끼움 · 옛 것은 assets/gen 에)",
+   "prompt_ko": "첫째 참조(가게 그림)를 기준 방 결로 다시 칠 — 외곽·비율·각도·색 그대로 · 투명 바탕",
+   "check": "house 가 잼: 지금 그림과 외곽(알파) IoU ≥ 0.90 · 평균 색 차 ΔE ≤ 10 · 가게 화면에 나란히 놓고 고른다",
+   "wire": "house: 192px webp 로 줄여 같은 자리에 · index.json 에 painted:true · core 손댈 것 없음",
+   "credits": 3
+  },
+  {
+   "n": 44,
+   "group": "④ 카드",
+   "id": "card_drying_rack",
+   "ko": "가게 카드 — 빨래 건조대",
+   "use": "가구점 줄 그림(사진 같은 잔결 · 가늘어 안 읽힘)",
+   "plan": "A 시험 일곱(좋으면 B: 84줄 전부 한 결 — Meshy 9점이 온 뒤)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "prompt": "Cozy hand-painted matte illustration in the exact style of the reference room image: soft brown ink outlines, warm muted palette, gentle paper grain, no photorealism. Repaint the FIRST reference image (a furniture shop icon) in the painted style of the second reference room. Keep its exact silhouette, proportions, camera angle and colors; only change the surface to cozy hand-painted matte with soft brown outlines and readable details. Transparent background, no floor, no shadow, no text.",
+    "aspect_ratio": "1:1",
+    "resolution": "1k",
+    "quality": "high",
+    "background": "transparent",
+    "count": 2
+   },
+   "refs": [
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_hf\\ref_thumb_drying_rack.png",
+    "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+   ],
+   "refs_note": "먼저 media_upload 로 올려 media_id 를 받고 medias:[{value, role:\"image_references\"}] 로 넘긴다(순서 = 이 목록 순서)",
+   "save_as": "assets/gen/v2_hf/card/drying_rack_{k}.png",
+   "out": "assets/v2/thumbs/furn/drying_rack.webp(같은 자리 바꿔 끼움 · 옛 것은 assets/gen 에)",
+   "prompt_ko": "첫째 참조(가게 그림)를 기준 방 결로 다시 칠 — 외곽·비율·각도·색 그대로 · 투명 바탕",
+   "check": "house 가 잼: 지금 그림과 외곽(알파) IoU ≥ 0.90 · 평균 색 차 ΔE ≤ 10 · 가게 화면에 나란히 놓고 고른다",
+   "wire": "house: 192px webp 로 줄여 같은 자리에 · index.json 에 painted:true · core 손댈 것 없음",
+   "credits": 3
+  }
+ ]
+}
