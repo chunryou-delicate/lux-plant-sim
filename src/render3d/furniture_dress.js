@@ -94,7 +94,10 @@ const DOORS = {
    유리(makeGlassPane)는 창틀 그룹 밖이라 그대로 · 빛은 코드 창 구멍으로만 든다 — GLB 는 틀 그림만.
    ⚠ 넣기 전에 «보이는 유리 = 빛 드는 유리»를 쟀다(정면 광선 · 원룸 76.0% / 코드 76.6% · 살 ×0.97~1.16 · 10-09). */
 const WINS = {
-  win_studio_cross: { file: 'house/win_studio_cross.glb', yaw: 0 }
+  win_studio_cross: { file: 'house/win_studio_cross.glb', yaw: 0 },
+  /* 반지하 창 — 3D 에서 세로살 ×1.22~1.31 · 보이는 유리 94%(정한 줄 +25% · 95% 바로 밑). 총괄 D38 «넣는다»(10-09 · 박사님 «묻지 말고 진행»)
+     후보였던 것: 넣음 / 코드 유지 / r4. 사진 docs/handoff/img/house_20261009/win_banjiha_code_vs_v2_pending.png */
+  win_semi_letterbox: { file: 'house/win_semi_letterbox.glb', yaw: 0 }
 };
 /* 옷을 안 입히고 색만 바꾸는 것 — 단·자리 계약이 걸려 있다(3단 선반·창턱 받침) */
 const RESTYLE = {

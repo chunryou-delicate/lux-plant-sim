@@ -259,12 +259,12 @@ r2 도 못 넘으면 9·18 은 접고 코드 창틀을 그대로 둔다(빛과 �
 | 4 | shelf_ladder_4tier | `shelf_ladder_4tier.glb` | 0 | 단 오차 ≤2.8mm · 구간 0.91~1.03 | `fitProxyBox` — 코드 사다리 아래 단이 발자국 앞으로 0.25m 나와 있어 발자국 대신 코드가 실제 차지한 상자에 맞춘다 · RESTYLE(type shelf_etagere) 보다 옷을 먼저 |
 | 5 | greenhouse_cabinet | `greenhouse_cabinet.glb` | 0 | 단 오차 ≤0.6mm · 구간 0.99~1.02 | `keepGlass` — 코드 유리 판을 남긴다 |
 | 9 | win_studio_cross | `assets/v2/house/win_studio_cross.glb` | 0 | 3D 정면 광선: 세로틀 0.088~0.090 · 십자살 0.050~0.052(×1.11~1.16) / 0.047 · 가로틀 0.087~0.089 · 보이는 유리 76.0%(코드 76.6% · 99%) ✔ | 창틀 그룹(trims)에 단다 — 벽이 내려가면 통째로 숨는다 · 사진 `win_oneroom_code_v2_side.png` |
-| 18 | win_semi_letterbox | `assets/v2/house/win_semi_letterbox.glb`(받아만 둠) | 0 | 3D: 세로틀 0.094~0.095 · **세로살 0.055~0.059(×1.22~1.31)** · 가로틀 0.097~0.099 · **보이는 유리 55.5%(코드 59.0% · 94%)** | ⏸ **줄 바로 밑**(살 +25% · 유리 95%) — Meshy 가 원화(×1.03~1.09)보다 살을 굵혔다. 내가 정한 대로 박사님 눈에 맡긴다: `win_banjiha_code_vs_v2_pending.png`. 사진으로는 차이가 작다 — **권: 넣는다.** 넣으면 `WINS` 에 한 줄. |
+| 18 | win_semi_letterbox | `assets/v2/house/win_semi_letterbox.glb`(받아만 둠) | 0 | 3D: 세로틀 0.094~0.095 · **세로살 0.055~0.059(×1.22~1.31)** · 가로틀 0.097~0.099 · **보이는 유리 55.5%(코드 59.0% · 94%)** | **줄 바로 밑**(살 +25% · 유리 95%) — Meshy 가 원화(×1.03~1.09)보다 살을 굵혔다. ✔ **총괄 눈으로 넣음**(D38 · 10-09 · 박사님 «묻지 말고 진행») · 후보: 넣음 / 코드 유지 / r4 · 사진 `win_banjiha_code_vs_v2_pending.png` · `WINS` 에 한 줄. |
 
 ### 모아 본 그림 — 게임 화면 · 같은 카메라 «코드(?v2furn=0) | v2»
 
 - 원룸: `docs/handoff/img/house_20261009/showcase_oneroom_code_vs_v2.png` — 새 가구 13점을 «산 가구»(light_adapter `setFurnitureEdits` · 저장 안 함)로 놓고 등 셋을 켠 판. 창틀·문·등도 v2.
-- 반지하: `showcase_banjiha_code_vs_v2.png` — 원래 가구(v2) + 새 가구 셋(계단식 · 받침대 · 카트) + 등 셋. 창은 코드(18 은 ⏸).
+- 반지하: `showcase_banjiha_code_vs_v2.png` — 원래 가구(v2) + 새 가구 셋(계단식 · 받침대 · 카트) + 등 셋. 창은 코드(찍을 때는 18 이 ⏸ — 지금은 D38 로 v2 창).
 - ⚠ 배치는 그림용이다(방 데이터·세이브 안 바꿈). 길·충돌은 안 쟀다.
 
 ## 받은 뒤 — [house] 가 잇는다 (크레딧 0)
