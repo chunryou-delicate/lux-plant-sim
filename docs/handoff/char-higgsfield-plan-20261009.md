@@ -556,7 +556,7 @@
 - 손님 초상 여섯 결(손님 표 group 그대로: shop · student · elder · couple · plant · office) — ★ shop = 첫 손님 반찬가게 사장님 얼굴(참조 `REF_BANCHAN_OWNER`)
 - 주인공 앞치마 초상(2D) · 장면 둘(가게 연 날 · 간판 단 날)
 - 주인공 앞치마 «옷»(3D)은 hero2 옷 길 그대로 — Meshy `meshy_retexture`(input_task_id 01a11e76 · enable_original_uv · 10) 글: «… Outfit: plain sage-green work apron over a cream round-neck t-shirt, grey joggers, grey-white shoes.» → `apply_outfit_tex.py` → `outfit/apron.jpg` · v2_hero 옷 이름 'apron' 은 char 가 연다 · 가게에 있을 때 입히기는 core
-- 참조 더: `REF_PORTRAIT_STYLE` = assets/characters/portraits/portrait_jachwi_neutral.png (결만 — 다른 사람) · `REF_BANCHAN_OWNER` = assets/characters/ref/npc_banchan_owner_ref.png (ev_neighbor_order A 의 사장님) · `REF_HERO2_TOY` = assets/v2/char/_src/hero2/img_01a11e70-223b-705a-b82f-1a80de034747.png (hero2 의 3D 장난감 기준 그림) · `REF_MONI_3D` = docs/handoff/img/hero/… 대신 assets/characters/3d/lq/char_mascot_sprout.glb 를 그린 그림 — 없으면 REF_MONI 하나로
+- 참조 더: `REF_PORTRAIT_STYLE` = assets/characters/portraits/portrait_jachwi_neutral.png (결만 — 다른 사람) · `REF_BANCHAN_OWNER` = assets/characters/ref/npc_banchan_owner_ref.png (ev_neighbor_order A 의 사장님) · `REF_HERO2_TOY` = assets/v2/char/_src/hero2/img_01a11e70-223b-705a-b82f-1a80de034747.png (hero2 의 3D 장난감 기준 그림) · `REF_MONI_3D` = assets/characters/ref/moni_3d_ref.png (게임 몬이 3D 앞모습 · 흰 바탕)
 
 ## ③ 유니티 몫 (박사님 «나중에 유니티로 만들 것도 생각해서»)
 - 턴어라운드: ★ **두 결** — (가) 지금 게임 hero2 와 같은 «3D 장난감 치비» 결(참조 hero2 기준 그림) ⇒ multi-image-to-3D 로 갈 것 · (나) 정본 초상 결 전신(2D · 원화·UI 기준)
