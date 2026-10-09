@@ -726,7 +726,10 @@ const MAIN_QUESTS = Object.freeze([
     teaches: ['빛이 무늬 등급을 정한다'],
     why: '어두운 자리는 산반이 흔하고, 밝은 자리는 하프문·풀문이 납니다.',
     todo: () => '무늬 삽수를 밝은 자리에서 뿌리내리세요',
-    opens: s => num(s.motherVarieLeaves) >= 1,
+    /* ★ 2026-10-09 [plan] 재미 점검 — **자를 수 있는 날에 연다(first_cut 과 같은 자 · D25).** 무늬 잎이 하나만 나도 열려
+       자르기 문(박사님 «지금 규칙 유지»)이 열리기 석 달 전부터 «뿌리내리세요»를 시켰다 — 할 수 없는 일([core]·총괄 봇 cut1008c Day 48~165).
+       칸(motherVarieMatured)이 없으면 무늬 잎 수 ≥ 2 로 어림(first_cut 과 같음). */
+    opens: s => (s.motherVarieMatured != null ? num(s.motherVarieMatured) : num(s.motherVarieLeaves)) >= 2,
     done:  s => arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand === 'bright')
   }),
 
