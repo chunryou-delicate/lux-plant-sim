@@ -1098,3 +1098,8 @@
 | 퀘스트 간판 단 날(questDoneShopSign) | `ev_shop_sign` |
 | 손님 얼굴(손님 표 group → 초상) | `portrait_npc_<group>` — shop · student · elder · couple · plant · office(손님 표 groups 이름 그대로) |
 | 자취생 가게 얼굴(FACE_FILE 키 · plan 배정) | `portrait_jachwi_apron` → 키 'apron' 권함 |
+
+### 이정표 다시 뽑기 받음 (총괄 a80d6841 · 장부 assets/gen/hf_runs/char_reroll_20261009.json)
+- 여섯 장 모두 뒷모습 · ¾ 와 같은 길·카메라 · 몬이 화분+잎 둘. 넷이 «점 → 작게 → 가까이 → 대문 앞» 차례가 된다.
+- 고름: **quarter r2a**(먼 언덕의 점 · 사람이 ¾ 처럼 왼쪽 가운데 · 오른쪽 울타리) · **half r2a**(같은 자리 · 집이 작게) · **near r2a**(대문이 열려 있고 창이 환함 · 왼쪽에 지나온 언덕이 보여 길이 이어진다)
+- 같은 이름으로 갈아 끼움(`assets/illust/ev_home_mark_{quarter,half,near}.png` 1024 · 머리 69.6 · 70.6 · 67.4). plan 이 이미 줄 art 칸에 걸었다(407b0543) — 그대로 뜬다.
