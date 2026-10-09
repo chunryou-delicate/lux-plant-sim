@@ -1,0 +1,165 @@
+{
+ "_what": "house 3D 주문 T 견줌(총괄이 돌림 10-09 23:0x) · 같은 원화로 Meshy(raw_*.glb · Meshy 계정 30)와 Tripo H3.1(Higgsfield)",
+ "inputs": {
+  "c_stool.png": "ca7c9933-4d05-42ae-8721-5c8563f3b45f",
+  "c_shelf_etagere_3tier.png": "e24f208a-ba60-4fdb-94e8-b8ddd8d4fdd2"
+ },
+ "jobs": [
+  {
+   "n": 1,
+   "id": "tripo_stool",
+   "job_id": "9e2149e6-b385-403f-a372-0b470cbfddab",
+   "params": {
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image"
+   },
+   "credits": 12,
+   "saved_path": "assets/gen/v2_furn/raw_stool_tripo.glb",
+   "stats": {
+    "size": 1972324,
+    "tris": 7166,
+    "dims": [
+     0.727,
+     1.0,
+     0.727
+    ],
+    "n_img": 1,
+    "img_kb": [
+     1673
+    ]
+   }
+  },
+  {
+   "n": 2,
+   "id": "tripo_stool_std",
+   "job_id": "0f10506f-c1cd-4299-a37c-ab28d63e45a1",
+   "params": {
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image"
+   },
+   "credits": 9,
+   "saved_path": "assets/gen/v2_furn/raw_stool_tripo_std.glb",
+   "stats": {
+    "size": 613508,
+    "tris": 7652,
+    "dims": [
+     0.728,
+     1.0,
+     0.727
+    ],
+    "n_img": 1,
+    "img_kb": [
+     331
+    ]
+   }
+  },
+  {
+   "n": 3,
+   "id": "tripo_etagere",
+   "job_id": "e799c058-ba66-4c97-a1f1-f7f7b8ef98d7",
+   "params": {
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image"
+   },
+   "credits": 12,
+   "saved_path": "assets/gen/v2_furn/raw_shelf_etagere_3tier_tripo.glb",
+   "stats": {
+    "size": 2071680,
+    "tris": 6390,
+    "dims": [
+     0.809,
+     1.0,
+     0.38
+    ],
+    "n_img": 1,
+    "img_kb": [
+     1773
+    ]
+   }
+  },
+  {
+   "n": "덤",
+   "id": "tripo_stool_std_pbr",
+   "job_id": "47b78427-9206-40f6-8368-317dfc7b605a",
+   "params": {
+    "face_limit": 6000,
+    "_note": "기본값(texture true · pbr true · standard)"
+   },
+   "credits": 9,
+   "saved_path": "assets/gen/v2_furn/raw_stool_tripo_std_pbr.glb",
+   "stats": {
+    "size": 1835916,
+    "tris": 5762,
+    "dims": [
+     0.728,
+     1.0,
+     0.729
+    ],
+    "n_img": 3,
+    "img_kb": [
+     266,
+     300,
+     1020
+    ]
+   }
+  },
+  {
+   "n": "실패",
+   "id": "tripo_stool_first",
+   "job_id": "8ef19b18-3543-48ca-9e64-76f099ae6552",
+   "params": {
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 6000
+   },
+   "credits": 0,
+   "note": "failed(까닭 안 옴) — 같은 값(8000 · orientation · alignment 더함)으로 다시 걸어 됨"
+  }
+ ],
+ "meshy_ref": {
+  "raw_stool.glb": {
+   "size": 2097168,
+   "tris": 5746,
+   "dims": [
+    1.514,
+    1.903,
+    1.514
+   ],
+   "n_img": 1,
+   "img_kb": [
+    1777
+   ]
+  },
+  "raw_shelf_etagere_3tier.glb": {
+   "size": 2163036,
+   "tris": 5746,
+   "dims": [
+    0.628,
+    1.903,
+    1.805
+   ],
+   "n_img": 1,
+   "img_kb": [
+    1824
+   ]
+  }
+ },
+ "note": "Tripo 는 키를 1.0 으로 맞춰 냄(Meshy 는 1.9 근처) · 텍스처 한 장이 훨씬 작음(0.3MB vs 1.8MB) — 화면 비교는 house(같은 카메라·같은 자)"
+}
