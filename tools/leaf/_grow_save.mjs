@@ -1,7 +1,7 @@
 /* tools/leaf/_grow_save.mjs — 세이브를 넣고 켜서 DAYS 일 더 키운 세이브를 뜬다(화분 여럿 · [leaf] 10-08 · 갈래 ① 씨앗 그루를 무늬 날 때까지)
    키우기는 _make_oneroom_save 와 같은 결: 날마다 화분마다 물 · runDays 1 · 첫 화분 등급 두 줄(게임 noteLeafGrades 처럼 첫 화분만).
    MOVE2=best — 둘째 화분을 «빈 자리 중 가장 밝은 곳»(dliAt · 맑음 여름 · 지금 등)으로 옮긴 뒤 키운다(사람이 화분을 옮기는 일) · MOVE2=<slotId>
-   SAVE= (필수) · OUT= (필수 · 있으면 안 돈다) · DAYS=150 · BYEOT_URL=(기본 127.0.0.1:9340 · tools/serve.py) */
+   LAMPCLIP=1(집게등을 에타제르 윗단에) · SAVE= (필수) · OUT= (필수 · 있으면 안 돈다) · DAYS=150 · BYEOT_URL=(기본 127.0.0.1:9340 · tools/serve.py) */
 import fs from 'node:fs';
 import { launch, sleep } from '../test_cdp.mjs';
 const SAVEF = process.env.SAVE, OUT = process.env.OUT;
@@ -16,6 +16,17 @@ await page.goto(`${BASE}/game.html`);
   if (!ok) { console.error('⛔ 안 섬'); await page.close(); process.exit(4); } }
 await sleep(5000);
 const J = async (js, ms = 1800000) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message, st:(e.stack||'').slice(0,300)}); } })()`, true, ms));
+/* ★ LAMPCLIP=1 — 집게등을 에타제르 맨 윗단에 물린다(house 10-09). 원룸으로 «켜진» 판에서 해야 한다 — 이사를 함수로 한 판은 3D 방이 다시 켜기 전까지 반지하라 «모르는 등»으로 던진다(10-09 한 번).
+   게임의 등 옮기기 길 그대로: roomView.commitLampAt → setFurniturePlacement → light.clearCache. 이미 물려 있으면 그대로(다시 켠 뒤에도 남나를 적는다) */
+if (process.env.LAMPCLIP === '1') console.log('집게등 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S(), io=window.__io, rv=window.__rv;
+  const before=(S.home&&S.home.furniture&&S.home.furniture['oneroom-growlight-clip'])||null;
+  const mounts=(rv.lampMounts&&rv.lampMounts())||[]; const top=(mounts.find(m=>/banjiha-etagere@0\.79/.test(m.mountId))||mounts.find(m=>/etagere/.test(m.mountId))||{}).mountId;
+  if (before && before.mountId === top) return { 이미:before };
+  const r=await rv.commitLampAt('oneroom-growlight-clip', { mountId: top });
+  st.setFurniturePlacement(S, r.uid, r.to, { size: io.light.room.size }); io.light.clearCache(); try{window.__redraw()}catch(e){}
+  return { 물린곳:top, 자리:r.to, 등:[S.lamps&&S.lamps.count, S.tutorial&&S.tutorial.lamp&&S.tutorial.lamp.placed] }; })()`)));
+/* 켠 그대로의 등 자리(다시 켠 뒤에도 남나) */
+console.log('등 자리 —', JSON.stringify(await J(`(async()=>{ const S=window.__S(); return (S.home&&S.home.furniture&&S.home.furniture['oneroom-growlight-clip'])||null; })()`)));
 if (process.env.MOVE2) console.log('옮김 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S(), io=window.__io;
   const p2=(S.pots||[])[1]; if(!p2) return {둘째없음:true};
   const slots=io.light.room.slots||[]; const used=new Set((S.pots||[]).map(p=>p.slotId).filter(Boolean));

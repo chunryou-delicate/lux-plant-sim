@@ -5,7 +5,7 @@
      ③ 원룸으로 이사(이사 자금만 채움 · 에타제르 들고 감) → 에타제르를 기준 배치 D 자리에 → 모주는 원룸 창턱 · 시루는 에타제르 아랫단(이사가 가방에 넣음 · 사람이 다시 놓음) · 삽수는 윗단·가운데단(setCuttingAt)
      ④ [다음 날 ▸] 로 DAYS 일 — 모주 물은 날마다(사람이 주는 것)
      ⑤ DUMP 로 세이브 · 찍기는 _shot_room_varie / _shot_stand 로
-   SAVE= · DUMP= (필수) · K=4 · DAYS=40 · BYEOT_URL=(기본 127.0.0.1:9340 · tools/serve.py) */
+   LAMPCLIP=1(집게등을 에타제르 맨 윗단에) · SAVE= · DUMP= (필수) · K=4 · DAYS=40 · BYEOT_URL=(기본 127.0.0.1:9340 · tools/serve.py) */
 import fs from 'node:fs';
 import { launch, sleep } from '../test_cdp.mjs';
 const SAVEF = process.env.SAVE, DUMP = process.env.DUMP;
@@ -63,10 +63,31 @@ console.log('③ 이사·놓기 —', JSON.stringify(await J(`(async()=>{ const 
   let siru=null; { const sl=slots.find(s=>s.slotId==='banjiha-etagere:0'); try { siru=st.setCropAt(S, { x:sl.x, y:sl.y, z:sl.z, slotId:sl.slotId }, { slots, size: io.light.room.size }).slotId; } catch(e) { siru='탈 '+e.message.slice(0,60); } }
   const want=['banjiha-etagere:6','banjiha-etagere:7','banjiha-etagere:8','banjiha-etagere:3','banjiha-etagere:4','banjiha-etagere:5'];
   const placed=[];
-  for (const [i,c] of (S.cuttings||[]).filter(c=>c && c.status!=='dead').entries()) { const sl=slots.find(s=>s.slotId===want[i]); if(!sl) break;
+  /* ★ 무늬 삽수를 윗단에 먼저 — 윗단만 등(집게)으로 무늬 문턱을 넘는다(house 10-09: 가운데단은 등을 다 켜도 3.39 < 3.78) */
+  const order=(S.cuttings||[]).filter(c=>c && c.status!=='dead').sort((a,b)=>(!!b.variegated)-(!!a.variegated));
+  for (const [i,c] of order.entries()) { const sl=slots.find(s=>s.slotId===want[i]); if(!sl) break;
     try { pr.setCuttingAt(S, c, { x:sl.x, y:sl.y, z:sl.z }, { slots, size: io.light.room.size, snapDist: 0 }); placed.push(c.id+'@'+sl.slotId+'·'+c.container); } catch(e) { placed.push(c.id+' 탈 '+e.message.slice(0,60)); } }
   try{window.__redraw()}catch(e){}
   return { 방:S.home.room, 삽수:placed, 모주:S.pots[0].slotId, 시루:siru }; })()`)));
+await sleep(3000);
+/* ★ 이사 뒤 3D 방 — 게임은 이사 길 끝에서 remountRoomView 로 방을 다시 짓는데, 10-09 지금 그 길이 «방을 그리지 못했습니다 — Cannot read properties of null
+   (reading 'precision')» 로 떨어진다(옛 방 dispose 가 #roomCanvas 문맥을 forceContextLoss 로 놓고, 새 방이 같은 캔버스를 다시 쓴다 · 하드웨어 GPU 도 같음 ·
+   재현 tools/leaf/_check_move_remount.mjs · core 에 알림). 함수로만 이사하고 그대로 두면 3D 가 반지하라 원룸 등을 «모르는 등»으로 던진다.
+   ⇒ 사람이 하듯 «저장하고 다시 켠다» — 켜진 판이 원룸 방뷰를 새로 짓는다. LAMPCLIP=1 이면 늘 · RELOAD=1 로도 */
+if (process.env.LAMPCLIP === '1' || process.env.RELOAD === '1') {
+  const sv = await J(`(async()=>{ const sv=await import('/src/game/save.js'); const r=sv.saveTo(localStorage, sv.SAVE_KEY, window.__S()); return { ok:r.ok }; })()`);
+  await page.goto(`${BASE}/game.html`);
+  let ok = false; for (let i = 0; i < 100; i++) { await sleep(3000); if (await page.eval(`String(!!(window.__rv && window.__rv.lampMounts))`) === 'true') { ok = true; break; } }
+  await sleep(6000); await clear();
+  console.log('③-1 저장·다시 켬 —', JSON.stringify(sv), ok, await page.eval(`String(window.__S().home.room)`)); }
+/* ★ LAMPCLIP=1 — 집게등을 에타제르 맨 윗단에 물린다(house 10-09 · 원룸 등은 바→집게→거치 차례로 켜짐 · 세운 수 2 = 바+집게).
+   게임의 등 옮기기 길 그대로: roomView.commitLampAt → setFurniturePlacement(세이브 자리표) → light.clearCache */
+if (process.env.LAMPCLIP === '1') console.log('③-2 집게등 물림 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S(), io=window.__io, rv=window.__rv;
+  const mounts=(rv.lampMounts&&rv.lampMounts())||[]; const ids=mounts.map(m=>m.mountId||m.id||m);
+  const top=ids.find(x=>/banjiha-etagere@0\.79/.test(String(x))) || ids.find(x=>/etagere/.test(String(x)));
+  const r=await rv.commitLampAt('oneroom-growlight-clip', { mountId: top });
+  st.setFurniturePlacement(S, r.uid, r.to, { size: io.light.room.size }); io.light.clearCache(); try{window.__redraw()}catch(e){}
+  return { 물린곳:top, 자리:r.to, 등:[S.lamps&&S.lamps.count, S.tutorial&&S.tutorial.lamp&&S.tutorial.lamp.placed], 후보:ids.slice(0,8) }; })()`)));
 await sleep(3000); await clear();
 /* ④ 날 넘기기 */
 for (let d = 0; d < DAYS; d++) {
