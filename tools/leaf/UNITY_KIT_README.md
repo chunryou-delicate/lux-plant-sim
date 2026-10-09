@@ -5,9 +5,12 @@
 ## 만드는 명령
 
 ```bash
-python tools/serve.py 9340 &                       # U4(위에서 찍기)만 서버가 필요하다
 python tools/leaf/unity_kit.py tex                 # U2 — 잎 GLB 마다 2048 밑색을 찾아 넣는다
 python tools/leaf/unity_kit.py mask                # U3 — 무늬 마스크 · 초록 밑판 · 무늬색 표
+python tools/serve.py 9341 "<저장소 위>" &         # U4 는 저장소(도구)와 키트(밖)를 같이 내주는 서버가 필요하다(KIT_URL 로 바꿀 수 있다)
+python tools/leaf/unity_kit.py top                 # U4 — 위에서 본 2048 투명(흰·검 두 번 찍어 차로 알파) + 무늬판 «판 마스크»
+python tools/leaf/unity_kit.py bake                # U1 — 유니티 규약: 자루 끝 원점 · +Y 위 · 가장 긴 축 = real_max_m(미터)
+python tools/leaf/unity_kit.py json                # U8 — plant_kit.json(종·단계·무늬판·등급·한글명·쨍/차분·마스크·색·위에서·유니티 메시)
 ```
 `--out=<경로>` 로 내는 곳을 바꾸고 `--only=mon_zebra,pp_leaf` 로 일부만 만든다.
 
@@ -20,6 +23,9 @@ unity_kit/plants/
   monstera/mask/<이름>_mask.png    R = 무늬 몫(부드러운 경계) · G = 무늬 안 «둘째 색» 몫 · B = 0
   monstera/mask/<이름>_base.png    초록 밑판(무늬 자리를 밑판 초록으로 · 원래 밝기 결은 조금 남김)
   monstera/mask/<이름>_colors.json 밑판색 · 무늬색1·2 · «잎 전체 특수색» 여부 · 실측
+  monstera/top/<이름>_top.png       위에서 본 2048 투명 · 무늬판은 <이름>_topmask.png(R·G · 알파 = 잎 알파)
+  monstera/unity/<이름>.glb        유니티 규약으로 구운 메시(자루 끝 원점 · +Y · 미터)
+  plant_kit.json               유니티가 읽는 표(ScriptableObject 로)
   pink_princess/… · alocasia/…  같은 꼴
 ```
 
@@ -34,4 +40,4 @@ unity_kit/plants/
 - **마스크는 그 GLB 의 UV 에 붙는다.** 유니티가 다른 메시(예: Tripo·Meshy 로 새로 뽑은 메시)를 쓰면 그 메시에서 마스크를 다시 뽑아야 한다 — 무늬판을 새 메시에 입히는 길은 Higgsfield `meshy_v5_retexture`(원래 UV · PBR).
 - 쨍·차분 판은 마스크를 따로 안 만든다 — 같은 기본판 마스크에 색 값만 다르다(`_colors.json`).
 - 자동 판정이 틀린 가족은 `tools/leaf/varie_mask.py` 의 `OVERRIDE` 표에 한 줄씩(까닭과 함께) 있다.
-- 메시는 지금 웹 규약 그대로다(높이 1 로 맞춰 쓰고 크기·각도는 plant_grow 조정표 · 실측은 manifest `real_max_m`). 유니티 규약(자루 끝 원점 · +Y 위 · 미터)으로 굽는 단계(U1)는 다음.
+- `mesh/` 는 웹 규약(높이 1 로 맞춰 쓰고 크기·각도는 plant_grow 조정표), `unity/` 는 유니티 규약(자루 끝 원점 · +Y · 가장 긴 축 = manifest `real_max_m` 미터). 잎의 돌림(조정표 ADJ)은 굽지 않는다 — 그루 조립 규칙과 같이 growth 몫. 실측이 없는 GLB 는 높이 1 로만 굽고 장부(`kit_log.json` bake.unit_only)에 적는다.

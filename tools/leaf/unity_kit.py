@@ -164,7 +164,190 @@ def step_mask():
     old.setdefault('mask', {}).update({r['name']: r for r in rows}); json.dump(old, open(lp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print(f'★ 마스크 {len(rows)} · 장부 {lp}')
 
+SERVE_ROOT = os.path.abspath(os.path.join(ROOT, '..'))       # 9341 서버의 뿌리 — 저장소(도구)와 키트(밖)를 같이 내준다
+TOP_URL = os.environ.get('KIT_URL', 'http://127.0.0.1:9341')   # python tools/serve.py 9341 "<저장소 위>" 로 띄운다
+
+def _thumb_all(rel_dir, bg):
+    """rel_dir(SERVE_ROOT 기준)의 GLB 를 한 판(크롬 하나)에 위에서 2048 로 찍는다 → rel_dir/thumbs/*.png"""
+    cmd = ['node', os.path.join(ROOT, 'tools', 'glb_thumb.mjs'), f'--all={rel_dir}', '--view=top', '--size=2048', '--force'] + ([f'--bg={bg}'] if bg else [])
+    r = subprocess.run(cmd, cwd=SERVE_ROOT, capture_output=True, text=True, encoding='utf-8', errors='replace',
+                       env=dict(os.environ, BYEOT_URL=TOP_URL + '/' + os.path.basename(ROOT)))
+    print((r.stdout or '').strip().splitlines()[-1:] or r.stderr[-300:], flush=True)
+    return os.path.join(SERVE_ROOT, rel_dir, 'thumbs')
+
+def _matte(white_png, black_png):
+    """흰·검 두 판의 차로 알파 — 흰 무늬도 구멍 없이 남는다(색 빼기를 안 쓴다)"""
+    w = np.asarray(Image.open(white_png).convert('RGB')).astype(np.float64) / 255
+    k = np.asarray(Image.open(black_png).convert('RGB')).astype(np.float64) / 255
+    a = np.clip(1 - (w - k).mean(2), 0, 1)
+    col = np.where(a[..., None] > 1e-3, k / np.maximum(a[..., None], 1e-3), 0)
+    return Image.fromarray((np.dstack([np.clip(col, 0, 1), a]) * 255).astype(np.uint8), 'RGBA'), a
+
+def step_top():
+    """U4 — 위에서 본 투명 2048(먼 거리 판 · UI) + 무늬판은 같은 각의 «판 마스크»(R·G · 알파는 잎 알파)"""
+    if os.path.commonpath([OUT, SERVE_ROOT]) != SERVE_ROOT: print('⛔ OUT 이 서버 뿌리 밖이다', OUT); return
+    log = {}
+    for sp in sorted(os.listdir(OUT)):
+        md = os.path.join(OUT, sp, 'mesh')
+        if not os.path.isdir(md): continue
+        rel = os.path.relpath(md, SERVE_ROOT).replace(os.sep, '/'); td = os.path.join(OUT, sp, 'top'); os.makedirs(td, exist_ok=True)
+        thumbs = os.path.join(md, 'thumbs'); keep = os.path.join(OUT, '_work', sp + '_white'); shutil.rmtree(keep, ignore_errors=True)
+        _thumb_all(rel, None); shutil.move(thumbs, keep)
+        _thumb_all(rel, '000000')
+        for f in sorted(glob.glob(os.path.join(keep, '*.png'))):
+            n = os.path.basename(f)[:-4]
+            if ONLY and not any(o in n for o in ONLY.split(',')): continue
+            bk = os.path.join(thumbs, n + '.png')
+            if not os.path.exists(bk): continue
+            img, a = _matte(f, bk); img.save(os.path.join(td, n + '_top.png'), optimize=True)
+            log[n] = {'alpha0': round(float((a < 0.01).mean()), 3), 'edge': round(float(((a > 0.01) & (a < 0.99)).mean()), 4)}
+        shutil.rmtree(thumbs, ignore_errors=True)
+        # 판 마스크 — 마스크 텍스처를 입힌 GLB 를 같은 각으로(흰 바탕 한 번 · 알파는 위 잎 알파)
+        mk = os.path.join(OUT, sp, 'mask'); mg = os.path.join(OUT, '_work', sp + '_maskglb'); shutil.rmtree(mg, ignore_errors=True); os.makedirs(mg)
+        for m in sorted(glob.glob(os.path.join(mk, '*_mask.png'))):
+            n = os.path.basename(m)[:-9]; g = os.path.join(md, n + '.glb')
+            if os.path.exists(g) and (not ONLY or any(o in n for o in ONLY.split(','))): put_tex(g, Image.open(m).convert('RGB'), os.path.join(mg, n + '.glb'), q=100)
+        if os.listdir(mg):
+            mt = _thumb_all(os.path.relpath(mg, SERVE_ROOT).replace(os.sep, '/'), '000000')
+            for f in sorted(glob.glob(os.path.join(mt, '*.png'))):
+                n = os.path.basename(f)[:-4]; top = os.path.join(td, n + '_top.png')
+                if not os.path.exists(top): continue
+                rgb = np.asarray(Image.open(f).convert('RGB')); al = np.asarray(Image.open(top))[..., 3]
+                Image.fromarray(np.dstack([rgb[..., 0], rgb[..., 1], np.zeros_like(al), al]), 'RGBA').save(os.path.join(td, n + '_topmask.png'), optimize=True)
+        print(f'★ {sp}: 위에서 {len(glob.glob(os.path.join(td, "*_top.png")))} · 판 마스크 {len(glob.glob(os.path.join(td, "*_topmask.png")))}', flush=True)
+    lp = os.path.join(OUT, 'kit_log.json'); old = json.load(open(lp, encoding='utf-8')) if os.path.exists(lp) else {}
+    old.setdefault('top', {}).update(log); json.dump(old, open(lp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    shutil.rmtree(WORK, ignore_errors=True)
+
+def step_json():
+    """U8 — plant_kit.json: 종 → 단계(메시 · 실측) · 무늬판(등급 · 한글명 · 쨍/차분 · 마스크 · 밑판 · 색 · 위에서). 유니티 ScriptableObject 로 읽는다.
+       값은 다 저장소 정본에서 읽는다(manifest · varie_grades · species 표 · kit_log) — 여기서 새로 정하는 값 없음. 추정한 칸은 'guess' 로 적는다."""
+    M = json.load(open(os.path.join(ROOT, 'assets/manifest.json'), encoding='utf-8'))
+    V = json.load(open(os.path.join(ROOT, 'data/balance/varie_grades.json'), encoding='utf-8'))
+    K = json.load(open(os.path.join(OUT, 'kit_log.json'), encoding='utf-8'))
+    man = {os.path.basename(it.get('path', '')): it for it in M['items'] if str(it.get('path', '')).endswith('.glb')}
+    fam = {}
+    for g in V['grades']:
+        for a in g.get('assets') or []: fam['mon_' + a['id']] = {'grade': g['id'], 'grade_ko': g['ko'], 'name_ko': a['ko'], 'stage': 'mature'}
+    for a in V['midCommon']['pool']: fam[a['id']] = {'grade': None, 'grade_ko': '중간잎 통일 풀(등급과 무관 · midCommon)', 'name_ko': a.get('ko') or a['id'], 'stage': 'mid'}
+    SPG = {'pinkmarble': ('marble', '산반'), 'pinkheavy': ('heavy', '하프문'), 'allpink': ('pink', '분홍 잎'), 'marble': ('marble', '산반'), 'half': ('sector', '하프문'), 'creamcenter': ('sector', '하프문')}
+    def rel(p): return os.path.relpath(p, OUT).replace(os.sep, '/') if p and os.path.exists(p) else None
+    out = {'version': 1, 'units': 'm', 'generated_by': 'tools/leaf/unity_kit.py json',
+           'conventions': {'mesh': '웹 규약 GLB(높이 1 로 맞춰 쓰고 조정표로 키움 · 밑색 2048)', 'unity_mesh': '유니티 규약으로 구운 GLB — 자루 끝(맨 아래 8% 띠 XZ 무게중심) = 원점 · +Y 위 · 가장 긴 축 = real_max_m(미터) · 노드 변환은 정점에 녹임 · 잎의 돌림(조정표 ADJ)은 안 구움',
+                           'mask': 'R = 무늬 몫 · G = 무늬 안 둘째 색 몫 · 그 GLB 의 UV 에 붙는다(다른 메시면 다시 뽑아야)',
+                           'variants': 'vivid(_v1) · calm(_v2) 는 같은 메시 · 다른 밑색 — 마스크는 기본판 것을 같이 쓴다',
+                           'top': '위에서 본 2048 투명 PNG(흰·검 두 판 차로 알파) · topmask = 같은 각의 마스크(알파 = 잎 알파)'},
+           'species': {}}
+    for sp in sorted(d for d in os.listdir(OUT) if os.path.isdir(os.path.join(OUT, d, 'mesh'))):
+        S = out['species'].setdefault(sp, {'stages': {}, 'skins': []})
+        for g in sorted(glob.glob(os.path.join(OUT, sp, 'mesh', '*.glb'))):
+            n = os.path.basename(g)[:-4]; mi = man.get(n + '.glb', {})
+            if n.endswith(('_v1', '_v2')): continue
+            row = {'mesh': rel(g), 'real_max_m': mi.get('real_max_m'), 'category': mi.get('category'), 'name_ko': mi.get('name_ko'),
+                   'tex2048': (K.get('tex', {}).get(n + '.glb') or {}).get('tex') == 2048,
+                   'top': rel(os.path.join(OUT, sp, 'top', n + '_top.png')),
+                   'unity_mesh': rel(os.path.join(OUT, sp, 'unity', n + '.glb'))}   # U1 — 자루 끝 원점 · +Y · 가장 긴 축 = real_max_m(미터)
+            vv = {k: rel(os.path.join(OUT, sp, 'mesh', n + s + '.glb')) for k, s in (('vivid', '_v1'), ('calm', '_v2'))}
+            if any(vv.values()): row['variants'] = vv
+            mk = os.path.join(OUT, sp, 'mask', n + '_mask.png')
+            if os.path.exists(mk):
+                info = fam.get(n, {}); kl = K.get('mask', {}).get(n, {})
+                if sp != 'monstera':
+                    t = next((v for k, v in SPG.items() if n.endswith('_' + k)), None)
+                    info = {'grade': t and t[0], 'grade_ko': t and t[1], 'name_ko': mi.get('name_ko'), 'stage': n.split('_')[2] if n.count('_') >= 2 else None,
+                            **({'guess': '크림 중심(creamcenter)을 하프문(sector)으로 읽음 — species.js 등급표에 이 판 이름이 없다'} if n.endswith('_creamcenter') else {})}
+                row.update({'key': n, **info, 'mask': rel(mk), 'base': rel(os.path.join(OUT, sp, 'mask', n + '_base.png')), 'colors': kl.get('colors'),
+                            'mask_pct': kl.get('mask_pct'), 'topmask': rel(os.path.join(OUT, sp, 'top', n + '_topmask.png'))})
+                S['skins'].append(row)
+            else:
+                S['stages'][n] = row
+    p = os.path.join(OUT, 'plant_kit.json'); json.dump(out, open(p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print('★', p, {sp: (len(v['stages']), len(v['skins'])) for sp, v in out['species'].items()})
+
+def _node_mats(js):
+    """노드마다 월드 행렬(4×4) — matrix 또는 TRS · 장면 뿌리부터"""
+    def local(n):
+        if 'matrix' in n: return np.array(n['matrix'], np.float64).reshape(4, 4).T
+        T = np.eye(4); T[:3, 3] = n.get('translation', [0, 0, 0])
+        x, y, z, w = n.get('rotation', [0, 0, 0, 1])
+        R = np.eye(4); R[:3, :3] = [[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                                    [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                                    [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]]
+        S = np.diag(list(n.get('scale', [1, 1, 1])) + [1]); return T @ R @ S
+    nodes = js.get('nodes', []); out = {}
+    def walk(i, M):
+        W = M @ local(nodes[i]); out[i] = W
+        for c in nodes[i].get('children', []): walk(c, W)
+    for s in js.get('scenes', [{}]):
+        for r in s.get('nodes', []): walk(r, np.eye(4))
+    return out
+
+def step_bake():
+    """U1 — 유니티 규약으로 굽는다: 자루 끝(맨 아래 8% 띠의 XZ 무게중심 · plant_grow normalizeAsset 의 anchorBottom 과 같은 셈) = 원점 · +Y 위 · 미터(manifest real_max_m = 가장 긴 축)
+       노드 변환은 정점에 녹이고 노드는 단위 행렬로. 잎은 게임이 돌리지 않는다(LONGY 는 줄기·잎자루뿐) — 돌림은 ADJ(plant_grow 조정표)의 몫이라 굽지 않는다.
+       → OUT/<종>/unity/<이름>.glb (mesh/ 는 웹 규약 그대로 둔다)"""
+    import struct
+    M = json.load(open(os.path.join(ROOT, 'assets/manifest.json'), encoding='utf-8'))
+    real = {os.path.basename(it.get('path', '')): it.get('real_max_m') for it in M['items'] if str(it.get('path', '')).endswith('.glb')}
+    log = {}
+    for sp in sorted(d for d in os.listdir(OUT) if os.path.isdir(os.path.join(OUT, d, 'mesh'))):
+        ud = os.path.join(OUT, sp, 'unity'); os.makedirs(ud, exist_ok=True)
+        for g in sorted(glob.glob(os.path.join(OUT, sp, 'mesh', '*.glb'))):
+            n = os.path.basename(g)
+            if ONLY and not any(o in n for o in ONLY.split(',')): continue
+            js, b = read_glb(g); b = bytearray(b); W = _node_mats(js)
+            users = {}
+            for i, nd in enumerate(js.get('nodes', [])):
+                if 'mesh' in nd: users.setdefault(nd['mesh'], []).append(i)
+            if any(len(set(map(lambda i: W[i].tobytes(), v))) > 1 for v in users.values()):
+                log[n] = {'skip': '한 메시를 변환이 다른 노드 여럿이 쓴다'}; continue
+            prims = []
+            for mi, nis in users.items():
+                Wm = W[nis[0]]
+                for pr in js['meshes'][mi]['primitives']:
+                    pa = pr['attributes']['POSITION']; P = np.array(_acc_read(js, b, pa)); P = (np.c_[P, np.ones(len(P))] @ Wm.T)[:, :3]
+                    Nm = None
+                    if 'NORMAL' in pr['attributes']:
+                        Nm = np.array(_acc_read(js, b, pr['attributes']['NORMAL'])) @ np.linalg.inv(Wm[:3, :3]).T
+                        Nm /= np.linalg.norm(Nm, axis=1, keepdims=True) + 1e-12
+                    prims.append((pa, P, pr['attributes'].get('NORMAL'), Nm))
+            allP = np.vstack([p for _, p, _, _ in prims]); y0 = allP[:, 1].min(); h = allP[:, 1].max() - y0
+            band = allP[allP[:, 1] <= y0 + 0.08 * h]; ax, az = band[:, 0].mean(), band[:, 2].mean()
+            rm = real.get(n) or real.get(n.replace('_v1.glb', '.glb').replace('_v2.glb', '.glb'))
+            # real_max_m = «실제 세계 최대축 길이»(manifest _scale_convention) — 높이가 아니라 가장 긴 축을 맞춘다(10-10 첫 판은 높이로 맞춰 옆으로 넓은 중간잎이 1.27배 컸다)
+            mx = float((allP.max(0) - allP.min(0)).max())
+            s = (rm / mx) if rm else (1.0 / h)
+            for pa, P, na, Nm in prims:
+                Q = (P - [ax, y0, az]) * s; _acc_write(js, b, pa, Q)
+                js['accessors'][pa]['min'] = Q.min(0).tolist(); js['accessors'][pa]['max'] = Q.max(0).tolist()
+                if na is not None: _acc_write(js, b, na, Nm)
+            for nd in js.get('nodes', []):
+                for k in ('matrix', 'translation', 'rotation', 'scale'): nd.pop(k, None)
+            views = [bytes(b[v.get('byteOffset', 0): v.get('byteOffset', 0) + v['byteLength']]) for v in js['bufferViews']]
+            dst = os.path.join(ud, n)
+            if os.path.exists(dst): os.remove(dst)
+            write_glb(dst, js, views)
+            log[n] = {'real_max_m': rm, 'scale': round(s, 5), 'anchor': [round(ax, 4), round(y0, 4), round(az, 4)], 'unit_only': rm is None}
+        print(f'★ {sp}: 구움 {len(glob.glob(os.path.join(ud, "*.glb")))}', flush=True)
+    lp = os.path.join(OUT, 'kit_log.json'); old = json.load(open(lp, encoding='utf-8')) if os.path.exists(lp) else {}
+    old.setdefault('bake', {}).update(log); json.dump(old, open(lp, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print('실측 없음(높이 1 로만) :', [k for k, v in log.items() if v.get('unit_only')], '· 건너뜀 :', [k for k, v in log.items() if v.get('skip')])
+
+_FMT = {5126: ('f', 4), 5123: ('H', 2), 5125: ('I', 4), 5121: ('B', 1)}
+_NC = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4}
+def _acc_loc(js, i):
+    a = js['accessors'][i]; v = js['bufferViews'][a['bufferView']]; f, sz = _FMT[a['componentType']]; n = _NC[a['type']]
+    return a, v.get('byteOffset', 0) + a.get('byteOffset', 0), v.get('byteStride', sz * n), f, n
+def _acc_read(js, b, i):
+    import struct
+    a, base, st, f, n = _acc_loc(js, i)
+    return [struct.unpack_from('<' + f * n, b, base + k * st) for k in range(a['count'])]
+def _acc_write(js, b, i, arr):
+    import struct
+    a, base, st, f, n = _acc_loc(js, i)
+    for k, row in enumerate(arr): struct.pack_into('<' + f * n, b, base + k * st, *map(float, row))
+
 if __name__ == '__main__':
     step = ARGS[0] if ARGS else 'tex'
     print('OUT =', OUT)
-    {'tex': step_tex, 'mask': step_mask}[step]()
+    {'tex': step_tex, 'mask': step_mask, 'top': step_top, 'json': step_json, 'bake': step_bake}[step]()

@@ -48,7 +48,8 @@ const scene = new THREE.Scene();
      같은 물건인데 가방 그림만 다른 결이 된다.
    ⚠ 배경도 **흰색 불투명**이다(crops/thumbs 넉 장 전수 확인 · 알파 0% ).
      `make_thumbs.py` 머리글은 「알파 있는 렌더」라고 적어 두었는데 **지금 파일들은 아니다.** */
-scene.background = new THREE.Color(0xffffff);
+/* ★ 2026-10-10 ([leaf] 유니티 키트 U4) — `?bg=000000` 이면 그 색 바탕(흰·검 두 번 찍어 차로 알파를 낸다 · 흰 무늬에 구멍 안 남). 안 주면 예전 그대로 흰 바탕 */
+scene.background = new THREE.Color((() => { const m = /[?&]bg=([0-9a-fA-F]{6})/.exec(location.search); return m ? parseInt(m[1], 16) : 0xffffff; })());
 
 /* 한 벌 찍기 — 앞 판을 지운다. 안 지우면 한 화면에 물건이 쌓여 둘 다 못 쓴다. */
 window.__reset = function () {

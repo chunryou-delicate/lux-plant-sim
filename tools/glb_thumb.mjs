@@ -111,7 +111,10 @@ if (!jobs.length) {
 const page = await launch({ width: 640, height: 640, dpr: 1, mobile: false });
 /* --size=2048 — 찍는 크기(기본 512 · [leaf] 10-09 유니티 키트 U4) */
 const SIZE_PX = (flags.find(a => a.startsWith('--size=')) || '').slice(7);
-await page.goto(`${BASE}/tools/glb_thumb.html${SIZE_PX ? '?size=' + encodeURIComponent(SIZE_PX) : ''}`);
+/* --bg=000000 — 바탕색(기본 흰 · [leaf] 10-10 유니티 키트 U4: 흰·검 두 번 찍어 알파) */
+const BG = (flags.find(a => a.startsWith('--bg=')) || '').slice(5);
+const QS = [SIZE_PX && 'size=' + encodeURIComponent(SIZE_PX), BG && 'bg=' + encodeURIComponent(BG)].filter(Boolean).join('&');
+await page.goto(`${BASE}/tools/glb_thumb.html${QS ? '?' + QS : ''}`);
 await page.waitFor('typeof window.__thumb === "function"', 60000, 200);
 
 /* 찍은 것을 폴더별로 모아 둔다 — 아래 §색인 에서 한 번에 적는다 */
