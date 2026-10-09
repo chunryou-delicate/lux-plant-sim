@@ -3,7 +3,7 @@
      ① 산 그림을 누르면 방 한가운데가 아니라 걸이 자리 원이 뜬다(글 «벽에 걸 자리를 골라 주세요») · 원은 화면 안
      ② 원을 고르면 그 자리에 걸린다 — 방 가구 줄에 y > 0 · 그 자리가 찬다 · 재고 하나 빠짐
      ③ 걸린 그림을 고르면 [옮기기]·[팔기]는 있고 [돌리기]는 없다 · [옮기기] → 다른 자리 원(제 자리 빼고) → 고르면 옮겨 걸린다
-     ④ 자리를 다 채우면 «벽에 걸 자리가 다 찼습니다 — 걸린 것을 하나 내리면 걸 수 있습니다» · 주문판(투룸 전용)은 «이 방엔 이것을 걸 자리가 없습니다»
+     ④ 자리를 다 채우면 «벽에 걸 자리가 다 찼습니다 — 걸린 것을 하나 내리면 걸 수 있습니다» · 주문판(투룸 전용)은 «주문판은 가게 방 문 옆에 겁니다»(plan a2ccb0c9)
      ⑤ 다시 켜도 걸린 자리가 그대로 · 달력 계절이 게임 계절(skyFor)과 맞아 있다(setSeason 이 «바뀐 것 없음»)
      ⑥ 콘솔에 처리 안 된 예외 없음
    python tools/serve.py 9300 · node tools/probe_wall_hang.mjs (OUTDIR=… 이면 사진) */
@@ -84,7 +84,7 @@ try {
   await shot('4_full');
   ok(sp4.every(s => !s.free), '④ 반지하 자리 넷이 다 찼다');
   ok(!pFull.on && pFull.lastLine === '벽에 걸 자리가 다 찼습니다 — 걸린 것을 하나 내리면 걸 수 있습니다', `④ 찼을 때 글(${pFull.lastLine})`);
-  ok(!pNone.on && pNone.lastLine === '이 방엔 이것을 걸 자리가 없습니다', `④ 주문판(투룸 전용) 글(${pNone.lastLine})`);
+  ok(!pNone.on && pNone.lastLine === '주문판은 가게 방 문 옆에 겁니다', `④ 주문판(투룸 전용) 글(${pNone.lastLine})`);
   /* ⑤ */
   await page.eval(`(()=>{ try { window.__byeotSave && window.__byeotSave(); } catch(e){} })()`, false); await sleep(1500);
   await boot();

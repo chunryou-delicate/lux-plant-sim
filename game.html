@@ -15850,22 +15850,31 @@ async function startPhonePlaceFurnitureBag(uid, hangAt = null) {
    ② 걸린 그림 [옮기기] → 다른 자리 원 → commitFurnitureAt(uid, { hang }) · [돌리기]는 없다(벽이 방향을 정한다)
    ③ 날마다 달력 계절(§syncHangSeason) · ④ 자리가 다 차면 plan 글 «벽에 걸 자리가 다 찼습니다»(걸린 것이 있으면 꼬리)
    ⚠ 걸 수 있나는 3D 가 안다(hangPose 가 크기·전용 자리·찬 자리에서 던진다 · furnitureFit {hang}) — 여기서 다시 가르지 않는다 */
+/* none* — «다 찼다»가 거짓이 되는 경우를 까닭으로 가른다(plan a2ccb0c9 · plan-furniture-texts 셋째 표). 셋째 줄은 앞 둘로 못 가를 때만 */
 const HANG_KO = Object.freeze({ pick: '벽에 걸 자리를 골라 주세요', full: '벽에 걸 자리가 다 찼습니다', fullTail: ' — 걸린 것을 하나 내리면 걸 수 있습니다',
-                               none: '이 방엔 이것을 걸 자리가 없습니다' });
+                               noneShop: '주문판은 가게 방 문 옆에 겁니다', noneSize: '이 방엔 이만큼 큰 것을 걸 자리가 없습니다', none: '이 방엔 이걸 걸 자리가 없습니다' });
 function isHangPreset(preset) { try { return !!(preset && furnPresets[preset] && furnPresets[preset].mount === 'wall-hang'); } catch { return false; } }
 /* 지금 걸 수 있는 자리 — 산 그림이면 hangPose 가 받는 자리 · 걸린 그림을 옮기면 furnitureFit {hang} 이 받는 자리(제 자리 빼고) */
 function hangChoices(want) {
   let spots = []; try { spots = (roomView && roomView.hangSpots && roomView.hangSpots()) || []; } catch { spots = []; }
   /* busyFit — 크기·전용은 맞는데 «찼을» 뿐인 자리(hangPose 는 크기를 먼저 보고 찬 것을 나중에 본다 · room_view §hangPoseFor).
        이것이 하나도 없으면 «다 찼다»가 아니라 «이 방엔 걸 자리가 없다»다(반지하의 주문판처럼) — 찼다고 하면 거짓말이 된다 */
-  let busyFit = 0;
+  let busyFit = 0, shopOnly = 0, size = 0, other = 0;
   const fits = sp => {
     if (want.uid) { if (sp.uid === want.uid) return false; try { return !!(roomView.furnitureFit(want.uid, { hang: sp.id }) || {}).ok; } catch { return false; } }
     try { roomView.hangPose(sp.id, want.preset); return true; }
-    catch (e) { if (!sp.free && /다 찼/.test((e && e.message) || '')) busyFit++; return false; }
+    catch (e) {
+      const m = (e && e.message) || '';
+      if (/다 찼/.test(m)) busyFit++;
+      else if (/주문판은 주문판 자리에만/.test(m)) shopOnly++;
+      else if (/자리보다 (넓|큽)니다/.test(m)) size++;
+      else if (!/다른 것을 거는 자리/.test(m)) other++;          /* 남의 전용 자리(주문판 자리)는 까닭에 안 센다 */
+      return false;
+    }
   };
   const open = spots.filter(fits);
-  return { spots, open, busyFit };
+  const noneLine = shopOnly ? HANG_KO.noneShop : (size && !other ? HANG_KO.noneSize : HANG_KO.none);
+  return { spots, open, busyFit, noneLine };
 }
 const hangPick = {
   on: false, timer: null, want: null, onPick: null, ids: '',
@@ -15873,7 +15882,7 @@ const hangPick = {
     if (!roomView || !roomView.hangSpots) { banner('방이 아직 준비 중입니다', '잠시 뒤에 다시 눌러 주세요'); return false; }
     const c = hangChoices(want);
     /* 옮기기면 다른 자리가 다 찬 것 · 새로 걸기면 찬 자리가 있으면 «다 찼다 — 내리면 걸 수 있다» · 없으면 «이 방엔 걸 자리가 없다» */
-    if (!c.open.length) { const line = want.uid ? HANG_KO.full : (c.busyFit ? HANG_KO.full + HANG_KO.fullTail : HANG_KO.none); banner(line, ''); this.lastLine = line; return false; }
+    if (!c.open.length) { const line = want.uid ? HANG_KO.full : (c.busyFit ? HANG_KO.full + HANG_KO.fullTail : c.noneLine); banner(line, ''); this.lastLine = line; return false; }
     this.close();
     this.want = want; this.onPick = onPick; this.on = true;
     $('hangPickMsg').textContent = HANG_KO.pick;
