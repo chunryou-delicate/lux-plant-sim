@@ -362,15 +362,17 @@ const OUTFIT_FILES = { spring: 'spring.jpg', autumn: 'autumn.jpg', winter: 'wint
 const outfitFilesNow = () => pickByGender({ f: OUTFIT_FILES, m: null }, HERO_GENDER, '옷 그림(outfit/m)');
 const _outfitTex = new Map();
 function outfitTexture(name) {
-  if (_outfitTex.has(name)) return _outfitTex.get(name);
+  /* 10-10 (char): 열쇠에 성별 — 'm' 옷(outfit/m/…)이 서면 같은 이름(spring 등)이 다른 그림이다. 이름만 열쇠면 먼저 받은 쪽이 남는다 */
+  const key = HERO_GENDER + ':' + name;
+  if (_outfitTex.has(key)) return _outfitTex.get(key);
   const url = new URL('../../assets/v2/char/outfit/' + outfitFilesNow()[name], import.meta.url).href;
   const p = new Promise((res, rej) => new THREE.TextureLoader().load(url, t => {
     t.flipY = false;                     // glTF 그림과 같게
     t.encoding = THREE.sRGBEncoding;
     res(t);
   }, undefined, () => rej(new Error('옷 그림을 못 받았습니다: ' + name))));
-  p.catch(() => _outfitTex.delete(name));
-  _outfitTex.set(name, p);
+  p.catch(() => _outfitTex.delete(key));
+  _outfitTex.set(key, p);
   return p;
 }
 
@@ -413,7 +415,9 @@ export async function makeHero() {
         for (const [m, map, em] of baseMaps) { m.map = map; m.emissiveMap = em; m.needsUpdate = true; }
         outfit = k; return true;
       }
-      if (!outfitFilesNow()[k] || src.kind !== 'hero2') return false;   // 옷 그림은 hero2 UV 로 만들었다 — 옛 몸(hero.glb)은 못 입는다
+      /* 옷 그림은 그 몸 UV 로 만들었다 — 옛 몸(hero.glb)은 못 입는다. 10-10 (char): 'hero2_m'(남 몸 extras.hero)도 받는다 —
+         몸과 옷 표가 같은 성별로 함께 떨어지므로(heroUrl · outfitFilesNow 둘 다 pickByGender) 짝은 어긋나지 않는다 */
+      if (!outfitFilesNow()[k] || !/^hero2(_m)?$/.test(src.kind)) return false;
       let t;
       try { t = await outfitTexture(k); } catch (e) { console.warn('[주인공] ' + e.message); return false; }
       for (const [m, map, em] of baseMaps) {
