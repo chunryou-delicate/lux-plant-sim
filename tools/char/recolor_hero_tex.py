@@ -20,7 +20,11 @@
 · 2026-10-08 판: 오른뺨 곁에 짙은 획 하나가 남는다(눈 조각 둘레의 머리 텍셀). 게임 거리에선 안 보임
 
 쓰기
-  python tools/char/recolor_hero_tex.py <hero.glb> <나갈.glb> [--report]
+  python tools/char/recolor_hero_tex.py <hero.glb> <나갈.glb> [--report] [--hair-hue] [--hair-gain=1.4]
+    --hair-hue     머리를 «밝기 < 60» 대신 «자줏빛·붉은 기(R>G+8 · B≥G−2) & 밝기 < 130»으로 가른다
+                   (2026-10-09 새 주인공 hero2 — 머리가 [65,38,48] 로 고르고 밝아 옛 문턱이면 하이라이트가 빠진다)
+    --hair-gain=g  머리 목표 = 정본 × g (D24 — 화면에서 짙은 갈색으로 읽히게 ×1.4)
+    그림 형식(jpeg/webp/png)은 원래 것을 지킨다
 """
 import io
 import os
@@ -139,10 +143,19 @@ def main():
         eye = eye & near3d
     print('■ 눈 자리  홍채 텍셀 %d · 텍스처 위 둘레 %dpx · %d텍셀을 «머리 옮기기»에서 뺀다'
           % (iris.sum(), R, eye.sum()))
-    hair = (L < DARK) & ~eye
+    if '--hair-hue' in sys.argv:
+        # ⛔ 첫 판은 «used &»를 붙였다 ⇒ 조각 둘레 여백이 옛 자줏빛으로 남아 이음매에 가는 금이 났다(겹선형 표본이 여백을 섞는다)
+        #   ⇒ 여백까지 색으로 가른다(옛 «밝기<60» 판도 여백까지 칠했다)
+        hair = (L < 130) & (tex[..., 0] > tex[..., 1] + 8) & (tex[..., 2] >= tex[..., 1] - 2) & ~eye
+    else:
+        hair = (L < DARK) & ~eye
     tee = used & (L > LIGHT) & (sat < 40) & (hgt > 0.38) & (hgt < 0.70)
     shoe = used & (L > LIGHT) & (sat < 40) & (hgt < 0.15)
     ch, ct, nh, nt = canon_colors()
+    gain = float(next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--hair-gain=')), '1'))
+    if gain != 1:
+        print('■ D24 — 머리 목표 = 정본 × %.2f' % gain)
+        ch = np.clip(ch * gain, 0, 255)
     print('■ 정본(초상화)에서 뽑은 색  머리 %s (%d화소) · 티 %s (%d화소)'
           % (ch.round().astype(int).tolist(), nh, ct.round().astype(int).tolist(), nt))
     print('■ 3D 텍스처 지금 색        머리 %s (%d텍셀) · 티 %s (%d텍셀) · (신발 %d텍셀은 안 건드림)'
@@ -155,7 +168,8 @@ def main():
           % (np.median(out[hair], 0).round().astype(int).tolist(),
              np.median(out[tee], 0).round().astype(int).tolist()))
     buf = io.BytesIO()
-    Image.fromarray(out.round().astype(np.uint8)).save(buf, 'WEBP', quality=92)
+    fmt = {'image/jpeg': 'JPEG', 'image/png': 'PNG'}.get(im.get('mimeType'), 'WEBP')   # 원래 형식을 지킨다
+    Image.fromarray(out.round().astype(np.uint8)).save(buf, fmt, **({} if fmt == 'PNG' else {'quality': 92}))
     data = buf.getvalue()
     while len(bn) % 4:
         bn.append(0)
