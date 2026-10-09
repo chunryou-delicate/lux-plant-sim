@@ -56,7 +56,9 @@ export function pickByGender(table, gender, what, warn) {
 /* ── 초상 ─────────────────────────────── FACE_FILE 값(file) → 파일 이름 앞말(portrait_ 뒤 · .png 앞)
    남 자취생 초상은 portrait_jachwi_m_{키}.png — **있는 것만** 적는다(없는 파일을 물으면 콘솔에 404 가 쌓인다).
    없는 키는 같은 성별 neutral + 경고(조용히 여자 얼굴로 떨어지지 않게 · plan §3-3). 몬이·식물신은 성별이 없다 */
-export const PORTRAIT_M_HAVE = Object.freeze(['cry', 'happy', 'neutral', 'numb', 'proud', 'surprise', 'think', 'tired', 'worry']);
+/* ★ 10-10 [char] a6c09ee8 — 남 낯 열다섯이 다 섰다(모자랐던 curious·scissors·bulb·beam·winter·apron 여섯을 원본 자리로 맞춤) */
+export const PORTRAIT_M_HAVE = Object.freeze(['apron', 'beam', 'bulb', 'cry', 'curious', 'happy', 'neutral', 'numb', 'proud', 'scissors',
+                                              'surprise', 'think', 'tired', 'winter', 'worry']);
 export function portraitNameOf(who, file, gender, warn) {
   if (who !== 'jachwi' || gender !== 'm') return `${who}_${file}`;
   if (PORTRAIT_M_HAVE.includes(file)) return `jachwi_m_${file}`;

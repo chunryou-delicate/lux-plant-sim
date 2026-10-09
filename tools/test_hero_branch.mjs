@@ -50,10 +50,13 @@ T('C m 강제 — 없는 그림은 떨어지면서 경고 한 줄(같은 것은 
   HB._resetGenderWarnings(); const w = caught();
   assert.equal(HB.portraitNameOf('jachwi', 'think', 'm', w.warn), 'jachwi_m_think', '있는 남 초상');
   assert.equal(w.out.length, 0);
-  assert.equal(HB.portraitNameOf('jachwi', 'beam', 'm', w.warn), 'jachwi_m_neutral', '없는 키는 같은 성별 neutral');
-  assert.equal(HB.portraitNameOf('jachwi', 'beam', 'm', w.warn), 'jachwi_m_neutral');
+  assert.equal(HB.portraitNameOf('jachwi', 'beam', 'm', w.warn), 'jachwi_m_beam', '있는 남 낯(char a6c09ee8)');
+  assert.equal(w.out.length, 0);
+  /* 없는 키(앞으로 여자 판에만 새 낯이 생기는 경우) — 같은 성별 neutral + 경고 한 번 */
+  assert.equal(HB.portraitNameOf('jachwi', 'zz_new', 'm', w.warn), 'jachwi_m_neutral', '없는 키는 같은 성별 neutral');
+  assert.equal(HB.portraitNameOf('jachwi', 'zz_new', 'm', w.warn), 'jachwi_m_neutral');
   assert.equal(w.out.length, 1, '같은 경고가 두 번 났다: ' + w.out.join(' / '));
-  assert.match(w.out[0], /portrait_jachwi_m_beam/);
+  assert.match(w.out[0], /portrait_jachwi_m_zz_new/);
   /* 몸·옷 — m 칸이 null 이면 f + 경고 */
   assert.equal(HB.pickByGender({ f: 'hero2.glb', m: null }, 'm', '3D 몸(v2 hero2_m.glb)', w.warn), 'hero2.glb');
   const outfits = { spring: 'spring.jpg' };
@@ -76,6 +79,7 @@ T('D 남 초상 — 있다고 적은 것은 있다 · 모자란 키(char 주문)
   assert.ok(files.length >= 10, '자취생 표를 못 읽었다: ' + files.join(','));
   const missing = files.filter(f => !HB.PORTRAIT_M_HAVE.includes(f));
   console.log(`      자취생 낯 ${files.length} · 남 판 있음 ${files.length - missing.length} · 모자람(char 주문) ${missing.join(' · ') || '없음'}`);
+  assert.deepEqual(missing, [], '여자 판 낯 중 남 판이 없는 것: ' + missing.join(','));   /* 10-10 a6c09ee8 — 다 섰다 · 새 낯이 여자 판에만 생기면 여기서 빨개진다(char 주문) */
 });
 
 T('E 캐릭터 id = characters.json · 진로 id = 진로 카드 · 둘은 안 겹친다', () => {
