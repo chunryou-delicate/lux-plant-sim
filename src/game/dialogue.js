@@ -447,7 +447,7 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'tired', text: '유리에 김이 서린다.' },
     { who: 'moni',   face: 'worry', text: '겨울이야. 이 동네는 겨울이 길어.' },
     { who: 'moni',   text: '해가 제일 낮은 계절이야. 창 하나로 버티기엔 짧고.' },
-    { who: 'jachwi', face: 'worry', text: '…겨울이 오면 셈이 급해진다.' },
+    { who: 'jachwi', face: 'winter', text: '…겨울이 오면 셈이 급해진다.' },
     /* ★실패가 아니라 더딘 것이다. 그 톤을 여기서 못 지키면 경로 C 가 벌처럼 읽힌다. */
     { who: 'moni',   face: 'calm', text: '급할 건 없어. **늦은 거지 틀린 게 아니고.**' }
   ],
@@ -460,7 +460,7 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'tired', text: '유리에 김이 서린다.' },
     { who: 'moni',   face: 'worry', text: '겨울이야. 이 동네는 겨울이 길어.' },
     { who: 'moni',   text: '이 방 빛은 겨울에도 그대로야. 원래 모자랐으니까.' },
-    { who: 'jachwi', face: 'tired', text: '…추운 건 그대로 춥고.' },
+    { who: 'jachwi', face: 'winter', text: '…추운 건 그대로 춥고.' },
     { who: 'moni',   face: 'calm', text: '급할 건 없어. **늦은 거지 틀린 게 아니고.**' }
   ],
   /* 겨울 열흘째까지 반지하일 때. 위 winterCame 의 톤을 한 번 더 받쳐 준다. */
@@ -1665,7 +1665,7 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'cheer',    text: '대신 이제 네 가게야.' }
   ],
   shopOpen: [
-    { who: 'jachwi', face: 'happy',    text: '문 앞에 작은 주문판을 걸었다.' },
+    { who: 'jachwi', face: 'apron',    text: '문 앞에 작은 주문판을 걸었다.' },
     { who: 'moni',   face: 'teach',    text: '손님이 원하는 걸 적어 두고 가. 기한 안에 맞추면 돼.' }
   ],
   shopNewRegular: [
@@ -1679,7 +1679,7 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'cheer',    text: '간판을 달자!' }
   ],
   shopTown: [
-    { who: 'jachwi', face: 'think',    text: '동네에서 식물 하면 여기래.' },
+    { who: 'jachwi', face: 'beam',     text: '동네에서 식물 하면 여기래.' },
     { who: 'moni',   face: 'proud',    text: '창턱 하나에서 여기까지 왔네.' }
   ],
   questHomeUnpack: [
@@ -1693,7 +1693,7 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach',    text: '주문판을 봐. 손님이 원하는 걸 기한 안에 맞추면 돼.' }
   ],
   questDoneShopFirstOrder: [
-    { who: 'jachwi', face: 'happy',    text: '첫 손님이 웃으며 받아 갔다.' },
+    { who: 'jachwi', face: 'beam',     text: '첫 손님이 웃으며 받아 갔다.' },
     { who: 'moni',   face: 'proud',    text: '이게 가게야.' }
   ],
   questShopRegulars3: [
@@ -1706,14 +1706,14 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach',    text: '단골이 열이면 간판을 달자.' }
   ],
   questDoneShopSign: [
-    { who: 'jachwi', face: 'happy',    text: '간판을 달았다.' },
+    { who: 'jachwi', face: 'beam',     text: '간판을 달았다.' },
     { who: 'moni',   face: 'proud',    text: '이제 지나가는 사람도 알아.' }
   ],
   questShopTown: [
     { who: 'moni',   face: 'calm',     text: '천천히 가자. 맞춘 손님이 다 이름이 돼.' }
   ],
   questDoneShopTown: [
-    { who: 'jachwi', face: 'think',    text: '동네에서 식물 하면 여기래.' },
+    { who: 'jachwi', face: 'beam',     text: '동네에서 식물 하면 여기래.' },
     { who: 'moni',   face: 'proud',    text: '창턱 하나에서 여기까지 왔네.' }
   ],
   /* ★ 2026-10-10 [plan] D55(총괄) — 원룸에서 안 자르고 키운 그루가 칸 한도의 2배를 넘게 컸다(사건 `cut_too_wide` · [core] 75a785d6 · 그 그루·그 칸에서 한 번).
@@ -1752,18 +1752,18 @@ export const SCRIPTS = {
   ppPinkWarn: [
     { who: 'jachwi', face: 'happy',    text: '새 잎이 또 온통 분홍이다. 예쁘다.' },
     { who: 'moni',   face: 'worry',    text: '예쁘지만 분홍만 있는 잎은 밥을 못 지어. 이렇게 또 나면 줄기 끝이 시들어.' },
-    { who: 'moni',   face: 'teach',    text: '초록이 섞인 마디 위에서 잘라 줘.' }
+    { who: 'moni',   face: 'scissors', text: '초록이 섞인 마디 위에서 잘라 줘.' }
   ],
   ppTipWithered: [
     { who: 'jachwi', face: 'worry',    text: '핑크프린세스 줄기 끝이 말랐다…' },
     { who: 'moni',   face: 'sad',      text: '분홍 잎만 이어져서 그래. 초록이 섞인 마디 위를 잘라 주면 거기서 다시 나.' }
   ],
   ppReverted: [
-    { who: 'jachwi', face: 'curious',  text: '요즘 핑크프린세스 새 잎이 다 초록이다.' },
+    { who: 'jachwi', face: 'scissors', text: '요즘 핑크프린세스 새 잎이 다 초록이다.' },
     { who: 'moni',   face: 'teach',    text: '분홍이 숨었어. 빛이 모자라면 그래. 더 밝은 데 두고, 분홍이 남은 마디 위를 잘라 봐.' }
   ],
   alSproutVarie: [
-    { who: 'jachwi', face: 'surprise', text: '구근에서 싹이 텄다. …잎에 크림색이 번져 있다!' },
+    { who: 'jachwi', face: 'beam',     text: '구근에서 싹이 텄다. …잎에 크림색이 번져 있다!' },
     { who: 'moni',   face: 'cheer',    text: '무늬가 나왔어!' }
   ],
   alSproutPlain: [
@@ -1772,15 +1772,15 @@ export const SCRIPTS = {
   ],
   /* 잠든 동안(빈 화분처럼 보일 때) — 버리거나 헐값에 팔고 싶어지는 자리를 몬이가 붙잡는다. 칸 alDormantNow 는 [core] */
   statusAlSleeping: [
-    { who: 'moni',   face: 'calm',     text: '빈 화분 같아도 자는 중이야. 봄을 기다리자.' }
+    { who: 'moni',   face: 'shh',      text: '빈 화분 같아도 자는 중이야. 봄을 기다리자.' }
   ],
   questPpHoldPink: [
-    { who: 'moni',   face: 'teach',    text: '분홍이 고운 잎이 나면 그 마디 위를 잘라. 거기서 다시 나.' },
+    { who: 'moni',   face: 'scissors', text: '분홍이 고운 잎이 나면 그 마디 위를 잘라. 거기서 다시 나.' },
     { who: 'moni',   face: 'worry',    text: '온통 분홍인 잎은 예쁘지만 밥을 못 지어. 욕심내면 끝이 시들어.' }
   ],
   questDonePpHoldPink: [
     { who: 'moni',   face: 'proud',    text: '붙잡았다. 이제 그 마디가 다음 잎을 낼 거야.' },
-    { who: 'jachwi', face: 'think',    text: '가위로 그림을 그리는 것 같다.' }
+    { who: 'jachwi', face: 'scissors', text: '가위로 그림을 그리는 것 같다.' }
   ],
   /* ★ 2026-10-09 [plan] D52(총괄) — 이 줄이 열리는 날 = 잠드는 날(잎이 다 지는 날 · [growth] asleep). 구근 이야기는 «여기 안 박는다» —
      한 번의 잠에 구근이 0 일 수 있다([growth] dfa5758c: 찾은 뒤 잎을 한 장 더 내야 또 찾음 · 잎이 다 지기 전에 깨면 못 찾음).
@@ -1788,8 +1788,8 @@ export const SCRIPTS = {
      «구근을 심는다»는 이튿날 열린다(stepQuests 「하루에 새 줄 하나」). 봄 깸은 «다시 깼다»만.
      ⚠ 봄 초입·겨울 가운데 이사 판은 원룸 안에 구근을 못 볼 수 있다 — 그래서 어느 줄도 «구근이 나온다»를 미리 약속하지 않는다. */
   questAlKeepWinter: [
-    { who: 'jachwi', face: 'worry',    text: '알로카시아 잎이 다 졌다…' },
-    { who: 'moni',   face: 'teach',    text: '죽은 게 아니야. 자는 거야. 겨울이라 쉬는 거야.' },
+    { who: 'jachwi', face: 'winter',   text: '알로카시아 잎이 다 졌다…' },
+    { who: 'moni',   face: 'shh',      text: '죽은 게 아니야. 자는 거야. 겨울이라 쉬는 거야.' },
     { who: 'moni',   face: 'calm',     text: '흙 속 알뿌리는 살아 있어. 버리지 말고 봄까지 두자.' }
   ],
   questDoneAlKeepWinter: [
@@ -1798,15 +1798,15 @@ export const SCRIPTS = {
   ],
   /* 잠드는 날 흙 속에서 구근을 찾음(사건 al_asleep · ev.corms > 0 일 때만 · 잠마다). 첫 잠이면 위 «겨울잠» 열림 대사 바로 뒤에 선다 */
   alAsleepCorms: [
-    { who: 'jachwi', face: 'surprise', text: '어, 잎이 다 진 흙 속에 뭔가 있다. …구근이다.' },
-    { who: 'moni',   face: 'calm',     text: '자면서 남긴 거야.' }
+    { who: 'jachwi', face: 'bulb',     text: '어, 잎이 다 진 흙 속에 뭔가 있다. …구근이다.' },
+    { who: 'moni',   face: 'bulb',     text: '자면서 남긴 거야.' }
   ],
   /* 두 번째 깸부터(첫 깸은 «겨울잠» 끝 대사가 말한다) — 사건 al_wake(ev.first false) */
   alWakeAgain: [
     { who: 'jachwi', face: 'happy',    text: '알로카시아가 다시 깼다.' }
   ],
   questAlPlantCorm: [
-    { who: 'moni',   face: 'teach',    text: '구근 하나가 새 그루가 돼. 심어 보자.' },
+    { who: 'moni',   face: 'bulb',     text: '구근 하나가 새 그루가 돼. 심어 보자.' },
     { who: 'moni',   face: 'curious',  text: '무늬가 날지는 싹이 나야 알아.' }
   ],
   questDoneAlPlantCorm: [
