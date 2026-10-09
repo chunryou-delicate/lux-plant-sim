@@ -197,6 +197,9 @@ export function createGrowthAdapter(iframe) {
        ⚠ 옛 확대창에는 이 창구가 없다 — 그때는 **아무 일도 안 한다**(던지지 않는다).
          화분 모양 하나 때문에 확대창이 안 열리면 안 된다. */
     setPotAsset(path) { const f = fn('setPotAsset'); return f ? f(path) : false; },
+    /* ★ 2026-10-09 [growth] (core D59 청) — 낙엽 켜기/끄기 · 모든 그루에 걸린다 · 값 파일이 늦게 와도 안 덮인다. 저장은 core */
+    setHealthDrop(on) { const f = fn('setHealthDrop'); return f ? f(on) : null; },
+    healthDropEnabled() { const f = fn('healthDropEnabled'); return f ? f() : null; },
     select(id) {
       const f = fn('selectPlant');
       if (!f) throw new Error(

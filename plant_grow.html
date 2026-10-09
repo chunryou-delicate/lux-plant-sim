@@ -1108,6 +1108,8 @@ function thBad(t){
   if(t.max<=t.min)        return 'thresholds.max 가 min 이하입니다';
   return null;
 }
+/* ★ 2026-10-09 (core D59 청) — 낙엽 켜기를 밖에서 정했으면(§setHealthDrop) 값 파일이 늦게 와도 덮지 않는다. null = 파일 값대로 */
+let HEALTH_DROP_OVERRIDE=null, HEALTH_DROP_FILE=null;
 fetch('./data/growth_tuning.json').then(r=>{
   if(!r.ok) throw new Error('HTTP '+r.status);
   return r.json();
@@ -1126,7 +1128,8 @@ fetch('./data/growth_tuning.json').then(r=>{
   if(j.mature_prob)   GT.mature =Object.assign({}, GT.mature,  num(j.mature_prob));
   // ⚠ health.drop_enabled 는 불리언이라 num() 을 통과 못 한다 — 따로 받는다.
   if(j.health){ GT.health=Object.assign({}, GT.health, num(j.health));
-    if(typeof j.health.drop_enabled==='boolean') GT.health.drop_enabled=j.health.drop_enabled; }
+    if(typeof j.health.drop_enabled==='boolean'){ GT.health.drop_enabled=j.health.drop_enabled; HEALTH_DROP_FILE=j.health.drop_enabled; }
+    if(HEALTH_DROP_OVERRIDE!=null) GT.health.drop_enabled=HEALTH_DROP_OVERRIDE; }   // 밖에서 이미 정했다 — 늦게 온 파일이 덮지 않게
   /* ★ 잎 간격표 (2026-08-09 박사님 확정 · §ageOf). 배열이라 num() 을 못 쓴다 — 따로 받는다.
      ⚠ 모양이 틀리면 **안 받는다**. 반쯤 받은 표로 돌면 옛 곡선도 새 표도 아닌 것이 나온다. */
   if(j.leaf_interval){
@@ -1716,6 +1719,19 @@ function leafHealthEntry(leafBirth){
 function leafFadeOf(leafBirth){ const e=LEAF_HEALTH.get(leafBirth); return e? e.fade : 0; }
 function leafDroppedOf(leafBirth){ const e=LEAF_HEALTH.get(leafBirth); return !!(e && e.dropped); }
 function leafHealthAll(){ return [...LEAF_HEALTH.entries()].map(([leafBirth,e])=>Object.assign({leafBirth},e)); }
+/* ★ 2026-10-09 (core D59 청 · 식물 가게 «초보 보호 끝») — 낙엽을 판 중간에 켜고 끈다.
+     켜면 stepLeafHealth 의 낙엽 길(다 바랜 채 drop_hold_days 를 버티면 그 잎이 떨어짐 · 마지막 한 장은 안 떨어짐)이 돈다.
+     ★ GT 는 그루 공용이라 «모든 그루»에 걸린다(그루를 갈아 꽂아도 그대로 · §PLANTS).
+     ★ 한 번 부르면 값 파일이 늦게 와도 안 덮인다(HEALTH_DROP_OVERRIDE). setHealthDrop(null) = 파일 값으로 돌아감.
+     ⚠ 저장은 core 가 한다(진로가 가게면 켬 · 다시 켤 때 다시 부름) — 여기서는 안 적는다.
+     ⚠ 값(fade_days · drop_hold_days)은 안 바꾼다 — 켜고 끄는 칸 하나다. */
+function setHealthDrop(on){
+  HEALTH_DROP_OVERRIDE = (on==null) ? null : !!on;
+  const v = HEALTH_DROP_OVERRIDE!=null ? HEALTH_DROP_OVERRIDE : (HEALTH_DROP_FILE!=null ? HEALTH_DROP_FILE : false);
+  GT.health=Object.assign({}, GT.health, { drop_enabled:v });
+  return v;
+}
+function healthDropEnabled(){ return !!GT.health.drop_enabled; }
 // 하루치 잎 건강. ★advanceTo 에서 **자란 날이든 아니든** 돈다 —
 //   빛이 모자라 안 자라는 그 상황이 바로 잎이 상하는 상황이라, 자란 날에만 돌면 아무 일도 안 일어난다.
 function stepLeafHealth(){

@@ -138,6 +138,12 @@ const check = (name, fn) => { try { fn(); results.push(['PASS', name]); }
 const info = (s) => results.push(['INFO', s]);
 
 const g = await ready(loadGrowth());
+/* ★ 2026-10-09 [growth] — D40(성숙 전 그루의 무늬 ×2 · 646331b4) 뒤 E·L 이 붉었다(그때 안 돌린 검사 · 색인 ⑯).
+     E·L 의 등식 «실제 무늬 비율 = 지금 calcVarieProb» 는 D40 뒤로 그대로 설 수 없다 — 성숙 전 잎은 ×2 로, 갈라진 잎이
+     생긴 뒤의 잎은 기본으로 굴려 둘이 섞인다(DLI 3.77: 지금 확률 0.26(×2) · 실제 0.196 · 기본 0.13).
+     ⇒ 뜻(«읽은 값이지 지어낸 값이 아니다»)은 배율을 «끈» 판(gb)에서 그대로 재고, 켠 판(g)은 «기본과 ×2 사이»로 따로 잰다.
+     D40 자체는 test_varie_boost 가 지킨다. */
+const gb = await ready(loadGrowth({ tuningPatch: t => { if (t.varie_boost) t.varie_boost.pre_mature_mult = 1; } }));
 
 /* ══ A · 143일 도착 개체가 실제 마디를 낸다 ═══════════════════════════════ */
 check('A 143일 도착 개체 — 마디 목록이 비어 있지 않고 등급이 캐논 넷 안이다', () => {
@@ -223,11 +229,11 @@ check('D 같은 축에서 위 마디가 품은 잎은 아래 마디 이하다 ·
 check('E ★무늬 잎 비율이 calcVarieProb 과 맞는다 · 빛 따라 움직인다', () => {
   const seen = [];
   for (const dli of [0.6, 3.77, 12.16]) {
-    g.seedTo(1); g.setDailyLightSteady(dli);
-    const p = g.calcVarieProb(g.lightCtx());
+    gb.seedTo(1); gb.setDailyLightSteady(dli);              // ★ D40 배율을 끈 판(위 §gb)
+    const p = gb.calcVarieProb(gb.lightCtx());
     let leaves = 0, varie = 0;
     for (let s = 1; s <= 400; s++) {
-      const root = rootNode(stand(g, { seed: s, dli, day: 500 }));
+      const root = rootNode(stand(gb, { seed: s, dli, day: 500 }));
       leaves += root.leaves; varie += root.variegatedLeaves;
     }
     assert.ok(leaves > 2000, '표본이 너무 적습니다: ' + leaves);
@@ -239,6 +245,16 @@ check('E ★무늬 잎 비율이 calcVarieProb 과 맞는다 · 빛 따라 움�
   }
   assert.equal(seen[0].varie, 0, '★빛이 없다시피 한데 무늬 잎이 났습니다');
   assert.ok(seen[2].obs > seen[1].obs, '밝은 자리가 어두운 자리보다 무늬가 안 많습니다');
+  /* ★ D40 을 켠 판(게임 그대로) — 실제 비율은 «기본»과 «×2(상한)» 사이에 든다(성숙 전 잎만 ×2 로 굴렸다) */
+  { const dli = 3.77; const base = seen[1].p;
+    g.seedTo(1); g.setDailyLightSteady(dli);
+    const boosted = g.calcVarieProb(g.lightCtx());
+    let leaves = 0, varie = 0;
+    for (let s = 1; s <= 400; s++) { const root = rootNode(stand(g, { seed: s, dli, day: 500 })); leaves += root.leaves; varie += root.variegatedLeaves; }
+    const obs = varie / leaves;
+    assert.ok(boosted > base && obs > base + 0.02 && obs < boosted + 0.02,
+      `D40 켬 DLI ${dli}: 기본 ${base.toFixed(4)} < 실제 ${obs.toFixed(4)} < ×2 ${boosted.toFixed(4)} 이어야 한다`);
+    info(`  D40 켬(게임 그대로) DLI ${dli}: 기본 ${base.toFixed(4)} < 실제 ${obs.toFixed(4)} < ×2 ${boosted.toFixed(4)}`); }
 });
 
 /* ══ F · ★더 자라면 마디가 늘고, 먼저 난 마디의 이름은 그대로다 ═══════════ */
@@ -368,12 +384,12 @@ check('K ★leafStats().leaves 가 cuttableNodes() 의 밑동 마디와 항상 �
 check('L ★leafStats 의 무늬 잎 비율이 calcVarieProb 과 맞는다 · 빛 따라 움직인다', () => {
   const seen = [];
   for (const dli of [0.6, 3.77, 12.16]) {
-    g.seedTo(1); g.setDailyLightSteady(dli);
-    const p = g.calcVarieProb(g.lightCtx());
+    gb.seedTo(1); gb.setDailyLightSteady(dli);              // ★ D40 배율을 끈 판(위 §gb · E 와 같은 까닭)
+    const p = gb.calcVarieProb(gb.lightCtx());
     let leaves = 0, varie = 0;
     for (let s = 1; s <= 400; s++) {
-      stand(g, { seed: s, dli, day: 500 });
-      const st = g.leafStats(); leaves += st.leaves; varie += st.variegatedLeaves;
+      stand(gb, { seed: s, dli, day: 500 });
+      const st = gb.leafStats(); leaves += st.leaves; varie += st.variegatedLeaves;
     }
     assert.ok(leaves > 2000, '표본이 너무 적습니다: ' + leaves);
     const obs = varie / leaves;

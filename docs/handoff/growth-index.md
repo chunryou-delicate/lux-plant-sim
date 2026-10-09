@@ -62,6 +62,7 @@
 | `test_young_plant.mjs` | ★ **D46 흙에 자리 잡은 삽수 = «작은 그루»(조립기 youngPlantOf)** — 잎 N 장 = 그린 잎 N 장 · 화분만 걷힘 · 밑동 y=0 · 정본 무늬만 무늬 · 모주 조립을 안 흔듦 · 사진 |
 | `test_musun_view.mjs` · `test_multisiru.mjs` | (옛 판 · 총괄 10-09 «찾은 쪽이 고침») 08-15 에 굳힌 시루 0.24 · 원 13칸 · 포기 4~11 을 다시 재서 굳힘 — 단언 옆에 근거 커밋 다섯(a39ebcd6 · 31e4fd41 · b725b8c · 23521a1 · 66508ad9). 21/21 · 16/16 · 고친 줄만 뒤집힘 확인 |
 | `test_skin_room_matches_zoom.mjs` «조립 차례» 단계 | ★ **어린 그루를 늙은 그루 뒤에 지어도 무늬가 산다**(10-09 🔴) — 화분·작은 그루 × 1일/400일 그루 뒤 |
+| `test_health_drop_switch.mjs` | D59 낙엽 켜기 창구 — 기본 꺼짐 · 늦게 온 값 파일이 안 덮음 · 켬/끔 차이 · 여러 그루 · null 복귀 (크롬 없음) |
 | `test_species_room_zoom.mjs` | ★ **새 두 종 방 = 확대** — 같은 그루 상태를 방(youngPlantOf)과 확대(setSpeciesView)에 넘겨 잎마다 판·단계·등급·눕힘·자리·방위·크기 · 무늬 표 견줌 · 씨앗 바꾼 대조는 어긋나야 · 확대가 몬스테라를 가리고 카메라가 새 종을 담나 · 끄면 돌아오나 |
 | `test_species_draw.mjs` | ★ **새 두 종 그림(youngPlantOf 종 갈래)** — PP 잎 N = 그린 잎 N · 줄기 마디 N · 판 = 정본 leafRows · 무늬판만 틴트 금지 · 흙 밑으로 안 들어감 · AL 새 잎이 가장 곧게 · 크기 = 실측 · null 셋 · 재질 따로 · 판 늦게 옴 → 알림 · 사진 |
 | `test_species_growth.mjs` | ★ **새 두 종(PP · AL) 생장 규칙** — 잎 간격 · 분홍 흐름 · 분홍 잎 줄 시듦 · 자르기 · 구근 · 겨울잠 · 무늬 몫 · 판 표 (크롬 없음 · 값은 파일에서 읽음) |
@@ -288,6 +289,18 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
          ★ 바로잡음(10-09): 확대가 lightAz 를 안 받으면 제 LIGHT_AZ 로 메웠다 → core 의 방은 lightAz 를 안 넘겨 PP 덩굴이 기우는 쪽이
             갈렸다(잎 밑동 최대 1.37cm · 대조로 잼). 받은 그대로 넘기게 고치고 «빛 방향 안 줌» 판(ppNoAz)을 test_species_room_zoom 에 더함
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
+```
+
+### 2026-10-09 · D59 낙엽 켜기 창구 setHealthDrop (core 청 · 식물 가게 «초보 보호 끝»)
+
+```
+엔진   plant_grow.setHealthDrop(true|false|null) · healthDropEnabled() — 켜면 stepLeafHealth 의 낙엽 길(다 바랜 채 drop_hold_days 버티면
+       떨어짐 · 마지막 한 장은 안 떨어짐)이 돈다. GT 는 그루 공용이라 모든 그루에 걸린다. 값(fade_days · drop_hold_days)은 안 바꿈
+       ★ 값 파일이 늦게 와도 밖에서 정한 값을 안 덮는다(HEALTH_DROP_OVERRIDE) — 부팅 직후 core 가 세이브대로 켜는 순서 · null = 파일 값
+어댑터 io.growth.setHealthDrop(on) · healthDropEnabled() (core 청 · growth_adapter 두 줄 · 로직 0)
+저장   core 몫(진로가 가게면 켬 · 다시 켤 때 다시 부름) — 엔진은 안 적는다
+지킴   test_health_drop_switch(크롬 없음): 기본 꺼짐 · 파일보다 먼저 켜도 유지 · 켬=어둠 120일 잎 4 떨어짐(남은 2) / 끔=0 · 둘째 그루도 · null 복귀
+새 종  이 칸 밖 — PP 끝 시듦 · AL 잠 낙엽은 늘 돈다(초보 보호와 무관). 새 종에 «어둠 낙엽»을 더할지는 총괄·plan 판단(지금 없음)
 ```
 
 ### 2026-10-09 · D56 AL 구근 찾기는 평생 두 번 (총괄 · core 판: 찾은 구근을 심으면 또 찾아 판당 18 · 가방 그루-날 517)
@@ -654,6 +667,10 @@ novice 은 등 0·1·2 모두 bright 100%
 ⑮ D40(646331b4) 커밋 때 지킴이 «프롤로그»를 test_prologue_leaf3_unlocked 하나로 읽고 test_prologue_varie 를 안 돌렸다
    — 그 검사 §E 가 D40 뒤 붉었다(씨앗 92158 의 잎1·2 가 굴림으로 무늬 → 보장이 안 쓰임 · 규칙은 맞고 자가 낡음)
    ⇒ D45 지킴이에서 잡았다. vm 으로 ×1/×2 를 맞대 원인이 D40 임을 갈랐고 §E 씨앗을 92231 로 바꿨다. «프롤로그»는 두 검사 다
+⑯ D40 은 test_cuttable E·L 도 붉혔다(같은 날 · D59 낙엽 창구 지킴이에서 잡음) — 작은 사본(git archive)으로 91b697d4 · 646331b4 붉음 ·
+   646331b4~1 초록을 보고 갈랐다. «실제 무늬 비율 = 지금 확률» 등식은 D40 뒤로 설 수 없어(성숙 전 ×2 · 뒤 기본이 섞임)
+   배율 끈 판(등식 그대로) + 켠 판(기본 < 실제 < ×2)으로 나눴다
+   ⇒ 무늬 확률을 건드리면 «무늬» 낱말이 든 검사를 다 찾아 돌린다: varie_boost · prologue_varie · prologue_leaf3 · cuttable · maturation · growth_parity
 ```
 > **자는 틀리지 않는다. 틀리는 것은 물음이다.**
 > **그리고 「[셈]인지 [잰 것]인지」를 매번 붙이면 남이 확인할 수 있다.**
