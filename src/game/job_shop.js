@@ -55,6 +55,12 @@ const NEED_TO_RANK = Object.freeze({ sanban: 1, halfmoon: 2, fullmoon: 3 });
 export function createJobShopState() {
   return { orders: [], nextOrderDay: null, regulars: [], done: 0, expired: 0, milestones: {}, signOnDay: null, seq: 0, openedOn: null, lastExpireSaidDay: null };
 }
+/* ★ 2026-10-10 진로 열거(plan-branch-job-gender §3-2) — 엔딩 뒤 같은 판의 «식물로 무엇을 하며 사나». 지금 열린 것은 shop 하나 ·
+     care(돌봄) · breed(무늬 육종)는 준비 중(진로 카드 game.html §JOB_KO 와 같은 id) · decor(꾸미기·수집)는 박사님 몫(§5-2)이라 자리만.
+     ⚠ 새 판 캐릭터(S.character · hero_branch §CHARACTER_IDS)와 한 칸에 섞지 않는다 */
+export const JOB_IDS = Object.freeze(['shop', 'care', 'breed']);
+export const JOB_IDS_RESERVED = Object.freeze(['decor']);
+export const JOB_OPEN = Object.freeze(['shop']);
 export function jobOf(S) { return (S && S.story && S.story.job) || null; }
 export function jobShopOf(S) {
   if (!S) throw new TypeError('[가게] 상태가 없습니다');

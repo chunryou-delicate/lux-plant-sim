@@ -17,6 +17,7 @@
    ⛔ 옛 anim/*·derived/char_clips/* 클립은 절대 얹지 않는다 — 1.7m 몸의 뼈 길이를 덮어 늘인다.
      hero 는 제 클립 8개(walk·idle·sit·sleep·doze·crouch·wave·cheer)만 쓴다.
 ============================================================ */
+import { pickByGender } from './hero_branch.js';
 
 /* 10-09 (char): 주인공 몸 = hero2(긴 생머리 · A포즈 · Meshy rig 01a11e7a) — 총괄 10-09 «기본을 hero2 로»(박사님 «초상화처럼 긴 생머리»).
    옛 몸(hero.glb · T포즈)은 ?hero2=0 · localStorage 'hero2'='0' 으로 남긴다(되돌리기 쉽게). */
@@ -27,7 +28,12 @@ function heroFile() {
     return off ? 'hero.glb' : 'hero2.glb';
   } catch (e) { return 'hero2.glb'; }
 }
-const HERO_URL = new URL('../../assets/v2/char/' + heroFile(), import.meta.url).href;
+/* ★ 2026-10-10 남녀 «추후 분기»의 길(plan-branch-job-gender §3-4) — 성별은 game.html 이 hero_branch §heroGenderOf 로 읽어
+     setHeroGender 로 세워 둔다(이 모듈은 판 상태를 모른다). 'm' 몸(hero2_m.glb)은 아직 없다 → 'f' + 경고 한 줄. char 가 만들면 표의 m 칸만 채운다 */
+let HERO_GENDER = 'f';
+export function setHeroGender(g) { HERO_GENDER = g === 'm' ? 'm' : 'f'; }
+export const heroGender = () => HERO_GENDER;
+const heroUrl = () => new URL('../../assets/v2/char/' + pickByGender({ f: heroFile(), m: null }, HERO_GENDER, '3D 몸(v2 hero2_m.glb)'), import.meta.url).href;
 
 export const HERO_H = 1.40;          // 옛 주인공과 같은 키[m]
 export const HERO_WALK_MPS = 0.76;   // 걷기 클립 지면 속도[m/s] — 위 「잰 것」
@@ -56,11 +62,13 @@ export const heroOn = () => v2Flag('v2hero');
 
 /* ── 한 번만 받는다 ── 방을 다시 지을 때마다(가구 옮기기 포함) 사람을 새로 세우므로
    2.2MB 를 매번 받고 풀면 그만큼 늦다. 원본은 여기 두고 사람마다 복제한다. */
-let _src = null;
+let _src = null, _srcUrl = null;
 function loadSource() {
-  if (_src) return _src;
+  const url = heroUrl();
+  if (_src && _srcUrl === url) return _src;
+  _srcUrl = url;
   _src = new Promise((res, rej) =>
-    new THREE.GLTFLoader().load(HERO_URL, res, undefined, () => rej(new Error('hero.glb 를 못 받았습니다'))))
+    new THREE.GLTFLoader().load(url, res, undefined, () => rej(new Error('hero.glb 를 못 받았습니다'))))
     .then(prepare)
     .catch(e => { _src = null; throw e; });
   return _src;
@@ -350,10 +358,12 @@ function breakClipFrom(src, name) {
    어떤 옷을 언제 입힐지(계절 · 잘 때 · 비 오는 날)는 core 가 정해 setOutfit 을 부른다. */
 const OUTFIT_FILES = { spring: 'spring.jpg', autumn: 'autumn.jpg', winter: 'winter.jpg', pajama: 'pajama.jpg', rain: 'rain.jpg',
   apron: 'apron.jpg' };   // 10-09 식물 가게(D59) 앞치마 — 가게에 있을 때 입히기는 core
+/* 성별 → 옷 표 — 'm' 옷(hero2_m UV · outfit/m/…)은 아직 없다 → 'f' + 경고(몸이 'f' 로 떨어지니 옷도 같이) */
+const outfitFilesNow = () => pickByGender({ f: OUTFIT_FILES, m: null }, HERO_GENDER, '옷 그림(outfit/m)');
 const _outfitTex = new Map();
 function outfitTexture(name) {
   if (_outfitTex.has(name)) return _outfitTex.get(name);
-  const url = new URL('../../assets/v2/char/outfit/' + OUTFIT_FILES[name], import.meta.url).href;
+  const url = new URL('../../assets/v2/char/outfit/' + outfitFilesNow()[name], import.meta.url).href;
   const p = new Promise((res, rej) => new THREE.TextureLoader().load(url, t => {
     t.flipY = false;                     // glTF 그림과 같게
     t.encoding = THREE.sRGBEncoding;
@@ -395,7 +405,7 @@ export async function makeHero() {
     /* 10-09 (char): 옷 — 'summer'(기본) · 'spring' · 'autumn' · 'winter' · 'pajama' · 'rain'. 그림이 없는 옷이면 그대로 두고 false.
        돌려주는 값: 입혔나(true/false). 같은 옷이면 아무것도 안 한다. */
     get outfit() { return outfit; },
-    outfits: ['summer', ...Object.keys(OUTFIT_FILES)],
+    outfits: ['summer', ...Object.keys(outfitFilesNow())],
     setOutfit: async name => {
       const k = String(name || 'summer');
       if (k === outfit) return true;
@@ -403,7 +413,7 @@ export async function makeHero() {
         for (const [m, map, em] of baseMaps) { m.map = map; m.emissiveMap = em; m.needsUpdate = true; }
         outfit = k; return true;
       }
-      if (!OUTFIT_FILES[k] || src.kind !== 'hero2') return false;   // 옷 그림은 hero2 UV 로 만들었다 — 옛 몸(hero.glb)은 못 입는다
+      if (!outfitFilesNow()[k] || src.kind !== 'hero2') return false;   // 옷 그림은 hero2 UV 로 만들었다 — 옛 몸(hero.glb)은 못 입는다
       let t;
       try { t = await outfitTexture(k); } catch (e) { console.warn('[주인공] ' + e.message); return false; }
       for (const [m, map, em] of baseMaps) {

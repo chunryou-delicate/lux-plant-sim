@@ -69,7 +69,8 @@ import { nearestSlot, slotHolds, freeSlotId, isFreeSlotId, FREE_PREFIX,
          samePoint, distanceXZ, inRoom, makeAt, atFromSlot,
          GRID_UNIT, GRID_CELL, unitsFor, snapSpan, snapAngleDeg,
          cellBox, cellBoxOverlap } from './place.js';
-import * as v2Hero from './v2_hero.js';   // v2: 새 주인공(hero.glb) — 끄기 ?v2hero=0
+import * as v2Hero from './v2_hero.js';
+import { pickByGender } from './hero_branch.js';   /* 남녀 «추후 분기» — 몸 고르기(makePerson) */   // v2: 새 주인공(hero.glb) — 끄기 ?v2hero=0
 
 /* ── 경로는 이 파일 기준으로 푼다 ──
    호스트 페이지가 저장소 뿌리에 있든 tools/ 아래에 있든 같은 곳을 가리켜야 한다.
@@ -7798,10 +7799,14 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   async function makePerson(gameId) {
-    const id = CHAR_ASSET[gameId] || 'jachwi_f';
+    /* ★ 2026-10-10 남녀 «추후 분기»의 길(plan-branch-job-gender §3-4) — 자취생 옛 몸(lq)도 성별로 고른다(v2_hero §heroGender 한 곳).
+         남 옛 몸 char_namja_jachwi(idle · 걷기 클립)는 있다. v2 몸(hero2_m)이 없으면 v2_hero 가 'f' + 경고로 떨어진다 */
+    const id = gameId === 'jachwi'
+      ? pickByGender({ f: 'jachwi_f', m: 'namja_jachwi' }, v2Hero.heroGender ? v2Hero.heroGender() : 'f', '옛 몸(lq)')
+      : (CHAR_ASSET[gameId] || 'jachwi_f');
     /* idle 파일 하나에 메시와 동작이 다 들어 있다 — 리깅본을 따로 안 받는다(char 창 §3) */
     /* v2: 새 주인공 — 켜져 있으면 hero.glb(제 클립 8개)를 쓴다. 못 받으면 옛 길로 */
-    const hero = (id === 'jachwi_f' && v2Hero.heroOn())
+    const hero = ((id === 'jachwi_f' || gameId === 'jachwi') && v2Hero.heroOn())
       ? await v2Hero.makeHero().catch(e => { console.warn('[방뷰] v2 hero 실패 — 옛 몸으로:', e.message); return null; }) : null;
     const g = hero || await charLoad(`${CHAR_MESH}/char_${id}_idle.glb`);
     const model = g.scene;

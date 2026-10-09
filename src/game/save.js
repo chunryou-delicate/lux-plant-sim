@@ -61,6 +61,7 @@ import { packLeafWatch } from './leaf_wait.js';
 import { packSpecies, unpackSpecies } from './species.js';
 /* ★ 2026-10-10 D59 — 진로 «식물 가게» 판(주문·단골) */
 import { packJobShop, unpackJobShop } from './job_shop.js';
+import { packHero, unpackHero, packCharacter } from './hero_branch.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
 export const SAVE_SCHEMA = 'game_save/1';
@@ -1274,6 +1275,9 @@ export function serialize(S, opt = {}) {
            ⚠ newState 칸이 아니라 KNOWN_STATE_KEYS 에 안 든다(종 칸은 처음 쓸 때 선다 · species §speciesOf) */
       species: S.species ? packSpecies(S.species) : null,
       jobShop: S.jobShop ? packJobShop(S.jobShop) : null,   /* D59 */
+      /* ★ 2026-10-10 남녀·캐릭터 «추후 분기»의 길(hero_branch) — 칸 없는 판(옛 세이브 · 지금 판)은 null = 'f' · 'jachwi' */
+      hero: packHero(S.hero),
+      character: packCharacter(S.character),
       firstPlay: packFirstPlay(S.firstPlay),
       story: packStory(S.story),
       tutorial: packTutorial(S.tutorial),
@@ -1742,6 +1746,7 @@ export function deserialize(raw, opt = {}) {
   /* ★ 2026-10-09 D45 — 새 두 종(없으면 null · 처음 쓸 때 선다). 자리 좌표는 화분과 같은 정본 모양으로(makeAt) */
   S.species = st.species ? unpackSpecies(st.species) : null;
   S.jobShop = st.jobShop ? unpackJobShop(st.jobShop) : null;   /* D59 */
+  { const h = unpackHero(st.hero); if (h) S.hero = h; const c = packCharacter(st.character); if (c) S.character = c; }   /* 남녀·캐릭터 — 없으면 칸을 안 세운다(기본 'f' · 'jachwi') */
   if (S.species) for (const q of S.species.pots) q.at = q.at ? makeAt(q.at) : null;
   S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {
     const q = packCutting(c, i);
