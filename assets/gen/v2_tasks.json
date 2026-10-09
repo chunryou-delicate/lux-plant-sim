@@ -152,5 +152,18 @@
       "AL4": "01a12010-b85c-7742-9684-a3ec7bc99b79",
       "AL5": "01a12010-bcdb-7732-9adb-de0611797d0f"
     }
+  },
+  "char_illust_20261009": {
+    "_note": "사건 원화 · Meshy nano-banana-pro(Higgsfield 끊김 · Kling 0) · 참조: 초상 jachwi_neutral · 몬이 cheer/neutral · style_keyframe_a · 주문표 docs/handoff/char-illust-plan-20261008.md",
+    "ev_home_ending(→ meshy1 원본 · char 머리 밝힘)": "01a1201f-fc9f-7378-9a26-1d8b00be7773",
+    "ev_home_ending_noplant": "01a12023-45bb-743f-b7c2-2f451739005c",
+    "ev_oneroom_arrive": "01a12023-4ba3-7605-95fb-5fe42966f369",
+    "ev_oneroom_firstday": "01a12023-4ffd-764e-a9b9-191c18575ea8",
+    "ev_moveout_keep": "01a12023-53e7-76a4-b826-aa96ada35fd2",
+    "ev_moveout_cuttings": "01a12023-583c-755b-a3ed-e53c6b1235fe",
+    "ev_moveout_sold": "01a12023-5c89-76ea-b889-b979ef19e2f8",
+    "ev_first_varie_sanban": "01a12023-609d-7647-a01b-697fd8ae3865",
+    "ev_first_varie_halfmoon": "01a12023-654f-7190-9ea1-f7c4d5af3a11",
+    "ev_monstera_arrive_v2": "01a12023-69bc-702c-8338-2672720a86a8"
   }
 }
