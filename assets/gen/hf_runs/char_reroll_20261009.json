@@ -1,0 +1,79 @@
+{
+ "_what": "char 다시 뽑기 3줄(이정표 quarter·half·near · ¾ a 구도 참조 REF_ROAD) — 총괄이 돌림 10-09 23:2x",
+ "model": "gpt_image_2_5 max 2k 1:1",
+ "refs": [
+  "REF_JACHWI be4f952f-02df-4277-a8c8-b616e8067711",
+  "REF_MONI 7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+  "REF_STYLE 7341859e-cecf-4685-b3da-844141b496d2",
+  "REF_ROAD 7a8ef924-1c9c-49a3-b5c1-96bb7e4abe31 (assets/illust/ev_home_mark_threequarter.png)"
+ ],
+ "credits": 54,
+ "entries": [
+  {
+   "name": "ev_home_mark_quarter_r2a",
+   "job_id": "ee05c1cb-81a5-4fdf-abac-f05a1d5553ab",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_142443_ee05c1cb-81a5-4fdf-abac-f05a1d5553ab.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_quarter_r2a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_quarter_r2a.png",
+   "size": [
+    2048,
+    2048
+   ]
+  },
+  {
+   "name": "ev_home_mark_quarter_r2b",
+   "job_id": "291f9216-6ccb-4f2d-9a10-173b9b4c6296",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_142442_291f9216-6ccb-4f2d-9a10-173b9b4c6296.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_quarter_r2b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_quarter_r2b.png",
+   "size": [
+    2048,
+    2048
+   ]
+  },
+  {
+   "name": "ev_home_mark_half_r2a",
+   "job_id": "1beb72ef-5471-4f7b-b0b2-bd28745ce786",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_142443_1beb72ef-5471-4f7b-b0b2-bd28745ce786.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_half_r2a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_half_r2a.png",
+   "size": [
+    2048,
+    2048
+   ]
+  },
+  {
+   "name": "ev_home_mark_half_r2b",
+   "job_id": "860c00d6-e16b-45a0-b779-3827d3a483d0",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_142444_860c00d6-e16b-45a0-b779-3827d3a483d0.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_half_r2b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_half_r2b.png",
+   "size": [
+    2048,
+    2048
+   ]
+  },
+  {
+   "name": "ev_home_mark_near_r2a",
+   "job_id": "f57b0a12-74e1-4a00-8132-f030fbb7bf6d",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_142444_f57b0a12-74e1-4a00-8132-f030fbb7bf6d.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_near_r2a.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_near_r2a.png",
+   "size": [
+    2048,
+    2048
+   ]
+  },
+  {
+   "name": "ev_home_mark_near_r2b",
+   "job_id": "488f9593-0614-4a14-97d9-14ed3c7718a1",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_142444_488f9593-0614-4a14-97d9-14ed3c7718a1.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_near_r2b.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_near_r2b.png",
+   "size": [
+    2048,
+    2048
+   ]
+  }
+ ]
+}
