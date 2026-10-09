@@ -100,7 +100,8 @@ function prepare(g) {
   return { scene: g.scene, clips, fileH: h, act: new Map(), hairFixed: moved,
            hand: Array.isArray(X.crouchHand) ? X.crouchHand : null,
            walkMps: Number.isFinite(X.walkMps) ? X.walkMps : null,
-           emoteWin: X.emoteWin || {}, breakWin: X.breakWin || {}, kind: X.hero || 'hero' };
+           emoteWin: X.emoteWin || {}, breakWin: X.breakWin || {}, kind: X.hero || 'hero',
+           inspectHead: Array.isArray(X.inspectHead) ? X.inspectHead : null };
 }
 
 /* ⛔ 뒷머리가 «팔»에 묶여 있다 — 잰 것(바인드 · 파일 단위 1.10m):
@@ -289,10 +290,25 @@ function actClipFrom(src, kind, targetY) {
   /* 10-09 (char): 새 손짓 — 가위로 자르기 · 흙 속 구근 찾기는 «거두기» 클립을 다시 쓴다(서서 따기 · 무릎 0.45m 밑은 쭈그려 따기).
      둘 다 손을 그 높이로 뻗어 집는 몸짓이라 새로 안 뽑았다. 심기·가구 놓기는 아래 쭈그리기(손 높이 표)로 간다. */
   if (kind === 'cut' || kind === 'dig') kind = 'harvest';
-  /* 살피기 — Meshy «굽혀 살펴보기»(281)를 받으면 inspect 클립으로 · 없으면 듣기(잔잔히 서서 보는 몸)로 */
+  /* 살피기 — Meshy «굽혀 살펴보기»(281 · 받은 이름 Female_Bend_Over_Pick_Up_Inspect)의 굽히는 앞 1.6초.
+     원본은 바닥까지 90° 굽는다 ⇒ 쭈그리기처럼 «머리 높이 표»(파일 extras.inspectHead)로 대상 높이에 맞춰 멈춘다
+     (화분대 위 그루면 조금만 숙이고, 바닥 화분이면 깊이 · 대상 위 0.15m). 클립이 없으면 듣기(잔잔히 서서 보는 몸)로. */
   if (kind === 'inspect') {
-    const w = src.emoteWin && src.emoteWin.inspect;
-    if (C.inspect) return cut(C.inspect, w ? w[0] : 0, w ? Math.min(C.inspect.duration, w[1]) : C.inspect.duration, 'inspect:act');
+    if (C.inspect && src.inspectHead) {
+      /* ⛔ 첫 판은 «대상 위 0.35m» — 머리 «뼈»는 목 밑동(서 있을 때 0.82)이라 화분대(0.6m)면 0.95 로 표 밖, 거의 안 숙였다(0.53초 · 0.4°).
+         ⇒ 쭈그리기 손과 같은 여유 0.15m · 높은 자리도 눈에 보이게 최소 0.8초(약 10°)까지는 숙인다 */
+      const want = Math.min(0.80, Math.max(0.33, (Number.isFinite(targetY) ? targetY : 0.5) + 0.15));
+      const T = src.inspectHead;
+      let t = T[T.length - 1][0];
+      if (want >= T[0][1]) t = T[0][0];
+      else for (let i = 0; i < T.length - 1; i++) {
+        const [t0, y0] = T[i], [t1, y1] = T[i + 1];
+        if (want <= y0 && want >= y1) { t = t0 + (t1 - t0) * (y0 - want) / (y0 - y1); break; }
+      }
+      const end = Math.min(C.inspect.duration, Math.max(0.8, Math.round(t * 10) / 10));
+      const from = Math.max(0, +(end - 1.2).toFixed(1));
+      return cut(C.inspect, from, end, `inspect:act:${from}-${end}`);
+    }
     if (C.listen) return breakClipFrom(src, 'listen');
   }
   if (kind === 'harvest' && C.harvest) {

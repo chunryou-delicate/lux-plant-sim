@@ -36,7 +36,8 @@ from build_hero2 import compact  # noqa: E402
 KEEP = {'walk': None, 'idle': None, 'sleep': None, 'wave': None,
         'sit': 'tail:1.5',                       # v2_hero 는 끝 1초(SIT_TAIL)만 쓴다 — 여유 0.5
         'crouch': (0.0, 2.6), 'water': (0.0, 1.9), 'harvest': (0.0, 2.2), 'harvest_low': (0.0, 2.5),
-        'cheer': 'emoteWin', 'scratch': 'breakWin', 'nod': 'breakWin', 'listen': 'breakWin'}
+        'cheer': 'emoteWin', 'scratch': 'breakWin', 'nod': 'breakWin', 'listen': 'breakWin',
+        'inspect': (0.0, 1.6)}                   # 10-09 살피기 — 굽히는 앞 구간만(머리 높이 표 inspectHead 와 같은 범위)
 DROP = {'pickup', 'run'}
 
 
