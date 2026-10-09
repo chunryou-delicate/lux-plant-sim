@@ -678,3 +678,18 @@
   - 이제 남 낯 열다섯 키가 다 있다(옛 여덟 + 정본 + 새 여섯) — core 66dfb4c0 «모자란 남 낯» 0
 - ② 턴어라운드 **a** — b 는 옆모습 팔이 앞으로 나와 앞모습(옆으로 45°)과 어긋난다. a 는 옆에서 팔이 곧게 내려와 A포즈와 맞다. 둘 다 짧은 머리라 머리–팔이 안 닿는다
   - 칸 넷 `assets/characters/sheets/_hf/crops/hero_m_toy_a_{front,side,back,three_quarter}.png` — 같은 정사각 1874 · 같은 축척 · 같은 바닥선 1809. 장부에 칸 상자가 없어 연결 덩어리로 찾았다(옆–뒤 · 뒤–3/4 사이 틈이 25px 뿐이라 «틈 40px 미만 잇기»는 셋을 한 덩어리로 묶었다 — 덩어리로 가름)
+
+### ③ 3D G2 — Tripo 로 (총괄 35461409 · 10-10 char)
+| 잰 것(`g2_check.py`) | Meshy 2aeab4b5 | **Tripo e4df0454** |
+|---|---|---|
+| 덩어리 · 면 | 1 · 30,733 | 1 · 29,537 |
+| 손끝 가로 거리(키 비) | 0.278 | **0.284** |
+| ★ 머리–팔 2% 안 머리 정점(가장 가까움) | 13 (0.000) | **0 (0.102)** |
+| 머리 색 · 밝기 | [29,15,15] · 19.2(거의 검정 · 붉은 기) | **[88,71,67] · 75.7**(정본 곁 — 색 안 바꿈) |
+| 옷 | 바지 옆에 **흰 줄**(턴어라운드 a 에 없다 — 지어냄) | 민 회색 조거(턴어라운드 그대로) |
+- 고름: **Tripo** — 첫 자(2%)가 0 · 팔 벌림이 조금 넓고 · 머리색·옷이 턴어라운드·정본 그대로 · 여 유니티 주인공도 Tripo 라 둘이 같은 결
+- 얼굴이 +X 를 보고 왔다 → `glb_face_z.py` 로 앞=+Z 로 구운 판 `assets/v2/char/_src/hero_m_unity/hero_m_toy_a_tripo_mv30k_e4df0454_facez.glb`. ⚠ 짧은 머리라 얼굴 찾기를 못 믿어 **돌린 파일을 돌리지 않고 그려** 앞이 얼굴인지 봤다(`docs/handoff/img/hero/unity_g2_male_tripo_facez.png`) ✔
+- 그림: `docs/handoff/img/hero/unity_g2_male_meshy_tripo.png`
+- ④ 리그·동작 13 은 크레딧 채운 뒤(총괄 10-10 · Higgsfield 3d_rigging 약 104). 서면 바로:
+  `python tools/char/build_hero_unity.py <rig.glb> <clips 폴더> assets/v2/char/hero_m_unity.glb --keep-color --hero=hero2_m --from="sheet_hero_m_turnaround_toy_a → Tripo multiview e4df0454 (facez)"`
+  - 그다음 웹 판 `hero2_m.glb` = diet_hero2 로 줄임(그림 1024 · 쓰는 구간) → v2_hero `pickByGender` 두 곳 m 칸 · 옷은 기본만(옷 일곱 D68 미룸 · m 옷 표는 null 그대로면 기본 옷으로 둔다)

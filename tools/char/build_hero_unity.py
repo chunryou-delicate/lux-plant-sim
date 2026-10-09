@@ -17,6 +17,9 @@
 
 쓰기  python tools/char/build_hero_unity.py <리그.glb> <clips 폴더> <나갈.glb> [--near=0.08,0.20] [--keep-color]
       Tripo 판: ... tripo/rig_01a12135.glb tripo/clips assets/v2/char/hero_unity.glb --keep-color
+      남 주인공(리그 서면): ... hero_m_unity/<rig>.glb hero_m_unity/clips assets/v2/char/hero_m_unity.glb --keep-color --hero=hero2_m
+        --from="sheet_hero_m_turnaround_toy_a → Tripo multiview e4df0454 (facez)"
+        (웹 게임 판 hero2_m.glb 는 그 뒤 diet_hero2.py 로 줄인다 — 그림 1024 · 쓰는 구간만 · 관문)
 """
 import json
 import os
@@ -126,8 +129,11 @@ def main():
         bw[nm] = break_window(dst, nm)[0]
     durs = {a['name']: round(float(max(js['accessors'][s['input']]['max'][0] for s in a['samplers'])), 3) for a in js['animations']}
     rig_id = os.path.basename(rig).split('_')[1].split('.')[0]
-    ex = {'hero': 'hero_unity', 'rig': rig_id,
-          'from': 'sheet_hero_turnaround_toy_b → ' + ('Tripo multiview 0cbeb136 (facez)' if 'tripo' in rig else 'Meshy multi-image 559fef1a'),
+    # 10-10 --hero=<이름>: 남 주인공은 웹 게임 몸 이름이 'hero2_m' 이다(v2_hero setOutfit 이 hero2 · hero2_m 만 옷을 입힌다 · core 66dfb4c0)
+    hero_name = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--hero=')), 'hero_unity')
+    ex = {'hero': hero_name, 'rig': rig_id,
+          'from': next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--from=')),
+                       'sheet_hero_turnaround_toy_b → ' + ('Tripo multiview 0cbeb136 (facez)' if 'tripo' in rig else 'Meshy multi-image 559fef1a')),
           'weights': 'fix_hair_weights %s(기본 무게로 구움)' % (near + ' ' if near else '전부 떼기 '), 'hair': 'keep' if keep else [95, 78, 80],
           'crouchHand': tab, 'walkMps': mps, 'emoteWin': {'cheer': w}, 'breakWin': bw, 'useWin': USE_WIN, 'clipSec': durs}
     js['scenes'][js.get('scene', 0)]['extras'] = ex
