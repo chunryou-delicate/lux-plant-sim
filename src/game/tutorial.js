@@ -697,7 +697,8 @@ export function tutorialDay(ts, opt = {}) {
      이제 **매달** 이레 전에 알린다. 첫 달은 예고할 여지가 없으니(첫날 청구) 저절로 빠진다.
      ⇒ 예고의 뜻도 같이 바뀐다. 예전에는 「봐 주던 것이 끝난다」였고 지금은 **「또 돌아온다」** 다.
        한 번 맞아 본 뒤라야 그 말이 무게를 갖는다. 대사도 그래서 갈렸다(dialogue §rentSoon). */
-  if (ts.day > 0 && ts.day === ts.rent.nextDueDay - RENT_NOTICE_DAYS)
+  /* ★ 2026-10-10 D59 — 산 집은 월세 날이 없다 — 예고도 안 낸다(plan 96500c11 · 아래 rent 와 같은 조건) */
+  if (!ts.homeOwned && ts.day > 0 && ts.day === ts.rent.nextDueDay - RENT_NOTICE_DAYS)
     ev.push({ id: 'rent_soon', ko: '월세 ' + rentWonOf(ts).toLocaleString() + '원이 ' +
                                    RENT_NOTICE_DAYS + '일 뒤 나갑니다',
               dueDay: ts.rent.nextDueDay, rentWon: rentWonOf(ts), count: ts.rent.paidCount + 1 });

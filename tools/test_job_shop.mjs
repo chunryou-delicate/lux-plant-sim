@@ -157,8 +157,9 @@ T('I 주문 가드 넷(plan §11) — 겨울·하프문 등 2 · PP 맨 위 분�
     const per = TUT_RULES.rentPeriodDays || 30;
     assert.strictEqual(TU.dailyCashOutWon(ts), Math.max(0, Math.round(TUT_RULES.oneroomDailySpendWon - TUT_RULES.oneroomRentWon / per)));
     console.log('      원룸 하루', before, '→ 산 집 하루', TU.dailyCashOutWon(ts));
-    let rentEv = 0; for (let d = 0; d < 90; d++) { const r = TU.tutorialDay(ts, { firstPlayDone: true }); rentEv += ((r && r.events) || []).filter(e => e.id === 'rent').length; }
+    let rentEv = 0, soonEv = 0; for (let d = 0; d < 90; d++) { const r = TU.tutorialDay(ts, { firstPlayDone: true }); const ev = (r && r.events) || []; rentEv += ev.filter(e => e.id === 'rent').length; soonEv += ev.filter(e => e.id === 'rent_soon').length; }
     assert.strictEqual(rentEv, 0, '산 집에서 월세가 나갔다');
+    assert.strictEqual(soonEv, 0, '산 집에서 «월세 날 이레 전» 예고가 섰다(plan 96500c11)');
   });
 }
 {
