@@ -1,0 +1,1366 @@
+{
+ "run": "char2_20261009",
+ "date": "2026-10-09",
+ "order": "docs/handoff/char-higgsfield-plan-20261009.md - sections '## ② 식물 가게', '## ③ 유니티 몫', JSON '## 주문 JSON — ② 식물 가게 · ③ 유니티' (shop 9 + unity 5, count 2 each)",
+ "tool": "generate_image_batch (count 1 per request, variants a/b as separate requests) + jobs_wait",
+ "model": "gpt_image_2_5",
+ "common_params": {
+  "quality": "max",
+  "resolution": {
+   "shop": "2k",
+   "unity": "4k"
+  },
+  "role": "image_references",
+  "folder_id": null,
+  "use_unlim": "omitted"
+ },
+ "unity_prompt_tail": "identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+ "refs": {
+  "assets/characters/portraits/portrait_jachwi_neutral.png": {
+   "media_id": "be4f952f-02df-4277-a8c8-b616e8067711",
+   "keys": [
+    "REF_JACHWI",
+    "REF_PORTRAIT_STYLE"
+   ],
+   "source": "imported earlier by coordinator"
+  },
+  "assets/characters/portraits/portrait_moni_neutral.png": {
+   "media_id": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+   "keys": [
+    "REF_MONI"
+   ],
+   "source": "imported earlier by coordinator"
+  },
+  "assets/characters/portraits/portrait_moni_cheer.png": {
+   "media_id": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+   "keys": [
+    "REF_MONI_CHEER"
+   ],
+   "source": "imported earlier by coordinator"
+  },
+  "assets/illust/ev_home_ending.png": {
+   "media_id": "7341859e-cecf-4685-b3da-844141b496d2",
+   "keys": [
+    "REF_STYLE"
+   ],
+   "source": "imported earlier by coordinator"
+  },
+  "assets/illust/ev_moveout_sold.png": {
+   "media_id": "d5bfff9e-828f-4bc6-8ae9-447ce413b4cb",
+   "keys": [
+    "REF_BANJIHA"
+   ],
+   "source": "imported earlier by coordinator",
+   "used_in_this_run": false
+  },
+  "assets/illust/ev_oneroom_firstday.png": {
+   "media_id": "470e5a11-904a-4765-aafd-307a68b0ce23",
+   "keys": [
+    "REF_ONEROOM"
+   ],
+   "source": "imported earlier by coordinator",
+   "used_in_this_run": false
+  },
+  "assets/v2/char/_src/hero2/img_01a11e70-223b-705a-b82f-1a80de034747.png": {
+   "media_id": "5cc75470-b460-4cf5-93b6-10e1b233125f",
+   "keys": [
+    "REF_HERO2_TOY"
+   ],
+   "source": "media_import_url raw.githubusercontent main (this run)"
+  },
+  "assets/characters/ref/moni_3d_ref.png": {
+   "media_id": "f8fc19d7-3ce4-41ea-a8ed-c9583e95bce8",
+   "keys": [
+    "REF_MONI_3D"
+   ],
+   "source": "media_import_url raw.githubusercontent main (this run)"
+  },
+  "assets/characters/ref/npc_banchan_owner_ref.png": {
+   "media_id": "55398d82-0e01-4329-a056-b74d80618db1",
+   "keys": [],
+   "used_in_this_run": false,
+   "source": "media_import_url raw.githubusercontent main (this run)",
+   "note": "NOT used: this committed crop (348x553) shows the HEROINE (long brown hair, cream tee) with only a sliver of the owner at the right edge. Passing it as 'image 2 = the SAME woman' would copy the heroine's face."
+  },
+  "assets/gen/hf_runs/char2_20261009_ref_banchan_owner_fixed.png": {
+   "media_id": "9e3708fe-9b55-41d2-8605-37c3161ecb98",
+   "keys": [
+    "REF_BANCHAN_OWNER"
+   ],
+   "source": "media_upload + PUT + media_confirm (this run)",
+   "derived_from": "assets/illust/_hf/ev_neighbor_order_a.png crop box (1080,190,2020,1443) -> 940x1253, owner only (curly perm, mauve sweater, floral apron, basket)",
+   "sha256": "69bda8ac0fb021e40636344e57af2a7e8e209158f2b74a63ae8d22f7e9223790"
+  }
+ },
+ "credits": {
+  "before": 1943.75,
+  "after": 1120.5,
+  "spent_this_run": 330,
+  "spent_breakdown": {
+   "first_pass_2k_x18": 162,
+   "first_pass_4k_x10": 150,
+   "retry_couple_2k_x2": 18
+  },
+  "verified_by": "transactions: 12x-9 at 13:58:05-13:58:12, 6x-9 + 10x-15 at 13:58:36-13:58:50, 2x-9 at 14:08:54/56 UTC; no refunds",
+  "balance_delta": 823.25,
+  "other_sessions_during_run": 493.25,
+  "other_sessions_note": "concurrent GPT Image 2.5 Flare (2.75 each), Nano Banana 2.1 (2 each) and Tripo H3.1 image-to-3D charges in the same window are not from this run",
+  "budget_cap": 400
+ },
+ "picks": {
+  "portrait_npc_shop": "a",
+  "portrait_npc_student": "a",
+  "portrait_npc_elder": "a",
+  "portrait_npc_couple": "c",
+  "portrait_npc_plant": "a",
+  "portrait_npc_office": "b",
+  "portrait_jachwi_apron": "a",
+  "ev_shop_open": "a",
+  "ev_shop_sign": "b",
+  "sheet_hero_turnaround_toy": "b",
+  "sheet_hero_turnaround_anime": "a",
+  "sheet_moni_turnaround": "b",
+  "sheet_hero_expressions": "a",
+  "sheet_moni_expressions": "a"
+ },
+ "failures": [
+  "portrait_npc_couple_a",
+  "portrait_npc_couple_b"
+ ],
+ "notes": [
+  "REF_BANCHAN_OWNER: committed crop assets/characters/ref/npc_banchan_owner_ref.png shows the heroine, not the owner; a correct owner crop from ev_neighbor_order_a.png was uploaded and used (file kept beside this ledger). The tracked ref file was not modified.",
+  "Hair: portrait-style 2D outputs (apron portrait, anime turnaround, hero expression sheet) inherit the canon portrait's near-black hair (R-B ~10-12); scenes and the toy sheet are warm brown (R-B 24-44). Fix with tools/char/illust_hair_lift.py if needed (0 credits).",
+  "Turnaround view_boxes_xyxy are pixel boxes in the saved 3840x2160 sheet, for cropping into multi-image-to-3D inputs."
+ ],
+ "entries": [
+  {
+   "item": 1,
+   "name": "portrait_npc_shop",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "a375ab23-fd56-4d92-b660-a05f1bbfb0cb",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_BANCHAN_OWNER",
+      "value": "9e3708fe-9b55-41d2-8605-37c3161ecb98",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "The SAME woman as image 2: middle-aged shop owner, short curly brown perm, round cheerful face, floral beige apron over a mauve sweater, warm laughing smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135806_a375ab23-fd56-4d92-b660-a05f1bbfb0cb.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_shop_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3745653,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - matches the owner in ev_neighbor_order A: short curly brown perm, round face, eyes-closed laughing smile, mauve sweater, floral beige apron; white bg; portrait line style; not the heroine.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_shop_a.png"
+  },
+  {
+   "item": 1,
+   "name": "portrait_npc_shop",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "9dbdb330-a72d-4f64-81ba-225be483b569",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_BANCHAN_OWNER",
+      "value": "9e3708fe-9b55-41d2-8605-37c3161ecb98",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "The SAME woman as image 2: middle-aged shop owner, short curly brown perm, round cheerful face, floral beige apron over a mauve sweater, warm laughing smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135810_9dbdb330-a72d-4f64-81ba-225be483b569.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_shop_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3300275,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS (weaker) - same hair/outfit but open-eyed and younger-looking, eyes drawn like the heroine's; less like the ref's laughing middle-aged owner.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_shop_b.png"
+  },
+  {
+   "item": 2,
+   "name": "portrait_npc_student",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "abb1b7dc-440c-472b-ba4f-be5a67a7a6c0",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A university student, short black hair, round glasses, grey hoodie and backpack strap, shy smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135807_abb1b7dc-440c-472b-ba4f-be5a67a7a6c0.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_student_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3428602,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - short black hair, round glasses, grey hoodie, backpack strap, shy smile; white bg; not the heroine.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_student_a.png"
+  },
+  {
+   "item": 2,
+   "name": "portrait_npc_student",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "784224b0-5178-4698-b4d3-797d59a3bf7f",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A university student, short black hair, round glasses, grey hoodie and backpack strap, shy smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135805_784224b0-5178-4698-b4d3-797d59a3bf7f.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_student_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 4021986,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - near-identical to a.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_student_b.png"
+  },
+  {
+   "item": 3,
+   "name": "portrait_npc_elder",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "5bb0c992-66d6-4466-940a-d0f340c0c18d",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A kind elderly grandmother, grey hair in a low bun, beige knit cardigan, gentle smile, small reading glasses on a chain. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135810_5bb0c992-66d6-4466-940a-d0f340c0c18d.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_elder_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3655224,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - grey low bun, beige cable cardigan, reading glasses on a chain, gentle smile; reads clearly elderly.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_elder_a.png"
+  },
+  {
+   "item": 3,
+   "name": "portrait_npc_elder",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "abe8130a-5fb7-486b-8cb5-7b24c8bd2fb8",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A kind elderly grandmother, grey hair in a low bun, beige knit cardigan, gentle smile, small reading glasses on a chain. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135809_abe8130a-5fb7-486b-8cb5-7b24c8bd2fb8.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_elder_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3863191,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - same brief, reads slightly younger.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_elder_b.png"
+  },
+  {
+   "item": 4,
+   "name": "portrait_npc_couple",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "d8a84112-0a5e-4ca6-9645-46ebf8fe0799",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A young married couple side by side, both bust in frame, warm smiles, casual knitwear, leaning slightly together. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135807_d8a84112-0a5e-4ca6-9645-46ebf8fe0799.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_couple_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 4251134,
+   "cost_credits": 9,
+   "qa_pass": false,
+   "qa_notes": "FAIL (hard: NPC with the heroine's face) - the wife has the heroine design: long straight dark hair, blunt bangs, cream knit, same face.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_couple_a.png"
+  },
+  {
+   "item": 4,
+   "name": "portrait_npc_couple",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "b96d796d-6027-4e61-b846-a04865c09da3",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A young married couple side by side, both bust in frame, warm smiles, casual knitwear, leaning slightly together. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135808_b96d796d-6027-4e61-b846-a04865c09da3.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_couple_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3966013,
+   "cost_credits": 9,
+   "qa_pass": false,
+   "qa_notes": "FAIL (hard: NPC with the heroine's face) - same as a; wife = heroine look-alike.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_couple_b.png"
+  },
+  {
+   "item": 4,
+   "name": "portrait_npc_couple",
+   "group": "shop",
+   "variant": "c",
+   "job_id": "0f5505ef-499a-42f3-b2ac-4e27885d3e0a",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A young married couple side by side, both bust in frame, warm smiles, casual knitwear, leaning slightly together. Use image 1 only for the art style - BOTH of them are DIFFERENT people, not the heroine: the wife must NOT resemble image 1 (no long straight dark hair, no blunt bangs, no cream top) - she has a shoulder-length wavy light-brown bob with a side part and a dusty-rose knit cardigan; the husband has short neat dark hair and a navy knit sweater. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140854_0f5505ef-499a-42f3-b2ac-4e27885d3e0a.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_couple_c.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 4211997,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - retry prompt (wife described explicitly): wavy light-brown side-part bob, dusty-rose cardigan; husband short dark hair, navy knit; neither resembles the heroine; white bg.",
+   "recommended_pick": true,
+   "retry_of": [
+    "a",
+    "b"
+   ],
+   "retry_reason": "both a and b drew the wife with the heroine design (long straight dark hair, blunt bangs, cream knit, same face) - hard check: NPC with heroine face",
+   "prompt_change": "char's couple prompt kept; 'this is a DIFFERENT person' replaced by 'BOTH of them are DIFFERENT people' plus explicit wife/husband looks (wavy light-brown side-part bob + dusty-rose cardigan; short dark hair + navy knit)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_couple_c.png"
+  },
+  {
+   "item": 4,
+   "name": "portrait_npc_couple",
+   "group": "shop",
+   "variant": "d",
+   "job_id": "c30ff966-1096-478b-af0a-bdc3919e04bd",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A young married couple side by side, both bust in frame, warm smiles, casual knitwear, leaning slightly together. Use image 1 only for the art style - BOTH of them are DIFFERENT people, not the heroine: the wife must NOT resemble image 1 (no long straight dark hair, no blunt bangs, no cream top) - she has a shoulder-length wavy light-brown bob with a side part and a dusty-rose knit cardigan; the husband has short neat dark hair and a navy knit sweater. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140856_c30ff966-1096-478b-af0a-bdc3919e04bd.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_couple_d.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 4293167,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - near-identical to c.",
+   "recommended_pick": false,
+   "retry_of": [
+    "a",
+    "b"
+   ],
+   "retry_reason": "both a and b drew the wife with the heroine design (long straight dark hair, blunt bangs, cream knit, same face) - hard check: NPC with heroine face",
+   "prompt_change": "char's couple prompt kept; 'this is a DIFFERENT person' replaced by 'BOTH of them are DIFFERENT people' plus explicit wife/husband looks (wavy light-brown side-part bob + dusty-rose cardigan; short dark hair + navy knit)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_couple_d.png"
+  },
+  {
+   "item": 5,
+   "name": "portrait_npc_plant",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "d0a50857-08f6-4bbe-8d52-20d8de4eb954",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A plant-loving young florist apprentice, tied-back auburn hair, green canvas apron, holding a tiny potted plant, bright eyes. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135808_d0a50857-08f6-4bbe-8d52-20d8de4eb954.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_plant_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3734273,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - tied-back auburn hair (low ponytail), green canvas apron, tiny potted plant, bright eyes. Warning: green apron over cream tee echoes the heroine's apron outfit; auburn hair keeps her distinct.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_plant_a.png"
+  },
+  {
+   "item": 5,
+   "name": "portrait_npc_plant",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "b06770ac-1234-4614-b0f4-eb0efd35c00c",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A plant-loving young florist apprentice, tied-back auburn hair, green canvas apron, holding a tiny potted plant, bright eyes. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135811_b06770ac-1234-4614-b0f4-eb0efd35c00c.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_plant_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3688601,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - variegated pothos, side ponytail; same outfit warning as a.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_plant_b.png"
+  },
+  {
+   "item": 6,
+   "name": "portrait_npc_office",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "637815e8-fbd1-4952-863f-535deaa0f1f4",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A tired but kind office worker in a light blue shirt with a lanyard ID badge, neat short hair, soft smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135806_637815e8-fbd1-4952-863f-535deaa0f1f4.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_office_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3307083,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - light blue shirt, lanyard ID badge (blank card, cut at frame edge), neat short hair, soft smile.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_office_a.png"
+  },
+  {
+   "item": 6,
+   "name": "portrait_npc_office",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "b4bc7d6a-82ba-48b2-a2e4-af4c477df0fc",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_PORTRAIT_STYLE",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "A tired but kind office worker in a light blue shirt with a lanyard ID badge, neat short hair, soft smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135812_b4bc7d6a-82ba-48b2-a2e4-af4c477df0fc.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_npc_office_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3548116,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - same brief; under-eye bags read 'tired but kind' better.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_npc_office_b.png"
+  },
+  {
+   "item": 7,
+   "name": "portrait_jachwi_apron",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "9b2fcc21-a137-4eb5-9b4e-e871104c8ce4",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Same heroine as image 1, same face and hair, now wearing a plain sage-green work apron over her cream tee, calm confident smile. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135839_9b2fcc21-a137-4eb5-9b4e-e871104c8ce4.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_apron_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3627425,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS (soft) - faithful heroine face/hair, sage-green apron over cream tee, calm smile; hair near-black exactly like the canon portrait (mean RGB ~64,52,53) -> tools/char/illust_hair_lift.py if brown wanted (0 credits).",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_apron_a.png"
+  },
+  {
+   "item": 7,
+   "name": "portrait_jachwi_apron",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "8cb1324b-ff2d-4c38-ae15-80c7cc6a7c6e",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Same heroine as image 1, same face and hair, now wearing a plain sage-green work apron over her cream tee, calm confident smile. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135841_8cb1324b-ff2d-4c38-ae15-80c7cc6a7c6e.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_apron_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3476490,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS (soft) - same; expression closer to neutral than 'confident smile'; same hair note.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_apron_b.png"
+  },
+  {
+   "item": 8,
+   "name": "ev_shop_open",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "33945199-4274-466c-912a-731a5180104b",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_MONI_CHEER",
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_STYLE",
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Opening day of her small home plant shop in a two-room apartment: shelves of potted monstera, pink princess and alocasia, a small cork order board with paper slips (no readable text); she wears a sage-green apron and smiles at the door; Moni cheers on a shelf. The woman in image 1 is the heroine; anyone else is a DIFFERENT person (do not copy her face). Heroine (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves - never remove pot or leaves. 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no readable text, no border.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135838_33945199-4274-466c-912a-731a5180104b.png",
+   "saved_path": "assets/illust/_hf/ev_shop_open_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5937061,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - brown hair (mean RGB ~90,54,47), blunt bangs, sage apron, smiling at the door; Moni cheering on a shelf, in pot with two holed leaves; monstera, pink princess, alocasia; blank cork slips; no text; full-frame 2D storybook; hands OK.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_shop_open_a.png"
+  },
+  {
+   "item": 8,
+   "name": "ev_shop_open",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "f0233f9f-bbe9-47c8-8e59-dfb0fbda7885",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_MONI_CHEER",
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_STYLE",
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Opening day of her small home plant shop in a two-room apartment: shelves of potted monstera, pink princess and alocasia, a small cork order board with paper slips (no readable text); she wears a sage-green apron and smiles at the door; Moni cheers on a shelf. The woman in image 1 is the heroine; anyone else is a DIFFERENT person (do not copy her face). Heroine (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves - never remove pot or leaves. 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no readable text, no border.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135840_f0233f9f-bbe9-47c8-8e59-dfb0fbda7885.png",
+   "saved_path": "assets/illust/_hf/ev_shop_open_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5837073,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - same content; Moni (pot + two holed leaves + feet) near the top edge; small blank chalkboard; no text.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_shop_open_b.png"
+  },
+  {
+   "item": 9,
+   "name": "ev_shop_sign",
+   "group": "shop",
+   "variant": "a",
+   "job_id": "b7d482f1-d386-42c2-b649-908576ae2ac1",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_MONI_CHEER",
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_STYLE",
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Daytime outside her apartment window/door: a small wooden shop sign with a leaf drawing (no readable text) has just been hung; she in a sage-green apron and Moni look up at it proudly; two friendly neighbors wave. The woman in image 1 is the heroine; anyone else is a DIFFERENT person (do not copy her face). Heroine (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves - never remove pot or leaves. 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no readable text, no border.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135840_b7d482f1-d386-42c2-b649-908576ae2ac1.png",
+   "saved_path": "assets/illust/_hf/ev_shop_sign_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5988222,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - she is still adjusting the just-hung leaf sign; Moni in pot with two holed leaves (looks at viewer, not the sign); two distinct neighbours wave; no text; hands OK.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_shop_sign_a.png"
+  },
+  {
+   "item": 9,
+   "name": "ev_shop_sign",
+   "group": "shop",
+   "variant": "b",
+   "job_id": "851112dd-41e6-4863-a118-66771eea3713",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_MONI_CHEER",
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_STYLE",
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Daytime outside her apartment window/door: a small wooden shop sign with a leaf drawing (no readable text) has just been hung; she in a sage-green apron and Moni look up at it proudly; two friendly neighbors wave. The woman in image 1 is the heroine; anyone else is a DIFFERENT person (do not copy her face). Heroine (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves - never remove pot or leaves. 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no readable text, no border.",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135838_851112dd-41e6-4863-a118-66771eea3713.png",
+   "saved_path": "assets/illust/_hf/ev_shop_sign_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5741348,
+   "cost_credits": 9,
+   "qa_pass": true,
+   "qa_notes": "PASS - she holds Moni and both look up proudly at the leaf sign; two distinct neighbours wave; no text; hands OK.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_shop_sign_b.png"
+  },
+  {
+   "item": 10,
+   "name": "sheet_hero_turnaround_toy",
+   "group": "unity",
+   "variant": "a",
+   "job_id": "ef8af945-bb5c-44ae-bebe-fa43b5e1b7f6",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_HERO2_TOY",
+      "value": "5cc75470-b460-4cf5-93b6-10e1b233125f",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. The heroine as a chibi 3D toy figure exactly like image 2 (same head-to-body ratio, soft toy shading), with face and hair from image 1: LONG straight dark chocolate-brown hair (clearly brown, NOT black) falling down the back, blunt bangs, front locks inside the shoulder line with a clear gap from the arms; cream round-neck tee, grey joggers, grey-white shoes. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135841_ef8af945-bb5c-44ae-bebe-fa43b5e1b7f6.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_hero_turnaround_toy_a.jpg",
+   "width": 3840,
+   "height": 2160,
+   "bytes": 5006317,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS - front/left-side/back/3-4, same scale (fig heights 1697-1717 px), chibi toy proportions like hero2 ref, brown hair (R>B), A-pose with gap, front locks inside the shoulder line; back-view shoes read open-heeled (disagree with front).",
+   "recommended_pick": false,
+   "view_boxes_xyxy": {
+    "front": [
+     103,
+     249,
+     932,
+     1948
+    ],
+    "side": [
+     1126,
+     254,
+     1761,
+     1950
+    ],
+    "back": [
+     1914,
+     253,
+     2750,
+     1952
+    ],
+    "three_quarter": [
+     2914,
+     245,
+     3710,
+     1961
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_hero_turnaround_toy_a.png"
+  },
+  {
+   "item": 10,
+   "name": "sheet_hero_turnaround_toy",
+   "group": "unity",
+   "variant": "b",
+   "job_id": "37769d53-228f-4b21-9c08-0c33dcd4293d",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_HERO2_TOY",
+      "value": "5cc75470-b460-4cf5-93b6-10e1b233125f",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. The heroine as a chibi 3D toy figure exactly like image 2 (same head-to-body ratio, soft toy shading), with face and hair from image 1: LONG straight dark chocolate-brown hair (clearly brown, NOT black) falling down the back, blunt bangs, front locks inside the shoulder line with a clear gap from the arms; cream round-neck tee, grey joggers, grey-white shoes. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135842_37769d53-228f-4b21-9c08-0c33dcd4293d.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_hero_turnaround_toy_b.jpg",
+   "width": 3840,
+   "height": 2160,
+   "bytes": 5204627,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS - 4 views, same scale (1696-1711 px), shoes consistent in all views (grey slip-on, white sole, white sock), slightly wider A-pose, clean hair/arm gap. Cleanest front/side/back for multi-image-to-3D.",
+   "recommended_pick": true,
+   "view_boxes_xyxy": {
+    "front": [
+     82,
+     249,
+     943,
+     1944
+    ],
+    "side": [
+     1128,
+     238,
+     1779,
+     1945
+    ],
+    "back": [
+     1899,
+     247,
+     2734,
+     1944
+    ],
+    "three_quarter": [
+     2858,
+     242,
+     3676,
+     1952
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_hero_turnaround_toy_b.png"
+  },
+  {
+   "item": 11,
+   "name": "sheet_hero_turnaround_anime",
+   "group": "unity",
+   "variant": "a",
+   "job_id": "1a4b5828-665e-4453-9dec-16158179d7ba",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. The heroine in the flat 2D anime style of image 1, full body (head about 1/6 of height), same face and hair as image 1, cream tee, grey joggers. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135836_1a4b5828-665e-4453-9dec-16158179d7ba.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_hero_turnaround_anime_a.jpg",
+   "width": 3840,
+   "height": 2160,
+   "bytes": 5353558,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS (soft) - 4 views, same scale (2014-2038 px), narrow A-pose (~15-20 deg, clear gap), front locks clear of arms, consistent tee; hair near-black like canon (RGB ~72,63,63).",
+   "recommended_pick": true,
+   "view_boxes_xyxy": {
+    "front": [
+     134,
+     53,
+     842,
+     2068
+    ],
+    "side": [
+     1181,
+     49,
+     1583,
+     2062
+    ],
+    "back": [
+     1972,
+     53,
+     2680,
+     2067
+    ],
+    "three_quarter": [
+     2933,
+     50,
+     3574,
+     2087
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_hero_turnaround_anime_a.png"
+  },
+  {
+   "item": 11,
+   "name": "sheet_hero_turnaround_anime",
+   "group": "unity",
+   "variant": "b",
+   "job_id": "a80610f1-e5c8-4cf2-a551-1d742afd0f79",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. The heroine in the flat 2D anime style of image 1, full body (head about 1/6 of height), same face and hair as image 1, cream tee, grey joggers. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135841_a80610f1-e5c8-4cf2-a551-1d742afd0f79.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_hero_turnaround_anime_b.jpg",
+   "width": 3840,
+   "height": 2160,
+   "bytes": 5544051,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS (soft) - same; shorter tee shows waistband; figures nearly touch top/bottom (~40 px margin); hair near-black.",
+   "recommended_pick": false,
+   "view_boxes_xyxy": {
+    "front": [
+     211,
+     44,
+     914,
+     2111
+    ],
+    "side": [
+     1197,
+     41,
+     1598,
+     2105
+    ],
+    "back": [
+     1919,
+     44,
+     2637,
+     2098
+    ],
+    "three_quarter": [
+     2869,
+     44,
+     3561,
+     2121
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_hero_turnaround_anime_b.png"
+  },
+  {
+   "item": 12,
+   "name": "sheet_moni_turnaround",
+   "group": "unity",
+   "variant": "a",
+   "job_id": "aa5dfdd8-842c-410e-8420-ff90af8b7651",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_MONI",
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_MONI_3D",
+      "value": "f8fc19d7-3ce4-41ea-a8ed-c9583e95bce8",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. Moni from image 1: tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), soft 3D toy look like image 2. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135838_aa5dfdd8-842c-410e-8420-ff90af8b7651.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_moni_turnaround_a.jpg",
+   "width": 3840,
+   "height": 2160,
+   "bytes": 4012991,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS - 4 views, same pot and two holed leaves, feet out front, soft 3D toy look; side-view leaf droops over the rim.",
+   "recommended_pick": false,
+   "view_boxes_xyxy": {
+    "front": [
+     38,
+     653,
+     1082,
+     1532
+    ],
+    "side": [
+     1224,
+     650,
+     1795,
+     1527
+    ],
+    "back": [
+     1843,
+     657,
+     2827,
+     1534
+    ],
+    "three_quarter": [
+     2868,
+     649,
+     3807,
+     1540
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_moni_turnaround_a.png"
+  },
+  {
+   "item": 12,
+   "name": "sheet_moni_turnaround",
+   "group": "unity",
+   "variant": "b",
+   "job_id": "339ed760-5f78-4c85-bef0-aad5749930c8",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_MONI",
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "ref": "REF_MONI_3D",
+      "value": "f8fc19d7-3ce4-41ea-a8ed-c9583e95bce8",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. Moni from image 1: tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), soft 3D toy look like image 2. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135839_339ed760-5f78-4c85-bef0-aad5749930c8.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_moni_turnaround_b.jpg",
+   "width": 3840,
+   "height": 2160,
+   "bytes": 4047185,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS - 4 views; leaves upright and clearly separated from the body in front/side/back; matches moni_3d_ref proportions. Cleanest silhouettes for 3D.",
+   "recommended_pick": true,
+   "view_boxes_xyxy": {
+    "front": [
+     26,
+     627,
+     1029,
+     1513
+    ],
+    "side": [
+     1120,
+     629,
+     1777,
+     1510
+    ],
+    "back": [
+     1799,
+     629,
+     2829,
+     1515
+    ],
+    "three_quarter": [
+     2851,
+     627,
+     3812,
+     1533
+    ]
+   },
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_moni_turnaround_b.png"
+  },
+  {
+   "item": 13,
+   "name": "sheet_hero_expressions",
+   "group": "unity",
+   "variant": "a",
+   "job_id": "28f88a03-3ddc-4750-bb50-eabc81da84bc",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "4:3",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Expression sheet of the SAME heroine as image 1, flat 2D anime style of image 1: a 3x4 grid of bust heads with the same framing, plain white background, no text labels. Expressions: neutral, happy, beaming proud, calm proud smile, surprised, curious, thinking, worried, crying, tired, numb (frozen), determined. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135850_28f88a03-3ddc-4750-bb50-eabc81da84bc.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_hero_expressions_a.jpg",
+   "width": 3312,
+   "height": 2480,
+   "bytes": 6722850,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS (soft) - 3x4 grid, 12 distinct expressions in the requested order, no labels; numb/tired clearly distinct; thinking-hand OK; hair near-black like canon.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_hero_expressions_a.png"
+  },
+  {
+   "item": 13,
+   "name": "sheet_hero_expressions",
+   "group": "unity",
+   "variant": "b",
+   "job_id": "96f97434-2cfc-4e82-b37e-50db18d30237",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "4:3",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_JACHWI",
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Expression sheet of the SAME heroine as image 1, flat 2D anime style of image 1: a 3x4 grid of bust heads with the same framing, plain white background, no text labels. Expressions: neutral, happy, beaming proud, calm proud smile, surprised, curious, thinking, worried, crying, tired, numb (frozen), determined. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135849_96f97434-2cfc-4e82-b37e-50db18d30237.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_hero_expressions_b.jpg",
+   "width": 3312,
+   "height": 2480,
+   "bytes": 6821840,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS (soft) - 12 distinct in order, no labels; 'numb' close to neutral; hair near-black.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_hero_expressions_b.png"
+  },
+  {
+   "item": 14,
+   "name": "sheet_moni_expressions",
+   "group": "unity",
+   "variant": "a",
+   "job_id": "c2d61a15-4029-4eec-aa84-8c785bf390ec",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "4:3",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_MONI",
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Expression sheet of Moni from image 1 (light-green sprout INSIDE a terracotta pot with two holed monstera leaves - keep pot and leaves in every cell), flat 2D style of image 1: a 3x4 grid, plain white background, no text labels. Expressions: neutral, cheer, calm, teaching, curious, proud, worried, sad, surprised, excited, sleepy, shh. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135849_c2d61a15-4029-4eec-aa84-8c785bf390ec.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_moni_expressions_a.jpg",
+   "width": 3312,
+   "height": 2480,
+   "bytes": 6055343,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS - 3x4 grid, pot + two holed leaves in every cell, 12 distinct in order; sad has tears (distinct from worried); only manga symbols (?, Zzz), no labels.",
+   "recommended_pick": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_moni_expressions_a.png"
+  },
+  {
+   "item": 14,
+   "name": "sheet_moni_expressions",
+   "group": "unity",
+   "variant": "b",
+   "job_id": "3be7dc33-9c0b-41a8-b4b6-f90cecba677d",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "4:3",
+    "quality": "max",
+    "resolution": "4k",
+    "count": 1,
+    "medias": [
+     {
+      "ref": "REF_MONI",
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     }
+    ]
+   },
+   "prompt_used": "Expression sheet of Moni from image 1 (light-green sprout INSIDE a terracotta pot with two holed monstera leaves - keep pot and leaves in every cell), flat 2D style of image 1: a 3x4 grid, plain white background, no text labels. Expressions: neutral, cheer, calm, teaching, curious, proud, worried, sad, surprised, excited, sleepy, shh. identical original character on all views, same proportions and colors in every view, single subject only, no other people, no props, no furniture, no background objects, pure white seamless background, no text, no labels, no watermark, no frame borders",
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135849_3be7dc33-9c0b-41a8-b4b6-f90cecba677d.png",
+   "saved_path": "assets/characters/sheets/_hf/sheet_moni_expressions_b.jpg",
+   "width": 3312,
+   "height": 2480,
+   "bytes": 5933058,
+   "cost_credits": 15,
+   "qa_pass": true,
+   "qa_notes": "PASS - 12 cells with pot + leaves; sad vs worried less distinct; symbols only.",
+   "recommended_pick": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/sheets/_hf/sheet_moni_expressions_b.png"
+  }
+ ],
+ "_storage": "opaque → JPEG q95 4:4:4 in repo, PNG master moved to C:/Users/pc/Desktop/빛식물/_hf_masters/ (same relative path) · transparent stays PNG"
+}
