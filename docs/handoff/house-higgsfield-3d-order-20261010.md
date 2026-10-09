@@ -58,6 +58,8 @@ Higgsfield 안에 3D 가 있다. Meshy 7(38) 말고도 **Tripo H3.1**(9 · 텍�
 - ⚠ 앞 방향이 엔진마다 다르다. 다단 선반이 Meshy 는 Z 로 길었고(yaw 90), Tripo 는 X 로 길다(yaw 0). Tripo 는 키를 1.0 으로 맞춰 낸다. **yaw 는 GLB 마다 재서 정한다.**
 - ⇒ **정함**: 웹 가구 = Tripo standard(9 · pbr 끔). 유니티 방 키트 = Tripo detailed(12 · pbr 켬 — 유니티는 노멀·거칠기를 쓴다). 진열대처럼 단이 중요한 것도 tiers 꺾은 선으로 맞추니 Tripo 로 된다. 원화가 어려운 꼴(가는 살대 · 투명)만 Meshy 7 을 예비로 둔다.
 - 크레딧: M 다섯 60 → 45 · U 키트 128 그대로(detailed).
+- **다시 뜨는 차례(박사님 10-10 «Meshy 가 잘 안 되면 Tripo 로» · 총괄)**: 웹 = Tripo standard → 틀리면 Tripo detailed. 어려운 꼴의 예비 Meshy 7 로 뜬 것이 틀리면 → **Tripo detailed** 로 다시 뜬다(Meshy 를 거듭 돌리지 않는다).
+- 받은 다섯(10-10 · 9b226b17): 진열대 yaw −90(+90 이면 앞뒤가 뒤집혀 앞단 +0.49m) · 협탁 r2 yaw −90(서랍이 +X 로 나옴) · 벤치 yaw 0 — 셋 다 윗면 오차 ≤ 2mm. 주문판(얇은 축 X → 벽 걸이면 yaw 90)·입간판은 webp 로만 두고, 벽 걸기·간판 자리를 세운 뒤 잇는다.
 
 ## 받은 뒤(house)
 
