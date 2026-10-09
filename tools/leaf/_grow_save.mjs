@@ -19,14 +19,14 @@ const J = async (js, ms = 1800000) => JSON.parse(await page.eval(`(async()=>{ tr
 /* ★ LAMPCLIP=1 — 집게등을 에타제르 맨 윗단에 물린다(house 10-09). 원룸으로 «켜진» 판에서 해야 한다 — 이사를 함수로 한 판은 3D 방이 다시 켜기 전까지 반지하라 «모르는 등»으로 던진다(10-09 한 번).
    게임의 등 옮기기 길 그대로: roomView.commitLampAt → setFurniturePlacement → light.clearCache. 이미 물려 있으면 그대로(다시 켠 뒤에도 남나를 적는다) */
 if (process.env.LAMPCLIP === '1') console.log('집게등 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S(), io=window.__io, rv=window.__rv;
-  const before=(S.home&&S.home.furniture&&S.home.furniture['oneroom-growlight-clip'])||null;
+  const fu=(S.home&&S.home.furniture)||{}; const bk=Object.keys(fu).find(k=>/growlight-clip/.test(k)); const before=bk?{uid:bk, ...fu[bk]}:null;
   const mounts=(rv.lampMounts&&rv.lampMounts())||[]; const top=(mounts.find(m=>/banjiha-etagere@0\.79/.test(m.mountId))||mounts.find(m=>/etagere/.test(m.mountId))||{}).mountId;
-  if (before && before.mountId === top) return { 이미:before };
+  const mt=mounts.find(m=>m.mountId===top); if (before && mt && Math.abs((before.y??-9)-(mt.y??mt.at?.y??-1))<0.02) return { 이미:before };
   const r=await rv.commitLampAt('oneroom-growlight-clip', { mountId: top });
   st.setFurniturePlacement(S, r.uid, r.to, { size: io.light.room.size }); io.light.clearCache(); try{window.__redraw()}catch(e){}
   return { 물린곳:top, 자리:r.to, 등:[S.lamps&&S.lamps.count, S.tutorial&&S.tutorial.lamp&&S.tutorial.lamp.placed] }; })()`)));
 /* 켠 그대로의 등 자리(다시 켠 뒤에도 남나) */
-console.log('등 자리 —', JSON.stringify(await J(`(async()=>{ const S=window.__S(); return (S.home&&S.home.furniture&&S.home.furniture['oneroom-growlight-clip'])||null; })()`)));
+console.log('등 자리 —', JSON.stringify(await J(`(async()=>{ const S=window.__S(); const fu=(S.home&&S.home.furniture)||{}; return Object.fromEntries(Object.entries(fu).filter(([k])=>/growlight/.test(k))); })()`)));
 if (process.env.MOVE2) console.log('옮김 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S(), io=window.__io;
   const p2=(S.pots||[])[1]; if(!p2) return {둘째없음:true};
   const slots=io.light.room.slots||[]; const used=new Set((S.pots||[]).map(p=>p.slotId).filter(Boolean));

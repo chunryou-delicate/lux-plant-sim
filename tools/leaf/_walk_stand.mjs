@@ -5,7 +5,7 @@
      ③ 원룸으로 이사(이사 자금만 채움 · 에타제르 들고 감) → 에타제르를 기준 배치 D 자리에 → 모주는 원룸 창턱 · 시루는 에타제르 아랫단(이사가 가방에 넣음 · 사람이 다시 놓음) · 삽수는 윗단·가운데단(setCuttingAt)
      ④ [다음 날 ▸] 로 DAYS 일 — 모주 물은 날마다(사람이 주는 것)
      ⑤ DUMP 로 세이브 · 찍기는 _shot_room_varie / _shot_stand 로
-   LAMPCLIP=1(집게등을 에타제르 맨 윗단에) · SAVE= · DUMP= (필수) · K=4 · DAYS=40 · BYEOT_URL=(기본 127.0.0.1:9340 · tools/serve.py) */
+   LAMPCLIP=1(집게등을 에타제르 맨 윗단에) · RELOAD=1(이사 뒤 저장·다시 켬 · 견줌용) · SAVE= · DUMP= (필수) · K=4 · DAYS=40 · BYEOT_URL=(기본 127.0.0.1:9340 · tools/serve.py) */
 import fs from 'node:fs';
 import { launch, sleep } from '../test_cdp.mjs';
 const SAVEF = process.env.SAVE, DUMP = process.env.DUMP;
@@ -70,16 +70,23 @@ console.log('③ 이사·놓기 —', JSON.stringify(await J(`(async()=>{ const 
   try{window.__redraw()}catch(e){}
   return { 방:S.home.room, 삽수:placed, 모주:S.pots[0].slotId, 시루:siru }; })()`)));
 await sleep(3000);
-/* ★ 이사 뒤 3D 방 — 게임은 이사 길 끝에서 remountRoomView 로 방을 다시 짓는데, 10-09 지금 그 길이 «방을 그리지 못했습니다 — Cannot read properties of null
-   (reading 'precision')» 로 떨어진다(옛 방 dispose 가 #roomCanvas 문맥을 forceContextLoss 로 놓고, 새 방이 같은 캔버스를 다시 쓴다 · 하드웨어 GPU 도 같음 ·
-   재현 tools/leaf/_check_move_remount.mjs · core 에 알림). 함수로만 이사하고 그대로 두면 3D 가 반지하라 원룸 등을 «모르는 등»으로 던진다.
-   ⇒ 사람이 하듯 «저장하고 다시 켠다» — 켜진 판이 원룸 방뷰를 새로 짓는다. LAMPCLIP=1 이면 늘 · RELOAD=1 로도 */
-if (process.env.LAMPCLIP === '1' || process.env.RELOAD === '1') {
+/* ★ 이사 뒤 3D 방 — 게임 이사 길 끝(doMoveOut)처럼 remountRoomView(window.__remount)로 방을 다시 짓고 새 방뷰가 설 때까지 기다린다.
+   10-09 한때 이 길이 «방을 그리지 못했습니다 — reading 'precision'» 으로 떨어졌다(core ff0c1365 로 고침 · 재현 _check_move_remount).
+   ⚠ «다시 켜기»를 끼우면 이 화면 고장을 지나친다(총괄 10-09) — 기본은 다시 짓기만. RELOAD=1 이면 예전처럼 저장하고 다시 켠다(견줌용) */
+if (process.env.RELOAD === '1') {
   const sv = await J(`(async()=>{ const sv=await import('/src/game/save.js'); const r=sv.saveTo(localStorage, sv.SAVE_KEY, window.__S()); return { ok:r.ok }; })()`);
   await page.goto(`${BASE}/game.html`);
   let ok = false; for (let i = 0; i < 100; i++) { await sleep(3000); if (await page.eval(`String(!!(window.__rv && window.__rv.lampMounts))`) === 'true') { ok = true; break; } }
   await sleep(6000); await clear();
-  console.log('③-1 저장·다시 켬 —', JSON.stringify(sv), ok, await page.eval(`String(window.__S().home.room)`)); }
+  console.log('③-1 저장·다시 켬 —', JSON.stringify(sv), ok, await page.eval(`String(window.__S().home.room)`));
+} else {
+  await page.eval(`(()=>{ try { window.__remount(); } catch(e) {} })()`, false);
+  let ok = false; for (let i = 0; i < 60; i++) { await sleep(2000); if (await page.eval(`String(!!(window.__rv && window.__rv.lampMounts))`) === 'true') { ok = true; break; } }
+  const fb = await page.eval(`String(((document.getElementById('roomFallback')||{}).innerText||'').slice(0,80) + ' · ' + document.getElementById('stage').className)`);
+  console.log('③-1 방 다시 지음(다시 켜지 않음) —', ok, await page.eval(`String(window.__S().home.room)`), fb);
+  if (!ok) { console.error('⛔ 이사 뒤 방이 안 섰다'); await page.close(); process.exit(5); }
+  await sleep(4000); await clear();
+}
 /* ★ LAMPCLIP=1 — 집게등을 에타제르 맨 윗단에 물린다(house 10-09 · 원룸 등은 바→집게→거치 차례로 켜짐 · 세운 수 2 = 바+집게).
    게임의 등 옮기기 길 그대로: roomView.commitLampAt → setFurniturePlacement(세이브 자리표) → light.clearCache */
 if (process.env.LAMPCLIP === '1') console.log('③-2 집게등 물림 —', JSON.stringify(await J(`(async()=>{ const st=await import('/src/game/state.js'); const S=window.__S(), io=window.__io, rv=window.__rv;
