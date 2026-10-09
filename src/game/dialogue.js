@@ -1503,6 +1503,14 @@ export const SCRIPTS = {
   moveNoVarie: [
     { who: 'moni', face: 'worry', text: '무늬 하나는 들고 가자. 무늬가 없으면 다음 방에서 늘릴 게 없어.' }
   ],
+  /* ★ 2026-10-10 [plan] D27 갈래 둘 — **무늬 모주는 있는데 무늬 삽수가 0** 인 채 이사하려 할 때(사건 `move_no_cutting` · [core] 이사 되묻기 창).
+     까닭([core] 판 · 71ff1a5c 뒤 · 900일): 무늬 삽수를 하나 들고 간 «안내대로» 판은 원룸 ③ 을 10/10 · 이사 뒤 중앙 21일에 끝내고,
+       안 들고 간 판은 2/10(265 · 323일) — 원룸에선 모주 자르기가 «모주에 잎이 하나도 안 남습니다»로 오래 막힌다(막은 말의 69%).
+       D27 의 «무늬 원천 0» 갈래는 무늬 모주가 있으면 안 서서 이 판이 아무 말 없이 갔다.
+     ⚠ «할 수 없는 일을 시키지 않는다» — [core] 는 «오늘 자를 수 있는 무늬 마디가 있을 때»만 낸다(아니면 말 없음). 막지 않는다(사람이 누른다). 수는 안 말한다. */
+  moveNoCutting: [
+    { who: 'moni', face: 'teach', text: '무늬 삽수 하나는 잘라 들고 가자. 원룸에선 모주가 잎을 천천히 내.' }
+  ],
   /* ★★ 2026-10-09 [plan] D31(총괄 · 박사님 «재미있게») — **이사비를 내면 첫 달 월세가 모자란 이사 «전»의 한 줄.** D27 과 같은 결: 막지 않고 말린다.
      지금은 거의 모든 판이 이사 다음 날 0원 밑 → 구호금 50만으로 원룸을 시작한다 — 이사의 «해냈다»가 «구호금»으로 시작했다.
      ⚠ 수는 안 말한다(이사비·월세는 되묻기 창이 말한다). 사건 `move_low_cash` — [core] 가 이사 되묻기 창을 열 때
@@ -2297,7 +2305,7 @@ export const REPEATABLE = new Set(
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
-             'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'hungryTalk', 'hungryTalk2',
+             'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'moveNoCutting', 'hungryTalk', 'hungryTalk2',
              'nudgeRadishOffer', 'nudgeRadishPush', 'statusHarvest10', 'statusHarvest30',
              'nudgeSettleOffer', 'nudgeSettlePush', 'nudgeRecutOffer', 'nudgeRecutPush',
              'statusNeighborAsk', 'statusLandlordPlant',
@@ -2373,6 +2381,8 @@ export const EVENT_SCRIPT = Object.freeze({
   pp_trade_offer:      'ppTradeOffer',
   /* ★ 2026-10-09 [plan] D47 — 가구점 첫 날(§furnitureShopOpen) */
   furniture_shop_open: 'furnitureShopOpen',
+  /* ★ 2026-10-10 [plan] D27 갈래 둘 — 무늬 모주만 있고 무늬 삽수 0 으로 이사하려 할 때(§moveNoCutting) */
+  move_no_cutting:     'moveNoCutting',
   /* ★ 2026-10-10 [plan] D55 — 키운 그루가 칸보다 크게 자람(§cutTooWide) */
   cut_too_wide:        'cutTooWide',
   /* ★ 2026-10-10 [plan] D59 — 식물 가게(§jobStart). 손님 이름이 드는 줄은 기록 줄(core) */
