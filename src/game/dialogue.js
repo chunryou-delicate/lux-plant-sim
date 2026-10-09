@@ -1261,7 +1261,9 @@ export const SCRIPTS = {
   shortMoney: [
     { who: 'moni',   face: 'teach', text: '배울 건 다 배웠어. 남은 건 돈이야.' },
     { who: 'jachwi', face: 'tired', text: '…제일 안 되는 거네.' },
-    { who: 'moni',   text: '이백만 원. 보증금이랑 첫 달 월세랑 이삿짐값.' },
+    /* ★ 2026-10-10 [plan] — 「이백만 원」을 뺐다: 몬이는 수를 안 말하고(규율), 이사비가 판으로 바뀐다(총괄 10-10 · 200·180·170·160만 판).
+       금액은 화면(이사 되묻기 창 · canMoveOut.why «이사 자금이 N원 모자랍니다»)이 규칙에서 말한다 */
+    { who: 'moni',   text: '보증금이랑 첫 달 월세랑 이삿짐값이야.' },
     { who: 'jachwi', face: 'think', text: '한 번에 나가는구나.' },
     { who: 'moni',   text: '한 번만 나가면 돼. 그다음엔 이 방이 아니고.' }
   ],
@@ -1401,7 +1403,7 @@ export const SCRIPTS = {
     { who: 'moni',   text: '그리고 여긴 바깥이 그대로 들어와. 흐린 날도, 계절도.' },
     { who: 'jachwi', face: 'think',   text: '…저 방은 매일 똑같았는데.' },
     { who: 'jachwi', face: 'tired',   text: '…대신 통장이 한 번에 얇아졌고.' },
-    { who: 'moni',   face: 'sad',     text: '응. 이백만 원. 그건 나간 거 맞아.' },
+    { who: 'moni',   face: 'sad',     text: '응. 그건 나간 거 맞아.' },   /* ★ 10-10 [plan] 「이백만 원」 뺌(위 §shortMoney 와 같은 까닭) */
     /* ★ 2026-10-08 [plan] — 「어디에 두느냐로만 나와」는 «새 무늬를 기다리라»로 읽혔다. [growth] 실측: 원룸에서 새 무늬 잎은 중앙값 0장
        (probe_timetable_oneroom · real · 540일). 무늬는 «잘라서 물려받는» 것이다(plan-oneroom-quests-v2 §0). 받는 줄도 짝으로 고쳤다 */
     { who: 'moni',   face: 'teach', text: '그리고 여기서부터 무늬는 아무도 안 줘. 있는 무늬를 잘라 늘리는 거야.' },
@@ -2121,7 +2123,7 @@ export const SCRIPTS = {
        그래서 이 말이 나올 자리는 반드시 생긴다.
      ★ 몬이는 세어 주지만 벌어 주지 않는다(§3 의 규율). 마지막 줄이 그것이다. */
   chatOneroomMoney: [
-    { who: 'jachwi', face: 'tired', text: '이사에 이백만 원이 한 번에 나갔다.' },
+    { who: 'jachwi', face: 'tired', text: '이사에 목돈이 한 번에 나갔다.' },   /* ★ 10-10 [plan] 「이백만 원」 → «목돈»(이사비가 판으로 바뀜 · 금액은 화면이 말함) */
     { who: 'moni',   face: 'calm', text: '통장이랑 방을 바꾼 거야.' },
     { who: 'jachwi', face: 'think', text: '…남는 장사였나.' },
     { who: 'moni',   face: 'calm', text: '그건 몇 달 뒤에 세어 보자. 세는 건 내가 잘하잖아.' }
@@ -2166,7 +2168,7 @@ export const SCRIPTS = {
      정확한 숫자를 대사가 읊으면 값이 조금만 움직여도 곧바로 거짓말이 된다. */
   chatDailySpend: [
     { who: 'jachwi', text: '오늘도 만 육천 원 남짓.' },
-    { who: 'moni',   face: 'worry', text: '하루가 만 육천 원이야. 그렇게 세니까 좀 무섭다.' },
+    { who: 'moni',   face: 'worry', text: '하루가 그만큼씩 나가. 그렇게 세니까 좀 무섭다.' },   /* ★ 10-10 [plan] 몬이는 수를 안 말한다 — 수는 앞 줄(자취생)이 말한다 */
     { who: 'jachwi', face: 'tired', text: '세지 말걸.' }
   ],
   chatMorning: [
