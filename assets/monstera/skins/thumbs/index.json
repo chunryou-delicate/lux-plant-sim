@@ -2,7 +2,7 @@
  "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
  "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
  "tool": "tools/glb_thumb.mjs",
- "updated": "2026-08-22",
+ "updated": "2026-10-09",
  "thumbs": {
   "_gw_standing.glb": {
    "png": "_gw_standing.png",
@@ -16,27 +16,27 @@
   "heart_albo_2672_3_v1.glb": {
    "png": "heart_albo_2672_3_v1.png",
    "m": {
-    "x": 1.7177,
-    "z": 1.9656,
-    "y": 2
+    "x": 1.8184,
+    "z": 2,
+    "y": 1.8523
    },
    "view": "top"
   },
   "heart_albo_2672_3_v2.glb": {
    "png": "heart_albo_2672_3_v2.png",
    "m": {
-    "x": 1.7177,
-    "z": 1.9656,
-    "y": 2
+    "x": 1.8184,
+    "z": 2,
+    "y": 1.8523
    },
    "view": "top"
   },
   "heart_albo_2672_3.glb": {
    "png": "heart_albo_2672_3.png",
    "m": {
-    "x": 1.7177,
-    "z": 1.9656,
-    "y": 2
+    "x": 1.8184,
+    "z": 2,
+    "y": 1.8523
    },
    "view": "top"
   },
@@ -259,27 +259,27 @@
   "mon_green_lemonpatch_v1.glb": {
    "png": "mon_green_lemonpatch_v1.png",
    "m": {
-    "x": 1.7508,
-    "z": 1.6235,
-    "y": 2
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
    },
    "view": "top"
   },
   "mon_green_lemonpatch_v2.glb": {
    "png": "mon_green_lemonpatch_v2.png",
    "m": {
-    "x": 1.7508,
-    "z": 1.6235,
-    "y": 2
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
    },
    "view": "top"
   },
   "mon_green_lemonpatch.glb": {
    "png": "mon_green_lemonpatch.png",
    "m": {
-    "x": 1.7508,
-    "z": 1.6235,
-    "y": 2
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
    },
    "view": "top"
   },
@@ -313,27 +313,27 @@
   "mon_halfmoon_greencream_v1.glb": {
    "png": "mon_halfmoon_greencream_v1.png",
    "m": {
-    "x": 1.885,
-    "z": 1.3661,
-    "y": 2
+    "x": 1.9885,
+    "z": 2,
+    "y": 1.9138
    },
    "view": "top"
   },
   "mon_halfmoon_greencream_v2.glb": {
    "png": "mon_halfmoon_greencream_v2.png",
    "m": {
-    "x": 1.885,
-    "z": 1.3661,
-    "y": 2
+    "x": 1.9885,
+    "z": 2,
+    "y": 1.9138
    },
    "view": "top"
   },
   "mon_halfmoon_greencream.glb": {
    "png": "mon_halfmoon_greencream.png",
    "m": {
-    "x": 1.885,
-    "z": 1.3661,
-    "y": 2
+    "x": 1.9885,
+    "z": 2,
+    "y": 1.9138
    },
    "view": "top"
   },
@@ -394,27 +394,27 @@
   "mon_neon_lime_v1.glb": {
    "png": "mon_neon_lime_v1.png",
    "m": {
-    "x": 1.7915,
-    "z": 1.7955,
-    "y": 2
+    "x": 1.7593,
+    "z": 2,
+    "y": 1.9163
    },
    "view": "top"
   },
   "mon_neon_lime_v2.glb": {
    "png": "mon_neon_lime_v2.png",
    "m": {
-    "x": 1.7915,
-    "z": 1.7955,
-    "y": 2
+    "x": 1.7593,
+    "z": 2,
+    "y": 1.9163
    },
    "view": "top"
   },
   "mon_neon_lime.glb": {
    "png": "mon_neon_lime.png",
    "m": {
-    "x": 1.7915,
-    "z": 1.7955,
-    "y": 2
+    "x": 1.7593,
+    "z": 2,
+    "y": 1.9163
    },
    "view": "top"
   },
@@ -556,54 +556,54 @@
   "mon_star_pinkmint_v1.glb": {
    "png": "mon_star_pinkmint_v1.png",
    "m": {
-    "x": 1.775,
-    "z": 1.6636,
-    "y": 2
+    "x": 1.7593,
+    "z": 2,
+    "y": 1.9163
    },
    "view": "top"
   },
   "mon_star_pinkmint_v2.glb": {
    "png": "mon_star_pinkmint_v2.png",
    "m": {
-    "x": 1.775,
-    "z": 1.6636,
-    "y": 2
+    "x": 1.7593,
+    "z": 2,
+    "y": 1.9163
    },
    "view": "top"
   },
   "mon_star_pinkmint.glb": {
    "png": "mon_star_pinkmint.png",
    "m": {
-    "x": 1.775,
-    "z": 1.6636,
-    "y": 2
+    "x": 1.7593,
+    "z": 2,
+    "y": 1.9163
    },
    "view": "top"
   },
   "mon_variegata_gold_v1.glb": {
    "png": "mon_variegata_gold_v1.png",
    "m": {
-    "x": 1.7476,
-    "z": 1.3645,
-    "y": 2
+    "x": 1.9885,
+    "z": 2,
+    "y": 1.9138
    },
    "view": "top"
   },
   "mon_variegata_gold_v2.glb": {
    "png": "mon_variegata_gold_v2.png",
    "m": {
-    "x": 1.7476,
-    "z": 1.3645,
-    "y": 2
+    "x": 1.9885,
+    "z": 2,
+    "y": 1.9138
    },
    "view": "top"
   },
   "mon_variegata_gold.glb": {
    "png": "mon_variegata_gold.png",
    "m": {
-    "x": 1.7476,
-    "z": 1.3645,
-    "y": 2
+    "x": 1.9885,
+    "z": 2,
+    "y": 1.9138
    },
    "view": "top"
   },
@@ -646,27 +646,27 @@
   "mon_zebra_v1.glb": {
    "png": "mon_zebra_v1.png",
    "m": {
-    "x": 1.9826,
-    "z": 1.6076,
-    "y": 2
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
    },
    "view": "top"
   },
   "mon_zebra_v2.glb": {
    "png": "mon_zebra_v2.png",
    "m": {
-    "x": 1.9826,
-    "z": 1.6076,
-    "y": 2
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
    },
    "view": "top"
   },
   "mon_zebra.glb": {
    "png": "mon_zebra.png",
    "m": {
-    "x": 1.9826,
-    "z": 1.6076,
-    "y": 2
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
    },
    "view": "top"
   },
@@ -709,27 +709,27 @@
   "pothos_cream_marble_v1.glb": {
    "png": "pothos_cream_marble_v1.png",
    "m": {
-    "x": 1.4312,
-    "z": 0.6336,
-    "y": 3.3144
+    "x": 1.7109,
+    "z": 2,
+    "y": 1.574
    },
    "view": "top"
   },
   "pothos_cream_marble_v2.glb": {
    "png": "pothos_cream_marble_v2.png",
    "m": {
-    "x": 1.4312,
-    "z": 0.6336,
-    "y": 3.3144
+    "x": 1.7109,
+    "z": 2,
+    "y": 1.574
    },
    "view": "top"
   },
   "pothos_cream_marble.glb": {
    "png": "pothos_cream_marble.png",
    "m": {
-    "x": 1.4312,
-    "z": 0.6336,
-    "y": 3.3144
+    "x": 1.7109,
+    "z": 2,
+    "y": 1.574
    },
    "view": "top"
   },
@@ -817,27 +817,27 @@
   "pothos_mint_dot_34_v1.glb": {
    "png": "pothos_mint_dot_34_v1.png",
    "m": {
-    "x": 2,
-    "z": 2.0036,
-    "y": 3.2797
+    "x": 1.7109,
+    "z": 2,
+    "y": 1.574
    },
    "view": "top"
   },
   "pothos_mint_dot_34_v2.glb": {
    "png": "pothos_mint_dot_34_v2.png",
    "m": {
-    "x": 2,
-    "z": 2.0036,
-    "y": 3.2797
+    "x": 1.7109,
+    "z": 2,
+    "y": 1.574
    },
    "view": "top"
   },
   "pothos_mint_dot_34.glb": {
    "png": "pothos_mint_dot_34.png",
    "m": {
-    "x": 2,
-    "z": 2.0036,
-    "y": 3.2797
+    "x": 1.7109,
+    "z": 2,
+    "y": 1.574
    },
    "view": "top"
   },

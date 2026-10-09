@@ -138,7 +138,8 @@
 | 크기 | 텍스처 1024 JPEG 로 → GLB 270~450KB(옛 100~470KB) |
 | 세 판 | 쨍(_v1) = `recolor_calm.redo_vivid` · 차분(_v2) = `recolor_calm.redo`(PICK 판) — 옛 가족과 같은 규칙 · `img/leaf1009/meshy9_final27.png` |
 | 확대창 | 저장소 파일을 안 바꾸고 화면 안에서만 «새 GLB + 캔버스 조정값»(`_shot_matgrid OVR`) — 같은 빌드 전후 `meshy9_zoom_mature.png` · `meshy9_zoom_mid.png` |
-| 들이기 | 조정표 12줄(9가족 ← 캔버스 · 중간 잎집 3)을 growth 에 청 → 그 커밋 직후 GLB 27개를 같은 이름으로 갈아 넣는다 |
+| 들이기 | ✔ growth a717db49(조정표 12줄) 직후 GLB 27개를 같은 이름으로 갈아 넣음 · 썸네일·색인·manifest 27줄 · 받은 원본은 `_incoming1009/<이름>_new.glb` 로 남김 |
+| 들인 뒤 | 실제 파일·실제 조정표로 확대창(OVR 없이) = 화면 안 시험 판과 **0.00%** · 자 살아 있음 확인(옛 판 ↔ 실제 9~15% 다름) |
 
 ### 새 식물 원화 1차(nano-banana-pro 10장 · 90)
 `img/leaf1009/newplant_2d_round1.png` — 모양: PP1·PP2·PP3·AL1·AL2 · 무늬 견본만: PP4·PP5·AL4·AL5 · 다시 뽑기: AL3(갈라짐 · 견본 AL2).

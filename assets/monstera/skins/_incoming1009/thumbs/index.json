@@ -1,0 +1,89 @@
+{
+ "note": "tools/glb_thumb.mjs 가 만든다. 손으로 고치지 말 것. GLB 이름 -> 썸네일 이름 · GLB 자체 크기",
+ "sizeMeans": "GLB 원본 바운딩박스. 실제 미터 = 이 값 × manifest.scale_to_real",
+ "tool": "tools/glb_thumb.mjs",
+ "updated": "2026-10-09",
+ "thumbs": {
+  "heart_albo_2672_3_new.glb": {
+   "png": "heart_albo_2672_3_new.png",
+   "m": {
+    "x": 1.8184,
+    "z": 2,
+    "y": 1.8523
+   },
+   "view": "top"
+  },
+  "mon_green_lemonpatch_new.glb": {
+   "png": "mon_green_lemonpatch_new.png",
+   "m": {
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
+   },
+   "view": "top"
+  },
+  "mon_halfmoon_greencream_new.glb": {
+   "png": "mon_halfmoon_greencream_new.png",
+   "m": {
+    "x": 1.9885,
+    "z": 2,
+    "y": 1.9138
+   },
+   "view": "top"
+  },
+  "mon_neon_lime_new.glb": {
+   "png": "mon_neon_lime_new.png",
+   "m": {
+    "x": 1.7593,
+    "z": 2,
+    "y": 1.9163
+   },
+   "view": "top"
+  },
+  "mon_star_pinkmint_new.glb": {
+   "png": "mon_star_pinkmint_new.png",
+   "m": {
+    "x": 1.7593,
+    "z": 2,
+    "y": 1.9163
+   },
+   "view": "top"
+  },
+  "mon_variegata_gold_new.glb": {
+   "png": "mon_variegata_gold_new.png",
+   "m": {
+    "x": 1.9885,
+    "z": 2,
+    "y": 1.9138
+   },
+   "view": "top"
+  },
+  "mon_zebra_new.glb": {
+   "png": "mon_zebra_new.png",
+   "m": {
+    "x": 1.6303,
+    "z": 2,
+    "y": 1.9889
+   },
+   "view": "top"
+  },
+  "pothos_cream_marble_new.glb": {
+   "png": "pothos_cream_marble_new.png",
+   "m": {
+    "x": 1.7109,
+    "z": 2,
+    "y": 1.574
+   },
+   "view": "top"
+  },
+  "pothos_mint_dot_34_new.glb": {
+   "png": "pothos_mint_dot_34_new.png",
+   "m": {
+    "x": 1.7109,
+    "z": 2,
+    "y": 1.574
+   },
+   "view": "top"
+  }
+ }
+}
