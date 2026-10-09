@@ -54,7 +54,7 @@ import { moveIntoOneroom } from '../src/game/oneroom.js';
 import { endingRulesFrom, endingProgress, finishEnding } from '../src/game/ending.js';
 import * as JSHOP from '../src/game/job_shop.js';   /* ★ D59 «가게 사람» */
 import { moveIntoOwnedHome } from '../src/game/oneroom.js';
-import { creditShopOrder } from '../src/game/shop.js';
+import { creditShopOrder, buyPriceOf } from '../src/game/shop.js';
 import { stepQuests, questView } from '../src/game/quest.js';
 import { nudgeWaiting, noteQuestWaits, nudgeWaitReason } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
@@ -99,6 +99,10 @@ export const PERSONAS = {
        잰다: 주문 맞춤 몫(납품 ÷ (납품 + 기한 지남) · ⚖ 7할 이상) · 단골 10명(간판)까지 날 · 못 맞춘 주문의 kind(«할 수 없는 주문»이 샜나) */
   shop:    { ko: '가게 사람(D41 안내대로 → 500만 엔딩 → 식물 가게 1년)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
              shop: true, shopDays: 365 },
+  /* ★ 10-10 총괄 — «따라 하는 가게 사람»: 몬이 말대로 구근 하나 · AL 주문이 붙으면 구근 하나 더(지갑 > 구근값 + 관리비 한 달) ·
+       교환이 오면 받아서 핑크프린세스 하나를 남긴다(가게 전엔 PP 를 안 자르고 안 판다) */
+  shopF:   { ko: '따라 하는 가게 사람(몬이 말 → 구근 · AL 주문 붙으면 하나 더 · 교환 PP 하나 남김)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
+             shop: true, shopDays: 365, shopFollow: true },
   /* 가게 사람 + 새 두 종(guide45 손) — PP·AL·구근 주문이 열리는지 */
   shop45:  { ko: '가게 사람 + 새 두 종', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
              shop: true, shopDays: 365, species: true },
@@ -338,14 +342,14 @@ export async function play(name, seed, opt = {}) {
       /* ── ★ D45 새 두 종(guide45) ── */
       /* ★ 10-10 총괄 (가) — 가게 첫날 몬이가 «구근 하나 들여 놓자»(shop_no_species)라 하면 «가게 사람»도 그 말을 따른다:
            구근을 사서 심고 새 종 손질(찾은 구근 심기·놓기)을 한다. PP 교환 대답은 새 두 종 사람(P.species)만 */
-      if ((P.species || (out.shop && out.shop.followNoSpecies)) && ts.movedOut) {
+      if ((P.species || P.shopFollow || (out.shop && out.shop.followNoSpecies)) && ts.movedOut) {
         const o = out.sp = out.sp || { trade: null, cormBuy: null, cuts: 0, sold: 0, soldWon: 0, found: 0, sprout: 0, bagDays: 0 };
         /* 교환 — 남긴 삽수 말고 내줄 것이 생길 때까지 물음을 «들고 있다»(거절하지 않는다 · 카드를 닫아 두는 사람) */
-        if (P.species && SPM.ppTradePending(S)) {
+        if ((P.species || P.shopFollow) && SPM.ppTradePending(S)) {
           const cands = SPM.ppTradeCandidates(S).filter(c => c.id !== out.keeperId);
           if (cands.length) { try { SPM.answerPPTrade(S, true, { cuttingId: cands[0].id }); o.trade = S.day; } catch { } }
         }
-        if (o.cormBuy == null && SPM.speciesShopOpen(S, 'al_corm')) { try { ord('al_corm', 1); o.cormBuy = S.day; } catch { } }
+        if (o.cormBuy == null && (P.species || (out.shop && out.shop.followNoSpecies)) && SPM.speciesShopOpen(S, 'al_corm')) { try { ord('al_corm', 1); o.cormBuy = S.day; } catch { } }
         if (stockOf(S, 'al_corm') > 0) { try { SPM.unpackSpeciesStock(S, 'al_corm', stockOf, useStock); } catch { } }
         /* ★ D56 — 찾은 구근: 빈 자리가 있으면 심고(놓기는 아래) · 없으면 상점에 되판다(한 알 1만 · 가방이 구근으로 안 막히게) */
         for (const c of [...((S.species && S.species.corms) || [])]) {
@@ -356,6 +360,7 @@ export async function play(name, seed, opt = {}) {
           else { try { const r = SPM.takeCormForSale(S, c.id); led('other', () => creditSpeciesSale(S, r.won)); o.cormSold = (o.cormSold || 0) + 1; } catch { } }
         }
         for (const q of SPM.speciesPotsOf(S).filter(q => q.species === 'pink_princess' && q.origin !== 'cut' && SPM.speciesPlaced(q))) {
+          if (!P.species && !out.shop) break;   /* 따라 하는 사람은 가게 전엔 PP 를 안 자른다(하나 남김) */
           if (q.plant.leaves.length < 4) continue;
           const nodes = SPM.ppCuttableNodes(q).filter(n => n.grade === 'marble' || n.grade === 'heavy');
           const n = nodes[nodes.length - 1]; if (!n) continue;
@@ -599,6 +604,9 @@ export async function play(name, seed, opt = {}) {
             console.error('[al 기한]', S.day, 'opened', od && od.day, od && od.season, 'lamps', S.lamps.count, JSON.stringify(SPM.speciesPotsOf(S).filter(q => q.species === 'alocasia_frydek').map(q => ({ id: q.id, o: q.origin, ph: q.plant.phase, L: (q.plant.leaves || []).length, slot: q.slotId,
               dli: q.slotId ? +(() => { try { return light.dliOfSlot(q.slotId, lightOptsOf(S, sky)); } catch { return -1; } })().toFixed(2) : null })))); } }
         if (e && e.id === 'order_new' && e.kind === 'al') { let sea = null; try { sea = light.skyFor(S.day, S.sim).season; } catch { } (out.shop.alOpen = out.shop.alOpen || {})[e.orderId] = { day: S.day, season: sea }; }
+        /* 따라 하는 사람 — AL 주문이 붙으면 구근 하나 더(지갑 > 구근값 + 관리비 한 달) */
+        if (P.shopFollow && e && e.id === 'order_new' && (e.kind === 'al' || e.kind === 'al_corm') && SPM.speciesShopOpen(S, 'al_corm') &&
+            ts.cashWon > buyPriceOf('al_corm') + 80_000) { try { ord('al_corm', 1); out.shop.cormMore = (out.shop.cormMore || 0) + 1; } catch { } }
         if (e && e.id === 'order_new') { const k = `${e.kind}/${e.tier}`; (out.shop.newKinds = out.shop.newKinds || {})[k] = (out.shop.newKinds[k] || 0) + 1; }
       }
       const J = JSHOP.jobShopOf(S);
@@ -752,7 +760,8 @@ for (const name of NAMES) {
       console.log(`    지갑 — 연 날 중앙 ${won(med(sh.map(r => r.shop.cashAtOpen)) ?? 0)} · 1년 뒤 중앙 ${won(med(sh.map(r => r.shop.cashEnd).filter(Number.isFinite)) ?? 0)} · ` +
                   `연 뒤 첫 0원 ${sh.filter(r => r.shop.brokeOn != null).length}/${sh.length}(중앙 ${med(sh.map(r => r.shop.brokeOn).filter(v => v != null)) ?? '—'}일) · ` +
                   `연 날 모주 자리 DLI 중앙 ${med(ao.map(a => a.potDli).filter(Number.isFinite)) ?? '—'} · 산 삽수 중앙 ${med(ao.map(a => a.cuts).filter(Number.isFinite)) ?? '—'} · ` +
-                  `«새 종 0» 권함 ${sh.filter(r => r.shop.noSpecies).length}/${sh.length} · 따라 구근 산 판 ${sh.filter(r => r.shop.noSpecies && r.sp && r.sp.cormBuy != null && r.sp.cormBuy >= r.shop.openDay).length}`);
+                  `«새 종 0» 권함 ${sh.filter(r => r.shop.noSpecies).length}/${sh.length} · 따라 구근 산 판 ${sh.filter(r => r.shop.noSpecies && r.sp && r.sp.cormBuy != null && r.sp.cormBuy >= r.shop.openDay).length}` +
+                  ` · AL 주문 따라 더 산 구근 판당 ${(sh.reduce((a, r) => a + (r.shop.cormMore || 0), 0) / Math.max(1, sh.length)).toFixed(1)} · 교환 받은 판 ${sh.filter(r => r.sp && r.sp.trade != null).length}`);
       console.log(`    기한 지남 갈래(판 합) — ${Object.entries(ek).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}`);
       console.log(`    새 주문 갈래(판 합 · 첫 주문 빼고) — ${Object.entries(nk).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(' · ') || '—'}`);
     } }
