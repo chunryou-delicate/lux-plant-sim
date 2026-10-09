@@ -15892,7 +15892,7 @@ async function startPhonePlaceFurnitureBag(uid, hangAt = null) {
      ★ [House] 실측으로 그 31초 중 **조도 몫은 5.74 ms**(0.02%)였다 — 나머지는 전부 화면.
        ⇒ 그래서 옮기기가 쓰는 그 가벼운 길(`rebuildRoom({prebuilt})`)로 창구를 냈다. */
   try {
-    if (roomView && roomView.refreshFurniture) await roomView.refreshFurniture();
+    if (roomView && roomView.refreshFurniture) { await roomView.refreshFurniture(); try { syncRoom(); } catch (e) { console.warn('[가구] 다시 짓고 맞추기 —', e && e.message); } }   /* ★ 10-10 한 판 걸음 — 가볍게 다시 지으면 몬스테라·등 켜짐 수가 다음 날까지 빠져 있었다 → 지금 상태를 다시 입힌다(§syncRoom) */
     else await remountRoomView();                 /* 옛 방뷰라 창구가 없으면 예전 그대로 */
   } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
   return { ok: true, uid, preset: row.preset };
@@ -16011,7 +16011,7 @@ async function startPhonePlaceFurnitureStock(itemId, hangAt = null) {
   try { sfx.thud(); } catch { }
   draw();
   try {
-    if (roomView && roomView.refreshFurniture) await roomView.refreshFurniture();
+    if (roomView && roomView.refreshFurniture) { await roomView.refreshFurniture(); try { syncRoom(); } catch (e) { console.warn('[가구] 다시 짓고 맞추기 —', e && e.message); } }   /* ★ 10-10 한 판 걸음 — 가볍게 다시 지으면 몬스테라·등 켜짐 수가 다음 날까지 빠져 있었다 → 지금 상태를 다시 입힌다(§syncRoom) */
     else await remountRoomView();
   } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
   return { ok: true, uid: row.uid, preset: row.preset };
@@ -17259,7 +17259,7 @@ function bindPicked() {
         /* 방은 «가볍게» 다시 짓는다 — 놓기와 같은 창구다(§refreshFurniture · 실측 273 ms) */
         (async () => {
           try {
-            if (roomView && roomView.refreshFurniture) await roomView.refreshFurniture();
+            if (roomView && roomView.refreshFurniture) { await roomView.refreshFurniture(); try { syncRoom(); } catch (e) { console.warn('[가구] 다시 짓고 맞추기 —', e && e.message); } }   /* ★ 10-10 한 판 걸음 — 가볍게 다시 지으면 몬스테라·등 켜짐 수가 다음 날까지 빠져 있었다 → 지금 상태를 다시 입힌다(§syncRoom) */
             else await remountRoomView();
           } catch (e) { console.warn('[가구] 방 다시 짓기 —', e && e.message); }
           try { fillSlots(); } catch (e) { console.warn('[가구] 자리 다시 채우기 —', e && e.message); }

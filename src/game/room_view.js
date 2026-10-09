@@ -3001,6 +3001,17 @@ export async function createRoomView(canvas, opts = {}) {
   function clearPlants() {
     for (const id of [...plants.keys()]) removePlant(id);
   }
+  /* ★ 2026-10-10 한 판 걸음(총괄 물음 ①) — 가구로 방을 «가볍게» 다시 지은 뒤(rebuildRoom → assemble) 몬스테라 그루가
+       기록(plants)에는 있는데 장면(houseGroup)에서 떨어진 채 남았다(비동기 조립 사이 assemble 이 houseGroup 을 비움).
+       그 뒤 «같은 날이면 옮기기만» 갈래는 다시 붙이지 않아 다음에 다시 지을 때까지 안 보였다(투룸 가게 · 사진·진단으로 잼).
+       ⇒ 옮기기만 하는 두 갈래(setPlant · setPlantAt)가 붙어 있는지 보고, 떨어졌으면 다시 붙인다 */
+  function reattachPlant(g) {
+    if (!g || g.parent === houseGroup) return false;
+    if (g.parent) g.parent.remove(g);
+    houseGroup.add(g);
+    needsRender = true;
+    return true;
+  }
 
   /* ── 화분을 '자리'가 아니라 '개체'로 찾는다 ──────────────────────────────
      자유 좌표 배치가 들어오면서 한 화분이 열쇠를 갈아탈 수 있게 됐다
@@ -3129,6 +3140,12 @@ export async function createRoomView(canvas, opts = {}) {
      조용히 0 으로 메꾸면 화분이 방 반대편 바닥으로 순간이동한다.
      ⚠ 3cm 문턱 아래로는 한 톨도 안 움직인다. 정상 배치는 gap 이 정확히 0 이다. */
   const POT_DROP_EPS = 0.03;
+  /* ★ 2026-10-10 한 판 걸음(총괄 물음 ①) — 광선이 «면이 아니다»로 건너뛸 재질인가. 유리·그림자 전용(colorWrite 끔 · 반투명)만 뺀다.
+       ⚠ 가구 옷(furniture_dress)의 «대리»(재질 visible:false · 옛 상자)는 colorWrite 와 상관없이 늘 면이다 — 옷 설계가 «대리가 광선을 받는다»이고,
+         숨김 재질 한 벌(hideMat)을 대리들이 같이 써서, 벽 컷어웨이(_stub)가 그 벽 문 대리의 colorWrite 를 끄면 가구 대리까지 같이 꺼졌다.
+         그러면 진열대 위를 뚫고 바닥에 닿아 그루가 높이 0(진열대 속)에 서고 · 눌러 놓기·윗면 높이도 같이 틀렸다(투룸 가게 · 사진으로 잼).
+         supportY · surfaceAt · surfaceTopAt 세 곳이 이 한 판정을 쓴다 */
+  const rayIgnores = m => !!(m && m.visible !== false && (m.colorWrite === false || (m.transparent && m.opacity < 0.95)));
   const _dropRay = new THREE.Raycaster();
   function supportY(g, y, under = null) {
     if (!built || !built.room) return y;
@@ -3141,7 +3158,7 @@ export async function createRoomView(canvas, opts = {}) {
     for (const h of hits) {
       if (!h.object.isMesh || !h.object.visible) continue;
       const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
-      if (m && (m.colorWrite === false || (m.transparent && m.opacity < 0.95))) continue;  // 유리·그림자전용
+      if (rayIgnores(m)) continue;  // 유리·그림자전용(가구 옷 대리는 면 — §rayIgnores)
       top = h.point.y; break;
     }
     if (top == null) return y;                       // 받쳐 주는 게 없다 — 건드리지 않는다
@@ -3338,6 +3355,7 @@ export async function createRoomView(canvas, opts = {}) {
     const cur = plants.get(slotId);
     const sh = sillWallShift(s.x, s.z, slotId, kind);      /* D23 — 벽에 붙은 창턱이면 그림만 방 쪽 · 굴광성 0.25 */
     if (cur && !needsRebuild(cur, spec, days) && (cur.photo ?? PHOTO_BASE) === photoOf(sh)) {
+      reattachPlant(cur.group);   /* ★ 10-10 — 기록만 남고 장면에서 떨어진 그루는 다시 붙인다(§reattachPlant) */
       applyLook(cur.group, spec);
       cur.spec = { ...spec };
       cur.wantDays = days;
@@ -3442,6 +3460,7 @@ export async function createRoomView(canvas, opts = {}) {
     const sh = sillWallShift(A.x, A.z, A.onUid, kind);     /* D23 — 벽에 붙은 창턱이면 그림만 방 쪽 · 굴광성 0.25 */
     const drawAt = { x: A.x + (sh ? sh.dx : 0), y: A.y, z: A.z + (sh ? sh.dz : 0) };
     if (prev && !needsRebuild(prev, { ...spec, kind }, days) && (prev.photo ?? PHOTO_BASE) === photoOf(sh)) {
+      reattachPlant(prev.group);   /* ★ 10-10 — 기록만 남고 장면에서 떨어진 그루는 다시 붙인다(§reattachPlant) */
       const old = keyOfPlant(prev);
       applyLook(prev.group, { ...spec, kind });
       prev.spec = { ...spec, kind };
@@ -4558,7 +4577,7 @@ export async function createRoomView(canvas, opts = {}) {
     const hits = ray.intersectObject(built.room, true);
     const usable = h => h.face && h.object.isMesh && !hiddenInScene(h.object) && (() => {
       const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
-      return !(m && (m.colorWrite === false || (m.transparent && m.opacity < 0.95)));  // 유리·그림자전용
+      return !rayIgnores(m);  // 유리·그림자전용(가구 옷 대리는 면 — §rayIgnores)
     })();
     const list = [];
     for (let i = 0; i < hits.length && list.length < 12; i++) if (usable(hits[i])) list.push(hits[i]);
@@ -6844,7 +6863,7 @@ export async function createRoomView(canvas, opts = {}) {
       if (h.object.userData && h.object.userData.isPreview) continue;   // 유령은 면이 아니다
       if (hiddenInScene(h.object)) continue;
       const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
-      if (m && (m.colorWrite === false || (m.transparent && m.opacity < 0.95))) continue;
+      if (rayIgnores(m)) continue;   // 가구 옷 대리는 면(§rayIgnores)
       if (faceUpY(h) <= SURF_UP_MIN) continue;
       const own = ownerOf(h.object);
       if (!own) continue;
