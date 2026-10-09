@@ -7436,7 +7436,7 @@ function drawCuttings() {
           ? (METHODS[c.method].rootDays + '일짜리 · ' + v.days + '일째')
           : v.statusKo)
          /* ★ 2026-10-08 — 가방 속 삽수는 하루가 안 간다(propagation §stepCuttings) — 왜 그대로인지 그 줄에서 말한다 */
-         + ((c.method && !c.at && !c.slotId) ? ' · 가방에선 멈춰 있습니다 — 방에 놓아야 자랍니다' : ''));
+         + ((c.method && !c.at && !c.slotId) ? ' · 가방에선 멈춰 있습니다 — 방에 놓아야 날이 갑니다' : ''));
     mine.push('<div class="cutRow' + (dying || (lst && lst.status === 'contacted') ? ' warn' : '') +
       '"><div class="nm">' +
       v.containerKo + ' · 잎 ' + v.leaves + '장' + (v.variegated ? ' · 무늬' : '') +
