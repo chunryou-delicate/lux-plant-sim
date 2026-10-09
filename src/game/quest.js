@@ -833,6 +833,13 @@ const SLOW_QUESTS = Object.freeze([
    ⚠ 체력 보상이 없다(stamina.json quests 표에 없음) — 그래서 다섯 다 `reward` 를 갖는다.
    ⚠ 「그루째 판다」로 온 판(그루도 무늬 삽수도 없음)은 ③에서 막힌다 — 갈래 명세 §3 의 열린 물음이다. */
 const ONEROOM_QUESTS = Object.freeze([
+  /* ⛔ 「등 자리에 불을 켠다」 줄은 «안 둔다»(2026-10-07 · 넣었다가 뺐다).
+     까닭 — 원룸 창턱은 여름엔 이미 «밝음»이라([growth] 브리핑) 이사한 날 등이 «꼭» 필요하지 않다.
+     억지로 켜게 하면 「겪지 않은 어려움은 못 가르친다」(§2.9 ㊾)에 걸리고, 원룸 잡담(chatOneroomLamp 「안 켜도 돼」)과도 어긋난다.
+     원룸에서 등은 «길»이 아니라 «속도»다(plan-oneroom-first-scene ⓒ⑤ · story_arc §4-1). 겨울에 창턱이 모자라는 날
+     등이 말할 자리는 사건·잡담이다 — 그 말은 ③ 의 why 에 한 줄로 둔다. 등 자리 둘(D6-가)은 그대로 쓰인다. */
+  /* ★★ 2026-10-09 [plan] D41 차례 — 짐 풀기 → 뿌리내리기 → ③ 흙에 옮겨 키우기 → 다시 자르기 → 집 자금 · (곁줄) 팔기.
+     배열 차례가 곧 «지금 할 일» 칩 차례다 — 원룸에서 칩이 먼저 «키워서 늘리기»를 가리키게. */
   Object.freeze({
     id: 'oneroom_unpack',
     room: 'oneroom',
@@ -845,11 +852,6 @@ const ONEROOM_QUESTS = Object.freeze([
     /* bagPlants — 가방에 든 그루·삽수·시루 수(가구는 안 센다 · 원룸 첫 장면의 «끝»과 같은 말) */
     done:  s => yes(s.movedOut) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
   }),
-  /* ⛔ 「등 자리에 불을 켠다」 줄은 «안 둔다»(2026-10-07 · 넣었다가 뺐다).
-     까닭 — 원룸 창턱은 여름엔 이미 «밝음»이라([growth] 브리핑) 이사한 날 등이 «꼭» 필요하지 않다.
-     억지로 켜게 하면 「겪지 않은 어려움은 못 가르친다」(§2.9 ㊾)에 걸리고, 원룸 잡담(chatOneroomLamp 「안 켜도 돼」)과도 어긋난다.
-     원룸에서 등은 «길»이 아니라 «속도»다(plan-oneroom-first-scene ⓒ⑤ · story_arc §4-1). 겨울에 창턱이 모자라는 날
-     등이 말할 자리는 사건·잡담이다 — 그 말은 ③ 의 why 에 한 줄로 둔다. 등 자리 둘(D6-가)은 그대로 쓰인다. */
   Object.freeze({
     id: 'oneroom_root_bright',
     room: 'oneroom',
@@ -874,6 +876,58 @@ const ONEROOM_QUESTS = Object.freeze([
                                           Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
   }),
   Object.freeze({
+    id: 'oneroom_settle_cutting',
+    room: 'oneroom',
+    ko: '한 그루가 둘이 된다',
+    reward: '자를 수 있는 그루가 하나 더 생깁니다',
+    teaches: ['늘리는 길은 자르기다', '혹이 나면 흙으로 — 자리를 잡으면 그루다'],
+    why: '뿌리낸 무늬 삽수에 혹이 나면 흙에 옮겨 심습니다. 자리를 잡으면 그 그루에서 또 자를 수 있습니다.',
+    /* ★ 2026-10-09 [plan] D41 — 뿌리낸 무늬 삽수를 다 판 사람에겐 «하나는 키우라»가 할 일이다(옮길 것이 없으니) */
+    todo: (q, s) => arr(s && s.cuttings).some(c => c && c.varieFromCut && (c.status === 'rooted' || c.status === 'node'))
+      ? '무늬 삽수에 혹이 나면 흙에 옮겨 심으세요' : '무늬 삽수 하나는 팔지 말고 키우세요',
+    after: 'oneroom_root_bright',
+    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
+    done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
+                arr(s.cuttings).some(c => c && c.varieFromCut && c.status === 'established' &&
+                                          Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
+  }),
+  /* ★★ 2026-10-09 [plan] D41(총괄 · 값 0) — **원룸의 안내 줄기는 «키워서 늘리기»다.** 흙에 자리 잡은 삽수(③)도 그루다 —
+     그 그루에서 무늬 마디를 다시 잘라(삽수 [병에]·[흙에] · core 4e70d1e9) 뿌리내리면 무늬 그루가 하나씩 는다. «내 화분대가 커지는 맛».
+     완료 = 삽수에서 자른 삽수(gen ≥ 2)가 하나라도 있음. ⚠ 칸 cuttings[].gen 은 [core] 스냅샷 — 없으면 이 줄은 «안 열린다»(칩을 붙잡지 않게). */
+  Object.freeze({
+    id: 'oneroom_recut',
+    room: 'oneroom',
+    ko: '키운 그루에서 다시 자른다',
+    reward: '무늬 그루가 하나 더 늡니다',
+    teaches: ['키운 그루가 늘수록 무늬가 는다', '팔지 않고 키운 것이 밭이 된다'],
+    why: '흙에 자리 잡은 삽수도 그루입니다. 그 그루에서 무늬 마디를 잘라 다시 뿌리내리면 무늬 그루가 하나씩 늘어납니다.',
+    todo: () => '키운 삽수에서 무늬 마디를 잘라 보세요',
+    after: 'oneroom_settle_cutting',
+    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_settle_cutting')) &&
+                       arr(s.cuttings).some(c => c && Number.isFinite(c.gen)),
+    done:  s => yes(s.movedOut) && arr(s.cuttings).some(c => c && Number.isFinite(c.gen) && c.gen >= 2)
+  }),
+  Object.freeze({
+    id: 'oneroom_home_fund',
+    room: 'oneroom',
+    ko: '내 집 자금을 모은다',
+    reward: '내 집으로 갑니다',
+    teaches: ['무늬를 늘려 팔면 집이 된다'],
+    why: '무늬 삽수와 그루를 내놓아 팔면 그 돈이 내 집 자금이 됩니다.',
+    /* ★ 수는 박지 않는다 — 목표 금액은 ending.js ENDING_RULES.targetWon(정본 · 아직 null · D9 로 잰다) */
+    todo: (q, s) => (s && Number.isFinite(s.targetWon) && s.targetWon > 0)
+      ? `내 집 자금 ${s.targetWon.toLocaleString('ko-KR')}원을 모으세요` : '내 집 자금을 모으세요',
+    /* ★ 2026-10-09 [plan] D41 — 팔기(곁줄)에 묶지 않는다. «뿌리내리기»(②) 뒤면 연다 — 엔딩 목표는 늘 보여야 한다 */
+    after: 'oneroom_root_bright',
+    /* ★ 목표 금액이 «없으면»(null) 안 연다 — 엔딩 화면이 숨는 것과 같은 말이다(D9) */
+    opens: (s, ctx) => yes(s.movedOut) && Number.isFinite(s.targetWon) && s.targetWon > 0 &&
+                       !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
+    done:  s => yes(s.movedOut) && Number.isFinite(s.targetWon) && s.targetWon > 0 &&
+                Number.isFinite(s.cashWon) && s.cashWon >= s.targetWon
+  }),
+  /* ★ 2026-10-09 [plan] D41 — 팔기는 «곁줄»(배열 맨 뒤). 원룸 안내의 줄기는 ③ 키우기 → 다시 자르기이고, 판매는 그 곁에서 언제든 한다.
+     ⚠ 열림은 그대로 ② 뒤(바로 파는 사람의 사슬이 막히지 않게 · 10-09 오전 결정) — 차례(칩)만 뒤로 갔다. */
+  Object.freeze({
     id: 'oneroom_sell',
     room: 'oneroom',
     ko: '이 방의 무늬를 판다',
@@ -888,39 +942,6 @@ const ONEROOM_QUESTS = Object.freeze([
     opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
     /* varieSalesSinceMove — 이사 «뒤»에 판 무늬 삽수·그루 수(ts.varieSale.count − 이사 날의 값) */
     done:  s => yes(s.movedOut) && Number.isFinite(s.varieSalesSinceMove) && s.varieSalesSinceMove >= 1
-  }),
-  Object.freeze({
-    id: 'oneroom_home_fund',
-    room: 'oneroom',
-    ko: '내 집 자금을 모은다',
-    reward: '내 집으로 갑니다',
-    teaches: ['무늬를 늘려 팔면 집이 된다'],
-    why: '무늬 삽수와 그루를 내놓아 팔면 그 돈이 내 집 자금이 됩니다.',
-    /* ★ 수는 박지 않는다 — 목표 금액은 ending.js ENDING_RULES.targetWon(정본 · 아직 null · D9 로 잰다) */
-    todo: (q, s) => (s && Number.isFinite(s.targetWon) && s.targetWon > 0)
-      ? `내 집 자금 ${s.targetWon.toLocaleString('ko-KR')}원을 모으세요` : '내 집 자금을 모으세요',
-    after: 'oneroom_sell',
-    /* ★ 목표 금액이 «없으면»(null) 안 연다 — 엔딩 화면이 숨는 것과 같은 말이다(D9) */
-    opens: (s, ctx) => yes(s.movedOut) && Number.isFinite(s.targetWon) && s.targetWon > 0 &&
-                       !!(ctx && ctx.doneIds.includes('oneroom_sell')),
-    done:  s => yes(s.movedOut) && Number.isFinite(s.targetWon) && s.targetWon > 0 &&
-                Number.isFinite(s.cashWon) && s.cashWon >= s.targetWon
-  }),
-  /* ★ 2026-10-09 [plan] — ③ «한 그루가 둘이 된다»는 배열 «맨 뒤»(곁줄). 배열 차례가 곧 «지금 할 일» 칩 차례라, 앞에 두면 뿌리낸 삽수를
-     바로 파는 사람의 칩이 ④·⑤(집 자금 — 엔딩 목표) 대신 13달 내내 ③ 에 머문다. 뜻·조건은 그대로 — 늘리기는 배움으로 남는다(박사님 10-09 «늘리기 그대로»). */
-  Object.freeze({
-    id: 'oneroom_settle_cutting',
-    room: 'oneroom',
-    ko: '한 그루가 둘이 된다',
-    reward: '자를 수 있는 그루가 하나 더 생깁니다',
-    teaches: ['늘리는 길은 자르기다', '혹이 나면 흙으로 — 자리를 잡으면 그루다'],
-    why: '뿌리낸 무늬 삽수에 혹이 나면 흙에 옮겨 심습니다. 자리를 잡으면 그 그루에서 또 자를 수 있습니다.',
-    todo: () => '무늬 삽수에 혹이 나면 흙에 옮겨 심으세요',
-    after: 'oneroom_root_bright',
-    opens: (s, ctx) => yes(s.movedOut) && !!(ctx && ctx.doneIds.includes('oneroom_root_bright')),
-    done:  s => yes(s.movedOut) && Number.isFinite(s.movedInOnDay) &&
-                arr(s.cuttings).some(c => c && c.varieFromCut && c.status === 'established' &&
-                                          Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= s.movedInOnDay)
   })
 ]);
 

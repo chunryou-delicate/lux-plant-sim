@@ -1149,8 +1149,9 @@ export const SCRIPTS = {
   questDoneOneroomRootBright: [
     { who: 'moni',   face: 'proud',   text: '뿌리냈네. 밝은 데서 낸 것일수록 값이 돼.' }
   ],
+  /* ★ 2026-10-09 [plan] D41 — 원룸 줄기는 «키워서 늘리기». 첫 줄이 «하나는 팔지 말고 키우라»를 먼저 말한다 */
   questOneroomSettleCutting: [
-    { who: 'moni',   face: 'teach',   text: '이제는 기다리는 거야. 혹이 나면 흙으로 옮겨.' },
+    { who: 'moni',   face: 'teach',   text: '하나는 팔지 말고 키워 봐. 혹이 나면 흙으로 옮겨.' },
     { who: 'jachwi', face: 'curious', text: '혹?' },
     { who: 'moni',   face: 'teach',   text: '뿌리 끝에 동그랗게 나. 그게 보이면 옮길 때야.' }
   ],
@@ -1158,6 +1159,21 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think',   text: '…한 그루가 둘이 됐네.' },
     { who: 'moni',   face: 'proud',   text: '그게 늘리는 거야. 이제 그 그루에서도 자를 수 있어.' }
   ],
+  /* ★★ 2026-10-09 [plan] D41 — «키운 그루에서 다시 자른다»(quest.js §oneroom_recut). «내 화분대가 커지는 맛»을 말로 */
+  questOneroomRecut: [
+    { who: 'moni',   face: 'teach',   text: '자리 잡은 그루에서도 자를 수 있어. 무늬 마디를 골라.' },
+    { who: 'jachwi', face: 'curious', text: '팔지 않고 키운 게 이렇게 쓰이네.' },
+    { who: 'moni',   face: 'teach',   text: '그렇게 하나씩 느는 거야.' }
+  ],
+  questDoneOneroomRecut: [
+    { who: 'jachwi', face: 'surprise', text: '키운 그루에서 또 하나가 나왔다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 이 화분대가 네 밭이야.' }
+  ],
+  /* ★ 2026-10-09 [plan] D41 — ③·다시 자르기의 «무엇을»(D19) */
+  nudgeSettleOffer: [ { who: 'moni', face: 'teach', text: '무늬 삽수 하나는 팔지 말고 흙에 옮겨 키워 봐.' } ],
+  nudgeSettlePush:  [ { who: 'moni', face: 'teach', text: '키운 그루가 늘어야 무늬도 늘어.' } ],
+  nudgeRecutOffer:  [ { who: 'moni', face: 'teach', text: '키운 그루에서 무늬 마디를 잘라 봐. 그게 늘리는 거야.' } ],
+  nudgeRecutPush:   [ { who: 'moni', face: 'teach', text: '자를 마디가 있으면 잘라 둬. 그루가 하나씩 늘어.' } ],
   questOneroomSell: [
     /* ★ 2026-10-09 [plan] — 이 줄은 이제 «뿌리낸 뒤»(②)에 열린다(quest.js §oneroom_sell). 「늘렸으면」은 늘린 적 없는 사람에게 거짓 */
     { who: 'moni',   face: 'teach',   text: '뿌리냈으면 이제 내놓아도 돼.' },
@@ -2099,6 +2115,7 @@ export const REPEATABLE = new Set(
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
              'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'hungryTalk', 'hungryTalk2',
              'nudgeRadishOffer', 'nudgeRadishPush', 'statusHarvest10', 'statusHarvest30',
+             'nudgeSettleOffer', 'nudgeSettlePush', 'nudgeRecutOffer', 'nudgeRecutPush',
              'statusNeighborAsk', 'statusLandlordPlant',
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
@@ -2254,6 +2271,7 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   oneroom_unpack:         'questOneroomUnpack',
   oneroom_root_bright:    'questOneroomRootBright',
   oneroom_settle_cutting: 'questOneroomSettleCutting',
+  oneroom_recut:          'questOneroomRecut',
   oneroom_sell:           'questOneroomSell',
   oneroom_home_fund:      'questOneroomHomeFund',
 
@@ -2286,6 +2304,7 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   oneroom_unpack:         'questDoneOneroomUnpack',
   oneroom_root_bright:    'questDoneOneroomRootBright',
   oneroom_settle_cutting: 'questDoneOneroomSettleCutting',
+  oneroom_recut:          'questDoneOneroomRecut',
   oneroom_sell:           'questDoneOneroomSell',
   oneroom_home_fund:      'questDoneOneroomHomeFund',
 
@@ -2611,6 +2630,9 @@ export const CHATTER = [
       ['first_cut', 'nudgeCutOffer', 'nudgeCutPush'],
       ['varie_bright', 'nudgeVarieOffer', 'nudgeVariePush'],
       ['sell_varie', 'nudgeSellOffer', 'nudgeSellPush'],
+      /* ★ 2026-10-09 D41 — 원룸 줄기(키우기 · 다시 자르기) */
+      ['oneroom_settle_cutting', 'nudgeSettleOffer', 'nudgeSettlePush'],
+      ['oneroom_recut', 'nudgeRecutOffer', 'nudgeRecutPush'],
       /* ★ 2026-10-08 갈래 지도 15 — 시루 줄 넷은 같은 두 줄을 쓴다 */
       ['siru_two', 'nudgeSiruOffer', 'nudgeSiruPush'],
       ['siru5_cycle5', 'nudgeSiruOffer', 'nudgeSiruPush'],
