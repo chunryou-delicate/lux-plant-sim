@@ -1,0 +1,373 @@
+{
+ "_what": "[house] Higgsfield 주문 — 가구점 코드 그림 마지막 아홉 → v2 (총괄 10-10 · 가게 78/87 → 87/87) · 회색 상자 길",
+ "_variants": "아홉 다 한 줄씩이다 — 같은 type · 0.8~1.25배 색 변형이 따라오는 꼴이 없다(더블 침대 type bed 는 싱글과 크기가 달라 안 묶인다)",
+ "_order": "C(원화 2장씩) → house 가 고른 job_id → M(Tripo standard 9 · pbr false · 8000면). 틀리면 Tripo detailed 로 다시.",
+ "_sum": {
+  "concept": 36,
+  "mesh": 81,
+  "total": 117
+ },
+ "_after": "받으면 save_as 에 · 장부 assets/gen/hf_runs/house_20261010_last9.json · 잇기(webp 1024 · FURN · 가게 그림)는 [house]",
+ "items": [
+  {
+   "n": 32,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "bed_double",
+   "ko": "더블 침대",
+   "why": "모든 방에 서는 큰 물건(투룸·아파트) — 바뀌면 화면이 가장 크게 달라진다",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_bed_double.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 bed frame and headboard, white mattress, two pale #e8dfe6 pillows, a cozy patchwork quilt in muted pastel squares folded over the lower half (like a lived-in small-apartment bed).",
+    "save_as": "assets/gen/v2_furn/c_bed_double_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 밝은 나무 틀·머리판 · 흰 매트리스 · 옅은 베개 둘 · 아래쪽에 접어 둔 파스텔 누빔 이불",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_bed_double.glb"
+   },
+   "out": "assets/v2/furniture/bed_double.glb",
+   "fit": "눕기 면(probes) — bed_single 처럼",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  },
+  {
+   "n": 33,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "bed_bunk",
+   "ko": "이층 침대",
+   "why": "가는 기둥·사다리가 많다 — standard 가 뭉개면 detailed",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_bed_bunk.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 frame, posts and ladder, two pale blue-gray #dce6ea mattresses with small white pillows. Keep every post, rail and ladder rung thin and separate.",
+    "save_as": "assets/gen/v2_furn/c_bed_bunk_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 밝은 나무 틀·기둥·사다리 · 옅은 회청 매트리스 둘 · 흰 베개 · 기둥·난간·사다리 칸은 가늘고 따로",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_bed_bunk.glb"
+   },
+   "out": "assets/v2/furniture/bed_bunk.glb",
+   "fit": "눕기 면 둘",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  },
+  {
+   "n": 34,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "bed_loft",
+   "ko": "로프트 침대",
+   "why": "원룸(공간절약) — 밑이 빈 높은 침대",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_bed_loft.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #d9c3a9 frame, tall posts, rail and ladder, a pale blue-gray #dce6ea mattress on top with a small pillow, empty space underneath. Keep posts and ladder rungs thin and separate.",
+    "save_as": "assets/gen/v2_furn/c_bed_loft_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 밝은 나무 틀·높은 기둥·난간·사다리 · 위에 옅은 회청 매트리스 · 밑은 빔",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_bed_loft.glb"
+   },
+   "out": "assets/v2/furniture/bed_loft.glb",
+   "fit": "눕기 면",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  },
+  {
+   "n": 35,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "table",
+   "ko": "식탁",
+   "why": "자리 2(상판 0.72) — 창 앞이면 B",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_table.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #e5d3b8 tabletop, slightly darker #cbbba2 round legs. Tabletop empty.",
+    "save_as": "assets/gen/v2_furn/c_table_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 밝은 나무 상판 · 조금 진한 둥근 다리 · 상판 비움",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_table.glb"
+   },
+   "out": "assets/v2/furniture/table.glb",
+   "fit": "몸 상자(자리 둘)",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  },
+  {
+   "n": 36,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "vanity",
+   "ko": "화장대",
+   "why": "자리 1(상판 0.76)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_vanity.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm cream #eae2d6 vanity with a drawer cabinet on the left and thin legs on the right, a round mirror on a slim stand at the back, slightly darker #cbbfae edges. Top empty.",
+    "save_as": "assets/gen/v2_furn/c_vanity_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 따뜻한 크림 화장대 · 왼쪽 서랍장 · 오른쪽 가는 다리 · 뒤에 둥근 거울 · 상판 비움",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_vanity.glb"
+   },
+   "out": "assets/v2/furniture/vanity.glb",
+   "fit": "몸 상자",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  },
+  {
+   "n": 37,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "mirror",
+   "ko": "전신 거울",
+   "why": "거울면은 그림으로(반사 없음) — 은빛 연한 회청",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_mirror.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: a tall standing full-length mirror with a light wood #cbbfae frame and a small back stand; the mirror surface painted as soft pale silver-blue with a gentle diagonal highlight (no reflection of a room).",
+    "save_as": "assets/gen/v2_furn/c_mirror_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 키 큰 전신 거울 · 밝은 나무 틀 · 뒤 받침 · 거울면은 옅은 은청색 + 비스듬한 빛 한 줄(방이 비치지 않게)",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_mirror.glb"
+   },
+   "out": "assets/v2/furniture/mirror.glb",
+   "fit": "box",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  },
+  {
+   "n": 38,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "shoe_cabinet",
+   "ko": "신발장",
+   "why": "자리 2(윗면 0.9) — 창 앞이면 B",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_shoe_cabinet.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm off-white #e6dccd shoe cabinet with three shallow doors (the thin lines are door seams), small round knobs. Top empty.",
+    "save_as": "assets/gen/v2_furn/c_shoe_cabinet_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 따뜻한 미색 신발장 · 얕은 문 셋(가는 선이 문 이음) · 작은 둥근 손잡이 · 윗면 비움",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_shoe_cabinet.glb"
+   },
+   "out": "assets/v2/furniture/shoe_cabinet.glb",
+   "fit": "몸 상자(자리 둘)",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  },
+  {
+   "n": 39,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "tv_stand",
+   "ko": "TV장",
+   "why": "자리 3(윗면 0.45)",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_tv_stand.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #e3d3bd low TV cabinet with two drawers (the thin line is the drawer seam), short darker #c3b49c legs. Top empty.",
+    "save_as": "assets/gen/v2_furn/c_tv_stand_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 밝은 나무 낮은 TV장 · 서랍 둘(가는 선이 이음) · 조금 진한 짧은 다리 · 윗면 비움",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_tv_stand.glb"
+   },
+   "out": "assets/v2/furniture/tv_stand.glb",
+   "fit": "몸 상자(자리 셋)",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  },
+  {
+   "n": 40,
+   "phase": "C→M 가구점 마지막 아홉",
+   "id": "room_divider",
+   "ko": "파티션 가림막",
+   "why": "공간분리 — 판 셋이 접힌 병풍",
+   "concept": {
+    "tool": "generate_image",
+    "model": "nano_banana_2_1",
+    "aspect_ratio": "1:1",
+    "resolution": "2k",
+    "count": 2,
+    "refs": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_room_divider.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: a three-panel folding room divider, warm off-white #e8dfd2 fabric panels with a light wood frame and a faint woven texture, panels at slight angles exactly like the reference.",
+    "save_as": "assets/gen/v2_furn/c_room_divider_{k}.png",
+    "prompt_ko": "첫째 참조(코드 가구) 다시 칠 — 판 셋이 접힌 병풍 · 따뜻한 미색 천 판 · 밝은 나무 틀 · 옅은 직물 결 · 각도는 참조 그대로",
+    "credits": 4
+   },
+   "mesh": {
+    "tool": "generate_3d",
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": false,
+    "texture_quality": "standard",
+    "geometry_quality": "standard",
+    "face_limit": 8000,
+    "orientation": "default",
+    "texture_alignment": "original_image",
+    "credits": 9,
+    "retake": "틀리면 tripo_h3_1_image_to_3d texture_quality detailed(12)로 다시(박사님 10-10 · Meshy 를 거듭 돌리지 않는다)",
+    "input": "<고른 원화 job_id>",
+    "save_as": "assets/gen/v2_furn/raw_room_divider.glb"
+   },
+   "out": "assets/v2/furniture/room_divider.glb",
+   "fit": "box",
+   "check": "원화: 부품 수·판 높이가 참조 그대로 · 글자 없음 / 3D: probe_dress_fit 윗면 오차 ≤ 1cm · 코드|v2 같은 카메라 · yaw 는 GLB 마다 잼"
+  }
+ ]
+}
