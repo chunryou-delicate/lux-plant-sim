@@ -471,3 +471,11 @@ r3 둘(9×2 = 18):
  }
 ]
 ```
+
+### G — r3 둘 판정 · 끝 (더 안 뽑는다)
+| 그림 | 고른 판 | 까닭 |
+|---|---|---|
+| ev_first_varie_sanban | **r3** | 몬이 제 화분·잎 둘 ✓ · 점은 잎에만 ✓. 뒤 선반 작은 화분은 반지하 채소 화분일 수 있어 거짓이 아니다. 머리 밝기 56(통과한 장들 55~61과 같은 자리 — 노란 방 배경 대비로 짙어 보일 뿐)이라 손대지 않음 |
+| ev_monstera_arrive_v2 | **r2** | r3 은 «잎 둘» + 몬이가 가방 주머니 속 작은 새싹 — 이 장면의 핵심 둘(잎 하나 · 몬이)이 다 틀렸다. r2 는 핵심 둘이 맞고 흠은 배경 선반 화분들(Day 12 엔 시루뿐 — 곁가지)뿐 |
+- 더 뽑지 않는 까닭: 뽑을 때마다 다른 데가 틀어졌다(r2 산반 몬이 몸 빠짐 → r3 고침 · r2 도착 맞음 → r3 틀어짐). 핵심이 맞은 판을 고른다.
+- ⇒ **열 장 다 섰다**: ev_home_ending · _noplant · ev_oneroom_arrive · ev_oneroom_firstday · ev_moveout_keep/_cuttings/_sold · ev_first_varie_sanban/_halfmoon · ev_monstera_arrive_v2. Meshy 그림 9×(10+4+2) = **144** 크레딧.
