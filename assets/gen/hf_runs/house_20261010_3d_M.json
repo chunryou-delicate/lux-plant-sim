@@ -320,6 +320,34 @@
    ],
    "images": 3,
    "magic_ok": true
+  },
+  {
+   "name": "tex_oneroom_wallpaper_1",
+   "job_id": "d81f1da1-28dd-4c8a-8bf2-9cdf5bcec718",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150528_d81f1da1-28dd-4c8a-8bf2-9cdf5bcec718.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U14 원룸 벽지 4k · 첫 참조 = house 고름 oneroom_wallpaper_r2_4(8016be54) · plain no motifs",
+   "saved_path": "assets/gen/v2_hf/unity/tex_oneroom_wallpaper_1.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_oneroom_wallpaper_1.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
+  },
+  {
+   "name": "tex_oneroom_wallpaper_2",
+   "job_id": "60dc65c9-805e-4012-a539-207770ce9fc2",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150528_60dc65c9-805e-4012-a539-207770ce9fc2.png",
+   "dir": "assets/gen/v2_hf/unity",
+   "note": "U14",
+   "saved_path": "assets/gen/v2_hf/unity/tex_oneroom_wallpaper_2.jpg",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/gen/v2_hf/unity/tex_oneroom_wallpaper_2.png",
+   "size": [
+    4096,
+    4096
+   ],
+   "has_alpha": false
   }
  ]
 }
