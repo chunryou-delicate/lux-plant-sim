@@ -9664,6 +9664,61 @@ export async function createRoomView(canvas, opts = {}) {
     needsRender = true;
   }
 
+  /* ══ ★★ 2026-10-09 D46 덤(총괄 · house-decor §D46 셈) — **화분을 받는 가구(화분대)로 다가가는 카메라** ══════════
+     focusSlot 과 «같은 셈» — 다른 것은 «무엇을 담나» 하나다:
+       상자 = 그 가구 발자국(userData.size · 사다리는 collide 깊이) × 바닥(그 가구가 선 높이) ~ 꼭대기
+       꼭대기 = max(가구 높이, 맨 윗자리 y + 0.35) — 맨 윗단에 놓일 화분·그루 몫 · 그 가구 자리에 선 그루 bbox 를 합친다
+       가운데 = 상자 한가운데 · hh = 높이/2 × 1.15 · hw = (지금 방위에서 보이는 폭)/2 × 1.15 — 보이는 폭 = w·|cos(az−rot)| + d·|sin(az−rot)|
+       거리 = clamp(max(hh/tanV, hw/tanH), 0.6, 3.6) · 방위는 지금 그대로 · el 은 focusSlot 규칙 · 방 안 거리로 자른다
+       ⚠ 넓은 가구가 방 안 거리에 잘리면 «세로(단)를 다 담고 가로를 조금 자르는» 쪽(house: 사람은 단 높이를 보러 누른다)
+     반환 { want, dist, target, box } — 재는 자가 본다 */
+  function focusFurniture(uid, snap) {
+    const g = built && built.furniture ? built.furniture.children.find(n => n.userData && n.userData.uid === uid) : null;
+    if (!g || !g.userData.size) throw new Error(`모르는 가구: ${uid} (방 ${roomId})`);
+    const sz = g.userData.size, col = g.userData.collide || null;
+    const w = sz.w || 0.5, d = (col && col.d) || sz.d || 0.3, h = sz.h || 0.5;
+    const baseY = g.position.y || 0;
+    const tops = [...slotById.values()].filter(sl => String(sl.slotId).startsWith(uid + ':')).map(sl => sl.y);
+    let top = Math.max(baseY + h, tops.length ? Math.max(...tops) + 0.35 : baseY + h);
+    const rot = g.rotation.y || 0;
+    const az = windowAzimuth() + YAW_OFFSET + userYaw;
+    let visW = w * Math.abs(Math.cos(az - rot)) + d * Math.abs(Math.sin(az - rot));
+    let minY = baseY;
+    /* 그 가구 자리에 선 그루 — 높이·폭에 합친다(큰 몬스테라가 잘리지 않게 · focusSlot 이 그루 bbox 를 담는 것과 같다) */
+    let pb = null;
+    for (const [key, rec] of plants) {
+      if (!rec || !rec.group) continue;
+      const onIt = String(key).startsWith(uid + ':') || (rec.at && rec.at.onUid === uid);
+      if (!onIt) continue;
+      try { const b = new THREE.Box3().setFromObject(rec.group); pb = pb ? pb.union(b) : b; } catch { }
+    }
+    if (pb && !pb.isEmpty()) {
+      top = Math.max(top, pb.max.y); minY = Math.min(minY, pb.min.y);
+      visW = Math.max(visW, Math.abs(pb.max.x - pb.min.x) * Math.abs(Math.cos(az)) + Math.abs(pb.max.z - pb.min.z) * Math.abs(Math.sin(az)));
+    }
+    const target = new THREE.Vector3(g.position.x, (minY + top) / 2, g.position.z);
+    /* hw 여유 1.3(house 셈 1.15) — 3/4 시점이라 가까운 모서리가 원근으로 넓어져 1.15 면 다리가 화면 끝에 잘렸다(실측 · 에타지에 390×844) */
+    const hh = (top - minY) / 2 * 1.15, hw = visW / 2 * 1.3;
+    const tanV = Math.tan(THREE.MathUtils.degToRad(ctx.cam.fov) / 2);
+    const tanH = tanV * Math.max(0.2, ctx.cam.aspect);
+    const elOf = want => clamp(Math.asin(clamp((roomBox().h - 0.32 - target.y) / want, -1, 1)), -0.12, FOCUS_EL);
+    let want = clamp(Math.max(hh / tanV, hw / tanH), 0.6, 3.6);
+    let el = elOf(want);
+    let dist = insideRoomDistance(target, az, el, want);
+    if (dist < want - 1e-3) {           /* 방 안 거리에 잘렸다 — 세로(단)를 다 담는 쪽으로 다시 잰다 */
+      const wantV = clamp(hh / tanV, 0.6, 3.6);
+      el = elOf(wantV);
+      dist = insideRoomDistance(target, az, el, wantV);
+      want = wantV;
+    }
+    focused = null;                     /* 자리 확대가 아니다(창 크기가 바뀌어도 자리로 다시 안 들어간다) */
+    setCam({ az, el, dist, target }, !!snap);
+    needsRender = true;
+    return { want: +want.toFixed(3), dist: +dist.toFixed(3), el: +el.toFixed(3),
+             target: { x: +target.x.toFixed(3), y: +target.y.toFixed(3), z: +target.z.toFixed(3) },
+             box: { minY: +minY.toFixed(3), top: +top.toFixed(3), visW: +visW.toFixed(3) } };
+  }
+
   /* 그 방향으로 얼마까지 물러설 수 있나 — 벽·천장 안쪽에 머무는 최대 거리 */
   function insideRoomDistance(target, az, el, want) {
     const b = roomBox(), m = 0.30;
@@ -10015,6 +10070,8 @@ export async function createRoomView(canvas, opts = {}) {
     /* 카메라를 그 자리로. null 이면 방 전체로.
        snap=true 면 부드럽게 가지 않고 바로 간다(스크린샷·헤드리스 검증용). */
     focusSlot(id, snap) { try { focusSlot(id, !!snap); } catch (e) { throw fail(e); } },
+    /* ★ 2026-10-09 D46 덤 — 화분을 받는 가구로 다가간다(house §D46 셈). 돌아오기는 focusSlot(null) */
+    focusFurniture(uid, snap) { try { return focusFurniture(uid, !!snap); } catch (e) { throw fail(e); } },
     /* v2: 카메라 연출 창구(src/game/camera_moves.js). 목표로 부드럽게 간다(setCam 트윈).
        focused·userYaw·userEl·zoomK 는 안 건드린다. 빠진 값은 지금 값, dist 는 줌 한계 안으로.
        사람이 끌거나 굴리면 늘 하던 대로 tween=null 로 끊긴다. 돌려주는 것은 실제로 건 목표다 */

@@ -16211,6 +16211,13 @@ const furnPicked = {
        메뉴만 뜨면 "무엇이 골라졌나"를 이름표로 읽어야 한다.
        ⚠ 밝히기를 못 해도 메뉴는 떠야 한다. 밝기는 보여 주기고 메뉴는 조작이다. */
     try { roomView && roomView.highlightFurniture(f.uid); } catch { }
+    /* ★ 2026-10-09 D46 덤(총괄 · house §D46 셈) — **화분을 받는 가구면 그 가구로 다가간다**(단 높이·그 위 그루까지 한 화면).
+         메뉴를 닫거나 [옮기기]·[돌리기]를 시작하면 방 전체로 돌아온다(§camBack) — 옮길 때는 방이 보여야 한다 */
+    this.camFocused = false;
+    try {
+      const hasSlots = !this.lamp && (io.light.room.slots || []).some(sl => sl && String(sl.slotId).startsWith(f.uid + ':'));
+      if (hasSlots && roomView && roomView.focusFurniture) { roomView.focusFurniture(f.uid); this.camFocused = true; }
+    } catch (e) { console.warn('[가구 카메라]', e && e.message); }
     /* 메뉴 자리는 **재서** 잡는다. 아래 한 번은 지금 프레임을 맞추고, 그 뒤는 tick 이 따라간다.
        ⚠ `display` 가 방금 켜졌으므로 offsetWidth 를 읽으려면 이 순서여야 한다 */
     let p = null; try { p = roomView && roomView.screenPosOf(f.uid); } catch { }
@@ -16221,8 +16228,16 @@ const furnPicked = {
        (`#dropLabel` 은 이미 [옮기기]를 누른 사람에게만 보인다 — 누를 줄 모르면 영영 안 보인다) */
     try { coach('furn'); } catch (e) { console.warn('[안내]', e && e.message); }
   },
+  /* D46 덤 — 다가갔던 카메라를 방 전체로 */
+  camBack(snap = false) {
+    if (!this.camFocused) return;
+    this.camFocused = false;
+    /* snap — 옮기기·돌리기는 «바로» 돌아와야 기준점(화면 좌표)이 돌아온 방에서 잡힌다 */
+    try { roomView && roomView.focusSlot && roomView.focusSlot(null, !!snap); } catch (e) { console.warn('[가구 카메라]', e && e.message); }
+  },
   clear() {
     if (!this.uid && !this.mode) return;
+    this.camBack();
     /* ★ **반드시 끈다.** 안 끄면 가구가 계속 밝다(roomui-to-plan §4-1 ⚠).
        원본 재질로 정확히 되돌아간다는 것은 저쪽이 재서 못 박아 뒀다(§2-2). */
     try { roomView && roomView.highlightFurniture(null); } catch { }
@@ -16257,6 +16272,7 @@ const furnPicked = {
       if (why) { $('dropLabel').textContent = why; $('dropLabel').classList.add('no'); return; }
       this.mode = 'lampmove'; this.beginLampMove(); return;
     }
+    this.camBack(true);      /* D46 덤 — 옮길 때는 방이 보여야 한다(기준점은 돌아온 뒤에 잡는다 · 바로) */
     this.mode = 'move';
     this.setOrigin();
     $('stage').classList.add('furnmoving');
@@ -16316,6 +16332,7 @@ const furnPicked = {
   },
   beginTurn() {
     if (!this.uid) return;
+    this.camBack(true);
     this.mode = 'turn'; this.rot0 = this.base.rot || 0;
     $('stage').classList.add('furnmoving');
     $('dropLabel').textContent = '좌우로 끌어서 돌리세요';
