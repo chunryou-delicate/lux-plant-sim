@@ -586,6 +586,8 @@
   /* ★★ 2026-08-23 — **자르면 모주가 얼마 깎이나** (plan 판단 · 「막지 않고 대가를 보여 준다」).
      급전은 대가를 치르는 것이 본질이다 — 대가를 숨기면 함정이고 보여 주면 기능이다. */
   .cutRow .won small{display:block;font-weight:600;font-size:10px;color:#f08a72;margin-top:1px}
+  /* ★ 10-10 잎 카드 — 중고 거래 줄(판매 확인) 값 옆 · 그 물건의 가장 높은 등급(plan 6d7665e0 ②) */
+  .cutRow .lcard{flex:0 0 auto;width:34px;height:34px;border-radius:7px;object-fit:contain;background:rgba(255,255,255,.08)}
   .cutRow button{min-height:34px;padding:0 10px;border-radius:9px;font-size:11.5px;flex:0 0 auto}
   /* ══ ★ 중고 거래 줄 — **줄바꿈한다** (2026-08-17 · 화면에서 깨진 것을 보고 고쳤다) ══
      ------------------------------------------------------------
@@ -1685,6 +1687,9 @@
   #event i{font-style:normal;display:block;font-size:12px;color:#2c4a22;margin-top:3px}
   /* 한 턴에 사건이 둘이면 위아래로 쌓인다 — Day 4 의 수확과 도착이 그렇다 */
   #event b+b{margin-top:7px}
+  /* ★ 10-10 잎 카드(화풍 A · 512) — 그 등급을 처음 본 날의 ✨ 배너 왼쪽(plan 6d7665e0 ①) */
+  #event b .bcard{float:left;width:52px;height:52px;margin:-2px 10px 0 -4px;border-radius:10px;object-fit:contain;background:rgba(255,255,255,.55)}
+  #event b::after{content:'';display:block;clear:both}
   .scen-run #play{opacity:.45}
   /* ★ 자원 3칸 — 아이콘은 2D 에셋. 글자만 있던 칸이라 무엇을 세는 칸인지 안 읽혔다. */
   .resourcebar{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}
@@ -3233,6 +3238,7 @@ import { setLampAim, clearLampAim } from './src/game/state.js';
 import { modeOf } from './src/game/state.js';
 import { varieLightStepOfBand } from './src/game/shop.js';
 import { potLeafGradesOf, potLeafGradesSeenOf } from './src/game/shop.js';
+import { leafCardOf, bestLeafCardOf } from './src/game/shop.js';   /* ★ 10-10 잎 카드(화풍 A · plan 6d7665e0) */
 /* ★ 2026-10-09 D47(총괄) — 가구점을 화면에 잇는다(줄 · 주문 · 가방 · 놓기). 셈·값·해금은 전부 코어(shop §furnitureCatalogList · state §placeBoughtFurniture) */
 import { furnitureCatalogList, isFurnitureItemId } from './src/game/shop.js';
 import { placeBoughtFurniture, giveFurniture } from './src/game/state.js';
@@ -3616,10 +3622,20 @@ function noteLeafGrades(t) {
          남겨 둔 그 자리다.
        ⚠ 창구가 없으면 조용히 지나간다 — 옛 생장 창에서도 게임은 돌아야 한다. */
     pushLeafSkins();
+    /* ★ 2026-10-10 잎 카드(plan 6d7665e0 ①) — 그 등급을 «처음» 본 날(이 그루 장부에 오늘 것 말고 같은 등급이 없음) 배너 옆에 그 잎의 카드.
+         카드는 그 잎이 실제로 그려지는 성숙잎 그림의 갈래(shop §leafCardOf) · 한 턴에 같은 등급이 둘이면 첫 잎만 · 무지는 안 띄운다 */
+    const p0c = pot0(S), todayB = new Set(((r && r.assigned) || []).map(a => String(a.leafBirth)));
+    let ledC = {}, skinsC = {}; try { ledC = potLeafGradesOf(p0c) || {}; skinsC = potLeafSkinsOf(S, p0c) || {}; } catch { }
+    const cardShown = new Set();
     for (const a of (r && r.assigned) || []) {
       const b = { title: `✨ ${a.leafNo}번째 잎 — ${a.gradeKo}`,
                   sub: (((r.events || []).find(e => e.leafBirth === a.leafBirth) || {}).ko || '').replace(/\*\*/g, '') };
-      banner(b.title, b.sub); leafBanners.push(b);
+      try {
+        const first = !cardShown.has(a.grade) && !Object.entries(ledC).some(([lb, g]) => g === a.grade && !todayB.has(String(lb)));
+        const mat = a.matSkin || ((skinsC[a.leafBirth] || skinsC[String(a.leafBirth)] || {}).matSkin) || null;   /* 알림 항목이 그 잎의 성숙잎 그림을 들고 온다(shop §assignPotLeafGrades) */
+        if (first) { const c = leafCardOf({ grade: a.grade, matSkin: mat }); if (c && c !== 'card_mon_plain') { b.img = `./assets/illust/cards/${c}.png`; cardShown.add(a.grade); } }
+      } catch { }
+      banners([b]); leafBanners.push(b);
       if (a.why === 'prologue' && a.leafNo === 2) pendingLeafScene = pendingLeafScene || 'seen';
       if (a.why === 'prologue' && a.grade === 'halfmoon') pendingLeafScene = 'half';
     }
@@ -18368,8 +18384,11 @@ function drawMarket() {
     const sub = l.contacted
       ? `📩 ${l.buyerKo} — 사고 싶다고 연락했습니다`
       : `올린 지 ${l.sinceDays}일 · ${marketWaitKo()}`;
+    /* ★ 10-10 잎 카드(plan 6d7665e0 ②) — 그 물건의 가장 높은 등급 잎 카드를 값 옆에 작게(무늬가 없으면 없음) */
+    let card = null; try { card = bestLeafCardOf(S, l.kind, l.refId); } catch { card = null; }
+    const cardImg = card ? `<img class="lcard" src="./assets/illust/cards/${card.card}.png" alt="${card.gradeKo}" title="${card.gradeKo}" onerror="this.remove()">` : '';
     return '<div class="cutRow' + (l.contacted ? ' warn' : '') + '"><div class="nm">' + head +
-      '<small>' + sub + '</small></div>' +
+      '<small>' + sub + '</small></div>' + cardImg +
       '<div class="won">' + l.won.toLocaleString() + '원</div>' +
       (l.contacted ? '<button class="primary" data-deal="' + l.listingId + '">거래하기</button>' : '') +
       '<button class="ghost" data-unlist="' + l.listingId + '">내리기</button></div>';
@@ -18655,7 +18674,7 @@ function banners(events) {
   const shown = uniq.slice(0, MAX);
   const rest = uniq.length - shown.length;
   const el = $('event');
-  el.innerHTML = shown.map(e => `<b>${e.title}${e.sub ? `<i>${e.sub}</i>` : ''}</b>`).join('')
+  el.innerHTML = shown.map(e => `<b>${e.img ? `<img class="bcard" src="${e.img}" alt="" onerror="this.remove()">` : ''}${e.title}${e.sub ? `<i>${e.sub}</i>` : ''}</b>`).join('')
                + (rest > 0 ? `<b><i>…외 ${rest}개</i></b>` : '');
   el.classList.add('on');
   /* 누르면 바로 없앤다. `onclick` 이라 여러 번 붙어도 하나만 남는다 */

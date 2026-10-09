@@ -2040,6 +2040,50 @@ export function leafSkinsFor(gradeId, seed, potId, leafBirth) {
   };
 }
 
+/* ★ 2026-10-10 잎 카드(화풍 A · leaf 4d8acd19 · assets/illust/cards/card_<이름>.png · 거는 자리 plan 6d7665e0) — 어느 잎이 어느 카드인가.
+     몬스테라 — 그 잎의 성숙잎 그림(leaf_matN)이 속한 무늬 갈래(varie_grades assets · matNum…matNum+2) = card_mon_<갈래 id>.
+       그림을 모르면(옛 판) 그 등급의 첫 갈래 · 무지·모르는 등급은 card_mon_plain.
+     새 두 종 — 등급 = 카드(PP green·marble·heavy·pink · AL plain·marble·sector) · 모르면 null.
+   ⚠ 그림 번호를 갈래로 되읽는 표는 위 §leafSkinsFor 가 쓰는 그 표(_VARIE) 하나다 — 카드 표를 따로 안 둔다 */
+export function leafCardOf({ species = 'monstera', grade = null, matSkin = null } = {}) {
+  if (species === 'pink_princess') return ['green', 'marble', 'heavy', 'pink'].includes(grade) ? `card_pp_${grade}` : null;
+  if (species === 'alocasia_frydek') return ['plain', 'marble', 'sector'].includes(grade) ? `card_al_${grade}` : null;
+  const g = grade ? _VARIE.byId.get(grade) : null;
+  if (!g || !g.varie) return 'card_mon_plain';
+  const m = /^leaf_mat(\d+)$/.exec(String(matSkin || ''));
+  if (m) {
+    const n = Number(m[1]);
+    for (const a of g.assets) if (a.matNum != null && n >= a.matNum && n <= a.matNum + 2) return `card_mon_${a.id}`;
+  }
+  const a0 = g.assets.find(a => a.id);
+  return a0 ? `card_mon_${a0.id}` : 'card_mon_plain';
+}
+/* 등급 순서(무지 < 산반 < 하프문 < 풀문) — 표에 적힌 차례 그대로 */
+const varieRankOf = gid => { let i = 0; for (const id of _VARIE.byId.keys()) { if (id === gid) return i; i++; } return -1; };
+/* 그 물건(중고 거래 줄 kind·refId)의 «가장 높은 등급» 잎 카드 — 판매 확인 줄이 값 옆에 작게 띄운다(plan 6d7665e0 ②).
+     그루 — 잎별 그림표(potLeafSkinsOf) · 삽수 — 잎별 등급(leafGrade) + 화면이 그리는 그 그림(leafSkinsFor(등급, 판 씨앗, 삽수 id, 잎 차례))
+     무늬 잎이 없으면 null(무지 카드는 판매 줄에 안 띄운다) */
+export function bestLeafCardOf(S, kind, refId) {
+  const seed = (S && S.sim && S.sim.seed) || 0;
+  let best = null;
+  const take = (gid, matSkin) => {
+    const g = _VARIE.byId.get(gid);
+    if (!g || !g.varie) return;
+    const r = varieRankOf(gid);
+    if (!best || r > best.r) best = { r, card: leafCardOf({ grade: gid, matSkin }), grade: gid, gradeKo: g.ko };
+  };
+  if (kind === 'pot') {
+    const pot = ((S && S.pots) || []).find(p => p && p.id === refId);
+    if (!pot) return null;
+    for (const v of Object.values(potLeafSkinsOf(S, pot) || {})) take(v.grade, v.matSkin);
+  } else {
+    const c = ((S && S.cuttings) || []).find(x => x && x.id === refId);
+    const grades = (c && Array.isArray(c.leafGrade)) ? c.leafGrade : [];
+    grades.forEach((gid, i) => { if (gid) take(gid, (leafSkinsFor(gid, seed, c.id, i) || {}).matSkin || null); });
+  }
+  return best ? { card: best.card, grade: best.grade, gradeKo: best.gradeKo } : null;
+}
+
 /* ★ 화분 하나의 **잎별 그림표**. 화면(3D)이 물어보는 자리다.
      `{ [leafBirth]: { grade, gradeKo, midSkin, matSkin, fromLegacy } }`
    ⚠ 등급 장부에 없는 잎은 **아예 안 들어간다**(모르는 것을 지어내지 않는다).
