@@ -1453,6 +1453,17 @@
   #orderBoard .otxt i{display:block;font-style:normal;color:var(--dim);font-size:11.5px}
   #orderBoard .orow button{flex:0 0 auto;width:auto;min-width:64px;min-height:36px;padding:0 12px;font-weight:800}
   #orderBoard .empty{font-size:12px;color:var(--dim)}
+  /* ★ 2026-10-10 벽 걸이 v1 — 걸이 자리 원(house hangSpots · 화면 좌표는 캔버스 기준이라 무대 기준으로 옮겨 찍는다) */
+  #hangPick{position:absolute;inset:0;z-index:31;display:none;pointer-events:none}
+  #hangPick.on{display:block}
+  /* 글은 무대 왼쪽 아래 — 위쪽은 튜토 손가락(«가방을 열어 보세요»)·할 일 칩이 쓰고, 오른쪽 아래는 [다음 날] 자리다(사진으로 잼) */
+  #hangPick .hphead{position:absolute;left:16px;bottom:16px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 140px);
+    padding:8px 12px;border-radius:12px;background:rgba(20,16,28,.9);border:1px solid rgba(255,190,110,.4);
+    font-size:13px;line-height:1.35;color:#f3e6d2;pointer-events:auto;word-break:keep-all}
+  #hangPick .hphead button{width:auto;min-height:32px;padding:0 12px}
+  #hangPick .hp{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;padding:0;min-height:0;
+    border:2px solid rgba(255,214,140,.95);background:rgba(255,190,110,.24);box-shadow:0 0 0 4px rgba(0,0,0,.22);pointer-events:auto;cursor:pointer}
+  #hangPick .hp:hover,#hangPick .hp:focus-visible{background:rgba(255,190,110,.5)}
   #orderBoard .oface{flex:0 0 auto;width:36px;height:44px;object-fit:cover;object-position:50% 6%;border-radius:8px;background:rgba(255,255,255,.06)}
   .cface{float:left;width:64px;height:80px;object-fit:cover;object-position:50% 6%;margin:0 10px 4px 0;border-radius:10px;background:rgba(255,255,255,.06)}
   #gameOver{position:fixed;inset:0;z-index:95;display:none;
@@ -1906,6 +1917,9 @@
          그게 맞다. "안 열린다"보다 "준비 중"이 사실에 가깝고, 아래 감시 타이머가 말을 바꾼다. -->
   <main id="stage" class="no-plant room-loading">
     <canvas id="roomCanvas"></canvas>
+    <!-- ★ 2026-10-10 벽 걸이 v1 — 걸이 자리 고르기(§hangPick) -->
+    <div id="hangPick" aria-hidden="true"><div class="hphead"><span id="hangPickMsg">벽에 걸 자리를 골라 주세요</span>
+      <button id="hangPickCancel" class="ghost" type="button">그만두기</button></div><div id="hangPickDots"></div></div>
     <div id="roomFallback"><div>
       <img id="bootArt" src="./assets/ui/item_monstera.png" alt="">
       <b id="bootTitle">볕</b>
@@ -8339,7 +8353,7 @@ function drawBag() {
                  (th ? `<span class="art"><img src="./${esc2(th)}" alt="" onerror="this.remove()"></span>` : `<i class="ltr">🪑</i>`) +
                  (n > 1 ? `<i class="cnt">×${n}</i>` : '') +
                  `<span class="nm">${esc2(ko)}</span>` +
-                 `<span class="eta">산 가구 · 눌러서 방에 놓으세요</span></button>`;
+                 `<span class="eta">${isHangPreset(preset) ? '산 그림 · 눌러서 걸 자리를 고르세요' : '산 가구 · 눌러서 방에 놓으세요'}</span></button>`;
         }).join('') +
         bag.map(f => {
           /* ★ 이름은 `name_ko` 가 정본이다(data/furniture_presets.json) —
@@ -8349,7 +8363,7 @@ function drawBag() {
                  ` title="${esc2(ko)}" aria-label="${esc2(ko)}">` +
                  `<i class="ltr">🪑</i>` +
                  `<span class="nm">${esc2(ko)}</span>` +
-                 `<span class="eta">눌러서 방에 놓으세요</span></button>`;
+                 `<span class="eta">${isHangPreset(f.preset) ? '눌러서 걸 자리를 고르세요' : '눌러서 방에 놓으세요'}</span></button>`;
         }).join('') + `</div>`;
     }
   }
@@ -13698,6 +13712,7 @@ function clearIfMoved(kind, nowSlot, warn) {
 }
 function syncRoom() {
   if (!roomView) return;
+  syncHangSeason();   /* ★ 10-10 벽 걸이 — 달력 계절 */
   const my = ++syncSeq;                 // 늦게 끝난 옛 요청이 새 상태를 덮어쓰지 않게
   const p = pot0(S);
   const b = S.firstPlay && S.firstPlay.beansprout;
@@ -15791,16 +15806,19 @@ function sowEmptyPot(id) {
      같이 바뀌는데, `room_view` 는 「가구 하나 더하기」 창구를 안 내준다(전문 검색: `rebuildRoom`
      은 안 내보낸다). ⇒ 이사할 때 쓰는 그 길을 그대로 쓴다 — **검증된 길이다.**
      ⛔ 무겁다. 가구를 여럿 놓으면 그만큼 여러 번 짓는다. 그 값은 재서 여기 적어야 한다. */
-async function startPhonePlaceFurnitureBag(uid) {
+async function startPhonePlaceFurnitureBag(uid, hangAt = null) {
   const one = carriedFurnitureOf(S, uid);
   if (!one) { banner('가방에 없습니다', '가방을 다시 확인해 주세요'); return { ok: false }; }
+  /* ★ 2026-10-10 벽 걸이 v1 — 들고 온 그림도 걸이 자리로(§hangPick) */
+  if (!hangAt && isHangPreset(one.preset))
+  { const on = hangPick.open({ preset: one.preset }, spotId => startPhonePlaceFurnitureBag(uid, roomView.hangPose(spotId, one.preset))); return { ok: on, picking: on }; }
   /* 세울 자리 — **방 한가운데 바닥**. 곧 옮길 것이라 정확할 필요가 없다(§provisionalSpot 과 같은 판단).
      ★★ 2026-08-30 — 여기 한동안 `{ x: sz.w/2, z: sz.d/2 }` 라고 적혀 있었다. **구석이다.**
        방 자리는 **한가운데가 원점**이라 쓸 수 있는 값이 `|x| ≤ w/2` 다(`place.js §inRoom`).
        그러니 `w/2` 는 한가운데가 아니라 **벽에 딱 붙은 금**이고, 검사도 경계라 그냥 지난다
        (ε 로 봐준다). ⇒ 화면에서는 침대가 **벽을 뚫고 반쯤 나가 보였다**(oneroom_placed.png).
      ⚠ 주석은 「한가운데」라고 말하고 값은 구석을 가리켰다 — 말과 값이 갈린 자리였다. */
-  const at = { x: 0, z: 0, rot: 0 };
+  const at = hangAt || { x: 0, z: 0, rot: 0 };
   let row = null;
   try { row = placeCarriedFurniture(S, uid, at, { size: io.light.room.size }); }
   catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false }; }
@@ -15826,17 +15844,105 @@ async function startPhonePlaceFurnitureBag(uid) {
   return { ok: true, uid, preset: row.preset };
 }
 
+/* ══ ★ 2026-10-10 벽 걸이 v1 «걸이 자리»(house 3ca468e9 · 총괄 결정 · 글 plan bcf8dda3) ══════════════════════
+   산 그림(프리셋 mount 'wall-hang')은 방마다 정해 둔 걸이 자리에만 건다(반지하 4 · 원룸 5 · 투룸 6 · 주문판 전용 하나).
+   ① 가방 «산 그림» → 쓸 수 있는 자리 원 → 고르면 house hangPose 의 자리표로 놓는다(세이브 꼴은 바닥 가구와 같은 x·z·rot·y 한 줄)
+   ② 걸린 그림 [옮기기] → 다른 자리 원 → commitFurnitureAt(uid, { hang }) · [돌리기]는 없다(벽이 방향을 정한다)
+   ③ 날마다 달력 계절(§syncHangSeason) · ④ 자리가 다 차면 plan 글 «벽에 걸 자리가 다 찼습니다»(걸린 것이 있으면 꼬리)
+   ⚠ 걸 수 있나는 3D 가 안다(hangPose 가 크기·전용 자리·찬 자리에서 던진다 · furnitureFit {hang}) — 여기서 다시 가르지 않는다 */
+const HANG_KO = Object.freeze({ pick: '벽에 걸 자리를 골라 주세요', full: '벽에 걸 자리가 다 찼습니다', fullTail: ' — 걸린 것을 하나 내리면 걸 수 있습니다',
+                               none: '이 방엔 이것을 걸 자리가 없습니다' });
+function isHangPreset(preset) { try { return !!(preset && furnPresets[preset] && furnPresets[preset].mount === 'wall-hang'); } catch { return false; } }
+/* 지금 걸 수 있는 자리 — 산 그림이면 hangPose 가 받는 자리 · 걸린 그림을 옮기면 furnitureFit {hang} 이 받는 자리(제 자리 빼고) */
+function hangChoices(want) {
+  let spots = []; try { spots = (roomView && roomView.hangSpots && roomView.hangSpots()) || []; } catch { spots = []; }
+  /* busyFit — 크기·전용은 맞는데 «찼을» 뿐인 자리(hangPose 는 크기를 먼저 보고 찬 것을 나중에 본다 · room_view §hangPoseFor).
+       이것이 하나도 없으면 «다 찼다»가 아니라 «이 방엔 걸 자리가 없다»다(반지하의 주문판처럼) — 찼다고 하면 거짓말이 된다 */
+  let busyFit = 0;
+  const fits = sp => {
+    if (want.uid) { if (sp.uid === want.uid) return false; try { return !!(roomView.furnitureFit(want.uid, { hang: sp.id }) || {}).ok; } catch { return false; } }
+    try { roomView.hangPose(sp.id, want.preset); return true; }
+    catch (e) { if (!sp.free && /다 찼/.test((e && e.message) || '')) busyFit++; return false; }
+  };
+  const open = spots.filter(fits);
+  return { spots, open, busyFit };
+}
+const hangPick = {
+  on: false, timer: null, want: null, onPick: null, ids: '',
+  open(want, onPick) {
+    if (!roomView || !roomView.hangSpots) { banner('방이 아직 준비 중입니다', '잠시 뒤에 다시 눌러 주세요'); return false; }
+    const c = hangChoices(want);
+    /* 옮기기면 다른 자리가 다 찬 것 · 새로 걸기면 찬 자리가 있으면 «다 찼다 — 내리면 걸 수 있다» · 없으면 «이 방엔 걸 자리가 없다» */
+    if (!c.open.length) { const line = want.uid ? HANG_KO.full : (c.busyFit ? HANG_KO.full + HANG_KO.fullTail : HANG_KO.none); banner(line, ''); this.lastLine = line; return false; }
+    this.close();
+    this.want = want; this.onPick = onPick; this.on = true;
+    $('hangPickMsg').textContent = HANG_KO.pick;
+    $('hangPick').classList.add('on'); $('hangPick').setAttribute('aria-hidden', 'false');
+    try { window.__byeotSheet.close(); } catch { }
+    try { if (furnPicked.camBack) furnPicked.camBack(true); } catch { }
+    this.layout();
+    this.timer = setInterval(() => this.layout(), 250);   /* 카메라가 돌면 원이 따라간다(단추는 그대로 두고 자리만 옮긴다) */
+    return true;
+  },
+  layout() {
+    if (!this.on) return;
+    const c = hangChoices(this.want);
+    const r = $('roomCanvas').getBoundingClientRect(), sr = $('stage').getBoundingClientRect();
+    const show = c.open.filter(sp => sp.screen);
+    const box = $('hangPickDots');
+    const ids = show.map(sp => sp.id).join('|');
+    if (ids !== this.ids) {
+      this.ids = ids;
+      box.innerHTML = show.map(sp => `<button class="hp" type="button" data-hang="${sp.id}" aria-label="걸이 자리"></button>`).join('');
+      for (const b of box.querySelectorAll('[data-hang]')) {
+        b.addEventListener('pointerdown', e => e.stopPropagation());
+        b.onclick = guard(() => this.pick(b.dataset.hang));
+      }
+    }
+    for (const sp of show) {
+      const b = box.querySelector(`[data-hang="${sp.id}"]`);
+      if (b) { b.style.left = (r.left - sr.left + sp.screen.x).toFixed(1) + 'px'; b.style.top = (r.top - sr.top + sp.screen.y).toFixed(1) + 'px'; }
+    }
+  },
+  async pick(spotId) {
+    const fn = this.onPick; this.close();
+    if (!fn) return;
+    try { await fn(spotId); } catch (e) { banner('걸지 못했습니다', (e && e.message) || ''); }
+  },
+  close() {
+    this.on = false; clearInterval(this.timer); this.timer = null; this.want = null; this.onPick = null; this.ids = '';
+    const L = $('hangPick'); if (L) { L.classList.remove('on'); L.setAttribute('aria-hidden', 'true'); }
+    const d = $('hangPickDots'); if (d) d.innerHTML = '';
+  }
+};
+/* ③ 달력 계절 — 게임 계절 = 빛의 skyFor(같은 계절이면 방뷰가 아무것도 안 한다) */
+function syncHangSeason() { try { if (roomView && roomView.setSeason) roomView.setSeason(io.light.skyFor(S.day, S.sim).season); } catch { } }
+window.__byeotHang = {   /* 재는 손잡이 */
+  spots: () => { try { return roomView.hangSpots(); } catch { return []; } },
+  picking: () => ({ on: hangPick.on, dots: [...document.querySelectorAll('#hangPickDots [data-hang]')].map(b => b.dataset.hang), msg: $('hangPickMsg').textContent, lastLine: hangPick.lastLine || null }),
+  pick: id => hangPick.pick(id), close: () => hangPick.close()
+};
+
 /* ★ 2026-10-09 D47 — 산 가구(재고)를 방에 놓는다. 가방 가구(§startPhonePlaceFurnitureBag)와 «같은 손»이다:
      방 한가운데 바닥에 세우고 그 자리에서 [옮기기]로 넘긴다. 재고 하나를 쓰고 자리 이름은 코어가 짓는다(state §placeBoughtFurniture · add-<프리셋>-n) */
-async function startPhonePlaceFurnitureStock(itemId) {
+async function startPhonePlaceFurnitureStock(itemId, hangAt = null) {
+  /* ★ 2026-10-10 벽 걸이 v1 — 산 그림은 방 한가운데가 아니라 «걸이 자리»를 고르게 한다(§hangPick) */
+  const hangPreset = isFurnitureItemId(itemId) ? itemId.slice(5) : null;
+  if (!hangAt && isHangPreset(hangPreset))
+  { const on = hangPick.open({ preset: hangPreset }, spotId => startPhonePlaceFurnitureStock(itemId, roomView.hangPose(spotId, hangPreset))); return { ok: on, picking: on }; }
   let row = null;
-  try { row = placeBoughtFurniture(S, itemId, { x: 0, z: 0, rot: 0 }, { size: io.light.room.size }); }
+  try { row = placeBoughtFurniture(S, itemId, hangAt || { x: 0, z: 0, rot: 0 }, { size: io.light.room.size }); }
   catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false }; }
   try { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); }
   catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
   const ko = (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.ko || row.preset;
-  pushLog(S, `🪑 ${josa(ko, '을', '를')} 방에 놓았습니다 — 눌러서 [옮기기]로 자리를 고르세요`);
-  banner(`${josa(ko, '을', '를')} 놓았습니다`, '눌러서 [옮기기]로 자리를 고를 수 있습니다');
+  if (hangAt) {
+    pushLog(S, `🖼 ${josa(ko, '을', '를')} 벽에 걸었습니다`);
+    banner(`${josa(ko, '을', '를')} 걸었습니다`, '눌러서 [옮기기]로 다른 자리에 걸 수 있습니다');
+  } else {
+    pushLog(S, `🪑 ${josa(ko, '을', '를')} 방에 놓았습니다 — 눌러서 [옮기기]로 자리를 고르세요`);
+    banner(`${josa(ko, '을', '를')} 놓았습니다`, '눌러서 [옮기기]로 자리를 고를 수 있습니다');
+  }
   try { window.__byeotSheet.close(); } catch { }
   try { sfx.thud(); } catch { }
   draw();
@@ -16424,7 +16530,7 @@ const furnPicked = {
          「왜 안 되지」가 되고, 그건 못 옮기는 것보다 나쁘다. */
     const wallLamp = !!(this.lamp && this.lamp.fixedWhy);
     set('furnMove', (on || wallLamp) ? 'none' : '');
-    set('furnTurn', (on || wallLamp) ? 'none' : '');
+    set('furnTurn', (on || wallLamp || this.hang) ? 'none' : '');
     set('furnAim', on ? 'none' : (this.aimable ? '' : 'none'));
     /* ★ 파는 단추도 옮기는 중에는 감춘다 — 옮기다 말고 팔면 되돌릴 자리가 사라진다 */
     set('furnSell', on ? 'none' : (this.sellable ? '' : 'none'));
@@ -16456,6 +16562,7 @@ const furnPicked = {
          *"처음에 주는 식물등이 저 하늘로 가버려"* 가 그 모양이다.
          못 하는 것을 회색 단추로 세우지 않고 **까닭을 글자로** 적는다. */
     this.lamp = f.lamp || null;
+    this.hang = isHangPreset(f.preset);   /* ★ 10-10 벽 걸이 — [돌리기] 없음 · [옮기기]는 걸이 자리 고르기 */
     /* ★★★ 2026-08-30 — **팔 수 있는 것인가.** 판정은 «코어»가 한다(§furnitureSellQuote).
        ⚠ 여기서 새로 가르지 않는다. 화분이 얹혔나·붙박이인가·위에 가구가 있나 — 셋 다 코어가 안다.
        ⚠ 다만 **단추를 «내느냐»**는 갈래로 가른다:
@@ -16593,6 +16700,15 @@ const furnPicked = {
          (lampmove-to-plan §0: "스탠드등은 이미 가구 옮기기가 옮긴다"). */
     const isFurn = (() => { try { return (roomView.furniture() || []).some(f => f.uid === this.uid); }
                             catch { return false; } })();
+    /* ★ 2026-10-10 벽 걸이 — 걸린 그림은 바닥 끌기가 아니라 «다른 걸이 자리»를 고른다(되돌리기 [취소] 없음 — 다시 고르면 된다) */
+    if (isFurn && this.hang) {
+      const uid = this.uid, name = $('furnName').textContent;
+      hangPick.open({ uid }, async spotId => {
+        const r = await roomView.commitFurnitureAt(uid, { hang: spotId });
+        this.afterMove(r, `🖼 ${josa(name, '을', '를')} 다른 자리에 걸었습니다`);
+      });
+      return;
+    }
     if (!isFurn) {
       const why = (() => { try { return roomView.lampImmovableReason(this.uid); } catch { return null; } })();
       if (why) { $('dropLabel').textContent = why; $('dropLabel').classList.add('no'); return; }
@@ -17091,6 +17207,7 @@ function bindPicked() {
     }
   }
   tapOnce('furnMove', () => furnPicked.beginMove());
+  tapOnce('hangPickCancel', () => hangPick.close());   /* ★ 10-10 벽 걸이 — 걸이 자리 고르기 그만두기 */
   tapOnce('furnTurn', () => furnPicked.beginTurn());
   tapOnce('furnAim', () => furnPicked.beginAim());
   /* ★ 등 켜기/끄기 — 규칙은 방뷰가 갖고 있다. 여기는 누르는 자리다(§furnLamp) */

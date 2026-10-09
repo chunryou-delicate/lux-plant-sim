@@ -105,9 +105,13 @@ try {
   /* ④ 다음 날 · 앞치마 · 세이브 */
   await page.eval(`(()=>{ window.__byeotSheet && window.__byeotSheet.close && window.__byeotSheet.close(); })()`, false); await sleep(500);
   const d1 = await J(`(()=>window.__S().day)()`);
+  /* ⑦ 벽 걸이 달력 계절(10-10) — 일부러 다른 계절로 틀어 두고 하루를 넘기면 게임 계절(skyFor)로 돌아와 있다 */
+  const sea0 = await J(`(()=>{ const S=window.__S(); const now=window.__io.light.skyFor(S.day, S.sim).season; const other = now === 'winter' ? 'summer' : 'winter'; return { now, other, set: window.__rv.setSeason(other) }; })()`);
   await page.eval(`(()=>{ const n=document.getElementById('mealGo'); if(n) n.click(); })()`, false); await sleep(3000); await skip();
   const d2 = await J(`(()=>window.__S().day)()`);
   ok(d2 === d1 + 1, `가게를 열면 [다음 날]이 다시 간다(${d1} → ${d2})`);
+  const sea1 = await J(`(()=>{ const S=window.__S(); const now=window.__io.light.skyFor(S.day, S.sim).season; return { now, changed: window.__rv.setSeason(now) }; })()`);
+  ok(sea0.set === true && sea1.changed === false, `⑦ 하루가 넘어가면 달력 계절을 게임 계절로 맞춘다(틀어 둔 ${sea0.other} → ${sea1.now})`);
   const outfit = await J(`(()=>({ o: window.__rv && window.__rv.heroOutfit ? window.__rv.heroOutfit() : null }))()`);
   ok(outfit.o === 'apron', `앞치마(${outfit.o})`);
   const hd = await J(`(()=>({ on: window.__io.growth.healthDropEnabled ? window.__io.growth.healthDropEnabled() : null }))()`);
