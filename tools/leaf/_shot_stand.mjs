@@ -5,7 +5,7 @@
      stand_2_side.png    옆 각
      stand_3_cut.png     삽수 하나에 붙임(게임의 누름 열쇠 — rv.plants 줄의 key)
    방에 선 그루·삽수 줄(종류·생장일)과 삽수 상태를 같이 적는다.
-   CUT=<삽수 id>(붙일 삽수 · 없으면 첫 삽수) · SAVE= OUTDIR= (필수 · 비어 있어야) · BYEOT_URL=(기본 127.0.0.1:9340 · tools/serve.py) */
+   CUT=<삽수 id>(붙일 삽수 · 없으면 첫 삽수) · CUTS=a,b(삽수마다 붙여 찍기) · SAVE= OUTDIR= (필수 · 비어 있어야) · BYEOT_URL=(기본 127.0.0.1:9340 · tools/serve.py) */
 import fs from 'node:fs';
 import { launch, sleep } from '../test_cdp.mjs';
 const OUTDIR = process.env.OUTDIR, SAVEF = process.env.SAVE;
@@ -27,7 +27,7 @@ const camWait = async () => { for (let i = 0; i < 30; i++) { if (await page.eval
 await quiet();
 const info = await J(`(async()=>{ const S=window.__S(); return { 방:S.home.room, 날:S.day,
   줄:(window.__rv.plants()||[]).map(r=>({key:r.key, potId:r.potId, kind:r.kind, 생장일:r.growthDays})),
-  삽수:(S.cuttings||[]).map(c=>({id:c.id, 상태:c.status, 그릇:c.container, 잎:(c.leafVarie||[]).length, 무늬잎:(c.leafVarie||[]).filter(Boolean).length, 자리:c.slotId||(c.at&&c.at.onUid)||null})) }; })()`);
+  삽수:(S.cuttings||[]).map(c=>({id:c.id, 상태:c.status, 그릇:c.container, 잎:(c.leafVarie||[]).length, 무늬잎:(c.leafVarie||[]).filter(Boolean).length, 자리:c.slotId||(c.at&&c.at.onUid)||null, leafDays:c.leafDays??null})) }; })()`);
 console.log('판 —', JSON.stringify(info));
 await page.shot(`${OUTDIR}/stand_0_room.png`);
 const cutRows = (info.줄 || []).filter(r => /^cut/.test(r.kind || ''));
@@ -43,4 +43,10 @@ if (k0) {
   console.log('삽수 누름 카메라 —', await page.eval(`JSON.stringify(window.__rv.camera())`));
   await page.shot(`${OUTDIR}/stand_3_cut.png`);
 } else console.log('⛔ 방에 선 삽수가 없다');
+/* CUTS=cut_01,cut_03 — 삽수마다 붙여 찍는다(stand_4_<id>.png) */
+for (const id of (process.env.CUTS || '').split(',').filter(Boolean)) {
+  await page.eval(`(()=>{try{window.__rv.focusSlot(null,true);}catch(e){}})()`, false); await camWait();
+  await page.eval(`(()=>{try{window.__rv.focusSlot(${JSON.stringify('free:' + id)},true);}catch(e){}})()`, false); await camWait();
+  await page.shot(`${OUTDIR}/stand_4_${id}.png`);
+}
 await page.close();
