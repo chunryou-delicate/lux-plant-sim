@@ -36,6 +36,8 @@
 
     python tools/char/fit_portrait.py <들어온.png> <나갈.png>
     python tools/char/fit_portrait.py ... --ref assets/characters/portraits/portrait_moni_sad.png
+    python tools/char/fit_portrait.py ... --tol 8      (바탕이 깨끗한 순백이고 옷이 크림색일 때 · 기본 26)
+    python tools/char/fit_portrait.py ... --tol 8 --pockets   (안 이어진 흰 틈도 지움 · 눈 반짝임은 남김 — §clear_pockets)
 """
 import os
 import sys
@@ -82,6 +84,39 @@ def edge_background(rgb, tol=26):
             if 0 <= ny < h and 0 <= nx < w and near[ny, nx] and not bg[ny, nx]:
                 bg[ny, nx] = True; q.append((ny, nx))
     return bg
+
+
+def clear_pockets(rgb, bg, tol):
+    """가장자리와 «안 이어진» 배경 주머니(머리채와 팔 사이 · 잎 구멍 · 몸과 잎 사이)도 지운다 — --pockets 일 때만.
+
+    ★ 2026-10-09 Higgsfield 초상: 퍼뜨림이 못 닿는 흰 틈이 대사창에서 «흰 실»로 남았다.
+    ⛔ 눈 속 반짝임·눈물도 같은 순백 주머니다 — 지우면 눈이 뚫린다. 가르는 법(일곱 장을 칠해 보고 정함):
+      · 그림 가운데 띠(|x−가운데| ≤ 0.25 폭) 안이고 인물 높이의 위 0.40 안 ⇒ 남긴다(눈 반짝임 높이 0.23~0.37 · 눈물 폭 0.19)
+      · 그 밖 ⇒ 배경이다 — 옆 띠(머리채 틈 · 잎 구멍) · 가운데 아래(몬이 몸과 잎 사이 0.42~0.56 · 가위 쥔 손가락 틈)
+      ⛔ 첫 판은 «둘레가 어두우면 눈»으로 갈랐다 — 몬이 외곽선이 짙은 자줏빛이라 몸·잎 틈 둘레도 어둡고,
+        눈 반짝임 둘레는 오히려 밝아(옆 반사광) 눈이 뚫렸다. 위치로 가른다.
+    ⛔ 못 하는 것: 얼굴 높이 가운데의 «진짜 배경 틈»은 남긴다 — 그림으로 볼 것."""
+    from scipy.ndimage import label
+    near = (np.abs(rgb.astype(int) - rgb[0, 0].astype(int)).max(axis=2) <= tol) & ~bg
+    lab, n = label(near)
+    w = rgb.shape[1]
+    fy = np.nonzero((~bg).any(axis=1))[0]
+    top, fh = int(fy.min()), int(fy.max() - fy.min() + 1)
+    out = bg.copy()
+    gone = kept = 0
+    for i in range(1, n + 1):
+        m = lab == i
+        cnt = int(m.sum())
+        if cnt < 30:
+            continue
+        ys, xs = np.nonzero(m)
+        if abs(xs.mean() - w / 2) <= 0.25 * w and (ys.mean() - top) / fh < 0.40:
+            kept += cnt
+            continue
+        out |= m
+        gone += cnt
+    print('  주머니: 지움 %d 화소 · 남김(눈 반짝임) %d 화소' % (gone, kept))
+    return out
 
 
 def ref_metrics(paths):
@@ -148,9 +183,16 @@ def main():
               % (BOTTOM_OVERRIDE, bottom))
         bottom = BOTTOM_OVERRIDE
 
+    # ★ 2026-10-09 — Higgsfield 초상은 바탕이 거의 순백(모서리 흔들림 ≤2)인데 크림 티가 그 흰색에서 23~28 밖에 안 떨어져
+    #   기본 26 으로 퍼뜨리면 어깨 닿은 자리로 배경이 티 안까지 먹어 들어갔다(beam 소매가 통째로 뚫림).
+    #   ⇒ 바탕이 깨끗한 그림은 --tol 8 로 좁힌다. 기본값은 그대로 둔다(클링 것들은 26 으로 통과했다).
+    tol = int(sys.argv[sys.argv.index('--tol') + 1]) if '--tol' in sys.argv else 26
     im = Image.open(src).convert('RGB')
     rgb = np.asarray(im)
-    bg = edge_background(rgb)
+    bg = edge_background(rgb, tol)
+    print('배경 퍼뜨림 허용 %d' % tol)
+    if '--pockets' in sys.argv:
+        bg = clear_pockets(rgb, bg, tol)
     fg = ~bg
     if not fg.any():
         print('⛔ 인물을 못 찾았다 — 배경색이 인물과 같은가?')

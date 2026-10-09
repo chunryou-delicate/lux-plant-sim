@@ -876,3 +876,169 @@
  ]
 }
 ```
+
+
+---
+
+## 첫 주문 판정 (총괄 93e2fd7a · 18줄 36장 · gpt_image_2_5 · 2026-10-09 char)
+
+검수 ①~⑦ 을 장마다 크게(2048 원본 잘라) 봤다. 머리 밝기는 11장 모두 61~73(정본 58 이상 · `illust_hair_lift` 불필요 — 글의 «clearly brown, NOT black» 이 먹었다).
+
+### 장면 — 고른 판
+| 그림 | 고름 | 버림 | 까닭 |
+|---|---|---|---|
+| `ev_furniture_shop` | **a** | b | a: 몬이가 3단 화분 받침 «위에» 앉아 «이거» 를 몸으로 보여 준다 · 장바구니 천가방 = 가게 나들이. b: 몬이가 스툴 쪽을 가리켜 «무엇»이 흐림(일꾼 권 b 와 다름) |
+| `ev_pp_trade_offer` | **b** | a | b: 쪽지가 맞바꿈 화살표 그림(글자 없음) — «바꿀래?»가 그림으로 읽힌다 · 손에 든 삽수 무늬가 또렷. 흠: PP 화분이 게시판 받침에 걸림(어색하나 읽힘). a: 쪽지가 빈 종이 · 손 삽수 무늬 약함 |
+| `ev_pp_trade_done` | **b** | a | 둘 다 통과. b: 몬이가 반짝이며 환호(REF_MONI_CHEER 결) · 손이 화분을 감싸는 모양 깔끔 |
+| `ev_al_corm` | **a** | b | a: 손끝으로 흙에서 구근을 «들어 올리는» 순간(뿌리·흙 떨어짐) — 글 그대로의 가까운 판. b: 이미 들고 있음 · 모종삽 |
+| `ev_al_sprout_varie` | **b** | a | b: 흙 위로 구근이 보이고 거기서 무늬 화살촉 잎 — 앞 판 ev_al_corm 과 이어진다. a 도 통과(몬이 눈 감고 웃음) |
+| `ev_home_mark_quarter` | **a(임시)** | b | ⚠ 다시 뽑기 — 아래. 지금 판은 자리만 채움(core 가 이름으로 걸 수 있게) |
+| `ev_home_mark_half` | **b(임시)** | a | ⚠ 다시 뽑기 — 아래. b 가 집이 a 보다 작아 quarter→¾ 사이 크기 |
+| `ev_home_mark_threequarter` | **a** | b | a: 뒷모습 · 집이 가까워짐 · 창이 빛남 — 이 판이 다시 뽑는 셋의 구도 참조(REF_ROAD). b: 잎 하나뿐인 몬이(실패) |
+| `ev_home_mark_near` | **a(임시)** | b | ⚠ 다시 뽑기 — 둘 다 집이 ¾ 와 같은 거리 |
+| `ev_oneroom_full` | **a** | b | a: 얼굴이 보이고 선반 가득 · 몬이 환호. b: 등을 돌려 표정이 안 보임 |
+| `ev_first_story_end` | **a** | b | a: 노을 창가 · 큰 몬스테라 · 몬이 — 글 그대로. b: 큰 몬스테라 없음(실패) |
+
+게임 판: `assets/illust/<이름>.png` 1024² RGB(ev_neighbor_order 와 같은 규격 · 원본 2048 LANCZOS 축소). 원본 PNG 는 저장소 밖 `_hf_masters`.
+
+### 초상 — 고른 판
+| 그림 | 고름 | 까닭 |
+|---|---|---|
+| `portrait_jachwi_scissors` | **a** | 가위 쥔 손 모양 자연스러움. b 도 통과 |
+| `portrait_jachwi_bulb` | **a** | a·b 거의 같음 — 손바닥 구근이 조금 더 또렷 |
+| `portrait_jachwi_beam` | **b** | 눈물 맺힌 활짝 · 맞잡은 손이 a 보다 깔끔 |
+| `portrait_jachwi_winter` | **b** | 글 «looking down gently» 그대로(a 는 정면) |
+| `portrait_moni_bulb` | **b** | 구근을 «자랑스럽게» 치켜듦 · 반짝 표시 |
+| `portrait_moni_shh` | **a** | 잎 끝을 입에. b: 구멍 난 잎이 셋(실패) |
+| `portrait_moni_scissors` | **a** | 가위를 잎으로 조심히. b: 잎이 날 위에 걸침(실패) |
+
+게임 판: `assets/characters/portraits/<이름>.png` 600×800 투명 — `fit_portrait.py --ref <정본 neutral> --tol 8 --pockets`.
+- ⛔ 기본(허용 26)으로 깎았더니 크림 티가 순백 바탕에서 23~28 밖에 안 떨어져 어깨로 배경이 먹어 들어갔다(beam 소매 통째로 뚫림) ⇒ `--tol 8`(바탕 흔들림 ≤2)
+- ⛔ 머리채와 팔 사이 · 잎 구멍 · 몬이 몸과 잎 사이의 «안 이어진» 흰 틈이 남았다 ⇒ `--pockets`(가운데 띠 · 위 0.40 안 = 눈 반짝임·눈물만 남김). 첫 판은 «둘레가 어두우면 눈»으로 갈라 몬이 눈이 뚫렸다 — 위치로 바꿈. 자홍 바탕에 놓고 일곱 장 다 봄
+- 머리는 정본 초상과 같은 «아주 짙은 갈색»(초상 결 그대로 — 올리지 않음)
+
+### 다시 뽑기 3줄 (6장) — 이정표 넷을 «한 벌»로
+- 까닭: 이정표 넷은 같은 길의 네 순간이다. 지금 판은 quarter·half 가 **앞모습(집을 등지고 걸어 나옴)** · ¾ 는 뒷모습 · near 는 집이 ¾ 와 같은 거리. 넷이 차례로 뜨면 «방향이 뒤집히고 마지막에 안 다가간다».
+- 고침: ¾ a(뒷모습 · 집으로 걸어감)를 **구도 참조 image 4 `REF_ROAD` = `assets/illust/ev_home_mark_threequarter.png`** 로 넣고, 거리만 글로 바꾼다(quarter 아주 멀리 · half 작게 · near 집 문 앞 크게).
+- 받으면 같은 이름으로 갈아 끼운다(core 거는 자리는 그대로).
+
+```json
+[
+ {
+  "name": "ev_home_mark_quarter",
+  "kind": "scene",
+  "retake": true,
+  "why": "a·b 둘 다 앞모습 — 집을 등지고 «집에서 걸어 나오는» 그림이 된다. ¾(a)는 뒷모습이라 넷이 한 벌로 안 읽힌다",
+  "save_as": "assets/illust/ev_home_mark_quarter.png",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "1:1",
+   "count": 2,
+   "prompt": "SAME place, SAME camera and SAME composition as image 4: a winding dirt path over gentle green hills up to a small cream house with an orange roof and a sunny window. She is seen from BEHIND (back view), walking AWAY from the viewer TOWARD the house, carrying Moni in her arms. She has just crossed the first hill: the house is still very far, a tiny speck on the farthest hill, much smaller than in image 4; several hills lie between her and it. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "medias": [
+    {
+     "value": "REF_JACHWI",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_MONI",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_STYLE",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_ROAD",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    }
+   ]
+  }
+ },
+ {
+  "name": "ev_home_mark_half",
+  "kind": "scene",
+  "retake": true,
+  "why": "quarter 와 같은 까닭(앞모습 · 집을 등짐)",
+  "save_as": "assets/illust/ev_home_mark_half.png",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "1:1",
+   "count": 2,
+   "prompt": "SAME place, SAME camera and SAME composition as image 4: a winding dirt path over gentle green hills up to a small cream house with an orange roof and a sunny window. She is seen from BEHIND (back view), walking AWAY from the viewer TOWARD the house, carrying Moni in her arms. She stands on top of the second hill, exactly halfway: the house is small but clearly visible, smaller than in image 4. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "medias": [
+    {
+     "value": "REF_JACHWI",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_MONI",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_STYLE",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_ROAD",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    }
+   ]
+  }
+ },
+ {
+  "name": "ev_home_mark_near",
+  "kind": "scene",
+  "retake": true,
+  "why": "a·b 둘 다 집이 ¾ 판과 같은 거리(언덕 위 작게) — «집 앞 문»이 안 된다(총괄 지적 그대로)",
+  "save_as": "assets/illust/ev_home_mark_near.png",
+  "tool": "generate_image",
+  "params": {
+   "model": "gpt_image_2_5",
+   "aspect_ratio": "1:1",
+   "count": 2,
+   "prompt": "SAME place, SAME camera and SAME composition as image 4: a winding dirt path over gentle green hills up to a small cream house with an orange roof and a sunny window. She is seen from BEHIND (back view), walking AWAY from the viewer TOWARD the house, carrying Moni in her arms. She has ARRIVED: she stands right at the small wooden gate of the house's front yard; the house is CLOSE and LARGE, filling the upper half of the frame, its sunny window glowing warm and its front door just ahead, MUCH closer than in image 4. The hills she crossed lie behind and below. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "medias": [
+    {
+     "value": "REF_JACHWI",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_MONI",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_STYLE",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    },
+    {
+     "value": "REF_ROAD",
+     "role": "<models_explore get gpt_image_2_5 의 참조 role>"
+    }
+   ]
+  }
+ }
+]
+```
+
+### core 거는 자리 (sceneArtOf · 대사 scriptId → 그림)
+| 대사(scriptId) | 그림 | 메모 |
+|---|---|---|
+| neighborOrder | `ev_neighbor_order` | 사건 neighbor_order · 이미 있는 그림인데 sceneArtOf 에 아직 없음 |
+| furnitureShopOpen | `ev_furniture_shop` | D47 가구점 첫 날 |
+| ppTradeOffer · ppTradeOfferAgain | `ev_pp_trade_offer` | 두 번째 물음도 같은 그림 |
+| ppTradeDone | `ev_pp_trade_done` |  |
+| alAsleepCorms | `ev_al_corm` | al_asleep · corms>0 |
+| alSproutVarie | `ev_al_sprout_varie` | alSproutPlain 은 그림 없음(안 띄움) |
+| statusHomeQuarter | `ev_home_mark_quarter` | ⚠ status 한 줄(status:true) — 상태 줄이 대사 상자(#sceneArt 길)로 뜨는지 core 가 확인 · 안 뜨면 그 줄만 카드로 |
+| statusHomeHalf | `ev_home_mark_half` | 같음 |
+| statusHomeThreeQuarter | `ev_home_mark_threequarter` | 같음 |
+| statusHomeNear | `ev_home_mark_near` | 같음 |
+| endingReady | `ev_oneroom_full` | char 권함 — plan 이 줄 art 칸으로 다른 줄에 박으면 그것이 먼저(sceneArtOf 첫 줄) |
+| #chapterEnd(D28 덮개 · 지금 jobCards 판) | `ev_first_story_end` | 덮개 카드 위 그림 — #homeArt 처럼 img 하나 · 없으면 숨김(onerror) |
+
+### FACE_FILE 키 (core 표 · plan 이 줄마다 배정)
+- jachwi: { scissors: 'scissors', bulb: 'bulb', beam: 'beam', winter: 'winter' } · moni: { bulb: 'bulb', shh: 'shh', scissors: 'scissors' }
+- 파일 이름 = `portrait_<화자>_<키>.png`(지금 규약 그대로). 배정 전에는 «쓰는 대사가 없는 표정»으로 찍힌다 — 흠이 아니라 상태(9-07 몬이 다섯과 같음)
