@@ -1637,6 +1637,66 @@ export const SCRIPTS = {
      PP 사건: pp_trade_offer(ev.again — 두 번째 물음) · pp_trade_done · pp_trade_declined(ev.last — 두 번째 거절 → 상점에 진열)
               pp_pink_warn(위 잎 «분홍 잎» 둘 연달아) · pp_tip_withered(셋 연달아 → 줄기 끝 시듦) · pp_reverted(초록 잎이 이어짐 · 빛 모자람)
      AL 사건: al_sprout(ev.varie true/false — 구근 첫 싹이 무늬인가) · 겨울잠·깸은 사건 대신 퀘스트 열림·끝 대사가 싣는다(§quest al_keep_winter) */
+  /* ═══ ★★ 2026-10-10 [plan] D59(총괄) — 진로 «식물 가게» (명세 docs/handoff/plan-shop-spec-20261010.md §6) ═══
+     ⚠ 손님마다 다른 말(«{손님}이 … 찾는다» · 받아 감)은 대사가 아니라 기록 줄·주문판 글로 — [core] 가 data/balance/shop_customers.json 의
+       ask · thanks 를 그대로 쓴다(대사는 틀 글자를 못 채운다). 여기는 손님 이름이 안 드는 줄만. 몬이는 수를 안 말한다.
+     사건([core]): job_start(진로를 고른 직후 · 초보 보호 끝 알림) · shop_open(가게 첫날) · order_done{newRegular} · regulars_milestone{n: 3|10|30} */
+  jobStart: [
+    { who: 'moni',   face: 'teach',    text: '이제부턴 진짜야. 잘 돌보지 않으면 잎이 떨어져.' },
+    { who: 'moni',   face: 'cheer',    text: '대신 이제 네 가게야.' }
+  ],
+  shopOpen: [
+    { who: 'jachwi', face: 'happy',    text: '문 앞에 작은 주문판을 걸었다.' },
+    { who: 'moni',   face: 'teach',    text: '손님이 원하는 걸 적어 두고 가. 기한 안에 맞추면 돼.' }
+  ],
+  shopNewRegular: [
+    { who: 'moni',   face: 'proud',    text: '단골이 하나 늘었어.' }
+  ],
+  shopRegulars3: [
+    { who: 'moni',   face: 'cheer',    text: '단골이 셋이야. 이제 가게 같다.' }
+  ],
+  shopSign: [
+    { who: 'jachwi', face: 'surprise', text: '손님들이 간판은 언제 다냐고 묻는다.' },
+    { who: 'moni',   face: 'cheer',    text: '간판을 달자!' }
+  ],
+  shopTown: [
+    { who: 'jachwi', face: 'think',    text: '동네에서 식물 하면 여기래.' },
+    { who: 'moni',   face: 'proud',    text: '창턱 하나에서 여기까지 왔네.' }
+  ],
+  questHomeUnpack: [
+    { who: 'jachwi', face: 'curious',  text: '창이 둘이다. 어디부터 놓지.' },
+    { who: 'moni',   face: 'teach',    text: '처음이랑 같아. 놓아야 시작돼.' }
+  ],
+  questDoneHomeUnpack: [
+    { who: 'moni',   face: 'proud',    text: '다 놓았네. 여기가 네 집이고 네 가게야.' }
+  ],
+  questShopFirstOrder: [
+    { who: 'moni',   face: 'teach',    text: '주문판을 봐. 손님이 원하는 걸 기한 안에 맞추면 돼.' }
+  ],
+  questDoneShopFirstOrder: [
+    { who: 'jachwi', face: 'happy',    text: '첫 손님이 웃으며 받아 갔다.' },
+    { who: 'moni',   face: 'proud',    text: '이게 가게야.' }
+  ],
+  questShopRegulars3: [
+    { who: 'moni',   face: 'teach',    text: '맞춰 준 손님은 또 와. 단골을 늘려 보자.' }
+  ],
+  questDoneShopRegulars3: [
+    { who: 'moni',   face: 'cheer',    text: '단골이 셋이야. 이제 가게 같다.' }
+  ],
+  questShopSign: [
+    { who: 'moni',   face: 'teach',    text: '단골이 열이면 간판을 달자.' }
+  ],
+  questDoneShopSign: [
+    { who: 'jachwi', face: 'happy',    text: '간판을 달았다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 지나가는 사람도 알아.' }
+  ],
+  questShopTown: [
+    { who: 'moni',   face: 'calm',     text: '천천히 가자. 맞춘 손님이 다 이름이 돼.' }
+  ],
+  questDoneShopTown: [
+    { who: 'jachwi', face: 'think',    text: '동네에서 식물 하면 여기래.' },
+    { who: 'moni',   face: 'proud',    text: '창턱 하나에서 여기까지 왔네.' }
+  ],
   /* ★ 2026-10-10 [plan] D55(총괄) — 원룸에서 안 자르고 키운 그루가 칸 한도의 2배를 넘게 컸다(사건 `cut_too_wide` · [core] 75a785d6 · 그 그루·그 칸에서 한 번).
      결: 혼내지 않고 «많이 컸네»로 — 칸을 넓혀 주자. ⚠ «바닥»을 권하지 않는다: 원룸 바닥은 등을 다 켜도 안 자라는 자리(가구 빛 D · house-decor §C 잰 닻)라
      거기로 옮기면 그루가 멈춘다. 옮기면 «더 큰다»고도 약속하지 않는다(칸 넓이가 자람을 막는다는 규칙은 없다 — 그림이 겹칠 뿐). */
@@ -2249,6 +2309,8 @@ export const REPEATABLE = new Set(
              'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping', 'alAsleepCorms', 'alWakeAgain',
              /* ★ D55 — 그루마다·칸마다 한 번(core 가 거른다) — 그루가 여럿이면 여러 번 */
              'cutTooWide',
+             /* ★ D59 — 새 단골은 여러 번 */
+             'shopNewRegular',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear', 'statusHomeQuarter', 'statusHomeThreeQuarter',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
@@ -2313,6 +2375,9 @@ export const EVENT_SCRIPT = Object.freeze({
   furniture_shop_open: 'furnitureShopOpen',
   /* ★ 2026-10-10 [plan] D55 — 키운 그루가 칸보다 크게 자람(§cutTooWide) */
   cut_too_wide:        'cutTooWide',
+  /* ★ 2026-10-10 [plan] D59 — 식물 가게(§jobStart). 손님 이름이 드는 줄은 기록 줄(core) */
+  job_start:           'jobStart',
+  shop_open:           'shopOpen',
   pp_trade_done:       'ppTradeDone',
   pp_trade_declined:   'ppTradeDeclined',
   pp_pink_warn:        'ppPinkWarn',
@@ -2414,6 +2479,12 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   oneroom_sell:           'questOneroomSell',
   /* ★ 2026-10-09 [plan] D45 — 새 종 곁줄 셋 */
   pp_hold_pink:           'questPpHoldPink',
+  /* ★ 2026-10-10 [plan] D59 — 식물 가게 사슬 */
+  home_unpack:            'questHomeUnpack',
+  shop_first_order:       'questShopFirstOrder',
+  shop_regulars3:         'questShopRegulars3',
+  shop_sign:              'questShopSign',
+  shop_town:              'questShopTown',
   al_keep_winter:         'questAlKeepWinter',
   al_plant_corm:          'questAlPlantCorm',
   oneroom_home_fund:      'questOneroomHomeFund',
@@ -2450,6 +2521,11 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   oneroom_recut:          'questDoneOneroomRecut',
   oneroom_sell:           'questDoneOneroomSell',
   pp_hold_pink:           'questDonePpHoldPink',
+  home_unpack:            'questDoneHomeUnpack',
+  shop_first_order:       'questDoneShopFirstOrder',
+  shop_regulars3:         'questDoneShopRegulars3',
+  shop_sign:              'questDoneShopSign',
+  shop_town:              'questDoneShopTown',
   al_keep_winter:         'questDoneAlKeepWinter',
   al_plant_corm:          'questDoneAlPlantCorm',
   oneroom_home_fund:      'questDoneOneroomHomeFund',
@@ -2502,6 +2578,8 @@ const EVENT_ORDER = [
      「바꿨다」가 먼저 와야 「분홍이 고운 잎이 나면…」이 그 뒤에 선다. 시듦은 경고보다 앞(같은 날 둘은 안 남) */
   'pp_trade_offer', 'pp_trade_declined', 'pp_trade_done',
   'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake', 'cut_too_wide',
+  /* ★ 2026-10-10 [plan] D59 — 진로 첫날은 «이제부턴 진짜야» → 주문판 → (퀘스트 열림). 납품 «단골 하나 늘었어»는 퀘스트 끝(«단골 셋» 등)보다 앞 */
+  'job_start', 'shop_open', 'order_done', 'regulars_milestone',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
      한 판에서 「①을 끝냈다 → 그래서 ②가 열린다」가 같은 날 난다(`siru5_cycle5` 의 여는
      조건이 `crop_mix` 완료라서). 순서가 뒤집히면 **열리고 나서 끝난 것을 축하한다.**
@@ -2573,6 +2651,9 @@ function scriptOf(ev, S = null) {
   /* ★ D52 — 잠드는 날: 구근을 찾았을 때만 말한다(ev.corms > 0) · 깸: 첫 깸은 곁줄 끝 대사가 말하므로 두 번째부터 */
   if (id === 'al_asleep') return ev && Number.isFinite(ev.corms) && ev.corms > 0 ? 'alAsleepCorms' : null;
   if (id === 'al_wake')   return ev && ev.first === false ? 'alWakeAgain' : null;
+  /* ★ 2026-10-10 [plan] D59 — 납품: 새 단골일 때만 한 줄(받아 간 말은 기록 줄 · core) · 이정표는 퀘스트 끝 대사와 겹치면 퀘스트 쪽이 말한다(§scriptsForEvents 걸름) */
+  if (id === 'order_done') return ev && ev.newRegular === true ? 'shopNewRegular' : null;
+  if (id === 'regulars_milestone') return ev && ev.n === 3 ? 'shopRegulars3' : ev && ev.n === 10 ? 'shopSign' : ev && ev.n === 30 ? 'shopTown' : null;
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
   if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
   return EVENT_SCRIPT[id] || null;
@@ -2629,6 +2710,12 @@ export function scriptsForEvents(events = [], S = null) {
   if (out.includes('endingReady') || out.includes('endingReadyAgain')) { const q = out.indexOf('questDoneOneroomHomeFund'); if (q >= 0) out.splice(q, 1); }
   /* ★ 2026-10-08 [plan] 혹 난 날은 경고(w_node)도 같이 난다 — 같은 순간이라 «혹이 났어» 한 벌만 */
   if (out.includes('cuttingNode')) { const w = out.indexOf('cuttingWarn'); if (w >= 0) out.splice(w, 1); }
+  /* ★ 2026-10-10 [plan] D59 — 이정표와 그 퀘스트 끝이 같은 턴이면 퀘스트 끝 대사만(같은 말 두 번 · «단골이 셋이야»). 퀘스트를 이미 끝낸 판(두 번째 서른 등)은 이정표가 말한다 */
+  for (const [ms, qd] of [['shopRegulars3', 'questDoneShopRegulars3'], ['shopSign', 'questDoneShopSign'], ['shopTown', 'questDoneShopTown']])
+    if (out.includes(ms) && out.includes(qd)) out.splice(out.indexOf(ms), 1);
+  /* 새 단골 «하나 늘었어»와 «단골 셋/간판/서른» 끝이 같은 턴이면 앞말은 군말 */
+  if (out.includes('shopNewRegular') && out.some(id => /^questDoneShop(Regulars3|Sign|Town)$|^shop(Regulars3|Sign|Town)$/.test(id)))
+    out.splice(out.indexOf('shopNewRegular'), 1);
   /* ★ 2026-10-09 [plan] D43 — 원룸에 들어온 날 들고 온 삽수가 가방에 있으면 도착 장면 «바로 뒤»에 한 줄(§movedInBagCuttings).
      가방 = 안 죽었고 자리(at·slotId)가 없음 — [core] turn.bagCuttings 와 같은 자(이사가 자리를 비운 직후라 들고 온 것이 곧 이것이다). */
   { const m = out.indexOf('movedInOneroom');

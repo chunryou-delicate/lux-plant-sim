@@ -93,3 +93,11 @@
 - 돌봄·육종 진로 — 카드만(«준비 중»).
 - 진로 바꾸기 — 없음.
 - 새 값표 — 없음(시세 × 웃돈).
+
+## 9. plan 이 넣은 것 (10-10 · 사건·칸이 오기 전엔 조용)
+- quest.js `SHOP_QUESTS`(room `'tworoom'` · 칸 `job === 'shop'`) 다섯: `home_unpack` → `shop_first_order` → `shop_regulars3` → `shop_sign`(10) → `shop_town`(30). 칩 글은 `shopChipTodo`(열린 주문이 있으면 «주문 n건 · 가장 급한 것 d일 남음» · 없으면 «단골 r명 — {셋|간판|서른}까지 k명»).
+- `questRoomOk`: `'tworoom'` = movedHome · 원룸 줄은 산 집에선 잠김(D48 결) · 새 종 곁줄은 `'afterBanjiha'`(반지하를 떠난 뒤 어디서나 — 투룸에서도 PP·AL 이 자란다).
+- 스냅샷 칸(core): `movedHome · job · shopDone · shopRegulars · shopOpenOrders · shopDueSoonest`(emptySnapshot 에 null).
+- dialogue.js: 사건 `job_start`(«이제부턴 진짜야…» / «대신 이제 네 가게야.») · `shop_open` · `order_done{newRegular}`(새 단골이면 «단골이 하나 늘었어.») · `regulars_milestone{n}`(3/10/30) · 퀘스트 열림·끝 열 줄. 이정표와 그 퀘스트 끝이 같은 턴이면 퀘스트 쪽만 말한다.
+- ⚠ **손님 이름이 드는 줄은 대사가 아니라 기록 줄·주문판 글**이다(대사는 틀 글자를 못 채운다) — [core] 가 `data/balance/shop_customers.json` 의 `ko · ask · thanks` 로: 주문이 붙을 때 «{ko} — {ask}» · 받아 갈 때 «{ko} — {thanks}».
+- 손님 표 36(c13b4f0e) · test_quest 걸음에 산 집·가게 걸음을 이어 30줄 다 열고 닫음.

@@ -232,6 +232,9 @@ export function emptySnapshot() {
               alDormantNow 알로카시아 한 그루라도 자나(잎이 다 졌나) · alWokeCount 잠에서 깬 번 수 · alCormsFound 잠들 때 흙 속에서 찾은 구근 수(누적 · D52)
               alFoundCormsPlanted 그 «찾은» 구근을 심은 수(상점에서 산 구근은 안 침 — 사서 심은 것으로 이 줄이 열리자마자 끝나지 않게) */
            ppPlants: null, ppPinkHoldCuts: null,
+           /* ★ 2026-10-10 D59 식물 가게([core] · null = 모른다) — movedHome 산 투룸으로 옮김 · job 진로 id · shopDone 맞춘 주문 수 ·
+              shopRegulars 단골 수(맞춘 서로 다른 손님) · shopOpenOrders 열린 주문 수 · shopDueSoonest 가장 급한 주문의 남은 날 */
+           movedHome: null, job: null, shopDone: null, shopRegulars: null, shopOpenOrders: null, shopDueSoonest: null,
            alDormantNow: null, alWokeCount: null, alCormsFound: null, alFoundCormsPlanted: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
@@ -263,8 +266,13 @@ export function questRoomOk(q, s) {
   const d = typeof q === 'string' ? QUESTS.find(x => x.id === q) : q;
   if (!d || !d.room) return true;
   const m = s ? s.movedOut : null;
-  if (d.room === 'oneroom') return m === true;
+  /* ★ 2026-10-10 [plan] 식물 가게(D59) — «산 집(투룸)으로 옮김»(movedHome · [core]). 원룸 줄은 산 집에선 잠긴다(D48 결 — 지난 방 줄이 칩을 안 쥔다).
+     'afterBanjiha' = 반지하를 떠난 뒤 어디서나(새 종 곁줄 — PP·AL 은 투룸에서도 자란다). */
+  const home = s ? s.movedHome === true : false;
+  if (d.room === 'oneroom') return m === true && !home;
   if (d.room === 'banjiha') return m !== true;
+  if (d.room === 'tworoom') return home;
+  if (d.room === 'afterBanjiha') return m === true;
   return true;
 }
 
@@ -985,6 +993,84 @@ const ONEROOM_QUESTS = Object.freeze([
   })
 ]);
 
+/* ══ ★★ 2026-10-10 [plan] D59(총괄) — 진로 «식물 가게» 사슬 (명세 docs/handoff/plan-shop-spec-20261010.md §5) ══════
+   짐 풀기(투룸) → 첫 납품 → 단골 셋 → 간판(단골 열) → 동네 식물 가게(단골 서른). 보상은 돈이 아니다(이정표 · 간판 = 외관).
+   칩 글(D51 결 · 날마다 바뀜): 열린 주문이 있으면 «주문 n건 · 가장 급한 것 d일 남음», 없으면 «단골 r명 — {다음 이정표}까지 k명».
+   ⚠ 칸이 null 이면(배선 전) 안 열린다. 새 종 곁줄보다 «앞»이다 — 산 집에선 가게가 줄기다. */
+const shopChipTodo = (s, goal, label) => {
+  if (s && Number.isFinite(s.shopOpenOrders) && s.shopOpenOrders > 0 && Number.isFinite(s.shopDueSoonest))
+    return `주문 ${s.shopOpenOrders}건 · 가장 급한 것 ${Math.max(0, s.shopDueSoonest)}일 남음`;
+  const r = (s && Number.isFinite(s.shopRegulars)) ? s.shopRegulars : 0;
+  return `단골 ${r}명 — ${label}까지 ${Math.max(0, goal - r)}명`;
+};
+const isShop = s => !!s && s.movedHome === true && s.job === 'shop';
+const SHOP_QUESTS = Object.freeze([
+  Object.freeze({
+    id: 'home_unpack',
+    room: 'tworoom',
+    ko: '새 집에 짐을 푼다',
+    reward: '투룸이 내 가게가 됩니다',
+    teaches: ['내 집도 자리부터'],
+    why: '들고 온 것은 가방에서 아무 일도 안 합니다. 새 집 창가부터 자리를 정해 놓으세요.',
+    todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
+      ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
+    opens: s => isShop(s),
+    done:  s => isShop(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
+  }),
+  Object.freeze({
+    id: 'shop_first_order',
+    room: 'tworoom',
+    ko: '첫 주문을 맞춘다',
+    reward: '손님이 단골이 됩니다',
+    teaches: ['주문은 기한 안에 맞춘다'],
+    why: '주문판에 손님이 원하는 것이 붙습니다. 기한 안에 맞춰 납품하면 시세보다 더 받습니다.',
+    todo: (q, s) => (s && Number.isFinite(s.shopOpenOrders) && s.shopOpenOrders > 0)
+      ? '주문판의 주문 하나를 맞춰 납품하세요' : '주문판에 주문이 붙기를 기다리세요',
+    after: 'home_unpack',
+    opens: (s, ctx) => isShop(s) && !!(ctx && ctx.doneIds.includes('home_unpack')),
+    done:  s => isShop(s) && Number.isFinite(s.shopDone) && s.shopDone >= 1
+  }),
+  Object.freeze({
+    id: 'shop_regulars3',
+    room: 'tworoom',
+    ko: '단골 셋',
+    reward: '가게다운 가게가 됩니다',
+    teaches: ['맞춘 손님이 단골이 된다'],
+    why: '주문을 맞춘 손님은 단골이 됩니다. 단골이 늘면 가게가 자리를 잡습니다.',
+    need: Object.freeze({ regulars: 3 }),
+    todo: (q, s) => shopChipTodo(s, q.need.regulars, '셋'),
+    after: 'shop_first_order',
+    opens: (s, ctx) => isShop(s) && !!(ctx && ctx.doneIds.includes('shop_first_order')),
+    done:  (s, ctx) => isShop(s) && Number.isFinite(s.shopRegulars) && s.shopRegulars >= ctx.q.need.regulars
+  }),
+  Object.freeze({
+    id: 'shop_sign',
+    room: 'tworoom',
+    ko: '간판을 단다',
+    reward: '가게 간판이 섭니다',
+    teaches: ['단골이 가게를 만든다'],
+    why: '단골이 열이면 동네가 이 가게를 압니다. 간판을 답니다.',
+    need: Object.freeze({ regulars: 10 }),
+    todo: (q, s) => shopChipTodo(s, q.need.regulars, '간판'),
+    after: 'shop_regulars3',
+    opens: (s, ctx) => isShop(s) && !!(ctx && ctx.doneIds.includes('shop_regulars3')),
+    done:  (s, ctx) => isShop(s) && Number.isFinite(s.shopRegulars) && s.shopRegulars >= ctx.q.need.regulars
+  }),
+  Object.freeze({
+    id: 'shop_town',
+    room: 'tworoom',
+    ko: '동네 식물 가게',
+    reward: '동네 식물 가게라고 불립니다',
+    teaches: ['오래 맞추면 이름이 된다'],
+    why: '단골이 서른이면 동네에서 식물 하면 이 가게를 떠올립니다.',
+    need: Object.freeze({ regulars: 30 }),
+    todo: (q, s) => shopChipTodo(s, q.need.regulars, '서른'),
+    after: 'shop_sign',
+    opens: (s, ctx) => isShop(s) && !!(ctx && ctx.doneIds.includes('shop_sign')),
+    done:  (s, ctx) => isShop(s) && Number.isFinite(s.shopRegulars) && s.shopRegulars >= ctx.q.need.regulars
+  })
+]);
+
 /* ══ ★★ 2026-10-09 [plan] D45(총괄) — 새 식물 두 종의 곁줄 셋 (명세 docs/handoff/plan-newspecies-20261009.md) ══
    몬스테라 «자리» · 핑크프린세스 «가위» · 알로카시아 «철». 셋 다 곁줄이다 — 원룸 사슬(배열 앞)이 열려 있는 동안
    「지금 할 일」 칩을 안 잡는다(questView 는 정의 순서에서 첫째를 뽑는다 · 이 묶음은 맨 끝).
@@ -993,7 +1079,7 @@ const ONEROOM_QUESTS = Object.freeze([
 const SPECIES_QUESTS = Object.freeze([
   Object.freeze({
     id: 'pp_hold_pink',
-    room: 'oneroom',
+    room: 'afterBanjiha',
     ko: '분홍을 붙잡는다',
     reward: '분홍 줄이 그 마디에서 다시 이어집니다',
     teaches: ['가위가 무늬를 붙잡는다', '온통 분홍인 잎은 예쁘지만 못 자란다'],
@@ -1004,7 +1090,7 @@ const SPECIES_QUESTS = Object.freeze([
   }),
   Object.freeze({
     id: 'al_keep_winter',
-    room: 'oneroom',
+    room: 'afterBanjiha',
     ko: '겨울잠을 지킨다',
     /* ★ 2026-10-09 D52 — 구근은 «잠들 때» 찾는다(봄에 심은 그루는 봄 깸이 원룸 끝 무렵이라 열어 보기를 못 보던 판). 깸은 «다시 깼다»만 */
     reward: '봄에 다시 잎이 납니다',
@@ -1017,7 +1103,7 @@ const SPECIES_QUESTS = Object.freeze([
   }),
   Object.freeze({
     id: 'al_plant_corm',
-    room: 'oneroom',
+    room: 'afterBanjiha',
     ko: '구근을 심는다',
     reward: '새 그루가 하나 늡니다',
     teaches: ['알로카시아는 구근으로 는다', '무늬는 싹이 나야 안다'],
@@ -1041,7 +1127,9 @@ const SPECIES_QUESTS = Object.freeze([
      ①②의 어떤 줄도 「지금 할 일」이 못 된다 — 박사님이 짚으신 그 구멍이 거기서 났다. */
 /* ★ 2026-10-07 — 원룸 다섯 줄은 «느린 줄 앞»이다. 맨 뒤면 잎 줄이 영영 안 끝나는 판(그루째 판 판)에서
      원룸 줄이 「지금 할 일」이 못 된다 — 위 ③ 을 맨 뒤로 옮긴 것과 같은 까닭이다. 반지하에서는 방이 걸러 안 보인다. */
-export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SPECIES_QUESTS]);
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SHOP_QUESTS, ...SPECIES_QUESTS]);
+/* ★ 2026-10-10 D59 — 식물 가게 사슬(§SHOP_QUESTS) */
+export const SHOP_QUEST_IDS = Object.freeze(SHOP_QUESTS.map(q => q.id));
 /* ★ 2026-10-09 D45 — 새 종 곁줄(§SPECIES_QUESTS) */
 export const SPECIES_QUEST_IDS = Object.freeze(SPECIES_QUESTS.map(q => q.id));
 export const ONEROOM_QUEST_IDS = Object.freeze(ONEROOM_QUESTS.map(q => q.id));

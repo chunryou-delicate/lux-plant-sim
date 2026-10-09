@@ -207,6 +207,10 @@ const OR = (day, o = {}) => MS(day, { ...LATE, motherVarieMatured: 2, lampOwned:
                                      bagPlants: 0, bagCuttings: 0, cuttings: [CW, VB], ...o });
 const SPEC = { cuttings: [CW, VB, ES, { ...ES, gen: 2 }], varieSalesSinceMove: 1,
                ppPlants: 0, ppPinkHoldCuts: 0, alDormantNow: false, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0 };
+/* ★ 2026-10-10 [plan] D59 — 산 집(투룸) · 진로 식물 가게 걸음. 원룸·새 종은 다 끝낸 판에서 */
+const END_SPEC = { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alCormsFound: 1, alFoundCormsPlanted: 1, alWokeCount: 1, cashWon: 5_000_000 };
+const HM = (day, o = {}) => OR(day, { ...END_SPEC, movedHome: true, job: 'shop', bagPlants: 0,
+                                     shopDone: 0, shopRegulars: 0, shopOpenOrders: 0, shopDueSoonest: null, ...o });
 const steps = [
   /* ─ 초반 사슬 ─────────────────────────────────────────────────────── */
   /* 1  ★★ 켠 그 순간 — **여기서 ①이 열려야 한다**(예전엔 0줄이었다) */
@@ -298,8 +302,20 @@ const steps = [
   OR(291, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alDormantNow: true, alCormsFound: 1 }),
   OR(300, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alDormantNow: true, alCormsFound: 1, alFoundCormsPlanted: 1 }),
   OR(360, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alDormantNow: false, alCormsFound: 1, alFoundCormsPlanted: 1, alWokeCount: 1 }),
-  /* 내 집 자금이 모였다 — home_fund 완료(마지막) */
-  OR(400, { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alCormsFound: 1, alFoundCormsPlanted: 1, alWokeCount: 1, cashWon: 5_000_000 })
+  /* 내 집 자금이 모였다 — home_fund 완료 */
+  OR(400, { ...END_SPEC }),
+
+  /* ─ 진로 «식물 가게»(D59) — 산 투룸으로 옮김 · 가게 사슬 다섯 ─────────────── */
+  HM(420, { bagPlants: 1 }),
+  HM(421),
+  HM(422, { shopOpenOrders: 1, shopDueSoonest: 21 }),
+  HM(430, { shopDone: 1, shopRegulars: 1 }),
+  HM(431, { shopDone: 1, shopRegulars: 1 }),
+  HM(470, { shopDone: 3, shopRegulars: 3 }),
+  HM(471, { shopDone: 3, shopRegulars: 3 }),
+  HM(560, { shopDone: 10, shopRegulars: 10 }),
+  HM(561, { shopDone: 10, shopRegulars: 10 }),
+  HM(800, { shopDone: 30, shopRegulars: 30 })
 ];
 steps.forEach((s, i) => step(i + 1, s));
 
