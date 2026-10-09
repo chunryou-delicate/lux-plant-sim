@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>잎 둘 나란히</title>
+<style>html,body{margin:0;background:#f3efe6}canvas{display:block}</style>
+<script src="../../vendor/three/three.min.js"></script>
+<script src="../../vendor/three/GLTFLoader.js"></script>
+</head><body>
+<script>
+/* tools/leaf/leaf_compare.html — 잎 GLB 둘을 «확대창(plant_grow)과 같은 빛»으로 같은 카메라에 나란히 찍는다 ([leaf] 10-10 · 유니티 겉모습 물음)
+   빛·톤은 plant_grow 그대로: ACES · 노출 1.05 · 반구빛(0xbcd0ff/0x30281f 0.75) · 주광(0xfff2dc 1.4 · (5,11,6)) · 보조(0x88aaff 0.3) · 그림자.
+   잎마다 normalizeAsset(anchorBottom)과 같은 셈 — 자루 끝(맨 아래 8% 띠 XZ 무게중심) = 원점 · 높이 1.
+   ?a=<glb>&b=<glb>&tintA=33ba5e(게임처럼 텍스처를 빼고 단색 · 없으면 GLB 재질 그대로)&tintB=…&view=front|3q|side&size=1200x700
+   window.__ready 가 true 가 되면 찍는다(tools/test_cdp.mjs page.shot). a = 화면 왼쪽 · b = 오른쪽.
+   ⚠ Git Bash 에서 넘길 때 «a=/…» 꼴 인자는 MSYS 가 경로로 바꾼다 — MSYS_NO_PATHCONV=1 로. 겉면이 카메라를 보게 한 사본은 orient_leaf.py --facecam 으로. */
+const q = new URLSearchParams(location.search);
+const [W, H] = (q.get('size') || '1200x700').split('x').map(Number);
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H);
+renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xf3efe6);
+scene.add(new THREE.HemisphereLight(0xbcd0ff, 0x30281f, 0.75));
+const dir = new THREE.DirectionalLight(0xfff2dc, 1.4); dir.position.set(5, 11, 6); dir.castShadow = true;
+dir.shadow.mapSize.set(2048, 2048); dir.shadow.bias = -0.0004; dir.shadow.radius = 5;
+Object.assign(dir.shadow.camera, { near: 0.5, far: 40, left: -4, right: 4, top: 4, bottom: -4 });
+scene.add(dir, dir.target); scene.add(new THREE.DirectionalLight(0x88aaff, 0.3).translateX(-6));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.28 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+function normalize(root) {                     // plant_grow normalizeAsset(anchorBottom) 와 같은 셈
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root), size = new THREE.Vector3(); box.getSize(size);
+  const band = box.min.y + size.y * 0.08, acc = new THREE.Vector3(); let n = 0; const v = new THREE.Vector3();
+  root.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position;
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); if (v.y <= band) { acc.add(v); n++; } } });
+  const ax = n ? acc.x / n : 0, az = n ? acc.z / n : 0;
+  const inner = new THREE.Group(); inner.add(root); inner.position.set(-ax, -box.min.y, -az);
+  const g = new THREE.Group(); g.add(inner); g.scale.setScalar(1 / (size.y || 1)); return g;
+}
+function tint(obj, hex) {                      // plant_grow tintObj 와 같다 — 텍스처를 빼고 단색
+  obj.traverse(o => { if (!o.isMesh) return; const m = o.material.clone(); m.color = new THREE.Color('#' + hex); m.map = null; o.material = m; });
+}
+const loader = new THREE.GLTFLoader();
+/* 읽기가 끊기면(ProgressEvent · 페이지가 막 뜨는 중 탐색이 겹침) 세 번까지 다시 — 10-10 첫 판이 그래서 다 실패했다 */
+const load1 = url => new Promise((res, rej) => loader.load(url, g => res(g.scene), undefined, rej));
+const load = async url => { let e; for (let i = 0; i < 3; i++) { try { return await load1(url); } catch (x) { e = x; await new Promise(r => setTimeout(r, 400)); } } throw e; };
+window.addEventListener('load', () => (async () => {
+  const view0 = q.get('view') || 'front';
+  const items = view0 === 'front' ? [['a', 0.75], ['b', -0.75]] : [['a', -0.75], ['b', 0.75]];   // 앞(−Z)에서 보면 +X 가 화면 왼쪽 — a 가 늘 왼쪽에 오게
+  for (const [k, x] of items) {
+    const url = q.get(k); if (!url) continue;
+    const s = await load(url);
+    s.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.material.side = THREE.DoubleSide; } });
+    if (q.get('tint' + k.toUpperCase())) tint(s, q.get('tint' + k.toUpperCase()));
+    const g = normalize(s); g.position.x = x; scene.add(g);
+  }
+  const view = q.get('view') || 'front';
+  const cam = new THREE.PerspectiveCamera(30, W / H, 0.01, 100);
+  if (view === 'front') cam.position.set(0, 0.75, -4.2);        // 겉면(−Z) 쪽에서 — 새 잎 자세(A)
+  else if (view === 'side') cam.position.set(4.2, 0.9, 0);
+  else cam.position.set(-2.6, 2.2, -3.2);
+  cam.lookAt(0, 0.5, 0);
+  renderer.render(scene, cam);
+  window.__ready = true;
+})().catch(e => { window.__err = String(e && (e.message || (e.target && e.target.status)) || e); window.__ready = true; }));
+</script>
+</body></html>

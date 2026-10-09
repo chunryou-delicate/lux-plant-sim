@@ -111,7 +111,32 @@ def orient(path, dry=False, src2d=None):
         write_glb(path, js, [bytes(b[v.get('byteOffset', 0): v.get('byteOffset', 0) + v['byteLength']]) for v in js['bufferViews']])
     return np.round(n0, 2), np.round(n1, 2), round(float(cx1), 2), round(float(cz1), 2)
 
+def facecam(src, dst):
+    """보기용 사본 — 겉면 법선을 정확히 −Z(카메라 쪽)로 · 자루 끝 → 잎몸을 +Y 로. 게임 판을 바꾸지 않는다(나란히 찍기 · 썸네일용)"""
+    import shutil
+    js, b = read_glb(src); b = bytearray(b); W = _node_mats(js); prims = []
+    for i, nd in enumerate(js.get('nodes', [])):
+        if 'mesh' not in nd: continue
+        for pr in js['meshes'][nd['mesh']]['primitives']:
+            P = np.array(_acc_read(js, b, pr['attributes']['POSITION'])); P = (np.c_[P, np.ones(len(P))] @ W[i].T)[:, :3]
+            N = np.array(_acc_read(js, b, pr['attributes']['NORMAL'])) @ np.linalg.inv(W[i][:3, :3]).T if 'NORMAL' in pr['attributes'] else None
+            prims.append((pr, P, N))
+    allP = np.vstack([p for _, p, _ in prims]); n = blade_normal(allP); n = n * front_sign(js, b, prims, n, None)
+    t = np.array([0, 0, -1.0]); v = np.cross(n, t); c = n @ t
+    R = np.eye(3) if np.linalg.norm(v) < 1e-9 else (lambda vx: np.eye(3) + vx + vx @ vx / (1 + c))(np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]]))
+    Q = allP @ R.T; hq = np.ptp(Q[:, 1]); y0 = Q[:, 1].min()
+    base = Q[Q[:, 1] <= y0 + 0.08 * hq].mean(0); blade = Q[Q[:, 1] > y0 + 0.3 * hq].mean(0); d = blade - base
+    R = Rz(np.arctan2(d[0], d[1])) @ R
+    for pr, P, N in prims:
+        Qp = P @ R.T; pa = pr['attributes']['POSITION']; _acc_write(js, b, pa, Qp); js['accessors'][pa]['min'] = Qp.min(0).tolist(); js['accessors'][pa]['max'] = Qp.max(0).tolist()
+        if N is not None: _acc_write(js, b, pr['attributes']['NORMAL'], (N / (np.linalg.norm(N, axis=1, keepdims=True) + 1e-12)) @ R.T)
+    for nd in js.get('nodes', []):
+        for k in ('matrix', 'translation', 'rotation', 'scale'): nd.pop(k, None)
+    write_glb(dst, js, [bytes(b[v.get('byteOffset', 0): v.get('byteOffset', 0) + v['byteLength']]) for v in js['bufferViews']])
+
 if __name__ == '__main__':
+    if '--facecam' in sys.argv:   # python tools/leaf/orient_leaf.py --facecam <src.glb> <dst.glb>
+        a = [x for x in sys.argv[1:] if not x.startswith('--')]; facecam(a[0], a[1]); print('★', a[1]); sys.exit(0)
     dry = '--dry' in sys.argv
     man = {it.get('path'): it for it in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'assets', 'manifest.json'), encoding='utf-8'))['items']}
     for g in [a for a in sys.argv[1:] if not a.startswith('--')]:
