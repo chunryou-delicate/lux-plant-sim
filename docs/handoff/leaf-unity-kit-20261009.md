@@ -90,3 +90,8 @@
 2. 고른 한 장으로 `generate_3d` · `tripo_h3_1_image_to_3d` · `pbr: true` · `texture: true` · `texture_quality: detailed` · `geometry_quality: standard` · `face_limit: 8000` · `orientation: align_image` (get_cost 12) — ⚠ 총괄 시험에서 `detailed + pbr false` 가 failed 였다 → pbr true 로
    → `unity_kit/pilot/mon_mature_detail.glb`
 3. leaf: 지금 성숙잎과 **같은 크기·같은 각·같은 빛**으로 나란히(방 · 확대창 각) 찍어 박사님께 올릴 그림을 만든다.
+
+### 6-b. 10-10 1단계 결과 → 글 고쳐 다시 (leaf 판정)
+받은 두 장(`unity_kit/pilot/mon_mature_detail_2d_{a,b}.png`)은 빛은 받았지만 **사진 같은 윤기 잎**이다 — 이걸로 3D 를 뜨면 «사진 결 vs 지금 저폴리»를 견주게 된다. 박사님께 여쭐 것은 «결은 그대로 · 더 세밀하게»라서 고른다면 «부드러운 그림 결의 세밀한 잎»이어야 한다 ⇒ 2단계(Tripo)로 안 넘기고 1단계만 다시(2장 · 5.5).
+참조: ① 지금 성숙잎 3/4(모양) ② `REF_STYLE_B` = `assets/raw/plants/pink_princess/PP2_clean.png`(지금 잎의 파스텔 색).
+글: `A single Monstera deliciosa mature leaf with its petiole, the same silhouette, splits and holes as image 1, 3/4 view, petiole pointing down, the whole leaf visible and centered. Stylized soft 3D game render, NOT a photo: smooth gently curved surface (not faceted, not low-poly), soft natural veins, matte finish with no glossy highlights, the soft pastel green palette of image 2, soft even studio light with gentle shading so the curvature reads. Isolated on a plain pure white background, no pot, no shadow, no text.`
