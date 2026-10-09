@@ -115,7 +115,8 @@
       "plant_step_3(r3)": "01a12006-1311-7000-821f-79983525a17c",
       "shelf_ladder_4tier(r3)": "01a12006-164e-76ce-9e8c-2dda141d147f",
       "greenhouse_cabinet(r3)": "01a12006-19b8-7352-8a2c-9cd0baaa3e0c",
-      "win_studio_cross(r3)": "01a12009-3cc0-73f7-b263-76abadf74916"
+      "win_studio_cross(r3)": "01a12009-3cc0-73f7-b263-76abadf74916",
+      "win_semi_letterbox(r3)": "01a1200d-3794-76a3-811f-f8411ec5f35f"
     },
     "retake_r3_graybox": {
       "plant_step_3": "01a12002-0740-7575-b2a8-dec438ab9113",
@@ -127,6 +128,29 @@
   },
   "leaf_20261009": {
     "_note": "leaf 주문표 docs/handoff/leaf-meshy-plan-20261008.md · M1 시험 한 줄(모양 좋은 성숙잎 + 제브라 무늬 그림)",
-    "M1_zebra_retexture": "01a12005-3491-7493-b3e8-16f2e22b1366"
+    "M1_zebra_retexture": "01a12005-3491-7493-b3e8-16f2e22b1366",
+    "retexture_8": {
+      "M2 mon_star_pinkmint": "01a1200f-d3c4-7270-9b2c-3aff194a64b7",
+      "M3 mon_halfmoon_greencream": "01a1200f-d7c5-73ed-a3c6-38908475ab04",
+      "M4 mon_green_lemonpatch": "01a1200f-dbea-761c-a14f-8b5b7396cf1b",
+      "M5 mon_neon_lime": "01a1200f-e025-7798-a64b-912872b88038",
+      "M6 mon_variegata_gold": "01a1200f-e31a-7101-a090-859e230abdf0",
+      "m1 heart_albo_2672_3": "01a1200f-e69f-759d-a665-d8ced10114c2",
+      "m2 pothos_cream_marble": "01a1200f-ea80-714c-bff4-97dc80cf934b",
+      "m3 pothos_mint_dot_34": "01a1200f-ee03-764f-9d8a-ac85d41050cb"
+    },
+    "new_species_concepts_i2i": {
+      "_note": "Kling 크레딧 0 → Meshy nano-banana-pro · 견본 kling_20260718_…2758_2.png(워터마크가 따라와 _clean 에서 귀퉁이만 지움)",
+      "PP1": "01a12010-9378-70af-8d97-567c0628fd6d",
+      "PP2": "01a12010-9977-7266-8ef3-ef10a1de9206",
+      "PP3": "01a12010-9dce-70c5-a49c-5e23a1b38816",
+      "PP4": "01a12010-a1fc-706b-bdcc-7960fd992e97",
+      "PP5": "01a12010-a709-76b7-ab33-bf654b4c045d",
+      "AL1": "01a12010-ab3f-7445-9c0f-6518aa8f854c",
+      "AL2": "01a12010-afd4-722f-abac-bbd6cd4d97a1",
+      "AL3": "01a12010-b43f-74f3-a518-4beaa41f0f99",
+      "AL4": "01a12010-b85c-7742-9684-a3ec7bc99b79",
+      "AL5": "01a12010-bcdb-7732-9adb-de0611797d0f"
+    }
   }
 }

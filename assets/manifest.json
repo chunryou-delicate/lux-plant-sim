@@ -15684,11 +15684,31 @@
         "credits": 10,
         "balance_after": 1086,
         "note": "총괄 1차 검수 통과(텍스처에 흰 줄무늬) · leaf 2차 검수 뒤 나머지 8줄"
+      },
+      {
+        "date": "2026-10-09",
+        "window": "master(house 주문)",
+        "service": "meshy",
+        "use": "반지하 창 r3 3D(30)",
+        "qty": 1,
+        "credits": 30,
+        "balance_after": null,
+        "note": "원화는 넘었으나 3D 에서 세로살 ×1.22~1.31 · 보이는 유리 94% — 총괄 D38 «넣는다»(그림만 · 빛 값 무관)"
+      },
+      {
+        "date": "2026-10-09",
+        "window": "master(leaf 주문)",
+        "service": "meshy",
+        "use": "몬스테라·하트 잎 retexture 8줄(10×8) + 새 식물 원화 10장(nano-banana-pro 9×10)",
+        "qty": 18,
+        "credits": 170,
+        "balance_after": 886,
+        "note": "Kling 은 이어졌으나 크레딧 0 이라 Meshy 로 대체. 원화 열 장에 견본의 KlingAI 워터마크가 따라옴 → _clean 에서 귀퉁이만 지움"
       }
     ],
     "balance_checked": {
       "date": "2026-10-09",
-      "meshy": 1086,
+      "meshy": 886,
       "higgsfield": null,
       "_prev": {
         "date": "2026-10-08",
@@ -15696,8 +15716,8 @@
         "higgsfield": null,
         "_gap_note": "⚠ 08-30 4470 → 10-08 2009(총괄이 잰 값). 그 사이 2,461 은 이 장부에 줄이 없다 — 이 파일로는 누가 썼는지 모른다. 짐작해서 적지 않는다"
       },
-      "_delta_note": "✔ 2009 → 1086 = 923 = 위 10-09 줄 여덟(53+39+153+354+99+165+50+10). 빈 곳 없다. 다시 재서 넣었다(18:4x)",
-      "_measured_by": "총괄 — meshy_check_balance(10-09 18:4x)",
+      "_delta_note": "✔ 2009 → 886 = 1,123 = 위 10-09 줄 열(53+39+153+354+99+165+50+10+30+170). 빈 곳 없다. 다시 재서 넣었다(19:1x)",
+      "_measured_by": "총괄 — meshy_check_balance(10-09 19:1x)",
       "_higgsfield_caution": "10-09 Higgsfield 커넥터가 «not connected» 라 못 쟀다(Kling 은 이어짐). ⚠ 08-03 에 791 이었던 것이 0 이 됐다. 그 사이 기록은 한 줄도 없다. 쓴 것인지 플랜이 만료돼 날아간 것인지 모른다(지금 plan_type=free). 짐작해서 적지 않는다",
       "_note": "다음에 재는 창은 이 값과 비교해라. 값이 늘어 있으면 누군가 충전한 것이고, 줄어 있는데 entries 가 그대로면 누군가 쓰고 안 적은 것이다"
     }
