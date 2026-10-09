@@ -272,23 +272,27 @@ async function main() {
   /* 링의 fits 와 surfaceAt 의 ok 가 **모든 자리에서 일치**해야 한다 — 같은 함수를 부르니까 */
   const agree = await page.eval(`(() => {
     const v = window.view, rc = document.getElementById('roomCanvas').getBoundingClientRect();
-    const out = [];
+    const out = []; let compared = 0;
     for (const potD of [0.20, 0.30]) {
       v.showSlotRings(true, { potD });
       const ring = new Map(v.slotRings().map(r => [r.slotId, r.fits]));
       for (const s of v.slots()) {
+        /* ★ 2026-10-10 (총괄 · 낡은 자) — 08-16 31e4fd41 박사님 «상판 위 추천 자리 강조 걷기»부터 가구 윗면 자리엔 원이 없다(칸 층 guideCells 가 대신).
+             원이 없는 자리를 «원 판정 = undefined» 로 견주면 늘 어긋난다 — 원이 있는 자리에서만 «판정이 한 벌»을 잰다 */
+        if (!ring.has(s.slotId)) continue;
         const sp = v.screenPosOf(s.slotId);
         if (!sp) continue;
+        compared++;
         const r = v.surfaceAt(rc.left + sp.x, rc.top + sp.y, { potD });
         if (ring.get(s.slotId) !== r.ok)
           out.push({ potD, id: s.slotId, ring: ring.get(s.slotId), surface: r.ok, why: r.reason });
       }
     }
     v.showSlotRings(false);
-    return out;
+    return { out, compared };
   })()`);
   ok('S-3 링의 fits 와 surfaceAt 의 ok 가 모든 자리에서 일치한다 (판정이 한 벌이다)',
-     agree.length === 0, JSON.stringify(agree.slice(0, 4)));
+     agree.out.length === 0 && agree.compared > 0, `견준 ${agree.compared} · ` + JSON.stringify(agree.out.slice(0, 4)));
 
   /* 매달린 조명·벽걸이 장식 위는 면이 아니다 */
   const banned = await page.eval(`(() => {
@@ -581,7 +585,10 @@ async function main() {
      ringsBig.fits === 0 && ringsSmall.fits > 0,
      `0.18m 통과 ${ringsSmall.fits}칸 · 0.90m 통과 ${ringsBig.fits}칸 · 색 ${ringsBig.colors}`);
   const ringNear = await page.eval(`(() => {
-    const s = window.view.slots().reduce((a, b) => (b.maxPotD || 0) > (a.maxPotD || 0) ? b : a);
+    /* ★ 2026-10-10 (낡은 자) — 겨눌 자리는 «원이 있는» 자리 중에서(윗면 자리엔 08-16 부터 원이 없다 · 책상 윗면을 겨누면 굵은 원이 없는 게 맞다) */
+    window.view.showSlotRings(true, { potD: 0.18 });
+    const ringIds = new Set(window.view.slotRings().map(r => r.slotId));
+    const s = window.view.slots().filter(x => ringIds.has(x.slotId)).reduce((a, b) => (b.maxPotD || 0) > (a.maxPotD || 0) ? b : a);
     window.view.showSlotRings(true, { potD: 0.18, near: { x: s.pos.x, z: s.pos.z } });
     const st = window.view.slotRings();
     const hot = st.filter(r => r.near);
@@ -723,11 +730,16 @@ async function main() {
       groups: { slot: 1, free: window.__countGroups('potOnFurn') }
     }))()`);
 
+    /* ★ 2026-10-10 (총괄 · 낡은 자) — 08-16 bba1f7f8 부터 옮기기는 발자국 모서리를 0.05 격자에 맞춘다(책상 1.25m 면 가운데가 0.025 튐 ·
+         game.html §undoMove 주석과 같은 셈). 자는 «부른 좌표 그대로»를 기대했다 — 3D 가 «실제로 옮겨진 자리»(commit 이 돌려준 to)에 서고
+         그 자리가 부른 곳에서 한 걸음(0.05) 안인지를 잰다. Δ 도 부른 값이 아니라 실제 가구 Δ 로 견준다(F-3·F-4) */
+    const to = moved && moved.to;
     ok('F-2 가구를 옮기면 3D 도 따라 움직인다',
-       !moved.error && after.furn && near(after.furn.x, setup.dest.x, 1e-3) && near(after.furn.z, setup.dest.z, 1e-3),
-       `${JSON.stringify(setup.from)} → ${JSON.stringify(after.furn)} ${moved.error || ''}`);
+       !moved.error && after.furn && to && near(after.furn.x, to.x, 1e-3) && near(after.furn.z, to.z, 1e-3) &&
+       Math.abs(to.x - setup.dest.x) <= 0.05 + 1e-6 && Math.abs(to.z - setup.dest.z) <= 0.05 + 1e-6,
+       `${JSON.stringify(setup.from)} → ${JSON.stringify(after.furn)} (부른 ${JSON.stringify(setup.dest)}) ${moved.error || ''}`);
 
-    const dx = setup.dest.x - setup.from.x, dz = setup.dest.z - setup.from.z;
+    const dx = (after.furn ? after.furn.x : setup.dest.x) - setup.from.x, dz = (after.furn ? after.furn.z : setup.dest.z) - setup.from.z;
     ok('F-3 가구 위 추천 자리 화분이 같이 간다',
        before.slotPlant && after.slotPlant &&
        near(after.slotPlant.pos.x - before.slotPlant.pos.x, dx, 0.02) &&
@@ -753,8 +765,10 @@ async function main() {
        after.floorPlant ? JSON.stringify(after.floorPlant.pos) : '없음');
 
     /* 못 놓는 자리는 거절한다 */
+    /* ★ 2026-10-10 (낡은 자) — 격자 길(기본)은 방 밖 좌표를 방 안 가장자리로 당긴다(08-16 bba1f7f8 clampAxis) — 밖으로 나가지 않으니 «못 옮긴다»는 지켜지되
+         거절이 아니다. «정확히 그 좌표»(grid:false · 되돌리기 길)로 방 밖을 부르면 이유를 말하며 거절해야 한다 */
     const refuse = await page.eval(`window.view.commitFurnitureAt(${JSON.stringify(setup.uid)},
-      { x: ${(size.w / 2 + 2).toFixed(3)}, z: 0, rot: 0 }).then(() => null, e => e.message)`);
+      { x: ${(size.w / 2 + 2).toFixed(3)}, z: 0, rot: 0, grid: false }).then(() => null, e => e.message)`);
     ok('F-6 방 밖으로는 못 옮긴다 (한국어 이유)', typeof refuse === 'string' && /벽 밖/.test(refuse), String(refuse));
   }
 
@@ -953,8 +967,9 @@ async function main() {
              fitHome: v.furnitureFit('banjiha-desk', { x: desk.x, z: desk.z, rot: desk.rot }) };
   })()`);
 
-  const ddx = movedF.dest ? movedF.dest.x - before.desk.x : 0;
-  const ddz = movedF.dest ? movedF.dest.z - before.desk.z : 0;
+  /* ★ 2026-10-10 (낡은 자) — 부른 dest 가 아니라 «실제로 옮겨진» 책상 Δ 로 견준다(격자 맞춤 · F-2 와 같은 까닭) */
+  const ddx = after.desk ? after.desk.x - before.desk.x : 0;
+  const ddz = after.desk ? after.desk.z - before.desk.z : 0;
   ok('N-5 클립등 좌표가 책상과 같은 만큼 움직였다 (조립 정의가 같이 바뀐다)',
      after.clip && near(after.clip.x - before.clip.x, ddx, 0.02) &&
      near(after.clip.z - before.clip.z, ddz, 0.02),
