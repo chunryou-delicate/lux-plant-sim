@@ -15654,11 +15654,41 @@
         "credits": 99,
         "balance_after": 1311,
         "note": "r2 셋(계단 화분대·사다리 선반·온실장)은 단 높이가 또 어긋남 → house 와 «회색 상자 그림을 참조로» 다시 뽑기 의논 중"
+      },
+      {
+        "date": "2026-10-09",
+        "window": "master(house 주문)",
+        "service": "meshy",
+        "use": "회색 상자 길 r3 원화 5(9×5: 계단 화분대·사다리·온실장·원룸 창·반지하 창) + r3 3D 4(30×4)",
+        "qty": 9,
+        "credits": 165,
+        "balance_after": null,
+        "note": "D34 — 게임 안 회색 상자를 찍어 «모양 그대로 칠만». 넷 다 ref 와 판 수·높이 일치 · 원룸 창 살 ±6%"
+      },
+      {
+        "date": "2026-10-09",
+        "window": "master(char 주문)",
+        "service": "meshy",
+        "use": "hero2 계절 옷 retexture 5벌(10×5: 봄·가을·겨울·잠옷·비옷)",
+        "qty": 5,
+        "credits": 50,
+        "balance_after": null,
+        "note": "G5 통과(봄). retexture 가 머리·살·눈까지 다시 칠해 char 가 «옷 자리만» 합침"
+      },
+      {
+        "date": "2026-10-09",
+        "window": "master(leaf 주문)",
+        "service": "meshy",
+        "use": "몬스테라 성숙잎 제브라 retexture M1 시험(10)",
+        "qty": 1,
+        "credits": 10,
+        "balance_after": 1086,
+        "note": "총괄 1차 검수 통과(텍스처에 흰 줄무늬) · leaf 2차 검수 뒤 나머지 8줄"
       }
     ],
     "balance_checked": {
       "date": "2026-10-09",
-      "meshy": 1311,
+      "meshy": 1086,
       "higgsfield": null,
       "_prev": {
         "date": "2026-10-08",
@@ -15666,8 +15696,8 @@
         "higgsfield": null,
         "_gap_note": "⚠ 08-30 4470 → 10-08 2009(총괄이 잰 값). 그 사이 2,461 은 이 장부에 줄이 없다 — 이 파일로는 누가 썼는지 모른다. 짐작해서 적지 않는다"
       },
-      "_delta_note": "✔ 2009 → 1311 = 698 = 위 10-09 줄 다섯(53+39+153+354+99). 빈 곳 없다. 다시 재서 넣었다",
-      "_measured_by": "총괄 — meshy_check_balance(10-09 12:20)",
+      "_delta_note": "✔ 2009 → 1086 = 923 = 위 10-09 줄 여덟(53+39+153+354+99+165+50+10). 빈 곳 없다. 다시 재서 넣었다(18:4x)",
+      "_measured_by": "총괄 — meshy_check_balance(10-09 18:4x)",
       "_higgsfield_caution": "10-09 Higgsfield 커넥터가 «not connected» 라 못 쟀다(Kling 은 이어짐). ⚠ 08-03 에 791 이었던 것이 0 이 됐다. 그 사이 기록은 한 줄도 없다. 쓴 것인지 플랜이 만료돼 날아간 것인지 모른다(지금 plan_type=free). 짐작해서 적지 않는다",
       "_note": "다음에 재는 창은 이 값과 비교해라. 값이 늘어 있으면 누군가 충전한 것이고, 줄어 있는데 entries 가 그대로면 누군가 쓰고 안 적은 것이다"
     }

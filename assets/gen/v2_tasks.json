@@ -6,7 +6,15 @@
     "mesh_i23d": "01a0d34f-49a3-76b5-8def-d87090109c8c",
     "remesh_30k": "01a0d353-1db0-768e-b4ff-6e57d816cff2",
     "rig": "01a0d355-6635-7681-a736-0c21a792fc81",
-    "clips_wanted": {"idle": 0, "sit_chair": 32, "sleep": 267, "doze": 268, "crouch_pick": 274, "wave": 28, "cheer": 303}
+    "clips_wanted": {
+      "idle": 0,
+      "sit_chair": 32,
+      "sleep": 267,
+      "doze": 268,
+      "crouch_pick": 274,
+      "wave": 28,
+      "cheer": 303
+    }
   },
   "props_i23d": {
     "backpack": "01a0d352-3762-731f-ae81-09d7c218d301",
@@ -50,6 +58,14 @@
       "scratch": "01a11e88-6b0e-7422-8a3d-0f7a2e26d420",
       "nod": "01a11e88-6cd4-72ca-9aa1-f416998d7cf0",
       "listen": "01a11e88-6e73-75b6-ba40-bca657b3932a"
+    },
+    "retexture_outfits": {
+      "_note": "input 01a11e76(리그 전 3D) · latest · enable_original_uv · 머리·얼굴·맨살은 char 가 정본 그림으로 합침(apply_outfit_tex)",
+      "spring": "01a12002-17ac-733c-9832-b0c31d986e11",
+      "autumn": "01a12009-45a4-7081-a5a8-e589aad675bd",
+      "winter": "01a12009-4909-7054-9a01-69bbe96fca73",
+      "pajama": "01a12009-4c89-7442-9344-bd7088d4b762",
+      "rain": "01a12009-5075-7032-86fe-b0709be35814"
     }
   },
   "house_20261009": {
@@ -95,7 +111,22 @@
       "sofa": "01a11e97-3057-7707-9748-4b031cb1648c",
       "growlight_stand(r2)": "01a11ea9-a8c2-77ef-9301-e4ff69b7ae1f",
       "cube_storage(r2)": "01a11ea9-ade4-7669-9cfc-6438e4bd5ae9",
-      "shelf_corner_3tier(r2)": "01a11ea9-b17f-73c0-acf0-eeaa94d54ee4"
+      "shelf_corner_3tier(r2)": "01a11ea9-b17f-73c0-acf0-eeaa94d54ee4",
+      "plant_step_3(r3)": "01a12006-1311-7000-821f-79983525a17c",
+      "shelf_ladder_4tier(r3)": "01a12006-164e-76ce-9e8c-2dda141d147f",
+      "greenhouse_cabinet(r3)": "01a12006-19b8-7352-8a2c-9cd0baaa3e0c",
+      "win_studio_cross(r3)": "01a12009-3cc0-73f7-b263-76abadf74916"
+    },
+    "retake_r3_graybox": {
+      "plant_step_3": "01a12002-0740-7575-b2a8-dec438ab9113",
+      "shelf_ladder_4tier": "01a12002-0c7f-750a-918b-71e77173f3d5",
+      "greenhouse_cabinet": "01a12002-1042-7475-ad76-a67c32dd231f",
+      "win_studio_cross": "01a12002-13e7-7065-8311-d5cce065ace2",
+      "win_semi_letterbox": "01a12009-4035-71a9-bcbd-a99e4a62cf46"
     }
+  },
+  "leaf_20261009": {
+    "_note": "leaf 주문표 docs/handoff/leaf-meshy-plan-20261008.md · M1 시험 한 줄(모양 좋은 성숙잎 + 제브라 무늬 그림)",
+    "M1_zebra_retexture": "01a12005-3491-7493-b3e8-16f2e22b1366"
   }
 }
