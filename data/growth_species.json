@@ -89,7 +89,7 @@
         "varie_chance": { "from_varie_mother": 0.75, "from_plain_mother": 0.0, "shop": 0.25 }
       },
       "varie_kinds": {
-        "_doc": "그루마다 하나(잎마다 크게 안 바뀐다). marble = 크림 마블 · sector = 중간잎 크림 중심 → 성숙잎 반달.",
+        "_doc": "그루마다 하나(잎마다 크게 안 바뀐다). marble = 크림 마블 · sector = 중간잎 크림 중심 → 성숙잎 반달. ⚠ sector 의 두 판은 «크림이 넓어지는» 쪽으로 한 그루의 자람으로 읽히지만 꼴이 정확히 잇지는 않는다(중간 = 가운데 크림 · 성숙 = 위쪽 반 크림 · leaf 2026-10-09).",
         "marble": "크림 마블",
         "sector": "크림 중심·반달"
       },
