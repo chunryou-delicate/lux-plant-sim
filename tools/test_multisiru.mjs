@@ -113,18 +113,23 @@ const AT = { x: 0.5, y: 0.02, z: 0.5, onUid: null, occIdx: null };
 ============================================================ */
 const GOLD = {
   beansprout: {
-    'p0|-':      { children: 5,  bodies: 4,  diameter: 0.24, pot: { w: 0.24, h: 0.109,   d: 0.24 } },
-    'p0|0.18':   { children: 5,  bodies: 4,  diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
-    'p0.2|-':    { children: 6,  bodies: 5,  diameter: 0.24, pot: { w: 0.24, h: 0.109,   d: 0.24 } },
-    'p0.2|0.18': { children: 6,  bodies: 5,  diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
-    'p0.34|-':   { children: 7,  bodies: 6,  diameter: 0.24, pot: { w: 0.24, h: 0.109,   d: 0.24 } },
-    'p0.34|0.18':{ children: 7,  bodies: 6,  diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
-    'p0.5|-':    { children: 9,  bodies: 8,  diameter: 0.24, pot: { w: 0.24, h: 0.109,   d: 0.24 } },
-    'p0.5|0.18': { children: 9,  bodies: 8,  diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
-    'p0.7|-':    { children: 10, bodies: 9,  diameter: 0.24, pot: { w: 0.24, h: 0.109,   d: 0.24 } },
-    'p0.7|0.18': { children: 10, bodies: 9,  diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
-    'p1|-':      { children: 12, bodies: 11, diameter: 0.24, pot: { w: 0.24, h: 0.109,   d: 0.24 } },
-    'p1|0.18':   { children: 12, bodies: 11, diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } }
+    /* ★★ 2026-10-09 [growth] 다시 굳힘(BYEOT_REGEN=1 로 잰 값 · 손으로 안 베낌) — 이 열두 줄은 두 커밋으로 움직였다. 회귀가 아니다:
+         · 지름·용기 0.24 → 0.20 — a39ebcd6(2026-08-16 «시루가 밝은 자리 열 곳에 통째로 못 올라가고 있었다» · room_view SIRU_D)
+           용기 높이 0.109 → 0.09083 은 그 배율(0.20/0.24) 그대로다 · 한도 0.18 줄은 지름이 한도라 안 움직였다
+         · 자식·포기 4~11 → 7~17 — 66508ad9(2026-10-08 house · core 허락 «시루 콩나물이 자라 보이게» · 포기 6~16 + 불린 콩 판 1)
+         ⚠ 이 표가 또 움직이면 먼저 room_view §buildBeansprout · SIRU_D 의 커밋을 봐라. 그걸 안 고쳤는데 움직였으면 그때가 회귀다. */
+    'p0|-':      { children: 8,  bodies: 7,  diameter: 0.20, pot: { w: 0.20, h: 0.09083, d: 0.20 } },
+    'p0|0.18':   { children: 8,  bodies: 7,  diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
+    'p0.2|-':    { children: 10, bodies: 9,  diameter: 0.20, pot: { w: 0.20, h: 0.09083, d: 0.20 } },
+    'p0.2|0.18': { children: 10, bodies: 9,  diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
+    'p0.34|-':   { children: 11, bodies: 10, diameter: 0.20, pot: { w: 0.20, h: 0.09083, d: 0.20 } },
+    'p0.34|0.18':{ children: 11, bodies: 10, diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
+    'p0.5|-':    { children: 13, bodies: 12, diameter: 0.20, pot: { w: 0.20, h: 0.09083, d: 0.20 } },
+    'p0.5|0.18': { children: 13, bodies: 12, diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
+    'p0.7|-':    { children: 15, bodies: 14, diameter: 0.20, pot: { w: 0.20, h: 0.09083, d: 0.20 } },
+    'p0.7|0.18': { children: 15, bodies: 14, diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } },
+    'p1|-':      { children: 18, bodies: 17, diameter: 0.20, pot: { w: 0.20, h: 0.09083, d: 0.20 } },
+    'p1|0.18':   { children: 18, bodies: 17, diameter: 0.18, pot: { w: 0.18, h: 0.08175, d: 0.18 } }
   },
   /* ★★ 2026-08-09 — **몬스테라 그루 높이 여덟 줄이 움직였다.** 회귀가 아니라 확정이다.
      박사님이 잎 간격을 표로 정하셨고(`data/growth_tuning.json · leaf_interval.days`
@@ -183,18 +188,28 @@ const GOLD = {
   musunWH: { w: +(0.36 * 0.20 / Math.hypot(0.36, 0.24)).toFixed(5),
              d: +(0.24 * 0.20 / Math.hypot(0.36, 0.24)).toFixed(5) },
   /* 링·fitCheck 의 답 — 14칸 중 통과하는 칸 수 */
-  ringsFit: { beansprout: 13, monstera: 14, none: 14 },
-  fitDiameter: { beansprout: 0.24, monstera: 0.20 },
+  /* ★★ 2026-10-09 [growth] 다시 굳힘 — 회귀가 아니다:
+       · 13·14·14 → 3·3·3 — 31e4fd41(2026-08-16 박사님 «책상 서랍장 위 강조 그리드 없애 줘» · room_view §buildGuideRings
+         «상판 위 추천 자리는 원을 안 그린다» — y > 0.05 자리는 건너뜀). 반지하에 원이 남는 자리는 바닥에 앉은 에타제르 아래 단 셋이고
+         셋 다 한도 0.22 라 콩나물·몬스테라(둘 다 0.20) 모두 «들어간다». 자리 자체는 그대로 산다(세이브·조도) — 그림만 안 그린다
+       · 콩나물 지름 0.24 → 0.20 — a39ebcd6(2026-08-16 · SIRU_D) */
+  ringsFit: { beansprout: 3, monstera: 3, none: 3 },   // 원이 그려지는 3칸 중 통과하는 칸 수
+  fitDiameter: { beansprout: 0.20, monstera: 0.20 },
 
   /* ★ 무리의 폭 — **육각 격자 자리표에서 나오는 값**이다(room_view §clusterUnit).
      공식은 span = 2·r + 1 (시루 지름 1 기준) 이고 r 은 고른 n점의 외접원 반지름이다.
      여기 적은 숫자는 지어낸 것이 아니라 그 공식으로 나온 값을 **소수 셋째까지 굳힌 것**이다 —
      굳혀 두지 않으면 자리표를 누가 흔들어도 검사가 안 걸린다. */
-  clusterD: { 1: 0.240, 2: 0.480, 3: 0.517, 4: 0.656, 6: 0.720, 8: 0.875, 12: 0.973 }
+  /* ★ 2026-10-09 [growth] 다시 굳힘 — 시루 지름 0.24 → 0.20(a39ebcd6 · 08-16). 자리표(육각 격자)는 그대로라 «시루 지름 1 기준» 폭은
+       1 · 2 · 2.1547 · 2.7321 · 3 · 3.6458 · 4.0551 그대로고 × 0.20 만 바뀌었다(옛 줄 0.240·0.480·0.517·0.656·0.720·0.875·0.973 = × 0.24). */
+  clusterD: { 1: 0.200, 2: 0.400, 3: 0.431, 4: 0.546, 6: 0.600, 8: 0.729, 12: 0.811 },
+  /* ⑥ 시루 한 개라도 받는 자리 수 — 2026-10-09 [growth] 다시 굳힘(옛 뜻 «추천 원의 답과 맞물린다»는 31e4fd41 로 원이 바닥 3칸만 그리게 되며 없어졌다).
+       13 → 15: 창턱 한도 0.21 → 0.27(b725b8c · 받침을 0.20 민 몫 — 이제 창턱이 시루를 받는다) · 협탁 자리 하나(23521a1 · 14 → 15칸) */
+  oneFitSlots: 15
 };
 
 const EPS = 1e-4;
-const SIRU_D = 0.24;
+const SIRU_D = 0.20;   // ★ 2026-10-09 [growth] 0.24 → 0.20 — a39ebcd6(2026-08-16 · room_view SIRU_D). 08-15 에 굳힌 0.24 가 남아 있었다
 
 async function main() {
   const page = await launch({ width: 390, height: 844, dpr: 2, mobile: false });
@@ -342,7 +357,7 @@ async function main() {
      && ring.none === GOLD.ringsFit.none
      && near(ring.fit.beansprout, GOLD.fitDiameter.beansprout, EPS)
      && near(ring.fit.monstera, GOLD.fitDiameter.monstera, EPS)
-     && near(ring.table.beansprout, 0.24, EPS) && near(ring.table.monstera, 0.20, EPS)
+     && near(ring.table.beansprout, GOLD.fitDiameter.beansprout, EPS) && near(ring.table.monstera, GOLD.fitDiameter.monstera, EPS)
      && near(ring.table.unknown, 0.20, EPS),
      JSON.stringify(ring));
 
@@ -414,7 +429,7 @@ async function main() {
   })()`);
   const over = clamped.filter(r => !(r.got <= r.max + 1e-3));
   const lostCount = clamped.filter(r => r.cnt !== 12);
-  /* 줄어들면 시루 한 개는 얼마가 되나 — 무리 지름 : 시루 지름 = 0.973 : 0.24 다 */
+  /* 줄어들면 시루 한 개는 얼마가 되나 — 무리 지름 : 시루 지름 = 0.811 : 0.20 다(2026-10-09 · 옛 0.973 : 0.24) */
   console.log('\n  좁은 자리에 12개를 놓으면 — 자리 한도 / 무리 지름 / 시루 한 개[m]');
   for (const r of clamped)
     console.log(`    ${r.id.padEnd(18)} ${r.max.toFixed(2)} / ${r.got.toFixed(3)} / ${(r.got / GOLD.clusterD[12] * SIRU_D).toFixed(3)}`);
@@ -440,12 +455,12 @@ async function main() {
     console.log(`    ${r.id.padEnd(18)} 한도 ${r.max == null ? '없음 ' : r.max.toFixed(2)}  최대 ${r.most === 24 ? '24+' : r.most}개`);
   const noTwelve = fitTable.filter(r => r.most < 12);
   console.log(`  ⇒ 12개가 제 크기로 안 들어가는 자리 ${noTwelve.length}/${fitTable.length}칸`);
-  /* ★ 창턱(0.21)은 시루 **한 개도** 안 받는다 — 그건 이 작업이 만든 일이 아니라
-     예전부터 그랬다. 추천 원이 14칸 중 13칸만 밝히는 것(§GOLD.ringsFit)이 같은 사실이다.
-     그래서 검사는 "한 개 이상"이 아니라 **옛 답과 맞물리는지**를 본다. */
-  ok('⑥ 한 개라도 받는 자리 수가 추천 원의 답과 맞물린다 (창턱은 예전부터 0개다)',
-     fitTable.filter(r => r.most >= 1).length === GOLD.ringsFit.beansprout,
-     `${fitTable.filter(r => r.most >= 1).length} ≠ ${GOLD.ringsFit.beansprout}`);
+  /* ★ (옛 글) 창턱(0.21)은 시루 한 개도 안 받았고 추천 원도 14칸 중 13칸만 밝혔다 — 그래서 이 줄이 «옛 답과 맞물리는지»를 봤다.
+     ★★ 2026-10-09 [growth] — 그 두 사실이 다 바뀌었다(GOLD.oneFitSlots 의 까닭 셋). 원은 이제 바닥 3칸만 그리므로 원과 맞물릴 수 없다 ⇒
+       자리 한도로 센 수를 굳힌다. 창턱도 이제 시루를 받는다(b725b8c). */
+  ok('⑥ 한 개라도 받는 자리 수가 굳힌 값과 같다 (2026-10-09 · 창턱도 받는다)',
+     fitTable.filter(r => r.most >= 1).length === GOLD.oneFitSlots,
+     `${fitTable.filter(r => r.most >= 1).length} ≠ ${GOLD.oneFitSlots}`);
 
   /* ══ 스크린샷 — 1 · 4 · 12개가 실제로 서 있는 것이 보여야 한다 ══════════
      ★ **방바닥**에 **제 크기로** 세운다. 가구 위에 놓으면 자리 한도에 맞춰 무리가
