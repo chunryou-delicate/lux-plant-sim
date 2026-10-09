@@ -45,7 +45,10 @@ export async function launch(opts = {}) {
     '--hide-scrollbars', '--mute-audio',
     /* ★ 소프트웨어 GL 을 강제한다. 헤드리스에서 GPU 가 없으면 WebGL 컨텍스트가
        아예 안 열려 방이 통째로 안 뜬다(실제로 안 떴다). */
-    '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
+    /* ★ 2026-10-09 (core · 성능 재기) — CDP_GL=gpu 면 이 기계의 하드웨어 GPU(ANGLE d3d11)로 띄운다. 기본은 그대로 소프트웨어 GL */
+    ...(process.env.CDP_GL === 'gpu'
+      ? ['--use-gl=angle', '--use-angle=d3d11', '--ignore-gpu-blocklist', '--enable-gpu-rasterization']
+      : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']),
     `--window-size=${opts.width || 390},${opts.height || 844}`,
     'about:blank'
   ];
