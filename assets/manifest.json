@@ -15809,6 +15809,2886 @@
       "glb_raw_max": 1.9,
       "size_basis_cat": "잎·핑크프린세스·성숙",
       "name_ko": "핑크프린세스-성숙잎-다 분홍"
+    },
+    {
+      "id": 817,
+      "file": "CA1_b.jpg",
+      "path": "raw/plants/calathea/CA1_b.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "CA1",
+      "name_ko": "칼라데아 · 어린잎(오비폴리아) — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·칼라데아",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "bcd91d15-4839-407a-a7c5-9552ec2354a6",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "1c652260-b1cc-4bac-aaf4-61db00d83e4a",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141430_1c652260-b1cc-4bac-aaf4-61db00d83e4a.png",
+          "local": "raw/plants/calathea/CA1_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA1_a.png",
+          "status": "pass",
+          "note": "young oval orbifolia leaf with silver feather stripes"
+        },
+        {
+          "v": 2,
+          "job_id": "bcd91d15-4839-407a-a7c5-9552ec2354a6",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141430_bcd91d15-4839-407a-a7c5-9552ec2354a6.png",
+          "local": "raw/plants/calathea/CA1_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA1_b.png",
+          "status": "pass",
+          "note": "young oval orbifolia leaf with silver feather stripes"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 818,
+      "file": "CA2_a.jpg",
+      "path": "raw/plants/calathea/CA2_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "CA2",
+      "name_ko": "칼라데아 · 중간잎(오비폴리아) — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·칼라데아",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "3e91b92a-ca8c-4341-9039-87d0644b72f2",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "3e91b92a-ca8c-4341-9039-87d0644b72f2",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141428_3e91b92a-ca8c-4341-9039-87d0644b72f2.png",
+          "local": "raw/plants/calathea/CA2_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA2_a.png",
+          "status": "pass",
+          "note": "half-grown round leaf with stripes (CA2_a edge flag is a corner-pixel false positive, not cropped)"
+        },
+        {
+          "v": 2,
+          "job_id": "3849fb97-907e-4856-ae16-ec0dc9cd04cc",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141431_3849fb97-907e-4856-ae16-ec0dc9cd04cc.png",
+          "local": "raw/plants/calathea/CA2_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA2_b.png",
+          "status": "pass",
+          "note": "half-grown round leaf with stripes (CA2_a edge flag is a corner-pixel false positive, not cropped)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 819,
+      "file": "CA3_a.jpg",
+      "path": "raw/plants/calathea/CA3_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "CA3",
+      "name_ko": "칼라데아 · 성숙잎(오비폴리아) — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·칼라데아",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "6e561e3d-e55d-4e34-8415-9ccc368eee9d",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "6e561e3d-e55d-4e34-8415-9ccc368eee9d",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141431_6e561e3d-e55d-4e34-8415-9ccc368eee9d.png",
+          "local": "raw/plants/calathea/CA3_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA3_a.png",
+          "status": "pass",
+          "note": "large round mature leaf with stripes"
+        },
+        {
+          "v": 2,
+          "job_id": "6bb74ba6-6606-4d30-8b5a-440d8f60c0cb",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141429_6bb74ba6-6606-4d30-8b5a-440d8f60c0cb.png",
+          "local": "raw/plants/calathea/CA3_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA3_b.png",
+          "status": "pass",
+          "note": "large round mature leaf with stripes"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 820,
+      "file": "CA4_b.jpg",
+      "path": "raw/plants/calathea/CA4_b.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "CA4",
+      "name_ko": "칼라데아 · 중간 · 무늬 화이트퓨전 — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·칼라데아",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "afebe1c3-754c-4429-8f6f-e668e1b62b58",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "36597246-99f4-4f31-87ac-e0a836df2199",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141429_36597246-99f4-4f31-87ac-e0a836df2199.png",
+          "local": "raw/plants/calathea/CA4_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA4_a.png",
+          "status": "pass",
+          "note": "White Fusion brushstroke white marbling"
+        },
+        {
+          "v": 2,
+          "job_id": "afebe1c3-754c-4429-8f6f-e668e1b62b58",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141429_afebe1c3-754c-4429-8f6f-e668e1b62b58.png",
+          "local": "raw/plants/calathea/CA4_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA4_b.png",
+          "status": "pass",
+          "note": "White Fusion brushstroke white marbling"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 821,
+      "file": "CA5_a.jpg",
+      "path": "raw/plants/calathea/CA5_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "CA5",
+      "name_ko": "칼라데아 · 성숙 · 무늬 화이트퓨전 — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·칼라데아",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "7737f499-5b07-40a7-919c-a5381e9aa298",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "7737f499-5b07-40a7-919c-a5381e9aa298",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141628_7737f499-5b07-40a7-919c-a5381e9aa298.png",
+          "local": "raw/plants/calathea/CA5_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA5_a.png",
+          "status": "pass",
+          "note": "White Fusion mature; lilac-pink edge visible in _b"
+        },
+        {
+          "v": 2,
+          "job_id": "a77cf874-b68a-43be-8ecb-8dd82f5e0011",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141626_a77cf874-b68a-43be-8ecb-8dd82f5e0011.png",
+          "local": "raw/plants/calathea/CA5_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA5_b.png",
+          "status": "pass",
+          "note": "White Fusion mature; lilac-pink edge visible in _b"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 822,
+      "file": "CA6_whole_a.jpg",
+      "path": "raw/plants/calathea/CA6_whole_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "CA6",
+      "name_ko": "칼라데아 · 그루 전체(로제트) — 기준 그림",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·칼라데아",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "09a8ae41-a386-4e30-9a56-93e8c7fbd316",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "09a8ae41-a386-4e30-9a56-93e8c7fbd316",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141625_09a8ae41-a386-4e30-9a56-93e8c7fbd316.png",
+          "local": "raw/plants/calathea/CA6_whole_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA6_whole_a.png",
+          "status": "pass",
+          "note": "rosette of round striped leaves on upright petioles from the base (pink faceted pot)"
+        },
+        {
+          "v": 2,
+          "job_id": "4d0690e5-9b38-4a03-ba2c-8391db56df55",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141627_4d0690e5-9b38-4a03-ba2c-8391db56df55.png",
+          "local": "raw/plants/calathea/CA6_whole_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/calathea/CA6_whole_b.png",
+          "status": "pass",
+          "note": "rosette of round striped leaves on upright petioles from the base (pink faceted pot)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 823,
+      "file": "SC1_a.jpg",
+      "path": "raw/plants/scindapsus/SC1_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "SC1",
+      "name_ko": "스킨답서스 · 어린잎(밑 모양) — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·스킨답서스",
+      "style": "파스텔저폴리",
+      "status": "다시뽑기",
+      "final_status": "redo",
+      "note": "다시 뽑기(r2) — 두 장 다 잎끝에 작은 새 잎이 붙음(3D 입력은 한 잎)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "591f27be-3cca-4575-b65f-70beaf8b31b2",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "591f27be-3cca-4575-b65f-70beaf8b31b2",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135015_591f27be-3cca-4575-b65f-70beaf8b31b2.png",
+          "local": "raw/plants/scindapsus/SC1_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC1_a.png",
+          "status": "pass",
+          "note": "young light-green heart leaf, asymmetric pointed tip, petiole down, pure white bg"
+        },
+        {
+          "v": 2,
+          "job_id": "2ab7fbe9-e288-4900-88c0-f83d77846568",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135014_2ab7fbe9-e288-4900-88c0-f83d77846568.png",
+          "local": "raw/plants/scindapsus/SC1_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC1_b.png",
+          "status": "pass",
+          "note": "young light-green heart leaf, asymmetric pointed tip, petiole down, pure white bg"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 824,
+      "file": "SC2_a.jpg",
+      "path": "raw/plants/scindapsus/SC2_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "SC2",
+      "name_ko": "스킨답서스 · 중간잎(밑 모양) — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·스킨답서스",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "c95d9997-47bb-4b47-8de2-e1da92055aec",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "c95d9997-47bb-4b47-8de2-e1da92055aec",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141213_c95d9997-47bb-4b47-8de2-e1da92055aec.png",
+          "local": "raw/plants/scindapsus/SC2_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC2_a.png",
+          "status": "pass",
+          "note": "half-grown medium green; near-identical to SC3 because framing normalises size (stage difference mostly colour)"
+        },
+        {
+          "v": 2,
+          "job_id": "49967231-c4a7-460d-a1ff-65577256e495",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141209_49967231-c4a7-460d-a1ff-65577256e495.png",
+          "local": "raw/plants/scindapsus/SC2_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC2_b.png",
+          "status": "pass",
+          "note": "half-grown medium green; near-identical to SC3 because framing normalises size (stage difference mostly colour)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 825,
+      "file": "SC3_a.jpg",
+      "path": "raw/plants/scindapsus/SC3_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "SC3",
+      "name_ko": "스킨답서스 · 성숙잎(밑 모양) — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·스킨답서스",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "9f236886-8a4b-41b7-ae4b-469a60098ae2",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "9f236886-8a4b-41b7-ae4b-469a60098ae2",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141212_9f236886-8a4b-41b7-ae4b-469a60098ae2.png",
+          "local": "raw/plants/scindapsus/SC3_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC3_a.png",
+          "status": "pass",
+          "note": "fully grown, gently curved"
+        },
+        {
+          "v": 2,
+          "job_id": "fe9fd1a1-24cc-461b-b589-59dce91def24",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141211_fe9fd1a1-24cc-461b-b589-59dce91def24.png",
+          "local": "raw/plants/scindapsus/SC3_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC3_b.png",
+          "status": "pass",
+          "note": "fully grown, gently curved"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 826,
+      "file": "SC4_a.jpg",
+      "path": "raw/plants/scindapsus/SC4_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "SC4",
+      "name_ko": "스킨답서스 · 성숙 · 무늬 마블퀸 — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·스킨답서스",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "4881217b-bc86-416e-8c51-f59785eb9acc",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "4881217b-bc86-416e-8c51-f59785eb9acc",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141431_4881217b-bc86-416e-8c51-f59785eb9acc.png",
+          "local": "raw/plants/scindapsus/SC4_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC4_a.png",
+          "status": "pass",
+          "note": "Marble Queen cream marbling"
+        },
+        {
+          "v": 2,
+          "job_id": "633613bd-8186-40a7-b6aa-81a0f0b5c16f",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141432_633613bd-8186-40a7-b6aa-81a0f0b5c16f.png",
+          "local": "raw/plants/scindapsus/SC4_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC4_b.png",
+          "status": "pass",
+          "note": "Marble Queen cream marbling"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 827,
+      "file": "SC5_b.jpg",
+      "path": "raw/plants/scindapsus/SC5_b.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "SC5",
+      "name_ko": "스킨답서스 · 성숙 · 무늬 엔조이 — 2D 원화(3D 입력)",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·스킨답서스",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "09c5f128-0431-4b53-af6b-4f1cf8ae61c4",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "3434b0de-00ee-4810-ad01-ca89142059c6",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141429_3434b0de-00ee-4810-ad01-ca89142059c6.png",
+          "local": "raw/plants/scindapsus/SC5_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC5_a.png",
+          "status": "pass",
+          "note": "N'Joy crisp white edge patches, green centre"
+        },
+        {
+          "v": 2,
+          "job_id": "09c5f128-0431-4b53-af6b-4f1cf8ae61c4",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141430_09c5f128-0431-4b53-af6b-4f1cf8ae61c4.png",
+          "local": "raw/plants/scindapsus/SC5_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC5_b.png",
+          "status": "pass",
+          "note": "N'Joy crisp white edge patches, green centre"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 828,
+      "file": "SC6_whole_a.jpg",
+      "path": "raw/plants/scindapsus/SC6_whole_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "SC6",
+      "name_ko": "스킨답서스 · 그루 전체(덩굴) — 기준 그림",
+      "batch": "leaf_hf_20261009",
+      "type": "원화-새종",
+      "category": "원화·스킨답서스",
+      "style": "파스텔저폴리",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "75f4ba98-b73c-47b4-a712-6ef961bfb9b4",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "75f4ba98-b73c-47b4-a712-6ef961bfb9b4",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141628_75f4ba98-b73c-47b4-a712-6ef961bfb9b4.png",
+          "local": "raw/plants/scindapsus/SC6_whole_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC6_whole_a.png",
+          "status": "pass",
+          "note": "hanging pot, long trailing marbled vines (pot is pink from the style ref)"
+        },
+        {
+          "v": 2,
+          "job_id": "98d4b294-d657-4688-a75c-cf85b41a5c13",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141626_98d4b294-d657-4688-a75c-cf85b41a5c13.png",
+          "local": "raw/plants/scindapsus/SC6_whole_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC6_whole_b.png",
+          "status": "pass",
+          "note": "hanging pot, long trailing marbled vines (pot is pink from the style ref)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 829,
+      "file": "card_al_marble_a.png",
+      "path": "illust/cards/card_al_marble_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "al_marble",
+      "name_ko": "카드 — 알로카시아 프라이덱 · 산반 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "d3f7c5a6-4956-48d5-975f-1e475d5fd35f",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "d3f7c5a6-4956-48d5-975f-1e475d5fd35f",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140253_d3f7c5a6-4956-48d5-975f-1e475d5fd35f.png",
+          "local": "illust/cards/card_al_marble_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_al_marble_a.png",
+          "status": "pass",
+          "note": "cream marbling between white veins, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "9b5a94ed-6519-4737-9bea-f88b72ad574c",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140255_9b5a94ed-6519-4737-9bea-f88b72ad574c.png",
+          "local": "illust/cards/card_al_marble_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_al_marble_b.png",
+          "status": "pass",
+          "note": "cream marbling between white veins, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 830,
+      "file": "card_al_marble_a.png",
+      "path": "illust/cards/_styleB/card_al_marble_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "al_marble",
+      "name_ko": "카드 — 알로카시아 프라이덱 · 산반 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "bc016ec1-6cbb-485a-9cd2-d86b080dc4f2",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "bc016ec1-6cbb-485a-9cd2-d86b080dc4f2",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141211_bc016ec1-6cbb-485a-9cd2-d86b080dc4f2.png",
+          "local": "illust/cards/_styleB/card_al_marble_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_al_marble_a.png",
+          "status": "pass",
+          "note": "cream marbling between white veins, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "194c30d9-788f-4857-b9b0-3d9291a19633",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141212_194c30d9-788f-4857-b9b0-3d9291a19633.png",
+          "local": "illust/cards/_styleB/card_al_marble_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_al_marble_b.png",
+          "status": "pass",
+          "note": "cream marbling between white veins, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 831,
+      "file": "card_al_plain_a.png",
+      "path": "illust/cards/card_al_plain_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "al_plain",
+      "name_ko": "카드 — 알로카시아 프라이덱 · 무지 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "2a20dbf6-9509-4844-a091-da8c782c581b",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "2a20dbf6-9509-4844-a091-da8c782c581b",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140043_2a20dbf6-9509-4844-a091-da8c782c581b.png",
+          "local": "illust/cards/card_al_plain_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_al_plain_a.png",
+          "status": "pass",
+          "note": "velvety dark green arrowhead with bold white veins"
+        },
+        {
+          "v": 2,
+          "job_id": "0735c89c-6544-402e-8735-744603581d24",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140049_0735c89c-6544-402e-8735-744603581d24.png",
+          "local": "illust/cards/card_al_plain_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_al_plain_b.png",
+          "status": "pass",
+          "note": "velvety dark green arrowhead with bold white veins"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 832,
+      "file": "card_al_plain_a.png",
+      "path": "illust/cards/_styleB/card_al_plain_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "al_plain",
+      "name_ko": "카드 — 알로카시아 프라이덱 · 무지 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "7a63a1df-e54a-44f7-8deb-3fcba362acaf",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "7a63a1df-e54a-44f7-8deb-3fcba362acaf",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141213_7a63a1df-e54a-44f7-8deb-3fcba362acaf.png",
+          "local": "illust/cards/_styleB/card_al_plain_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_al_plain_a.png",
+          "status": "pass",
+          "note": "velvety dark green arrowhead with bold white veins"
+        },
+        {
+          "v": 2,
+          "job_id": "3f1a6b66-c0d3-47ab-b7c1-897783247c5d",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141211_3f1a6b66-c0d3-47ab-b7c1-897783247c5d.png",
+          "local": "illust/cards/_styleB/card_al_plain_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_al_plain_b.png",
+          "status": "pass",
+          "note": "velvety dark green arrowhead with bold white veins"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 833,
+      "file": "card_al_sector_a.png",
+      "path": "illust/cards/card_al_sector_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "al_sector",
+      "name_ko": "카드 — 알로카시아 프라이덱 · 하프문 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "73d7de56-9cb7-4bbf-83a5-81cb3ccaf874",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "73d7de56-9cb7-4bbf-83a5-81cb3ccaf874",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140253_73d7de56-9cb7-4bbf-83a5-81cb3ccaf874.png",
+          "local": "illust/cards/card_al_sector_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_al_sector_a.png",
+          "status": "pass",
+          "note": "upper half cream sector, lower half green with white veins, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "d8794533-e1e9-48f4-8ea3-90ed215d8ede",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140252_d8794533-e1e9-48f4-8ea3-90ed215d8ede.png",
+          "local": "illust/cards/card_al_sector_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_al_sector_b.png",
+          "status": "pass",
+          "note": "upper half cream sector, lower half green with white veins, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 834,
+      "file": "card_al_sector_a.png",
+      "path": "illust/cards/_styleB/card_al_sector_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "al_sector",
+      "name_ko": "카드 — 알로카시아 프라이덱 · 하프문 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "0d0be129-3c02-4d56-af8f-0f42e1843932",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "0d0be129-3c02-4d56-af8f-0f42e1843932",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141213_0d0be129-3c02-4d56-af8f-0f42e1843932.png",
+          "local": "illust/cards/_styleB/card_al_sector_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_al_sector_a.png",
+          "status": "pass",
+          "note": "upper half cream sector, lower half green with white veins, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "306e190c-a302-4e78-a89a-ca13cac461c1",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141207_306e190c-a302-4e78-a89a-ca13cac461c1.png",
+          "local": "illust/cards/_styleB/card_al_sector_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_al_sector_b.png",
+          "status": "pass",
+          "note": "upper half cream sector, lower half green with white veins, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 835,
+      "file": "card_mon_charcoal_a.png",
+      "path": "illust/cards/card_mon_charcoal_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_charcoal",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 차콜-다크그린 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "69b9539d-a42b-4c04-9d73-b527361f0894",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "69b9539d-a42b-4c04-9d73-b527361f0894",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135013_69b9539d-a42b-4c04-9d73-b527361f0894.png",
+          "local": "illust/cards/card_mon_charcoal_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_charcoal_a.png",
+          "status": "fail",
+          "note": "veins and every split readable (not a silhouette); QA-4 brightness borderline 0.20-0.25; ref's mauve petiole shows in style B; QA-4 brightness < 0.25 (luma 0.229, HSV-V 0.245)"
+        },
+        {
+          "v": 2,
+          "job_id": "0a71a3c7-d4f6-425b-b890-f18acc283690",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135012_0a71a3c7-d4f6-425b-b890-f18acc283690.png",
+          "local": "illust/cards/card_mon_charcoal_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_charcoal_b.png",
+          "status": "pass",
+          "note": "veins and every split readable (not a silhouette); QA-4 brightness borderline 0.20-0.25; ref's mauve petiole shows in style B; QA-4 brightness ok on at least one measure (luma 0.237, HSV-V 0.254)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 836,
+      "file": "card_mon_charcoal_a.png",
+      "path": "illust/cards/_styleB/card_mon_charcoal_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_charcoal",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 차콜-다크그린 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "2203e1f9-17e3-45cf-be67-697c43a33985",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "2203e1f9-17e3-45cf-be67-697c43a33985",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135014_2203e1f9-17e3-45cf-be67-697c43a33985.png",
+          "local": "illust/cards/_styleB/card_mon_charcoal_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_charcoal_a.png",
+          "status": "fail",
+          "note": "veins and every split readable (not a silhouette); QA-4 brightness borderline 0.20-0.25; ref's mauve petiole shows in style B; QA-4 brightness < 0.25 (luma 0.235, HSV-V 0.249)"
+        },
+        {
+          "v": 2,
+          "job_id": "71158e9c-97c5-4519-9fe9-2c7123b62231",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135013_71158e9c-97c5-4519-9fe9-2c7123b62231.png",
+          "local": "illust/cards/_styleB/card_mon_charcoal_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_charcoal_b.png",
+          "status": "fail",
+          "note": "veins and every split readable (not a silhouette); QA-4 brightness borderline 0.20-0.25; ref's mauve petiole shows in style B; QA-4 brightness < 0.25 (luma 0.204, HSV-V 0.218)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 837,
+      "file": "card_mon_fullalbo_a.png",
+      "path": "illust/cards/card_mon_fullalbo_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_fullalbo",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 알보-전체흰 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "71185d4b-79e9-4a2e-9d13-63c1ba2e94d5",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "71185d4b-79e9-4a2e-9d13-63c1ba2e94d5",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135811_71185d4b-79e9-4a2e-9d13-63c1ba2e94d5.png",
+          "local": "illust/cards/card_mon_fullalbo_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_fullalbo_a.png",
+          "status": "pass",
+          "note": "white leaf; interior saturation < 0.10 in all (style A ivory-warm 0.07-0.08, style B cool 0.03-0.04); white check ok: interior saturation 0.074"
+        },
+        {
+          "v": 2,
+          "job_id": "e9a02a2b-f01b-4f25-a811-a169fd640dec",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135812_e9a02a2b-f01b-4f25-a811-a169fd640dec.png",
+          "local": "illust/cards/card_mon_fullalbo_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_fullalbo_b.png",
+          "status": "pass",
+          "note": "white leaf; interior saturation < 0.10 in all (style A ivory-warm 0.07-0.08, style B cool 0.03-0.04); white check ok: interior saturation 0.084"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 838,
+      "file": "card_mon_fullalbo_b.png",
+      "path": "illust/cards/_styleB/card_mon_fullalbo_b.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_fullalbo",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 알보-전체흰 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "352997d7-b0cf-49ee-bea8-92c67e872c49",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "efc1b662-1c73-4300-96b5-f4bc48c5276a",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140908_efc1b662-1c73-4300-96b5-f4bc48c5276a.png",
+          "local": "illust/cards/_styleB/card_mon_fullalbo_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_fullalbo_a.png",
+          "status": "pass",
+          "note": "white leaf; interior saturation < 0.10 in all (style A ivory-warm 0.07-0.08, style B cool 0.03-0.04); white check ok: interior saturation 0.04"
+        },
+        {
+          "v": 2,
+          "job_id": "352997d7-b0cf-49ee-bea8-92c67e872c49",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140911_352997d7-b0cf-49ee-bea8-92c67e872c49.png",
+          "local": "illust/cards/_styleB/card_mon_fullalbo_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_fullalbo_b.png",
+          "status": "pass",
+          "note": "white leaf; interior saturation < 0.10 in all (style A ivory-warm 0.07-0.08, style B cool 0.03-0.04); white check ok: interior saturation 0.034"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 839,
+      "file": "card_mon_galaxy_darkteal_a.png",
+      "path": "illust/cards/card_mon_galaxy_darkteal_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_galaxy_darkteal",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 갤럭시-다크틸 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "d6f8c8d5-d23f-4c8e-8a87-0f65a93f82e0",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "d6f8c8d5-d23f-4c8e-8a87-0f65a93f82e0",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135649_d6f8c8d5-d23f-4c8e-8a87-0f65a93f82e0.png",
+          "local": "illust/cards/card_mon_galaxy_darkteal_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_galaxy_darkteal_a.png",
+          "status": "fail",
+          "note": "splits, veins and star specks readable (not a silhouette) but QA-4 brightness below 0.25 in every image; QA-4 brightness < 0.25 (luma 0.2, HSV-V 0.224)"
+        },
+        {
+          "v": 2,
+          "job_id": "b3becc4c-258b-4900-ae82-29f26974d34b",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135651_b3becc4c-258b-4900-ae82-29f26974d34b.png",
+          "local": "illust/cards/card_mon_galaxy_darkteal_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_galaxy_darkteal_b.png",
+          "status": "fail",
+          "note": "splits, veins and star specks readable (not a silhouette) but QA-4 brightness below 0.25 in every image; QA-4 brightness < 0.25 (luma 0.201, HSV-V 0.228)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 840,
+      "file": "card_mon_galaxy_darkteal_a.png",
+      "path": "illust/cards/_styleB/card_mon_galaxy_darkteal_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_galaxy_darkteal",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 갤럭시-다크틸 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "64773f67-9e68-4f2f-bb73-c739c7b51e88",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "64773f67-9e68-4f2f-bb73-c739c7b51e88",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140707_64773f67-9e68-4f2f-bb73-c739c7b51e88.png",
+          "local": "illust/cards/_styleB/card_mon_galaxy_darkteal_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_galaxy_darkteal_a.png",
+          "status": "fail",
+          "note": "splits, veins and star specks readable (not a silhouette) but QA-4 brightness below 0.25 in every image; QA-4 brightness < 0.25 (luma 0.221, HSV-V 0.249)"
+        },
+        {
+          "v": 2,
+          "job_id": "3ca0bdef-2f48-41b6-9709-841498a9e995",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140708_3ca0bdef-2f48-41b6-9709-841498a9e995.png",
+          "local": "illust/cards/_styleB/card_mon_galaxy_darkteal_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_galaxy_darkteal_b.png",
+          "status": "fail",
+          "note": "splits, veins and star specks readable (not a silhouette) but QA-4 brightness below 0.25 in every image; QA-4 brightness < 0.25 (luma 0.218, HSV-V 0.247)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 841,
+      "file": "card_mon_galaxy_tealgold_a.png",
+      "path": "illust/cards/card_mon_galaxy_tealgold_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_galaxy_tealgold",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 갤럭시-틸골드 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "23037033-9328-40d4-9f31-1bfa81e83bc5",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "23037033-9328-40d4-9f31-1bfa81e83bc5",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135650_23037033-9328-40d4-9f31-1bfa81e83bc5.png",
+          "local": "illust/cards/card_mon_galaxy_tealgold_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_galaxy_tealgold_a.png",
+          "status": "pass",
+          "note": "deep teal with gold veins and specks (not a listed dark family; luma 0.24-0.27)"
+        },
+        {
+          "v": 2,
+          "job_id": "31a55d17-81c8-4866-becb-50fc8fbd9118",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135649_31a55d17-81c8-4866-becb-50fc8fbd9118.png",
+          "local": "illust/cards/card_mon_galaxy_tealgold_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_galaxy_tealgold_b.png",
+          "status": "pass",
+          "note": "deep teal with gold veins and specks (not a listed dark family; luma 0.24-0.27)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 842,
+      "file": "card_mon_galaxy_tealgold_a.png",
+      "path": "illust/cards/_styleB/card_mon_galaxy_tealgold_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_galaxy_tealgold",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 갤럭시-틸골드 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "89e8313f-2f43-4e4a-8743-6f2b9b4a2acb",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "89e8313f-2f43-4e4a-8743-6f2b9b4a2acb",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140709_89e8313f-2f43-4e4a-8743-6f2b9b4a2acb.png",
+          "local": "illust/cards/_styleB/card_mon_galaxy_tealgold_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_galaxy_tealgold_a.png",
+          "status": "pass",
+          "note": "deep teal with gold veins and specks (not a listed dark family; luma 0.24-0.27)"
+        },
+        {
+          "v": 2,
+          "job_id": "6ccf4b87-d945-4709-8627-cc25783938a6",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140708_6ccf4b87-d945-4709-8627-cc25783938a6.png",
+          "local": "illust/cards/_styleB/card_mon_galaxy_tealgold_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_galaxy_tealgold_b.png",
+          "status": "pass",
+          "note": "deep teal with gold veins and specks (not a listed dark family; luma 0.24-0.27)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 843,
+      "file": "card_mon_green_lemonpatch_a.png",
+      "path": "illust/cards/card_mon_green_lemonpatch_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_green_lemonpatch",
+      "name_ko": "카드 — 몬스테라 · 산반 · 라임-레몬패치 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "f419e7ea-b285-4d7a-965d-c784fa03e28c",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "f419e7ea-b285-4d7a-965d-c784fa03e28c",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135647_f419e7ea-b285-4d7a-965d-c784fa03e28c.png",
+          "local": "illust/cards/card_mon_green_lemonpatch_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_green_lemonpatch_a.png",
+          "status": "pass",
+          "note": "deep green with one lemon patch near the edge, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "23fee60f-4a1c-4a34-b1c4-c877a8f17d65",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135654_23fee60f-4a1c-4a34-b1c4-c877a8f17d65.png",
+          "local": "illust/cards/card_mon_green_lemonpatch_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_green_lemonpatch_b.png",
+          "status": "pass",
+          "note": "deep green with one lemon patch near the edge, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 844,
+      "file": "card_mon_green_lemonpatch_a.png",
+      "path": "illust/cards/_styleB/card_mon_green_lemonpatch_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_green_lemonpatch",
+      "name_ko": "카드 — 몬스테라 · 산반 · 라임-레몬패치 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "26043740-0eae-4223-966b-3f0b7fe9eb61",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "26043740-0eae-4223-966b-3f0b7fe9eb61",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140458_26043740-0eae-4223-966b-3f0b7fe9eb61.png",
+          "local": "illust/cards/_styleB/card_mon_green_lemonpatch_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_green_lemonpatch_a.png",
+          "status": "pass",
+          "note": "deep green with one lemon patch near the edge, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "4a0fb843-6990-4bf1-adc0-0d5c93f2a1e6",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140458_4a0fb843-6990-4bf1-adc0-0d5c93f2a1e6.png",
+          "local": "illust/cards/_styleB/card_mon_green_lemonpatch_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_green_lemonpatch_b.png",
+          "status": "pass",
+          "note": "deep green with one lemon patch near the edge, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 845,
+      "file": "card_mon_green_yellow_a.png",
+      "path": "illust/cards/card_mon_green_yellow_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_green_yellow",
+      "name_ko": "카드 — 몬스테라 · 산반 · 오로레아-그린옐로우 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "c4906997-360e-454e-9786-0086ec256764",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "c4906997-360e-454e-9786-0086ec256764",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135554_c4906997-360e-454e-9786-0086ec256764.png",
+          "local": "illust/cards/card_mon_green_yellow_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_green_yellow_a.png",
+          "status": "pass",
+          "note": "lime-yellow aurea streaks on deep green"
+        },
+        {
+          "v": 2,
+          "job_id": "173ae2ed-c6fa-4394-9ed5-14c65cce6cd4",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135552_173ae2ed-c6fa-4394-9ed5-14c65cce6cd4.png",
+          "local": "illust/cards/card_mon_green_yellow_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_green_yellow_b.png",
+          "status": "pass",
+          "note": "lime-yellow aurea streaks on deep green"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 846,
+      "file": "card_mon_green_yellow_a.png",
+      "path": "illust/cards/_styleB/card_mon_green_yellow_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_green_yellow",
+      "name_ko": "카드 — 몬스테라 · 산반 · 오로레아-그린옐로우 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "8752b9b3-6f5e-46ea-998d-4afa1da7dce5",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "8752b9b3-6f5e-46ea-998d-4afa1da7dce5",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140457_8752b9b3-6f5e-46ea-998d-4afa1da7dce5.png",
+          "local": "illust/cards/_styleB/card_mon_green_yellow_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_green_yellow_a.png",
+          "status": "pass",
+          "note": "lime-yellow aurea streaks on deep green"
+        },
+        {
+          "v": 2,
+          "job_id": "9e7b4681-bbcf-47a7-9126-50ab11b24fb1",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140500_9e7b4681-bbcf-47a7-9126-50ab11b24fb1.png",
+          "local": "illust/cards/_styleB/card_mon_green_yellow_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_green_yellow_b.png",
+          "status": "pass",
+          "note": "lime-yellow aurea streaks on deep green"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 847,
+      "file": "card_mon_halfmoon_greencream_a.png",
+      "path": "illust/cards/card_mon_halfmoon_greencream_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_halfmoon_greencream",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 하프문-그린크림 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "6310c089-96ae-4c35-8ce7-e05a6e73b535",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "6310c089-96ae-4c35-8ce7-e05a6e73b535",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135651_6310c089-96ae-4c35-8ce7-e05a6e73b535.png",
+          "local": "illust/cards/card_mon_halfmoon_greencream_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_halfmoon_greencream_a.png",
+          "status": "pass",
+          "note": "cream sits in the centre/right following the ref rather than a strict half split along the midrib (most visible in _a)"
+        },
+        {
+          "v": 2,
+          "job_id": "e91eff46-a416-4a65-a446-eaa3986ba110",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135652_e91eff46-a416-4a65-a446-eaa3986ba110.png",
+          "local": "illust/cards/card_mon_halfmoon_greencream_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_halfmoon_greencream_b.png",
+          "status": "pass",
+          "note": "cream sits in the centre/right following the ref rather than a strict half split along the midrib (most visible in _a)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 848,
+      "file": "card_mon_halfmoon_greencream_b.png",
+      "path": "illust/cards/_styleB/card_mon_halfmoon_greencream_b.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_halfmoon_greencream",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 하프문-그린크림 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "1c7eed59-d90c-413e-8765-a021c0d472d9",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "1acb630c-e31d-43c6-beb0-deebb1be9e41",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140459_1acb630c-e31d-43c6-beb0-deebb1be9e41.png",
+          "local": "illust/cards/_styleB/card_mon_halfmoon_greencream_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_halfmoon_greencream_a.png",
+          "status": "pass",
+          "note": "cream sits in the centre/right following the ref rather than a strict half split along the midrib (most visible in _a)"
+        },
+        {
+          "v": 2,
+          "job_id": "1c7eed59-d90c-413e-8765-a021c0d472d9",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140459_1c7eed59-d90c-413e-8765-a021c0d472d9.png",
+          "local": "illust/cards/_styleB/card_mon_halfmoon_greencream_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_halfmoon_greencream_b.png",
+          "status": "pass",
+          "note": "cream sits in the centre/right following the ref rather than a strict half split along the midrib (most visible in _a)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 849,
+      "file": "card_mon_halfmoon_greenwhite_b.png",
+      "path": "illust/cards/card_mon_halfmoon_greenwhite_b.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_halfmoon_greenwhite",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 하프문-그린흰 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "e099b0ff-3c88-4b03-bf4a-83492e76170a",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "1f0b2cc7-f424-4b5c-a8d0-81b8ebe5acc4",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135649_1f0b2cc7-f424-4b5c-a8d0-81b8ebe5acc4.png",
+          "local": "illust/cards/card_mon_halfmoon_greenwhite_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_halfmoon_greenwhite_a.png",
+          "status": "pass",
+          "note": "half white / half green readable"
+        },
+        {
+          "v": 2,
+          "job_id": "e099b0ff-3c88-4b03-bf4a-83492e76170a",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135650_e099b0ff-3c88-4b03-bf4a-83492e76170a.png",
+          "local": "illust/cards/card_mon_halfmoon_greenwhite_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_halfmoon_greenwhite_b.png",
+          "status": "pass",
+          "note": "half white / half green readable"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 850,
+      "file": "card_mon_halfmoon_greenwhite_b.png",
+      "path": "illust/cards/_styleB/card_mon_halfmoon_greenwhite_b.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_halfmoon_greenwhite",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 하프문-그린흰 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "b0380266-ceb3-43f3-9080-d087636d1ce7",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "e4fd283e-addd-4c84-b525-ada1815f2bbc",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140501_e4fd283e-addd-4c84-b525-ada1815f2bbc.png",
+          "local": "illust/cards/_styleB/card_mon_halfmoon_greenwhite_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_halfmoon_greenwhite_a.png",
+          "status": "pass",
+          "note": "half white / half green readable"
+        },
+        {
+          "v": 2,
+          "job_id": "b0380266-ceb3-43f3-9080-d087636d1ce7",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140458_b0380266-ceb3-43f3-9080-d087636d1ce7.png",
+          "local": "illust/cards/_styleB/card_mon_halfmoon_greenwhite_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_halfmoon_greenwhite_b.png",
+          "status": "pass",
+          "note": "half white / half green readable"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 851,
+      "file": "card_mon_mauve_a.png",
+      "path": "illust/cards/card_mon_mauve_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_mauve",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 모브-라벤더그레이 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "fadc737d-69a1-4f0f-8d17-e786da6782fa",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "fadc737d-69a1-4f0f-8d17-e786da6782fa",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135813_fadc737d-69a1-4f0f-8d17-e786da6782fa.png",
+          "local": "illust/cards/card_mon_mauve_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_mauve_a.png",
+          "status": "pass",
+          "note": "mauve lavender-grey, darker on one side"
+        },
+        {
+          "v": 2,
+          "job_id": "31fc9948-b416-44bf-a563-e4e296a0be29",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135810_31fc9948-b416-44bf-a563-e4e296a0be29.png",
+          "local": "illust/cards/card_mon_mauve_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_mauve_b.png",
+          "status": "pass",
+          "note": "mauve lavender-grey, darker on one side"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 852,
+      "file": "card_mon_mauve_a.png",
+      "path": "illust/cards/_styleB/card_mon_mauve_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_mauve",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 모브-라벤더그레이 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "767ca49b-531c-4d08-8496-69928959ea46",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "767ca49b-531c-4d08-8496-69928959ea46",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140907_767ca49b-531c-4d08-8496-69928959ea46.png",
+          "local": "illust/cards/_styleB/card_mon_mauve_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_mauve_a.png",
+          "status": "pass",
+          "note": "mauve lavender-grey, darker on one side"
+        },
+        {
+          "v": 2,
+          "job_id": "27ac0f06-3d0d-42e3-b24e-b056ad1a41e8",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140909_27ac0f06-3d0d-42e3-b24e-b056ad1a41e8.png",
+          "local": "illust/cards/_styleB/card_mon_mauve_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_mauve_b.png",
+          "status": "pass",
+          "note": "mauve lavender-grey, darker on one side"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 853,
+      "file": "card_mon_neon_lime_a.png",
+      "path": "illust/cards/card_mon_neon_lime_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_neon_lime",
+      "name_ko": "카드 — 몬스테라 · 산반 · 네온-라임 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "e3286a41-93af-4af9-a4b3-bf4e31dcaede",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "e3286a41-93af-4af9-a4b3-bf4e31dcaede",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135650_e3286a41-93af-4af9-a4b3-bf4e31dcaede.png",
+          "local": "illust/cards/card_mon_neon_lime_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_neon_lime_a.png",
+          "status": "pass",
+          "note": "neon lime all over"
+        },
+        {
+          "v": 2,
+          "job_id": "63b98bd8-df93-4e35-ab7e-9b8245eae040",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135652_63b98bd8-df93-4e35-ab7e-9b8245eae040.png",
+          "local": "illust/cards/card_mon_neon_lime_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_neon_lime_b.png",
+          "status": "pass",
+          "note": "neon lime all over"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 854,
+      "file": "card_mon_neon_lime_b.png",
+      "path": "illust/cards/_styleB/card_mon_neon_lime_b.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_neon_lime",
+      "name_ko": "카드 — 몬스테라 · 산반 · 네온-라임 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "dbeed628-16af-460c-8c8e-8d4f58a985cf",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "471f8c48-9883-4cd1-905a-ee0ab0449b32",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140501_471f8c48-9883-4cd1-905a-ee0ab0449b32.png",
+          "local": "illust/cards/_styleB/card_mon_neon_lime_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_neon_lime_a.png",
+          "status": "pass",
+          "note": "neon lime all over"
+        },
+        {
+          "v": 2,
+          "job_id": "dbeed628-16af-460c-8c8e-8d4f58a985cf",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140501_dbeed628-16af-460c-8c8e-8d4f58a985cf.png",
+          "local": "illust/cards/_styleB/card_mon_neon_lime_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_neon_lime_b.png",
+          "status": "pass",
+          "note": "neon lime all over"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 855,
+      "file": "card_mon_plain_a.png",
+      "path": "illust/cards/card_mon_plain_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_plain",
+      "name_ko": "카드 — 몬스테라 · 무지 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "64163468-12a8-4796-85d1-e8f88836ca4a",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "64163468-12a8-4796-85d1-e8f88836ca4a",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140046_64163468-12a8-4796-85d1-e8f88836ca4a.png",
+          "local": "illust/cards/card_mon_plain_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_plain_a.png",
+          "status": "pass",
+          "note": "plain deep green"
+        },
+        {
+          "v": 2,
+          "job_id": "bad39b0c-1ee9-4307-95a2-617aeb418df0",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140047_bad39b0c-1ee9-4307-95a2-617aeb418df0.png",
+          "local": "illust/cards/card_mon_plain_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_plain_b.png",
+          "status": "pass",
+          "note": "plain deep green"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 856,
+      "file": "card_mon_plain_a.png",
+      "path": "illust/cards/_styleB/card_mon_plain_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_plain",
+      "name_ko": "카드 — 몬스테라 · 무지 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "66dbc8e4-373e-499f-91fb-430bb687d57f",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "66dbc8e4-373e-499f-91fb-430bb687d57f",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140910_66dbc8e4-373e-499f-91fb-430bb687d57f.png",
+          "local": "illust/cards/_styleB/card_mon_plain_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_plain_a.png",
+          "status": "pass",
+          "note": "plain deep green"
+        },
+        {
+          "v": 2,
+          "job_id": "56338d2b-3aae-422c-a864-61cecf719ca7",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140910_56338d2b-3aae-422c-a864-61cecf719ca7.png",
+          "local": "illust/cards/_styleB/card_mon_plain_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_plain_b.png",
+          "status": "pass",
+          "note": "plain deep green"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 857,
+      "file": "card_mon_rose_pink_a.png",
+      "path": "illust/cards/card_mon_rose_pink_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_rose_pink",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 핑크-로즈 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "18790a45-7489-493a-8eb4-c070dc948700",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "18790a45-7489-493a-8eb4-c070dc948700",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135809_18790a45-7489-493a-8eb4-c070dc948700.png",
+          "local": "illust/cards/card_mon_rose_pink_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_rose_pink_a.png",
+          "status": "pass",
+          "note": "coral rose-pink with pale veins and star flecks"
+        },
+        {
+          "v": 2,
+          "job_id": "1650c494-36cb-4c26-af28-29edf29ff5ba",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135810_1650c494-36cb-4c26-af28-29edf29ff5ba.png",
+          "local": "illust/cards/card_mon_rose_pink_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_rose_pink_b.png",
+          "status": "pass",
+          "note": "coral rose-pink with pale veins and star flecks"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 858,
+      "file": "card_mon_rose_pink_a.png",
+      "path": "illust/cards/_styleB/card_mon_rose_pink_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_rose_pink",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 핑크-로즈 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "431a2087-75fc-49c3-b38d-efa473c0eac5",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "431a2087-75fc-49c3-b38d-efa473c0eac5",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140711_431a2087-75fc-49c3-b38d-efa473c0eac5.png",
+          "local": "illust/cards/_styleB/card_mon_rose_pink_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_rose_pink_a.png",
+          "status": "pass",
+          "note": "coral rose-pink with pale veins and star flecks"
+        },
+        {
+          "v": 2,
+          "job_id": "8d7c5a96-884b-4190-90b3-bb4f3e1c2372",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140710_8d7c5a96-884b-4190-90b3-bb4f3e1c2372.png",
+          "local": "illust/cards/_styleB/card_mon_rose_pink_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_rose_pink_b.png",
+          "status": "pass",
+          "note": "coral rose-pink with pale veins and star flecks"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 859,
+      "file": "card_mon_speckle_greencream_a.png",
+      "path": "illust/cards/card_mon_speckle_greencream_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_speckle_greencream",
+      "name_ko": "카드 — 몬스테라 · 산반 · 스페클-그린크림 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "a74c80c5-929d-431d-818a-46dec81612a3",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "a74c80c5-929d-431d-818a-46dec81612a3",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135555_a74c80c5-929d-431d-818a-46dec81612a3.png",
+          "local": "illust/cards/card_mon_speckle_greencream_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_speckle_greencream_a.png",
+          "status": "pass",
+          "note": "cream speckled patches over green, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "fb97b1c2-d9ee-4409-8baf-c09ebd7edd52",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135553_fb97b1c2-d9ee-4409-8baf-c09ebd7edd52.png",
+          "local": "illust/cards/card_mon_speckle_greencream_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_speckle_greencream_b.png",
+          "status": "pass",
+          "note": "cream speckled patches over green, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 860,
+      "file": "card_mon_speckle_greencream_a.png",
+      "path": "illust/cards/_styleB/card_mon_speckle_greencream_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_speckle_greencream",
+      "name_ko": "카드 — 몬스테라 · 산반 · 스페클-그린크림 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "fcf1b222-7832-4f01-a1a6-0dac54de1202",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "fcf1b222-7832-4f01-a1a6-0dac54de1202",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140252_fcf1b222-7832-4f01-a1a6-0dac54de1202.png",
+          "local": "illust/cards/_styleB/card_mon_speckle_greencream_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_speckle_greencream_a.png",
+          "status": "pass",
+          "note": "cream speckled patches over green, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "7e463d4e-9fe9-4eeb-b804-a3bdbc92c3dc",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140253_7e463d4e-9fe9-4eeb-b804-a3bdbc92c3dc.png",
+          "local": "illust/cards/_styleB/card_mon_speckle_greencream_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_speckle_greencream_b.png",
+          "status": "pass",
+          "note": "cream speckled patches over green, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 861,
+      "file": "card_mon_star_greenwhite_a.png",
+      "path": "illust/cards/card_mon_star_greenwhite_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_star_greenwhite",
+      "name_ko": "카드 — 몬스테라 · 산반 · 별무늬-그린흰 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "e2ecdb67-495a-42de-afe4-ed78f7dcd1db",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "e2ecdb67-495a-42de-afe4-ed78f7dcd1db",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135551_e2ecdb67-495a-42de-afe4-ed78f7dcd1db.png",
+          "local": "illust/cards/card_mon_star_greenwhite_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_star_greenwhite_a.png",
+          "status": "pass",
+          "note": "mostly cream with green margins (+ yellow tinge at top like ref); star flecks faint; style-B _a very pale"
+        },
+        {
+          "v": 2,
+          "job_id": "c213fbbc-c05c-4909-802f-16821de8c3c0",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135551_c213fbbc-c05c-4909-802f-16821de8c3c0.png",
+          "local": "illust/cards/card_mon_star_greenwhite_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_star_greenwhite_b.png",
+          "status": "pass",
+          "note": "mostly cream with green margins (+ yellow tinge at top like ref); star flecks faint; style-B _a very pale"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 862,
+      "file": "card_mon_star_greenwhite_b.png",
+      "path": "illust/cards/_styleB/card_mon_star_greenwhite_b.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_star_greenwhite",
+      "name_ko": "카드 — 몬스테라 · 산반 · 별무늬-그린흰 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "edefe7b1-8ca3-4300-995c-29f3f9a1566a",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "5ad19827-4b51-4cf1-893c-7d20c4ec8db9",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140254_5ad19827-4b51-4cf1-893c-7d20c4ec8db9.png",
+          "local": "illust/cards/_styleB/card_mon_star_greenwhite_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_star_greenwhite_a.png",
+          "status": "pass",
+          "note": "mostly cream with green margins (+ yellow tinge at top like ref); star flecks faint; style-B _a very pale"
+        },
+        {
+          "v": 2,
+          "job_id": "edefe7b1-8ca3-4300-995c-29f3f9a1566a",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140253_edefe7b1-8ca3-4300-995c-29f3f9a1566a.png",
+          "local": "illust/cards/_styleB/card_mon_star_greenwhite_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_star_greenwhite_b.png",
+          "status": "pass",
+          "note": "mostly cream with green margins (+ yellow tinge at top like ref); star flecks faint; style-B _a very pale"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 863,
+      "file": "card_mon_star_greenyellow_a.png",
+      "path": "illust/cards/card_mon_star_greenyellow_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_star_greenyellow",
+      "name_ko": "카드 — 몬스테라 · 산반 · 별무늬-그린옐로우 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "d25298e3-cb34-45c9-babf-502fc4acf668",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "d25298e3-cb34-45c9-babf-502fc4acf668",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135552_d25298e3-cb34-45c9-babf-502fc4acf668.png",
+          "local": "illust/cards/card_mon_star_greenyellow_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_star_greenyellow_a.png",
+          "status": "pass",
+          "note": "cream + golden-yellow streaks; star flecks faint (ref shows none clearly either)"
+        },
+        {
+          "v": 2,
+          "job_id": "e7681f5c-5537-44e6-8448-acc3c58cfe1f",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135551_e7681f5c-5537-44e6-8448-acc3c58cfe1f.png",
+          "local": "illust/cards/card_mon_star_greenyellow_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_star_greenyellow_b.png",
+          "status": "pass",
+          "note": "cream + golden-yellow streaks; star flecks faint (ref shows none clearly either)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 864,
+      "file": "card_mon_star_greenyellow_a.png",
+      "path": "illust/cards/_styleB/card_mon_star_greenyellow_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_star_greenyellow",
+      "name_ko": "카드 — 몬스테라 · 산반 · 별무늬-그린옐로우 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "f016f509-c67b-4bcb-a767-d95479862b86",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "f016f509-c67b-4bcb-a767-d95479862b86",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140252_f016f509-c67b-4bcb-a767-d95479862b86.png",
+          "local": "illust/cards/_styleB/card_mon_star_greenyellow_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_star_greenyellow_a.png",
+          "status": "pass",
+          "note": "cream + golden-yellow streaks; star flecks faint (ref shows none clearly either)"
+        },
+        {
+          "v": 2,
+          "job_id": "799fde8f-3ccc-4be2-9c08-1906024c3e7e",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140254_799fde8f-3ccc-4be2-9c08-1906024c3e7e.png",
+          "local": "illust/cards/_styleB/card_mon_star_greenyellow_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_star_greenyellow_b.png",
+          "status": "pass",
+          "note": "cream + golden-yellow streaks; star flecks faint (ref shows none clearly either)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 865,
+      "file": "card_mon_star_palegreen_a.png",
+      "path": "illust/cards/card_mon_star_palegreen_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_star_palegreen",
+      "name_ko": "카드 — 몬스테라 · 산반 · 별무늬-페일그린 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "4d20667f-1b5a-4a2d-8abd-77157f77fc53",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "4d20667f-1b5a-4a2d-8abd-77157f77fc53",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135554_4d20667f-1b5a-4a2d-8abd-77157f77fc53.png",
+          "local": "illust/cards/card_mon_star_palegreen_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_star_palegreen_a.png",
+          "status": "pass",
+          "note": "olive pale green with clearly visible cream star flecks"
+        },
+        {
+          "v": 2,
+          "job_id": "3f11b3d7-bc29-43fe-884f-35565b5e5bdf",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135553_3f11b3d7-bc29-43fe-884f-35565b5e5bdf.png",
+          "local": "illust/cards/card_mon_star_palegreen_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_star_palegreen_b.png",
+          "status": "pass",
+          "note": "olive pale green with clearly visible cream star flecks"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 866,
+      "file": "card_mon_star_palegreen_a.png",
+      "path": "illust/cards/_styleB/card_mon_star_palegreen_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_star_palegreen",
+      "name_ko": "카드 — 몬스테라 · 산반 · 별무늬-페일그린 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "69d512ab-65e6-484f-abc6-b64693fa2204",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "69d512ab-65e6-484f-abc6-b64693fa2204",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140500_69d512ab-65e6-484f-abc6-b64693fa2204.png",
+          "local": "illust/cards/_styleB/card_mon_star_palegreen_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_star_palegreen_a.png",
+          "status": "pass",
+          "note": "olive pale green with clearly visible cream star flecks"
+        },
+        {
+          "v": 2,
+          "job_id": "6beaafbe-b61b-46a6-a8d4-00c97c7eaa71",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140459_6beaafbe-b61b-46a6-a8d4-00c97c7eaa71.png",
+          "local": "illust/cards/_styleB/card_mon_star_palegreen_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_star_palegreen_b.png",
+          "status": "pass",
+          "note": "olive pale green with clearly visible cream star flecks"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 867,
+      "file": "card_mon_star_pinkmint_a.png",
+      "path": "illust/cards/card_mon_star_pinkmint_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_star_pinkmint",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 별무늬-핑크민트 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "05f141e4-6a86-4aa8-8c0d-4136fe00d353",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "05f141e4-6a86-4aa8-8c0d-4136fe00d353",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135811_05f141e4-6a86-4aa8-8c0d-4136fe00d353.png",
+          "local": "illust/cards/card_mon_star_pinkmint_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_star_pinkmint_a.png",
+          "status": "pass",
+          "note": "pink-white / mint split along midrib with flecks"
+        },
+        {
+          "v": 2,
+          "job_id": "a1d20974-c89c-4c49-8f0e-05433abc8b22",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135812_a1d20974-c89c-4c49-8f0e-05433abc8b22.png",
+          "local": "illust/cards/card_mon_star_pinkmint_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_star_pinkmint_b.png",
+          "status": "pass",
+          "note": "pink-white / mint split along midrib with flecks"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 868,
+      "file": "card_mon_star_pinkmint_b.png",
+      "path": "illust/cards/_styleB/card_mon_star_pinkmint_b.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_star_pinkmint",
+      "name_ko": "카드 — 몬스테라 · 하프문 · 별무늬-핑크민트 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "6f7429cd-17dc-4efe-86cb-dd0951755203",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "e4b768d8-b003-4c77-8b8f-b53fcdaef81b",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140709_e4b768d8-b003-4c77-8b8f-b53fcdaef81b.png",
+          "local": "illust/cards/_styleB/card_mon_star_pinkmint_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_star_pinkmint_a.png",
+          "status": "pass",
+          "note": "pink-white / mint split along midrib with flecks"
+        },
+        {
+          "v": 2,
+          "job_id": "6f7429cd-17dc-4efe-86cb-dd0951755203",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140708_6f7429cd-17dc-4efe-86cb-dd0951755203.png",
+          "local": "illust/cards/_styleB/card_mon_star_pinkmint_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_star_pinkmint_b.png",
+          "status": "pass",
+          "note": "pink-white / mint split along midrib with flecks"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 869,
+      "file": "card_mon_variegata_gold_a.png",
+      "path": "illust/cards/card_mon_variegata_gold_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_variegata_gold",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 오로레아-골드 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "3ceb083e-ff1c-4905-995c-8ddd5d999c54",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "3ceb083e-ff1c-4905-995c-8ddd5d999c54",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135809_3ceb083e-ff1c-4905-995c-8ddd5d999c54.png",
+          "local": "illust/cards/card_mon_variegata_gold_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_variegata_gold_a.png",
+          "status": "pass",
+          "note": "golden-orange sector about half the leaf"
+        },
+        {
+          "v": 2,
+          "job_id": "bdb8443c-6f06-41f7-b40e-dfc6a32cda4e",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135812_bdb8443c-6f06-41f7-b40e-dfc6a32cda4e.png",
+          "local": "illust/cards/card_mon_variegata_gold_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_variegata_gold_b.png",
+          "status": "pass",
+          "note": "golden-orange sector about half the leaf"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 870,
+      "file": "card_mon_variegata_gold_b.png",
+      "path": "illust/cards/_styleB/card_mon_variegata_gold_b.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_variegata_gold",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 오로레아-골드 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "1a06930a-a966-4d8e-892a-b61ebace548c",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "8d3a3aab-a3a8-4dcc-88cd-f8f8594e7505",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140708_8d3a3aab-a3a8-4dcc-88cd-f8f8594e7505.png",
+          "local": "illust/cards/_styleB/card_mon_variegata_gold_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_variegata_gold_a.png",
+          "status": "pass",
+          "note": "golden-orange sector about half the leaf"
+        },
+        {
+          "v": 2,
+          "job_id": "1a06930a-a966-4d8e-892a-b61ebace548c",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140707_1a06930a-a966-4d8e-892a-b61ebace548c.png",
+          "local": "illust/cards/_styleB/card_mon_variegata_gold_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_variegata_gold_b.png",
+          "status": "pass",
+          "note": "golden-orange sector about half the leaf"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 871,
+      "file": "card_mon_variegata_pink_a.png",
+      "path": "illust/cards/card_mon_variegata_pink_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_variegata_pink",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 핑크-로즈핑크 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "89627105-01b5-4181-a357-76510cf1ef1b",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "89627105-01b5-4181-a357-76510cf1ef1b",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135813_89627105-01b5-4181-a357-76510cf1ef1b.png",
+          "local": "illust/cards/card_mon_variegata_pink_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_variegata_pink_a.png",
+          "status": "pass",
+          "note": "dusty rose-pink with dark green vein streaks"
+        },
+        {
+          "v": 2,
+          "job_id": "50c08d5c-1283-42c4-b2c8-474987b74d45",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135813_50c08d5c-1283-42c4-b2c8-474987b74d45.png",
+          "local": "illust/cards/card_mon_variegata_pink_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_variegata_pink_b.png",
+          "status": "pass",
+          "note": "dusty rose-pink with dark green vein streaks"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 872,
+      "file": "card_mon_variegata_pink_a.png",
+      "path": "illust/cards/_styleB/card_mon_variegata_pink_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_variegata_pink",
+      "name_ko": "카드 — 몬스테라 · 풀문 · 핑크-로즈핑크 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "bdd3e6d8-b139-432d-be97-e7262d2df315",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "bdd3e6d8-b139-432d-be97-e7262d2df315",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140710_bdd3e6d8-b139-432d-be97-e7262d2df315.png",
+          "local": "illust/cards/_styleB/card_mon_variegata_pink_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_variegata_pink_a.png",
+          "status": "pass",
+          "note": "dusty rose-pink with dark green vein streaks"
+        },
+        {
+          "v": 2,
+          "job_id": "20a32c63-08c6-4885-9b7a-9a87160c664b",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140710_20a32c63-08c6-4885-9b7a-9a87160c664b.png",
+          "local": "illust/cards/_styleB/card_mon_variegata_pink_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_variegata_pink_b.png",
+          "status": "pass",
+          "note": "dusty rose-pink with dark green vein streaks"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 873,
+      "file": "card_mon_zebra_a.png",
+      "path": "illust/cards/card_mon_zebra_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_zebra",
+      "name_ko": "카드 — 몬스테라 · 산반 · 제브라-그린흰 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "b8af938a-47d2-48e4-86f8-794996f85aea",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "b8af938a-47d2-48e4-86f8-794996f85aea",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135554_b8af938a-47d2-48e4-86f8-794996f85aea.png",
+          "local": "illust/cards/card_mon_zebra_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_zebra_a.png",
+          "status": "pass",
+          "note": "thin white zebra stripes from midrib, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "d4a70391-b823-452e-93f0-1e0d29bea5cf",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135554_d4a70391-b823-452e-93f0-1e0d29bea5cf.png",
+          "local": "illust/cards/card_mon_zebra_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_mon_zebra_b.png",
+          "status": "pass",
+          "note": "thin white zebra stripes from midrib, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 874,
+      "file": "card_mon_zebra_a.png",
+      "path": "illust/cards/_styleB/card_mon_zebra_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "mon_zebra",
+      "name_ko": "카드 — 몬스테라 · 산반 · 제브라-그린흰 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "ad9582ae-31c5-4eaf-b9db-230c789e2c40",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "ad9582ae-31c5-4eaf-b9db-230c789e2c40",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140254_ad9582ae-31c5-4eaf-b9db-230c789e2c40.png",
+          "local": "illust/cards/_styleB/card_mon_zebra_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_zebra_a.png",
+          "status": "pass",
+          "note": "thin white zebra stripes from midrib, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "88aaff0d-a748-4016-ac7b-72093d891372",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140254_88aaff0d-a748-4016-ac7b-72093d891372.png",
+          "local": "illust/cards/_styleB/card_mon_zebra_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_mon_zebra_b.png",
+          "status": "pass",
+          "note": "thin white zebra stripes from midrib, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 875,
+      "file": "card_pp_green_a.png",
+      "path": "illust/cards/card_pp_green_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "pp_green",
+      "name_ko": "카드 — 핑크프린세스 · 무지 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "다시뽑기",
+      "final_status": "redo",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 다시 뽑기(r2) — 무지 카드에 옅은 초록 줄무늬 · 밝기 0.17~0.19 · 글 고침(docs/handoff/leaf-higgsfield-order-20261009-r2.json)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "8bf00232-4b16-46fe-a9e1-823c5cdaf46a",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "8bf00232-4b16-46fe-a9e1-823c5cdaf46a",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140047_8bf00232-4b16-46fe-a9e1-823c5cdaf46a.png",
+          "local": "illust/cards/card_pp_green_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_green_a.png",
+          "status": "fail",
+          "note": "QA-4 clear miss: brightness 0.17-0.20 in all 4 images; not a silhouette, but adds light-green streak marbling on a 'plain' leaf and reads dark green rather than burgundy-green; QA-4 brightness < 0.25 "
+        },
+        {
+          "v": 2,
+          "job_id": "32fdce3a-9355-4c6c-b329-f7421912979c",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140048_32fdce3a-9355-4c6c-b329-f7421912979c.png",
+          "local": "illust/cards/card_pp_green_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_green_b.png",
+          "status": "fail",
+          "note": "QA-4 clear miss: brightness 0.17-0.20 in all 4 images; not a silhouette, but adds light-green streak marbling on a 'plain' leaf and reads dark green rather than burgundy-green; QA-4 brightness < 0.25 "
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 876,
+      "file": "card_pp_green_a.png",
+      "path": "illust/cards/_styleB/card_pp_green_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "pp_green",
+      "name_ko": "카드 — 핑크프린세스 · 무지 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "다시뽑기",
+      "final_status": "redo",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 다시 뽑기(r2) — 같음",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "4a2611ac-9611-4e78-a8a3-989ce5e66251",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "4a2611ac-9611-4e78-a8a3-989ce5e66251",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140909_4a2611ac-9611-4e78-a8a3-989ce5e66251.png",
+          "local": "illust/cards/_styleB/card_pp_green_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_green_a.png",
+          "status": "fail",
+          "note": "QA-4 clear miss: brightness 0.17-0.20 in all 4 images; not a silhouette, but adds light-green streak marbling on a 'plain' leaf and reads dark green rather than burgundy-green; QA-4 brightness < 0.25 "
+        },
+        {
+          "v": 2,
+          "job_id": "87aadc63-bd58-48ce-94b8-c336fc25d48a",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140908_87aadc63-bd58-48ce-94b8-c336fc25d48a.png",
+          "local": "illust/cards/_styleB/card_pp_green_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_green_b.png",
+          "status": "fail",
+          "note": "QA-4 clear miss: brightness 0.17-0.20 in all 4 images; not a silhouette, but adds light-green streak marbling on a 'plain' leaf and reads dark green rather than burgundy-green; QA-4 brightness < 0.25 "
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 877,
+      "file": "card_pp_heavy_a.png",
+      "path": "illust/cards/card_pp_heavy_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "pp_heavy",
+      "name_ko": "카드 — 핑크프린세스 · 하프문 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "21796cb0-4453-4806-8de2-5a3818978e5b",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "21796cb0-4453-4806-8de2-5a3818978e5b",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140048_21796cb0-4453-4806-8de2-5a3818978e5b.png",
+          "local": "illust/cards/card_pp_heavy_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_heavy_a.png",
+          "status": "pass",
+          "note": "large pink sectors over most of the leaf, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "a4d248d8-1918-42e4-b52a-5cf884868e65",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140046_a4d248d8-1918-42e4-b52a-5cf884868e65.png",
+          "local": "illust/cards/card_pp_heavy_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_heavy_b.png",
+          "status": "pass",
+          "note": "large pink sectors over most of the leaf, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 878,
+      "file": "card_pp_heavy_a.png",
+      "path": "illust/cards/_styleB/card_pp_heavy_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "pp_heavy",
+      "name_ko": "카드 — 핑크프린세스 · 하프문 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "dab22ee0-81f9-475a-9d75-c38bd4291e41",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "dab22ee0-81f9-475a-9d75-c38bd4291e41",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140908_dab22ee0-81f9-475a-9d75-c38bd4291e41.png",
+          "local": "illust/cards/_styleB/card_pp_heavy_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_heavy_a.png",
+          "status": "pass",
+          "note": "large pink sectors over most of the leaf, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "bba8b219-3d7a-4f7b-b47b-36837818878c",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140911_bba8b219-3d7a-4f7b-b47b-36837818878c.png",
+          "local": "illust/cards/_styleB/card_pp_heavy_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_heavy_b.png",
+          "status": "pass",
+          "note": "large pink sectors over most of the leaf, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 879,
+      "file": "card_pp_marble_a.png",
+      "path": "illust/cards/card_pp_marble_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "pp_marble",
+      "name_ko": "카드 — 핑크프린세스 · 산반 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "8ed28ff3-2c17-4381-8f7e-a2234d4d3225",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "8ed28ff3-2c17-4381-8f7e-a2234d4d3225",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140048_8ed28ff3-2c17-4381-8f7e-a2234d4d3225.png",
+          "local": "illust/cards/card_pp_marble_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_marble_a.png",
+          "status": "pass",
+          "note": "dark green with pink marbled flecks/streak, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "18680691-31b5-48aa-8b79-99c01e3265cf",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140045_18680691-31b5-48aa-8b79-99c01e3265cf.png",
+          "local": "illust/cards/card_pp_marble_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_marble_b.png",
+          "status": "pass",
+          "note": "dark green with pink marbled flecks/streak, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 880,
+      "file": "card_pp_marble_a.png",
+      "path": "illust/cards/_styleB/card_pp_marble_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "pp_marble",
+      "name_ko": "카드 — 핑크프린세스 · 산반 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "3a186114-d3b0-4986-af1f-bee01d5b9996",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "3a186114-d3b0-4986-af1f-bee01d5b9996",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140908_3a186114-d3b0-4986-af1f-bee01d5b9996.png",
+          "local": "illust/cards/_styleB/card_pp_marble_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_marble_a.png",
+          "status": "pass",
+          "note": "dark green with pink marbled flecks/streak, matches ref"
+        },
+        {
+          "v": 2,
+          "job_id": "343158bf-7ab4-4ce5-b426-8610d41bcd73",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140911_343158bf-7ab4-4ce5-b426-8610d41bcd73.png",
+          "local": "illust/cards/_styleB/card_pp_marble_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_marble_b.png",
+          "status": "pass",
+          "note": "dark green with pink marbled flecks/streak, matches ref"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 881,
+      "file": "card_pp_pink_a.png",
+      "path": "illust/cards/card_pp_pink_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "pp_pink",
+      "name_ko": "카드 — 핑크프린세스 · 분홍 잎 (결 A · 손그림)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "손그림(잉크·과슈)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "712f685f-40e7-4a4a-b08e-342385f45251",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "712f685f-40e7-4a4a-b08e-342385f45251",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140047_712f685f-40e7-4a4a-b08e-342385f45251.png",
+          "local": "illust/cards/card_pp_pink_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_pink_a.png",
+          "status": "pass",
+          "note": "entirely bubblegum pink, no green (follows prompt; ref is darker maroon-pink)"
+        },
+        {
+          "v": 2,
+          "job_id": "993918c5-ecb4-49ba-b89b-3442d9336e1e",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_140046_993918c5-ecb4-49ba-b89b-3442d9336e1e.png",
+          "local": "illust/cards/card_pp_pink_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_pink_b.png",
+          "status": "pass",
+          "note": "entirely bubblegum pink, no green (follows prompt; ref is darker maroon-pink)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 882,
+      "file": "card_pp_pink_a.png",
+      "path": "illust/cards/_styleB/card_pp_pink_a.png",
+      "source": "Higgsfield생성",
+      "id_slug": "pp_pink",
+      "name_ko": "카드 — 핑크프린세스 · 분홍 잎 (결 B · 저폴리)",
+      "batch": "leaf_hf_20261009",
+      "type": "카드-잎",
+      "category": "카드·식물",
+      "style": "파스텔저폴리(그림)",
+      "status": "후보(결 고르기 전)",
+      "final_status": "candidate",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "606ad95e-8427-432a-83d8-7956dbe5627d",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "606ad95e-8427-432a-83d8-7956dbe5627d",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141208_606ad95e-8427-432a-83d8-7956dbe5627d.png",
+          "local": "illust/cards/_styleB/card_pp_pink_a.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_pink_a.png",
+          "status": "pass",
+          "note": "entirely bubblegum pink, no green (follows prompt; ref is darker maroon-pink)"
+        },
+        {
+          "v": 2,
+          "job_id": "f6892450-ad2e-41c7-a3fc-4caca89f7927",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141209_f6892450-ad2e-41c7-a3fc-4caca89f7927.png",
+          "local": "illust/cards/_styleB/card_pp_pink_b.png",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_pink_b.png",
+          "status": "pass",
+          "note": "entirely bubblegum pink, no green (follows prompt; ref is darker maroon-pink)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 883,
+      "file": "ev_leaf_stage_axis_a.jpg",
+      "path": "illust/ev_leaf_stage_axis_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "axis",
+      "name_ko": "잎 단계 · 다음 잎(새 축) — 사건 원화 결",
+      "batch": "leaf_hf_20261009",
+      "type": "장면원화",
+      "category": "원화·잎단계",
+      "style": "손그림(잉크·과슈)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "e0fae237-5128-4a2f-9d9e-957d815cc279",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "e0fae237-5128-4a2f-9d9e-957d815cc279",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141737_e0fae237-5128-4a2f-9d9e-957d815cc279.png",
+          "local": "illust/ev_leaf_stage_axis_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_axis_a.png",
+          "status": "pass",
+          "note": "mature leaf + new furled spear beside it; same framing (subject off-centre by content)"
+        },
+        {
+          "v": 2,
+          "job_id": "7017b88a-fdae-4fc0-8cda-9e7f2402a26e",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141739_7017b88a-fdae-4fc0-8cda-9e7f2402a26e.png",
+          "local": "illust/ev_leaf_stage_axis_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_axis_b.png",
+          "status": "pass",
+          "note": "mature leaf + new furled spear beside it; same framing (subject off-centre by content)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 884,
+      "file": "ev_leaf_stage_mature_a.jpg",
+      "path": "illust/ev_leaf_stage_mature_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "mature",
+      "name_ko": "잎 단계 · 다 자란 잎 — 사건 원화 결",
+      "batch": "leaf_hf_20261009",
+      "type": "장면원화",
+      "category": "원화·잎단계",
+      "style": "손그림(잉크·과슈)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "52e4f0f6-cc5f-4330-8aae-8afbd3a94293",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "52e4f0f6-cc5f-4330-8aae-8afbd3a94293",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141627_52e4f0f6-cc5f-4330-8aae-8afbd3a94293.png",
+          "local": "illust/ev_leaf_stage_mature_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_mature_a.png",
+          "status": "pass",
+          "note": "deep green leaf with splits and holes; same framing"
+        },
+        {
+          "v": 2,
+          "job_id": "a3820744-b62b-41a5-a283-004c14a7de99",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141626_a3820744-b62b-41a5-a283-004c14a7de99.png",
+          "local": "illust/ev_leaf_stage_mature_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_mature_b.png",
+          "status": "pass",
+          "note": "deep green leaf with splits and holes; same framing"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 885,
+      "file": "ev_leaf_stage_mid_b.jpg",
+      "path": "illust/ev_leaf_stage_mid_b.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "mid",
+      "name_ko": "잎 단계 · 중간잎 — 사건 원화 결",
+      "batch": "leaf_hf_20261009",
+      "type": "장면원화",
+      "category": "원화·잎단계",
+      "style": "손그림(잉크·과슈)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "3213bfaf-c84e-457c-80a6-58abee018ddf",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "cd3e812a-a4c4-472a-9cf2-ab771777ec20",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141628_cd3e812a-a4c4-472a-9cf2-ab771777ec20.png",
+          "local": "illust/ev_leaf_stage_mid_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_mid_a.png",
+          "status": "pass",
+          "note": "medium-green heart leaf with 1-2 small splits; same framing"
+        },
+        {
+          "v": 2,
+          "job_id": "3213bfaf-c84e-457c-80a6-58abee018ddf",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141628_3213bfaf-c84e-457c-80a6-58abee018ddf.png",
+          "local": "illust/ev_leaf_stage_mid_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_mid_b.png",
+          "status": "pass",
+          "note": "medium-green heart leaf with 1-2 small splits; same framing"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 886,
+      "file": "ev_leaf_stage_opening_b.jpg",
+      "path": "illust/ev_leaf_stage_opening_b.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "opening",
+      "name_ko": "잎 단계 · 새순 풀림 — 사건 원화 결",
+      "batch": "leaf_hf_20261009",
+      "type": "장면원화",
+      "category": "원화·잎단계",
+      "style": "손그림(잉크·과슈)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "016e55b9-e0f9-423a-83df-797c370ae8ff",
+      "chosen_version": 2,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "117e50aa-4dbc-488d-9105-5323252e8ee3",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135013_117e50aa-4dbc-488d-9105-5323252e8ee3.png",
+          "local": "illust/ev_leaf_stage_opening_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_opening_a.png",
+          "status": "pass",
+          "note": "unrolling spear; same framing as the set (stem from bottom centre, blurred sunny windowsill)"
+        },
+        {
+          "v": 2,
+          "job_id": "016e55b9-e0f9-423a-83df-797c370ae8ff",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_135014_016e55b9-e0f9-423a-83df-797c370ae8ff.png",
+          "local": "illust/ev_leaf_stage_opening_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_opening_b.png",
+          "status": "pass",
+          "note": "unrolling spear; same framing as the set (stem from bottom centre, blurred sunny windowsill)"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 887,
+      "file": "ev_leaf_stage_strip_a.jpg",
+      "path": "illust/ev_leaf_stage_strip_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "strip",
+      "name_ko": "잎 단계 · 한눈에(띠) — 사건 원화 결",
+      "batch": "leaf_hf_20261009",
+      "type": "장면원화",
+      "category": "원화·잎단계",
+      "style": "손그림(잉크·과슈)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "08cca1ff-2277-4301-8a86-1fb619579ecc",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "08cca1ff-2277-4301-8a86-1fb619579ecc",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141738_08cca1ff-2277-4301-8a86-1fb619579ecc.png",
+          "local": "illust/ev_leaf_stage_strip_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_strip_a.png",
+          "status": "pass",
+          "note": "five stages left to right on cream, no text/arrows; 2688x1520"
+        },
+        {
+          "v": 2,
+          "job_id": "bd6e6366-f1bb-4c2f-acff-5bd2e5878110",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141739_bd6e6366-f1bb-4c2f-acff-5bd2e5878110.png",
+          "local": "illust/ev_leaf_stage_strip_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_strip_b.png",
+          "status": "pass",
+          "note": "five stages left to right on cream, no text/arrows; 2688x1520"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
+    },
+    {
+      "id": 888,
+      "file": "ev_leaf_stage_young_a.jpg",
+      "path": "illust/ev_leaf_stage_young_a.jpg",
+      "source": "Higgsfield생성",
+      "id_slug": "young",
+      "name_ko": "잎 단계 · 어린잎 — 사건 원화 결",
+      "batch": "leaf_hf_20261009",
+      "type": "장면원화",
+      "category": "원화·잎단계",
+      "style": "손그림(잉크·과슈)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "",
+      "is_glb": false,
+      "model": "gpt_image_2_5",
+      "job_id": "3e42ff8e-e7b4-4cdc-9605-a3ef8c75aa5f",
+      "chosen_version": 1,
+      "versions": [
+        {
+          "v": 1,
+          "job_id": "3e42ff8e-e7b4-4cdc-9605-a3ef8c75aa5f",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141626_3e42ff8e-e7b4-4cdc-9605-a3ef8c75aa5f.png",
+          "local": "illust/ev_leaf_stage_young_a.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_young_a.png",
+          "status": "pass",
+          "note": "small tender lime heart leaf, no splits; same framing"
+        },
+        {
+          "v": 2,
+          "job_id": "0bcc4f6d-23d5-40f0-baf5-0ee0033fed4f",
+          "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_141627_0bcc4f6d-23d5-40f0-baf5-0ee0033fed4f.png",
+          "local": "illust/ev_leaf_stage_young_b.jpg",
+          "master": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/ev_leaf_stage_young_b.png",
+          "status": "pass",
+          "note": "small tender lime heart leaf, no splits; same framing"
+        }
+      ],
+      "ledger": "gen/hf_runs/leaf_20261009.json"
     }
   ],
   "_scale_convention": {

@@ -1,0 +1,98 @@
+{
+ "_doc": "leaf Higgsfield 다시 뽑기(10-09 r2) — 1차 검수에서 «글을 고쳐야» 고쳐지는 셋. 장당 2.75(high · 2k) · count 2 → 6장 16.5. REF_* 는 1차와 같은 media_id.",
+ "refs": {
+  "REF_FAM_pp_green": "assets/plants/pink_princess/thumbs/pp_leaf_mature.png",
+  "REF_STYLE_A": "assets/illust/ev_first_varie_halfmoon.png",
+  "REF_STYLE_B": "assets/raw/plants/pink_princess/PP2_clean.png",
+  "REF_STYLE_B2": "assets/raw/plants/alocasia/AL2_clean.png"
+ },
+ "jobs": [
+  {
+   "name": "card_pp_green_r2_A",
+   "kind": "card",
+   "save_as": "assets/illust/cards/card_pp_green_r2.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 핑크프린세스 · 무지",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf centered and filling about 80% of a square frame, the short petiole attached at the notch at the TOP of the leaf (the sinus) - no stem at the pointed tip, isolated on a transparent background. Keep the leaf shape of image 1 but make it COMPLETELY PLAIN: one solid, uniform dark green with a slight burgundy tint over the whole leaf, a mid-dark value (clearly lighter than black), veins only a little lighter so the leaf stays readable. Absolutely no streaks, no marbling, no lighter patches, no pink, no variegation of any kind. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_pp_green",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_A",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   },
+   "why": "1차 무지 카드에 옅은 초록 줄무늬가 났다(무지가 무늬로 읽힘) · 밝기 0.17~0.19 < 0.25 · 잎끝 줄기 — 글을 «완전 민무늬 · 홈에 잎자루»로"
+  },
+  {
+   "name": "card_pp_green_r2_B",
+   "kind": "card",
+   "save_as": "assets/illust/cards/_styleB/card_pp_green_r2.png",
+   "used_in": "도감·카드 — 지금 게임에 자리 없음: 후보 ⓐ 무늬 등급 알림 «✨ N번째 잎 — 등급» 옆 그림 ⓑ 잎·삽수 팔기 확인 시트 ⓒ 앞으로 도감 · 지금 바로 docs/dogam 식물 칸 · 핑크프린세스 · 무지",
+   "who": "plan(자리) · core(그림 걸기) · leaf(docs/dogam)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf centered and filling about 80% of a square frame, the short petiole attached at the notch at the TOP of the leaf (the sinus) - no stem at the pointed tip, isolated on a transparent background. Keep the leaf shape of image 1 but make it COMPLETELY PLAIN: one solid, uniform dark green with a slight burgundy tint over the whole leaf, a mid-dark value (clearly lighter than black), veins only a little lighter so the leaf stays readable. Absolutely no streaks, no marbling, no lighter patches, no pink, no variegation of any kind. Paint it as a hand-painted pastel low-poly illustration in the style of image 2: broad flat faceted planes like a low-poly model, soft pastel colors, a faint brush texture, no hard highlights. No pot, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "REF_FAM_pp_green",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     }
+    ],
+    "background": "transparent"
+   },
+   "why": "1차 무지 카드에 옅은 초록 줄무늬가 났다(무지가 무늬로 읽힘) · 밝기 0.17~0.19 < 0.25 · 잎끝 줄기 — 글을 «완전 민무늬 · 홈에 잎자루»로"
+  },
+  {
+   "name": "SC1_r2",
+   "kind": "species_leaf",
+   "save_as": "assets/raw/plants/scindapsus/SC1_r2.png",
+   "used_in": "② 스킨답서스 · 어린잎(밑 모양) — Meshy image_to_3d 입력(나중 · Meshy 461 안에서 · growth 의 덩굴/로제트 규칙 뒤)",
+   "who": "leaf(3D 로 · 잇기) · growth(종 프로필)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "A single Epipremnum aureum (scindapsus / pothos) heart-shaped leaf with a slightly asymmetric pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a small young leaf just unrolled, fresh light green, plain, no variegation. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. Exactly one leaf - no bud, no second leaf, no new shoot curling at the tip. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "REF_STYLE_B",
+      "role": "image_references"
+     },
+     {
+      "value": "REF_STYLE_B2",
+      "role": "image_references"
+     }
+    ],
+    "background": "opaque"
+   },
+   "why": "1차 두 장 다 잎끝에 작은 새 잎이 말려 붙었다 — 3D 입력은 한 잎이어야 한다"
+  }
+ ]
+}
