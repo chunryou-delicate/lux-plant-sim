@@ -468,7 +468,29 @@ export function createLightEngine(data) {
     }
     const s0 = best('summer', 0), sN = best('summer', nAll), w0 = best('winter', 0), wN = best('winter', nAll);
     const key = w0 >= th ? 'A' : s0 >= th ? (wN >= th ? 'B' : 'Bp') : sN >= th ? 'C' : 'D';
-    return { key, wnShort: key === 'C' && wN < th, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
+    /* ★ 2026-10-09 총괄 — «조금만 더 높으면» 꼬리. 가장 밝은 자리가 마주한 창의 **아랫변보다 낮으면**, 같은 x·z 를 아랫변 높이로 올려
+         여름 등 없이 값을 다시 잰다. 15% 넘게 밝아질 때만 낸다(계단식 맨 윗단 0.595m → 창 아랫변 0.775m: 2.73 → 3.7 꼴 · D47 걸어 잼).
+         말은 엔진이 그 자리에서 잰 값에서만 나온다 — 규칙을 손으로 박지 않는다 */
+    let higher = null;
+    {
+      const sum0 = p => { const o = dliAt(p, { weather: 'clear', season: 'summer', litHours: 12, lampCount: 0, occIdx: p.occIdx ?? null });
+        return (o.dli_daylight ?? 0) * weatherE('summer'); };
+      const vals = pts.map(p => ({ p, v: sum0(p) })).sort((a, b) => b.v - a.v);
+      const top = vals[0];
+      for (const w of (room.wins || [])) {
+        if (!w || w.ny) continue;                                  // 천창은 안 본다
+        const dx = top.p.x - w.cx, dz = top.p.z - w.cz;
+        const along = dx * (w.ux || 0) + dz * (w.uz || 0), off = dx * (w.nx || 0) + dz * (w.nz || 0);
+        if (Math.abs(along) > w.width / 2 || off < 0 || off > 1.0) continue;    // 그 창 폭 안 · 방 쪽 1m 안
+        const bottom = w.cy - w.height / 2;
+        if (top.p.y >= bottom - 0.05) continue;                    // 이미 아랫변 높이
+        const up = { ...top.p, y: +(bottom + 0.02).toFixed(3) };
+        const v = sum0(up);
+        if (v >= top.v * 1.15) higher = { y: up.y, s0: r2(v), from: r2(top.v) };   // 그 높이로 올리면 여름 등 없이 이만큼
+        break;
+      }
+    }
+    return { key, wnShort: key === 'C' && wN < th, higher, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
   }
 
   /* 이 좌표에서 제일 가까운 추천 자리. UI 의 원형 가이딩이 쓴다. */

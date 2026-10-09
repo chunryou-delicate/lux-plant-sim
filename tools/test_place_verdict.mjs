@@ -41,6 +41,13 @@ const engOf = id => { console.warn = () => {}; const e = createLightEngine({ hou
   const v5 = e.placeVerdict([{ x: -1.5, y: 0.10, z: 1.0 }, { x: 0.5, y: 0.80, z: -2.30 }]);
   ok('자리 여럿이면 가장 밝은 자리로 → B', v5.key === 'B', JSON.stringify(v5));
   ok('빈 자리 → null', e.placeVerdict([]) === null);
+  /* «조금만 더 높으면» — 창 아랫변보다 낮은 자리만 · 15% 넘게 밝아질 때만 */
+  const h1 = e.placeVerdict([{ x: 0.8, y: 0.595, z: -2.25 }]);
+  ok('계단식 맨 윗단 꼴(0.595m · 창 앞) → higher 를 낸다(아랫변 0.795m 쯤 · 더 밝다)', !!h1.higher && h1.higher.y > 0.7 && h1.higher.s0 >= h1.values.s0 * 1.15, JSON.stringify(h1.higher));
+  const h2 = e.placeVerdict([{ x: 0.5, y: 0.80, z: -2.30 }]);
+  ok('이미 아랫변 높이(0.80m) → higher 없음', h2.higher === null, JSON.stringify(h2.higher));
+  const h3 = e.placeVerdict([{ x: -2.5, y: 0.5, z: 1.5 }]);
+  ok('창 폭 밖 → higher 없음', h3.higher === null, JSON.stringify(h3.higher));
 }
 { const { e, r } = engOf('banjiha');
   const sill = r.slots.find(s => /sill/.test(s.slotId)), desk = r.slots.find(s => /desk/.test(s.slotId));
