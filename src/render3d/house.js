@@ -786,7 +786,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     }
     g.userData={ normal:pt.axis==='x'?[1,0,0]:[0,0,1],
                  center:pt.axis==='x'?[pt.at,CH/2,0]:[0,CH/2,pt.at],
-                 partition:true, plane:{ axis:pt.axis, at:pt.at } };   // ★ 컷어웨이용
+                 partition:true, plane:{ axis:pt.axis, at:pt.at }, cut:pt.cut||null };   // ★ 컷어웨이용 · cut 'always' = 늘 밑동(10-10)
     g.userData._h=CH; shells['part_'+(pt.id||shellPartIdx++)]=g; room.add(g);
   }
 
@@ -1231,7 +1231,12 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
     let stub;
     if(mode==='on')       stub = false;
     else if(mode==='low') stub = true;
-    else if(plane){       // 칸막이·도려낸 벽: 카메라와 방 가운데 사이를 막고 있으면
+    else if(plane && sh.userData.cut==='always'){
+      /* ★ 2026-10-10 [house] 총괄 — 칸막이가 «방 가운데»가 아니라 한쪽 방을 통째로 가리는 방(투룸: 칸막이 x −0.6 이
+         기본 카메라(앞-오른쪽)에서 가게 방을 거의 다 가렸다). 그 방은 데이터(partitions[].cut)로 «늘 밑동»을 고른다.
+         다른 방의 칸막이는 예전 판정 그대로다(아파트·교실·온실 모습이 안 바뀐다). 빛(occluders)은 데이터 그대로라 안 바뀐다 */
+      stub = true;
+    }else if(plane){       // 칸막이·도려낸 벽: 카메라와 방 가운데 사이를 막고 있으면
       const camA = plane.axis==='x' ? cp.x : cp.z;
       stub = (plane.at > 0 && camA > plane.at + 0.3) ||
              (plane.at < 0 && camA < plane.at - 0.3);
