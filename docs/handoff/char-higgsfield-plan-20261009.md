@@ -543,3 +543,336 @@
  }
 ]
 ```
+
+
+---
+
+## G — 첫 장 ev_neighbor_order (총괄 3d535306 · gpt_image_2_5 max · 2048²)
+- ✔ 둘 다 통과(머리 갈색 · 몬이 화분+잎 둘 · 반지하 계단 · 바구니) ⇒ **A** — 구도가 깔끔하고 꽃무늬 앞치마 사장님이 또렷하다(다음 «첫 손님» 얼굴로 씀)
+- 게임 이름 `assets/illust/ev_neighbor_order.png`(1024) · 사장님 상반신을 `assets/characters/ref/npc_banchan_owner_ref.png` 로 잘라 둠
+- 총괄이 고친 한 줄(주인공 = image 1 · 다른 어른은 다른 사람) — 아래 둘에도 넣었다
+
+## ② 식물 가게 (plan 01574f9c · 손님 표 c13b4f0e · D59)
+- 손님 초상 여섯 결(손님 표 group 그대로: shop · student · elder · couple · plant · office) — ★ shop = 첫 손님 반찬가게 사장님 얼굴(참조 `REF_BANCHAN_OWNER`)
+- 주인공 앞치마 초상(2D) · 장면 둘(가게 연 날 · 간판 단 날)
+- 주인공 앞치마 «옷»(3D)은 hero2 옷 길 그대로 — Meshy `meshy_retexture`(input_task_id 01a11e76 · enable_original_uv · 10) 글: «… Outfit: plain sage-green work apron over a cream round-neck t-shirt, grey joggers, grey-white shoes.» → `apply_outfit_tex.py` → `outfit/apron.jpg` · v2_hero 옷 이름 'apron' 은 char 가 연다 · 가게에 있을 때 입히기는 core
+- 참조 더: `REF_PORTRAIT_STYLE` = assets/characters/portraits/portrait_jachwi_neutral.png (결만 — 다른 사람) · `REF_BANCHAN_OWNER` = assets/characters/ref/npc_banchan_owner_ref.png (ev_neighbor_order A 의 사장님) · `REF_HERO2_TOY` = assets/v2/char/_src/hero2/img_01a11e70-223b-705a-b82f-1a80de034747.png (hero2 의 3D 장난감 기준 그림) · `REF_MONI_3D` = docs/handoff/img/hero/… 대신 assets/characters/3d/lq/char_mascot_sprout.glb 를 그린 그림 — 없으면 REF_MONI 하나로
+
+## ③ 유니티 몫 (박사님 «나중에 유니티로 만들 것도 생각해서»)
+- 턴어라운드: ★ **두 결** — (가) 지금 게임 hero2 와 같은 «3D 장난감 치비» 결(참조 hero2 기준 그림) ⇒ multi-image-to-3D 로 갈 것 · (나) 정본 초상 결 전신(2D · 원화·UI 기준)
+  - 시트 한 장에 앞·옆·뒤·3/4 를 같이 그리게 한다(한 그림 안에서 같은 사람이 지켜진다) → char 가 칸별로 잘라 multi-image-to-3D 입력(앞·옆·뒤)으로
+  - Higgsfield 의 «character-sheet» 길이 있으면(`get_workflow_instructions {workflow:"character-sheet"}`) 그것을 먼저 쓰고 같은 글을 넣는다
+  - ★ A포즈 · 머리와 팔 사이 틈 — hero2 에서 잰 교훈(T포즈면 클립이 팔을 들고 긴 머리가 팔에 묶였다 · A포즈로 머리 정점 팔 무게 55.8%→0.4%)
+- 표정 시트: 주인공 12 · 몬이 12(지금 대사 얼굴 키와 같은 차례) — 유니티 블렌드셰이프·스프라이트 기준
+- 3D 로 가기(총괄 · Higgsfield 안 Meshy): 시트 (가) → 앞·옆·뒤 → multi-image-to-3D(a-pose · 3만 면 · 2k) → rig(height 1.4) → 동작은 hero2 와 같은 번호(idle 0 · sit 32 · sleep 267 · repot 274 · cheer 49 · wave 28 · 285 · 278 · 277 · 281 · 36 · 25 · 47) → 받으면 char 가 G2~G4 와 같은 자로 잰다(뼈 · 팔 벌림 · 머리 팔 무게 · 다이어트)
+
+## 주문 JSON — ② 식물 가게 · ③ 유니티
+```json
+{
+ "shop": [
+  {
+   "name": "portrait_npc_shop",
+   "kind": "portrait",
+   "save_as": "assets/characters/portraits/_hf/portrait_npc_shop.png",
+   "used_in": "식물 가게 주문판 손님 초상 — shop · 동네 가게 사람 — ★ 첫 손님 반찬가게 사장님(banchan_owner) 얼굴 · 2층 카페·빵집·미용실…도 이 그림 · 주문 줄 대사의 얼굴(plan 이 손님 group → 초상 키 · core 가 띄움)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "The SAME woman as image 2: middle-aged shop owner, short curly brown perm, round cheerful face, floral beige apron over a mauve sweater, warm laughing smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+    "medias": [
+     {
+      "value": "REF_PORTRAIT_STYLE",
+      "role": "<models_explore get 의 참조 role>"
+     },
+     {
+      "value": "REF_BANCHAN_OWNER",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   },
+   "then": "python tools/char/fit_portrait.py <고른.png> assets/characters/portraits/portrait_npc_shop.png"
+  },
+  {
+   "name": "portrait_npc_student",
+   "kind": "portrait",
+   "save_as": "assets/characters/portraits/_hf/portrait_npc_student.png",
+   "used_in": "식물 가게 주문판 손님 초상 — student · 학생·자취생 · 주문 줄 대사의 얼굴(plan 이 손님 group → 초상 키 · core 가 띄움)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "A university student, short black hair, round glasses, grey hoodie and backpack strap, shy smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+    "medias": [
+     {
+      "value": "REF_PORTRAIT_STYLE",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   },
+   "then": "python tools/char/fit_portrait.py <고른.png> assets/characters/portraits/portrait_npc_student.png"
+  },
+  {
+   "name": "portrait_npc_elder",
+   "kind": "portrait",
+   "save_as": "assets/characters/portraits/_hf/portrait_npc_elder.png",
+   "used_in": "식물 가게 주문판 손님 초상 — elder · 어르신 — 예전 윗집 할머니도 이 그림 · 주문 줄 대사의 얼굴(plan 이 손님 group → 초상 키 · core 가 띄움)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "A kind elderly grandmother, grey hair in a low bun, beige knit cardigan, gentle smile, small reading glasses on a chain. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+    "medias": [
+     {
+      "value": "REF_PORTRAIT_STYLE",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   },
+   "then": "python tools/char/fit_portrait.py <고른.png> assets/characters/portraits/portrait_npc_elder.png"
+  },
+  {
+   "name": "portrait_npc_couple",
+   "kind": "portrait",
+   "save_as": "assets/characters/portraits/_hf/portrait_npc_couple.png",
+   "used_in": "식물 가게 주문판 손님 초상 — couple · 부부·가족 — 첫 집을 산 부부도 이 그림 · 주문 줄 대사의 얼굴(plan 이 손님 group → 초상 키 · core 가 띄움)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "A young married couple side by side, both bust in frame, warm smiles, casual knitwear, leaning slightly together. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+    "medias": [
+     {
+      "value": "REF_PORTRAIT_STYLE",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   },
+   "then": "python tools/char/fit_portrait.py <고른.png> assets/characters/portraits/portrait_npc_couple.png"
+  },
+  {
+   "name": "portrait_npc_plant",
+   "kind": "portrait",
+   "save_as": "assets/characters/portraits/_hf/portrait_npc_plant.png",
+   "used_in": "식물 가게 주문판 손님 초상 — plant · 식물 좋아하는 사람(화원 견습생 등) · 주문 줄 대사의 얼굴(plan 이 손님 group → 초상 키 · core 가 띄움)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "A plant-loving young florist apprentice, tied-back auburn hair, green canvas apron, holding a tiny potted plant, bright eyes. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+    "medias": [
+     {
+      "value": "REF_PORTRAIT_STYLE",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   },
+   "then": "python tools/char/fit_portrait.py <고른.png> assets/characters/portraits/portrait_npc_plant.png"
+  },
+  {
+   "name": "portrait_npc_office",
+   "kind": "portrait",
+   "save_as": "assets/characters/portraits/_hf/portrait_npc_office.png",
+   "used_in": "식물 가게 주문판 손님 초상 — office · 회사·일터 · 주문 줄 대사의 얼굴(plan 이 손님 group → 초상 키 · core 가 띄움)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "A tired but kind office worker in a light blue shirt with a lanyard ID badge, neat short hair, soft smile. Use image 1 only for the art style - this is a DIFFERENT person, not the heroine. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+    "medias": [
+     {
+      "value": "REF_PORTRAIT_STYLE",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   },
+   "then": "python tools/char/fit_portrait.py <고른.png> assets/characters/portraits/portrait_npc_office.png"
+  },
+  {
+   "name": "portrait_jachwi_apron",
+   "kind": "portrait",
+   "save_as": "assets/characters/portraits/_hf/portrait_jachwi_apron.png",
+   "used_in": "가게 줄 대사의 주인공 얼굴(앞치마) — 키 'apron'(plan 배정 · core FACE_FILE)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "count": 2,
+    "prompt": "Same heroine as image 1, same face and hair, now wearing a plain sage-green work apron over her cream tee, calm confident smile. Flat 2D anime bust portrait in exactly the art style of image 1 (clean thin lines, soft flat shading), same framing and size as image 1, plain pure white background, no text.",
+    "medias": [
+     {
+      "value": "REF_JACHWI",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   },
+   "then": "python tools/char/fit_portrait.py <고른.png> assets/characters/portraits/portrait_jachwi_apron.png"
+  },
+  {
+   "name": "ev_shop_open",
+   "kind": "scene",
+   "save_as": "assets/illust/_hf/ev_shop_open.png",
+   "used_in": "가게 연 날 — 사건 shop_open(주문판 소개 대사 위 · #sceneArt)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "Opening day of her small home plant shop in a two-room apartment: shelves of potted monstera, pink princess and alocasia, a small cork order board with paper slips (no readable text); she wears a sage-green apron and smiles at the door; Moni cheers on a shelf. The woman in image 1 is the heroine; anyone else is a DIFFERENT person (do not copy her face). Heroine (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves - never remove pot or leaves. 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no readable text, no border.",
+    "medias": [
+     {
+      "value": "REF_JACHWI",
+      "role": "<models_explore get 의 참조 role>"
+     },
+     {
+      "value": "REF_MONI_CHEER",
+      "role": "<models_explore get 의 참조 role>"
+     },
+     {
+      "value": "REF_STYLE",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   }
+  },
+  {
+   "name": "ev_shop_sign",
+   "kind": "scene",
+   "save_as": "assets/illust/_hf/ev_shop_sign.png",
+   "used_in": "간판 단 날 — 단골 10명 이정표(§3 · 몬이 «간판을 달자!» 위)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "count": 2,
+    "prompt": "Daytime outside her apartment window/door: a small wooden shop sign with a leaf drawing (no readable text) has just been hung; she in a sage-green apron and Moni look up at it proudly; two friendly neighbors wave. The woman in image 1 is the heroine; anyone else is a DIFFERENT person (do not copy her face). Heroine (image 1): LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs. Moni (image 2): tiny light-green sprout INSIDE a terracotta pot with two holed monstera leaves - never remove pot or leaves. 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no readable text, no border.",
+    "medias": [
+     {
+      "value": "REF_JACHWI",
+      "role": "<models_explore get 의 참조 role>"
+     },
+     {
+      "value": "REF_MONI_CHEER",
+      "role": "<models_explore get 의 참조 role>"
+     },
+     {
+      "value": "REF_STYLE",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   }
+  }
+ ],
+ "unity": [
+  {
+   "name": "sheet_hero_turnaround_toy",
+   "kind": "sheet",
+   "save_as": "assets/characters/sheets/_hf/sheet_hero_turnaround_toy.png",
+   "used_in": "유니티 주인공 3D(지금 게임 hero2 와 같은 몸 결) — 시트를 앞·옆·뒤·3/4 로 잘라 multi-image-to-3D",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "count": 2,
+    "prompt": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. The heroine as a chibi 3D toy figure exactly like image 2 (same head-to-body ratio, soft toy shading), with face and hair from image 1: LONG straight dark chocolate-brown hair (clearly brown, NOT black) falling down the back, blunt bangs, front locks inside the shoulder line with a clear gap from the arms; cream round-neck tee, grey joggers, grey-white shoes.",
+    "medias": [
+     {
+      "value": "REF_JACHWI",
+      "role": "<models_explore get 의 참조 role>"
+     },
+     {
+      "value": "REF_HERO2_TOY",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sheet_hero_turnaround_anime",
+   "kind": "sheet",
+   "save_as": "assets/characters/sheets/_hf/sheet_hero_turnaround_anime.png",
+   "used_in": "유니티 2D/일러 기준(정본 D3 결 전신) — 3D 가 아니라 원화·UI 쪽 기준",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "count": 2,
+    "prompt": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. The heroine in the flat 2D anime style of image 1, full body (head about 1/6 of height), same face and hair as image 1, cream tee, grey joggers.",
+    "medias": [
+     {
+      "value": "REF_JACHWI",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sheet_moni_turnaround",
+   "kind": "sheet",
+   "save_as": "assets/characters/sheets/_hf/sheet_moni_turnaround.png",
+   "used_in": "유니티 몬이 3D — 시트를 잘라 multi-image-to-3D(리깅은 잎 둘·몸 정도 · 사람 리그 아님)",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "16:9",
+    "count": 2,
+    "prompt": "Character turnaround sheet on a plain pure white background: FRONT, LEFT SIDE, BACK and 3/4 views of the SAME character side by side, full body, same scale, A-pose (arms straight down 40 degrees from the body, palms in), even flat lighting, no shadows, no text. Moni from image 1: tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), soft 3D toy look like image 2.",
+    "medias": [
+     {
+      "value": "REF_MONI",
+      "role": "<models_explore get 의 참조 role>"
+     },
+     {
+      "value": "REF_MONI_3D",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sheet_hero_expressions",
+   "kind": "sheet",
+   "save_as": "assets/characters/sheets/_hf/sheet_hero_expressions.png",
+   "used_in": "유니티 표정(블렌드셰이프·스프라이트 기준) · 지금 대사 얼굴 키 열과 같은 차례",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "4:3",
+    "count": 2,
+    "prompt": "Expression sheet of the SAME heroine as image 1, flat 2D anime style of image 1: a 3x4 grid of bust heads with the same framing, plain white background, no text labels. Expressions: neutral, happy, beaming proud, calm proud smile, surprised, curious, thinking, worried, crying, tired, numb (frozen), determined.",
+    "medias": [
+     {
+      "value": "REF_JACHWI",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sheet_moni_expressions",
+   "kind": "sheet",
+   "save_as": "assets/characters/sheets/_hf/sheet_moni_expressions.png",
+   "used_in": "유니티 몬이 표정 · 지금 몬이 얼굴 키 열과 같은 차례",
+   "tool": "generate_image",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "4:3",
+    "count": 2,
+    "prompt": "Expression sheet of Moni from image 1 (light-green sprout INSIDE a terracotta pot with two holed monstera leaves - keep pot and leaves in every cell), flat 2D style of image 1: a 3x4 grid, plain white background, no text labels. Expressions: neutral, cheer, calm, teaching, curious, proud, worried, sad, surprised, excited, sleepy, shh.",
+    "medias": [
+     {
+      "value": "REF_MONI",
+      "role": "<models_explore get 의 참조 role>"
+     }
+    ]
+   }
+  }
+ ]
+}
+```
