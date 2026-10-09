@@ -15,7 +15,7 @@
 import { buildHouse } from '../render3d/house.js';
 import { faintGrainTexture } from '../render3d/textures.js';
 import { winFromHouse } from '../engine/daylight_lux.js';
-import { buildDailyLight, thresholdsFor, daylightRatio } from '../engine/daily_light.js';
+import { buildDailyLight, thresholdsFor, daylightRatio, lampDLI } from '../engine/daily_light.js';
 import { ppfdSum, aimVector } from '../render3d/lighting_sim.js';
 import { skyOf, setWeatherProbs, seasonOf, weatherE } from '../engine/weather.js';
 import { modeOf, placedItems } from './state.js';
@@ -450,11 +450,15 @@ export function createLightEngine(data) {
      반지하(초보 판 · novice:true): 맑은 여름 그날 값 하나 — grow / lamp / none (겨울 말 없음)
      «등을 다 켜면» = 그 방의 식물등 자리 전부(lamps 로 덮을 수 있다). 문턱은 그 식물의 자람(min).
      ⚠ 갈래만 낸다. 수(DLI)를 화면에 내지 않는다(초보 판 showDli 규율) — values 는 검사·진단용이다. */
-  function placeVerdict(points, { novice = false, plantId = 'monstera_deliciosa', lamps = null } = {}) {
+  /* topOf: (선택) 그 화분이 얹힌 **가구의 자리 전부** — 화분 한 점을 가르되, «맨 윗단에 집게등을 물리면»은 그 가구 맨 윗단으로 잰다
+       (화분을 가운데단에 놓을 때 쓴다 · 없으면 points 로) */
+  function placeVerdict(points, { novice = false, plantId = 'monstera_deliciosa', lamps = null, variegated = false, topOf = null } = {}) {
     if (!room) throw new Error('[조도] 방을 아직 조립하지 않았습니다 — build(roomId) 를 먼저 부르세요');
     const pts = (points || []).filter(p => p && Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z));
     if (!pts.length) return null;
-    const th = (thresholdsFor(data.lightTh, plantId) || {}).min;
+    /* ★ 2026-10-09 총괄 — 놓는 것이 무늬 그루·무늬 삽수면 **무늬 문턱**(×1.4 · light_thresholds variegated)으로 가른다.
+         «화분대 = 밭»만 말하면 가운데단에 무늬 삽수를 놓고 120일을 기다리는 사람이 나온다(leaf D41 걸음) */
+    const th = (thresholdsFor(data.lightTh, plantId, !!variegated) || {}).min;
     const nAll = lamps != null ? lamps : room.growRigs.length;
     const best = (season, n) => Math.max(...pts.map(p => {
       const o = dliAt(p, { weather: 'clear', season: novice ? 'summer' : season, litHours: 12, lampCount: n, occIdx: p.occIdx ?? null });
@@ -462,9 +466,27 @@ export function createLightEngine(data) {
       return novice ? d + l : d * weatherE(season) + l;
     }));
     const r2 = v => +v.toFixed(2);
+    /* «맨 윗단에 집게등을 물리면» — 무늬일 때만 · 집게등(growlight_clip) 발광점을 그 가구 맨 윗단 가운데 위(빌더 키 0.42 × 0.92 —
+       house.js emitY 와 같은 셈)로 옮겼다고 치고 집게등까지 켜지는 개수(rigsOn 차례)로 등 몫을 다시 센다. 실제로 물리는 자리는 roomView.lampMounts 의 그 상판 */
+    const clipTopOf = () => {
+      const ci = room.growRigs.findIndex(r => r && r.id === 'growlight_clip');
+      if (ci < 0) return null;
+      const base = (Array.isArray(topOf) && topOf.length ? topOf : pts).filter(p => p && Number.isFinite(p.y));
+      const yTop = Math.max(...base.map(p => p.y));
+      const tops = base.filter(p => p.y >= yTop - 1e-3);
+      const cx = tops.reduce((a, p) => a + p.x, 0) / tops.length, cz = tops.reduce((a, p) => a + p.z, 0) / tops.length;
+      const rigs = rigsOn(ci + 1).map((r, k) => k === ci ? { ...r, pos: { x: cx, y: yTop + 0.42 * 0.92, z: cz }, aim: undefined } : r);
+      const val = season => Math.max(...tops.map(p => {
+        const o = dliAt(p, { weather: 'clear', season: novice ? 'summer' : season, litHours: 12, lampCount: 0, occIdx: p.occIdx ?? null });
+        return (o.dli_daylight ?? 0) * (novice ? 1 : weatherE(season)) + lampDLI(+ppfdSum(rigs, p).toFixed(2), 12);
+      }));
+      const cs = val('summer'), cw = novice ? cs : val('winter');
+      return cs >= th ? { y: +yTop.toFixed(3), s: r2(cs), w: r2(cw), lamps: ci + 1, winterToo: !novice && cw >= th } : null;
+    };
     if (novice) {
       const v0 = best('summer', 0), vN = best('summer', nAll);
-      return { key: v0 >= th ? 'grow' : vN >= th ? 'lamp' : 'none', th, lamps: nAll, values: { v0: r2(v0), vN: r2(vN) } };
+      const key = v0 >= th ? 'grow' : vN >= th ? 'lamp' : 'none';
+      return { key, clipTop: variegated && key !== 'grow' ? clipTopOf() : null, variegated: !!variegated, th, lamps: nAll, values: { v0: r2(v0), vN: r2(vN) } };
     }
     const s0 = best('summer', 0), sN = best('summer', nAll), w0 = best('winter', 0), wN = best('winter', nAll);
     const key = w0 >= th ? 'A' : s0 >= th ? (wN >= th ? 'B' : 'Bp') : sN >= th ? 'C' : 'D';
@@ -490,7 +512,8 @@ export function createLightEngine(data) {
         break;
       }
     }
-    return { key, wnShort: key === 'C' && wN < th, higher, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
+    const clipTop = variegated && key !== 'A' ? clipTopOf() : null;   // 무늬인데 겨울 등 없이까지는 못 넘으면
+    return { key, wnShort: key === 'C' && wN < th, higher, clipTop, variegated: !!variegated, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
   }
 
   /* 이 좌표에서 제일 가까운 추천 자리. UI 의 원형 가이딩이 쓴다. */
