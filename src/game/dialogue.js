@@ -1509,6 +1509,30 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think', text: '서른 번째 콩나물이다.' },
     { who: 'moni',   face: 'calm',  text: '이젠 눈 감고도 하겠다.' }
   ],
+  /* ═══ ★★ 2026-10-09 [plan] D35(총괄 결정 · 박사님 «재미있게») — **반지하 중반 작은 수입 사건 한 번: 반찬가게 주문** ═══
+     기록: 10-09 총괄 D35 · 후보 ㉠ 무지 삽수 판매를 일찍 가르침(자르기 문과 부딪힘 — 뒤로) · ㉡ 중반 작은 수입 사건 한 번(택함) ·
+           ㉢ D30 «다»(반지하는 잎 1~3 이 못박혀 안 먹힘) · 까닭: 16주 동안 처음 보는 것 넷 · 돈은 줄기만(plan-fun-audit §1).
+     ★ «이미 하는 일이 보상받는» 결 — 날마다 거두던 콩나물·무순을 동네 반찬가게가 «좋은 값에 한 번» 사 간다. 새 손님 하나가 «처음 보는 것»도 된다.
+     ★ 복선: Day 70~85 윗집 할머니가 콩나물을 물어본다(§statusNeighborAsk) → 소문 → 이 주문.
+     ⚠ 수는 안 말한다(금액은 배너·로그가 «값에서» 말한다 · TUTORIAL_RULES 칸은 [core]). 한 판에 한 번(REPEATABLE 아님).
+     ⚠ 언제([core] · 사건 `neighbor_order`): 게임 Day 90~110 · 반지하(!movedOut) · 아직 무늬 삽수를 판 적 없음(varieSale.count 0) ·
+       그 사이 «처음 거둔 날»(콩나물·무순) — 그날 거둔 것을 가져가고 지갑에 금액을 넣는다. 110일까지 안 거두면 110일에 곳간이 있으면 그날, 없으면 없음. */
+  neighborOrder: [
+    { who: 'jachwi', face: 'surprise', text: '아랫길 반찬가게 사장님이 오늘 거둔 걸 다 사 가셨다.' },
+    { who: 'moni',   face: 'cheer',    text: '맛있다고 소문났나 봐!' },
+    { who: 'jachwi', face: 'happy',    text: '값을 생각보다 많이 쳐 주셨어.' },
+    { who: 'moni',   face: 'proud',    text: '매일 거둔 게 이렇게 돌아오네.' }
+  ],
+  /* ★ 2026-10-09 [plan] 재미 점검 — 16주(Day 50~165)의 «작은 새것» 둘(한 판에 한 번 · 값 0 · 일어난 일을 지어내지 않는 말).
+     statusNeighborAsk 는 D35 의 복선(«물어보셨다» — 가져갔다고는 안 한다: 곳간이 안 줄었으니) · statusLandlordPlant 는 잎 둘 뒤 «화분이 눈에 띈다». */
+  statusNeighborAsk: [
+    { who: 'jachwi', text: '윗집 할머니가 콩나물 키우는 걸 물어보셨다.' },
+    { who: 'moni',   face: 'calm', text: '맛있어 보였나 봐.' }
+  ],
+  statusLandlordPlant: [
+    { who: 'jachwi', face: 'surprise', text: '집주인 아저씨가 창턱 화분을 보고 갔다.' },
+    { who: 'moni',   face: 'proud',    text: '잎이 둘이니까. 이제 눈에 띄는 거야.' }
+  ],
   /* ★★ 2026-10-08 [plan] 갈래 지도 2 — **굶주림 경고에 «나가는 길»을 말한다.** 0원이 닷새 이어지면 매일 `hungry`(tutorial.js) —
      지금까지 로그(「굶은 지 N일째 — M일 남았습니다」)뿐이고 대사가 없었다. 게임오버 자체는 박사님 결정(08-17)이라 안 건드린다.
      ⚠ 수는 안 말한다(남은 날은 로그·화면이 말한다) · 「곳간」은 화면에서 걷힌 말이라(박사님 08-16 «그냥 보유 채소») «남은 채소».
@@ -2075,6 +2099,7 @@ export const REPEATABLE = new Set(
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
              'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'hungryTalk', 'hungryTalk2',
              'nudgeRadishOffer', 'nudgeRadishPush', 'statusHarvest10', 'statusHarvest30',
+             'statusNeighborAsk', 'statusLandlordPlant',
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
@@ -2135,6 +2160,8 @@ export const EVENT_SCRIPT = Object.freeze({
   move_no_varie:       'moveNoVarie',
   /* ★ 2026-10-09 [plan] D31 — 이사비를 내면 첫 달 월세가 모자란 이사 되묻기(§moveLowCash) · 사건은 [core] */
   move_low_cash:       'moveLowCash',
+  /* ★ 2026-10-09 [plan] D35 — 반찬가게 주문(§neighborOrder · 사건은 [core] · 한 판에 한 번) */
+  neighbor_order:      'neighborOrder',
   /* ★ 2026-10-08 [plan] 갈래 지도 2 — 굶주림 경고(tutorial.js · 0원 닷새째부터 매일 · 월세·파산과 같은 살림 사건 길) */
   hungry:              'hungryTalk',
   /* ★ 2026-10-08 [plan] 갈래 지도 5·6 — 삽수 사건([core] a8749420 로 turn.events 에 섬). 갈림은 §scriptOf */
@@ -2645,6 +2672,10 @@ export const CHATTER = [
   { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0 },
   /* ★ 2026-10-09 [plan] 원룸 후반 — 한 해 · 목표 이정표 둘(처음 넘은 날 · 한 번씩 — gap 400 은 «한 판에 한 번») */
   /* ★ 2026-10-09 [plan] 재미 점검 — 수확 이정표(열 번째 · 서른 번째 · 한 판에 한 번) */
+  /* ★ 2026-10-09 [plan] 재미 점검 — 16주의 «작은 새것» 둘(한 판에 한 번). 날은 게임 날(c.day) · 반지하에서만 */
+  { id: 'statusNeighborAsk',    status: true, gap: 9999, when: c => c.living && !c.movedOut && fin(c.day) && c.day >= 70 && c.day <= 85 },
+  { id: 'statusLandlordPlant',  status: true, gap: 9999, when: c => !c.movedOut && c.hasMonstera && fin(c.leaves) && c.leaves >= 2
+                                                                && fin(c.day) && c.day >= 60 },
   { id: 'statusHarvest30',      status: true, gap: 9999, when: c => fin(c.harvestTotal) && c.harvestTotal >= 30 },
   { id: 'statusHarvest10',      status: true, gap: 9999, when: c => fin(c.harvestTotal) && c.harvestTotal >= 10 && c.harvestTotal < 30 },
   { id: 'statusOneroomYear',    status: true, gap: 400, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 365 },
