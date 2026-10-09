@@ -349,7 +349,9 @@ export async function play(name, seed, opt = {}) {
       /* 늘리는 사람의 «남긴 삽수» — 원룸에서 처음 뿌리낸 무늬 삽수(죽으면 다음 것으로 갈아 듦)
          ★ 2026-10-09 D41 — 안내대로(follow)는 원룸 «흙에 옮겨 키우기»·«다시 자르기» 줄이 열리면 그 안내를 따라 같은 손을 쓴다 */
       const stmG = S.stamina || {}, openedG = id => (stmG.questsOpenedOn || {})[id] != null;
-      const growNow = P.grow || (P.follow && ts.movedOut && (openedG('oneroom_settle_cutting') || openedG('oneroom_recut')));
+      /* ★ 10-10 — 안내대로(follow)는 원룸에 들어서면 곧 «키울 하나»를 정한다. 예전엔 ③ 줄이 «열린 뒤»에만 정해서, 들고 간 삽수가 뿌리내린 그날
+           (③ 이 열리기 바로 전 · 같은 날 차례)에 먼저 올려 팔아 버렸다(guide g: 145일 뿌리 → 올림 → ③ 영영 못 끝냄) */
+      const growNow = P.grow || (P.follow && ts.movedOut);
       if (growNow && ts.movedOut) {
         const k = out.keeperId && cuttingsOf(S).find(c => c && c.id === out.keeperId);
         if (!k || k.status === 'dead') {
@@ -365,9 +367,12 @@ export async function play(name, seed, opt = {}) {
         if (growNow && c.id === out.keeperId) continue;
         const varie = (c.variegatedLeaves || 0) > 0 || !!c.varieFromCut;
         if (varie && keepVarie) continue;
-        /* ★ 2026-10-10 [plan] fdd7bb53 — 안내대로(follow)는 sell_keep_one 을 따른다: 반지하 · 무늬를 판 적 있음 · 이것이 마지막 «안 올린» 무늬 삽수면 남긴다 */
-        if (P.follow && !ts.movedOut && c.varieFromCut && ts.varieSale && ts.varieSale.count >= 1 &&
+        /* ★ 2026-10-10 [plan] a0e86638 — 안내대로(follow)는 반지하 무늬 삽수를 퀘스트대로 판다: sell_varie(«무늬 삽수가 둘이면 하나를 팔아 보세요»)와
+             sell_keep_one(«이건 남겨 두자») — 마지막 «안 죽고 안 올린» 무늬 삽수는 안 판다(첫 판매도 · 이사 둘째 축은 «잎 낸 적 ∨ 판 적»이라 팔 까닭이 아니다).
+             민무늬 삽수는 예전대로 판다 */
+        if (P.follow && !ts.movedOut && c.varieFromCut &&
             !cuttingsOf(S).some(x => x && x !== c && x.varieFromCut && x.status !== 'dead' && !listingFor(S, x))) { out.keptOne = (out.keptOne || 0) + 1; continue; }
+        if (!ts.movedOut && c.varieFromCut && out.varieListAxis == null) { try { out.varieListAxis = { day: S.day, axis: !!canMoveOut(ts).varie, money: !!canMoveOut(ts).money }; } catch { } }
         try { listCutting(S, c.id); } catch { }
       }
       if (P.sellMother === 'early' && pot0(S) && !listingFor(S, pot0(S))) {
@@ -461,7 +466,10 @@ export async function play(name, seed, opt = {}) {
       cashIn: Object.keys(dayIn).length ? dayIn : null, said: saidIds.length ? saidIds : null,
       events: [...new Set([...((turn && turn.events) || []).map(e => e && e.id), ...(out._qEv || [])].filter(Boolean))],
       questsDone: (out._qDone || []).length ? out._qDone : null, chip: out._chip ?? null,
-      newGrades: dayGrades.length ? dayGrades : null, cuts: dayCuts || null });
+      newGrades: dayGrades.length ? dayGrades : null, cuts: dayCuts || null,
+      /* 10-10 — 삽수마다 상태(무늬 · 자리 · 올림) — «들고 간 삽수가 원룸 ③ 까지 가나»를 날마다 본다 */
+      cutsNow: cuttingsOf(S).map(c => `${c.id}:${c.status}${c.varieFromCut ? 'V' : ''}${c.slotId || c.at ? '' : '(가방)'}${listingFor(S, c) ? '(올림)' : ''}`).join(' ') || null,
+      keeper: out.keeperId || null, potStock: stockOf(S, 'pot') });
     out._qDone = []; out._qEv = [];
     if (ts.movedOut) { const g = cuttingsOf(S).filter(c => c && c.status === 'established' && c.varieFromCut && !listingFor(S, c)).length;
                        if (g > (out.grownMax || 0)) out.grownMax = g; }   /* D41 — 원룸에서 키운 무늬 그루(흙에 자리 잡은 · 안 내놓은) 최대 */

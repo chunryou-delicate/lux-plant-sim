@@ -7497,13 +7497,13 @@ const reallyRepot = guard((id) => {
    ⚠ 「무늬 삽수를 판 적이 있다」 깃발(반지하 탈출의 둘째 축)도 **거기서** 선다 —
      여기서 서면 올렸다 내리기만 해도 문이 열린다(shop.js §⑦-2 가 그 판단을 적어 두었다). */
 /* ★ 2026-10-10 [plan] fdd7bb53 ㉠ — **반지하에서 마지막 무늬 삽수를 내놓으려 할 때** 몬이 한 줄(sell_keep_one · 막지 않음 · 그 손에서 한 번).
-     때(넷 다): 반지하 · 무늬를 판 적 있음(이사 둘째 축이 섰음 — 첫 판매는 sell_varie 가 가르친다) · 지금 것이 무늬 삽수 ·
-     이것을 내놓으면 «안 죽고 안 올린» 무늬 삽수가 0. D22(sell_last_varie)와 같은 손이면 D22 만 말한다(plan · scriptsForEvents 가 거른다) */
+     때(셋 다): 반지하 · 지금 것이 무늬 삽수 · 이것을 내놓으면 «안 죽고 안 올린» 무늬 삽수가 0.
+       ⚠ 10-10 plan a0e86638 — «무늬를 판 적 있음» 조건은 걷었다(이사 둘째 축은 «무늬 잎을 낸 적 ∨ 판 적» · 팔 까닭이 아니다).
+     D22(sell_last_varie)와 같은 손이면 D22 만 말한다(plan · scriptsForEvents 가 거른다) */
 function sellKeepOneHit(c) {
   try {
     const ts = S.tutorial;
     if (!ts || ts.movedOut || !c || !c.varieFromCut) return false;
-    if (!(ts.varieSale && ts.varieSale.count >= 1)) return false;
     const others = cuttingsOf(S).filter(x => x && x !== c && x.varieFromCut && x.status !== 'dead' && !listingFor(S, x)).length;
     return others === 0;
   } catch { return false; }
