@@ -47,7 +47,7 @@ import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow, cu
 import { lightOptsOf } from '../src/game/loop.js';
 import { moveIntoOneroom } from '../src/game/oneroom.js';
 import { endingRulesFrom, endingProgress } from '../src/game/ending.js';
-import { stepQuests } from '../src/game/quest.js';
+import { stepQuests, questView } from '../src/game/quest.js';
 import { nudgeWaiting, noteQuestWaits } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
 /* ★ 2026-10-09 (총괄 · plan 청) — 대사 고르기도 같이 돌린다(화면과 무관한 순수 함수 · game.html §story 와 같은 것) */
@@ -304,6 +304,8 @@ export async function play(name, seed, opt = {}) {
       for (const id of (qr && qr.finished) || []) { try { grantStaminaQuest(S, id); } catch { } }   /* 게임 checkQuests 와 같다 — 끝낸 것은 stamina.questsTaken 이 기억한다 */
       try { if (qr && qr.events && qr.events.length) { const q2 = story.events(qr.events) || []; saidToday += q2.length; saidIds = saidIds.concat(q2); } } catch { }
       noteQuestWaits(S, S.day);
+      /* ★ 2026-10-09 ([plan] 7d3b2e4f 청) — «지금 할 일» 칩(questView.current · 정의 순서 첫 열린 줄)이 이사 뒤 어느 줄에 며칠 머물렀나 */
+      if (ts.movedOut) { try { const cur = questView(S, snap).current; const k = cur ? cur.id : '(없음)'; (out.chipDays = out.chipDays || {})[k] = (out.chipDays[k] || 0) + 1; } catch { } }
       const stm = S.stamina || {}, done = new Set(stm.questsTaken || []);
       for (const [id, on] of Object.entries(stm.questsOpenedOn || {})) {
         if (out.questOpen[id] == null) out.questOpen[id] = on;
@@ -426,7 +428,14 @@ for (const name of NAMES) {
                                ` · 줄 수 중앙 ${med(mv.map(r => r.talk.linesAfterMove))}`);
     const tot = {}; for (const r of mv) for (const [k, v] of Object.entries(r.talk.ids || {})) tot[k] = (tot[k] || 0) + v;
     const top = Object.entries(tot).sort((a, b) => b[1] - a[1]);
-    if (top.length) console.log(`    줄 종류 ${top.length} · 판당 자주 나온 줄: ` + top.slice(0, 8).map(([k, v]) => `${k} ${Math.round(v / mv.length)}`).join(' · ')); }
+    if (top.length) console.log(`    줄 종류 ${top.length} · 판당 자주 나온 줄: ` + top.slice(0, 8).map(([k, v]) => `${k} ${Math.round(v / mv.length)}`).join(' · '));
+    /* «지금 할 일» 칩 — 이사 뒤 머문 날(판당) · 원룸 줄이 열린 날(이사 뒤 · 중앙 · 열린 판 수) */
+    const chip = {}; for (const r of mv) for (const [k, v] of Object.entries(r.chipDays || {})) chip[k] = (chip[k] || 0) + v;
+    const ct = Object.entries(chip).sort((a, b) => b[1] - a[1]);
+    if (ct.length) console.log(`    칩(지금 할 일) 이사 뒤 머문 날 · 판당: ` + ct.slice(0, 6).map(([k, v]) => `${k} ${Math.round(v / mv.length)}`).join(' · '));
+    const oq = ['oneroom_settle_cutting', 'oneroom_sell', 'oneroom_home_fund'];
+    console.log(`    원룸 줄 열린 날(이사 뒤 중앙 · 열린 판) — ` + oq.map(id => { const h = mv.filter(r => (r.questOpen || {})[id] != null);
+      return `${id} ${med(h.map(r => r.questOpen[id] - r.moveDay)) ?? '—'}일 ${h.length}/${mv.length}`; }).join(' · ')); }
   /* 장부(--ledger) — 판마다 이사 뒤 30일씩 · 단위 만 원 */
   if (arg('ledger', false)) for (const r of rs.filter(x => x.ledger && x.ledger.length)) {
     const m = v => (v / 1e4).toFixed(1).replace(/\.0$/, '');

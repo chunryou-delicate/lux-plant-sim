@@ -13,6 +13,7 @@
      order_seed              씨앗이 오는 중이거나 · 시루가 자라는 중이거나 · 익은 시루가 있으면 기다림 ← 2026-10-08 [plan] 지도 13·14 로 좁힘
      oneroom_root_bright     무늬 삽수가 뿌리내리는 중(rooting)이면 기다림          ← 2026-10-08 [plan] 청
      oneroom_settle_cutting  뿌리는 냈는데(rooted) 혹(node)이 아직이면 기다림        ← 2026-10-08 [plan] 청
+                             뿌리낸(rooted · node) 무늬 삽수가 하나도 없어도 기다림  ← 2026-10-09 [plan] 7d3b2e4f 청
      first_cut               잘라 물에 꽂아 «뿌리내리는 중»(water · rooting)이면 기다림 ← 2026-10-08 D25(총괄)
      varie_bright            무늬 원천(무늬 잎 단 그루 + 안 죽은 무늬 삽수)이 0 이면 기다림 ← 2026-10-08 [plan] be02f66a
    ⚠ 그 밖의 퀘스트는 «할 수 있다»로 본다(false). 모르는 것을 기다림으로 치면 독촉이 영영 안 나온다 —
@@ -64,8 +65,13 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
     return (S && Array.isArray(S.cuttings) ? S.cuttings : []).some(c => c && c.method === 'water' && c.status === 'rooting' && (c.at || c.slotId));   /* 놓인 것만(위와 같은 까닭) */
   }
   if (id === 'oneroom_settle_cutting') {
+    /* ★ 2026-10-09 [plan] 7d3b2e4f 청 — 뿌리낸(rooted · node) 무늬 삽수가 «하나도 없으면» 기다림.
+         뿌리낸 삽수를 다 판 사람에게 «혹이 나면 흙으로»는 할 수 없는 일이다(갈래 판: 판당 약 264일 열린 채 독촉).
+         ⚠ 여기만은 가방 속 것도 센다 — 가방에 뿌리낸 것이 있으면 «놓기»가 할 일이다(아래 «놓인 것만»과 같은 까닭의 반대쪽) */
+    const all = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.varieFromCut);
+    if (!all.some(c => c.status === 'rooted' || c.status === 'node')) return true;
     /* 뿌리는 냈는데 아직 «혹»이 안 났으면 기다림 — 혹이 나야 흙으로 옮길 수 있다(혹이 나면 할 수 있음) */
-    const cs = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.varieFromCut && (c.at || c.slotId));   /* 놓인 것만 */
+    const cs = all.filter(c => c.at || c.slotId);   /* 놓인 것만 */
     return cs.some(c => c.status === 'rooted') && !cs.some(c => c.status === 'node');
   }
   /* ★ 2026-10-08 [plan] be02f66a 청 — 반지하 varie_bright 는 «무늬 원천 0»이면 기다림.
