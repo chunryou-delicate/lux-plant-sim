@@ -3,7 +3,10 @@
 
 2026-10-10 · [Char] · 박사님 «나중에 유니티로 만들 것도 생각해서» · 총괄 a459c237
 ■ hero2(build_hero2.py)와 같은 길 · 다른 것 셋
-  1) 머리 무게 — `fix_hair_weights.py --near=0.08,0.20` 을 «기본 무게»로 굽는다(--as-emote 아님).
+  ★ 10-10 몸은 Tripo 판(rig 01a12135 · facez)으로 바뀌었다 — Meshy 판은 아래 1)의 까닭으로 관문에 걸렸다.
+     Tripo 는 날것 22.1% 지만 머리가 팔에 «안 닿아»(G2 2% 안 0) 전부 떼도 바늘이 없다(cheer·wave·idle 그림) ⇒ 기본 = 전부 떼기.
+     머리 색은 이미 정본 곁([101,84,82] · 정본 [95,78,80]) — 색 바꾸기 문턱(B≥G−2)에 걸쳐 반만 칠할 수 있어 --keep-color 로 둔다.
+  1) 머리 무게 — `fix_hair_weights.py`(기본 전부 · --near=a,b 면 팔 뼈 거리로 서서히)를 «기본 무게»로 굽는다(--as-emote 아님).
        G3: 날것은 머리 정점 12.3%(2,594)가 팔 무게 >0.5(hero2 0.4%) — 팔이 몸에 더 붙어(손끝 벌림 키의 0.245 · hero2 0.323)
        뒷머리 끝이 아래팔에 닿는다. 전부 떼면 어깨·든 팔에 바늘, 팔 뼈 거리로 서서히(0.08~0.20)면 바늘 없이 곧다.
        팔 내린 idle·걷기도 날것과 같다(그림 16장씩) ⇒ 유니티엔 v2_hero 의 «팔 들 때만 바꾸기»가 없으니 이것을 기본으로.
@@ -12,7 +15,8 @@
 ■ 클립 이름(게임 이름 ← clips/<파일>) — Meshy 파일 이름이 hero2 와 다른 둘: crouch ← repot(274) · inspect ← a281(281)
 ■ extras(GLTFLoader → scene.userData · 유니티 glTFast 는 extras 를 못 읽을 수 있다 — 같은 값을 <나갈>.json 으로도 쓴다)
 
-쓰기  python tools/char/build_hero_unity.py <리그.glb> <clips 폴더> <나갈.glb>
+쓰기  python tools/char/build_hero_unity.py <리그.glb> <clips 폴더> <나갈.glb> [--near=0.08,0.20] [--keep-color]
+      Tripo 판: ... tripo/rig_01a12135.glb tripo/clips assets/v2/char/hero_unity.glb --keep-color
 """
 import json
 import os
@@ -75,7 +79,8 @@ def main():
     rig, cdir, dst = args
     t1, t2 = dst + '.w.glb', dst + '.c.glb'
     n0, s0 = hair_arm_strong(rig)
-    out = run([os.path.join(HERE, 'fix_hair_weights.py'), rig, t1, '--near=0.08,0.20'])
+    near = next((a for a in sys.argv[1:] if a.startswith('--near=')), None)
+    out = run([os.path.join(HERE, 'fix_hair_weights.py'), rig, t1] + ([near] if near else []))
     print('\n'.join(l for l in out.splitlines() if '3단계' in l or '되읽어' in l))
     n1, s1 = hair_arm_strong(t1)
     print('■ G3 머리 정점 중 팔 무게 >0.5  전 %.1f%%(머리 %d) → 후 %.1f%%(머리 %d) · hero2 0.4%%' % (s0 * 100, n0, s1 * 100, n1))
@@ -84,9 +89,14 @@ def main():
         # 10-10 Meshy 판: --near 0.08~0.20 에서 7.6%(hero2 몸짓 무게 0.3%) — 뒷머리 끝이 아래팔에 얹혀 팔 뼈 곁에 남는다.
         #   0.04~0.12 로 좁히면 3.5% 지만 어깨·든 팔 바늘이 돌아온다(그림) ⇒ 0 크레딧 도구로 못 고친다 = 박사님 «Meshy 안 되면 Tripo»
         raise SystemExit('⛔ 머리 무게가 덜 옮겨졌다(팔 무게 >0.5 %.1f%% > 0.5%%) — 몸을 바꿀 것(Tripo 판)' % (s1 * 100))
-    out = run([os.path.join(HERE, 'recolor_hero_tex.py'), t1, t2, '--hair-hue', '--hair-gain=1.4'])
-    print('\n'.join(l for l in out.splitlines() if '바꾼 뒤' in l or '지금 색' in l))
-    os.remove(t1)
+    keep = '--keep-color' in sys.argv
+    if keep:
+        os.replace(t1, t2)
+        print('■ 색 그대로(--keep-color)')
+    else:
+        out = run([os.path.join(HERE, 'recolor_hero_tex.py'), t1, t2, '--hair-hue', '--hair-gain=1.4'])
+        print('\n'.join(l for l in out.splitlines() if '바꾼 뒤' in l or '지금 색' in l))
+        os.remove(t1)
     js, bn = read_glb(t2)
     js['animations'] = []
     for name, f in CLIPS:
@@ -115,8 +125,10 @@ def main():
     for nm in ('scratch', 'nod', 'listen'):
         bw[nm] = break_window(dst, nm)[0]
     durs = {a['name']: round(float(max(js['accessors'][s['input']]['max'][0] for s in a['samplers'])), 3) for a in js['animations']}
-    ex = {'hero': 'hero_unity', 'rig': '01a12114', 'from': 'sheet_hero_turnaround_toy_b → Meshy multi-image 559fef1a',
-          'weights': 'fix_hair_weights --near=0.08,0.20 (기본 무게로 구움)', 'hair': [95, 78, 80],
+    rig_id = os.path.basename(rig).split('_')[1].split('.')[0]
+    ex = {'hero': 'hero_unity', 'rig': rig_id,
+          'from': 'sheet_hero_turnaround_toy_b → ' + ('Tripo multiview 0cbeb136 (facez)' if 'tripo' in rig else 'Meshy multi-image 559fef1a'),
+          'weights': 'fix_hair_weights %s(기본 무게로 구움)' % (near + ' ' if near else '전부 떼기 '), 'hair': 'keep' if keep else [95, 78, 80],
           'crouchHand': tab, 'walkMps': mps, 'emoteWin': {'cheer': w}, 'breakWin': bw, 'useWin': USE_WIN, 'clipSec': durs}
     js['scenes'][js.get('scene', 0)]['extras'] = ex
     write_glb(dst, js, bn2)

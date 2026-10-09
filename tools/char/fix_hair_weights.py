@@ -49,6 +49,18 @@ HAIR_SAT = 40     # 채도가 이보다 낮으면 머리색
 FMT = {5121: 'B', 5123: 'H', 5125: 'I', 5126: 'f'}
 
 
+def base_color_image(js):
+    """메시 재질의 baseColorTexture 그림 — images[0] 이 아니다.
+    ⛔ 2026-10-10 Tripo 판은 재질 그림 차례가 [노멀 · 바탕색 · 금속거칠기]라 images[0] 이 «노멀 맵»이었다
+      (머리 가르기·색 바꾸기가 엉뚱한 그림을 읽을 뻔했다). Meshy 판은 바탕색 하나라 우연히 맞았다."""
+    for m in js.get('meshes', []):
+        for p in m.get('primitives', []):
+            if 'material' in p:
+                t = js['materials'][p['material']].get('pbrMetallicRoughness', {}).get('baseColorTexture')
+                if t is not None:
+                    return js['images'][js['textures'][t['index']]['source']]
+    return js['images'][0]
+
 def writer(js, ai):
     """accessor 에 정점마다 VEC4 를 «제자리에» 쓰는 함수 (끼워 넣은 버퍼 stride 를 따른다)."""
     a = js['accessors'][ai]
@@ -81,7 +93,7 @@ def main():
     iHead, iSpine = names.index('Head'), names.index('Spine')
     isArm = np.array([n.startswith(('Left', 'Right')) and n.endswith(('Arm', 'ForeArm', 'Hand'))
                       and 'Shoulder' not in n for n in names])
-    im = js['images'][0]
+    im = base_color_image(js)
     bv = js['bufferViews'][im['bufferView']]
     o = bv.get('byteOffset', 0)
     tex = np.asarray(Image.open(io.BytesIO(bytes(bn[o:o + bv['byteLength']]))).convert('RGB')).astype(float)

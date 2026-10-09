@@ -1,0 +1,118 @@
+{
+ "hero": "hero_unity",
+ "rig": "01a12135",
+ "from": "sheet_hero_turnaround_toy_b → Tripo multiview 0cbeb136 (facez)",
+ "weights": "fix_hair_weights 전부 떼기 (기본 무게로 구움)",
+ "hair": "keep",
+ "crouchHand": [
+  [
+   0.0,
+   0.589
+  ],
+  [
+   0.2,
+   0.587
+  ],
+  [
+   0.4,
+   0.585
+  ],
+  [
+   0.6,
+   0.582
+  ],
+  [
+   0.8,
+   0.562
+  ],
+  [
+   1.0,
+   0.516
+  ],
+  [
+   1.2,
+   0.445
+  ],
+  [
+   1.4,
+   0.365
+  ],
+  [
+   1.6,
+   0.284
+  ],
+  [
+   1.8,
+   0.222
+  ],
+  [
+   2.0,
+   0.184
+  ],
+  [
+   2.2,
+   0.16
+  ],
+  [
+   2.4,
+   0.145
+  ]
+ ],
+ "walkMps": 1.002,
+ "emoteWin": {
+  "cheer": [
+   3.4,
+   6.4
+  ]
+ },
+ "breakWin": {
+  "scratch": [
+   0.0,
+   5.7
+  ],
+  "nod": [
+   8.5,
+   12.9
+  ],
+  "listen": [
+   0.0,
+   4.8
+  ]
+ },
+ "useWin": {
+  "sit": "tail",
+  "water": [
+   0.3,
+   1.8
+  ],
+  "harvest": [
+   0.3,
+   2.1
+  ],
+  "harvest_low": [
+   0.3,
+   2.4
+  ],
+  "inspect": [
+   0.0,
+   1.6
+  ]
+ },
+ "clipSec": {
+  "walk": 1.067,
+  "run": 0.667,
+  "idle": 4.033,
+  "sit": 11.367,
+  "sleep": 1.733,
+  "crouch": 9.567,
+  "cheer": 9.033,
+  "wave": 5.367,
+  "water": 5.233,
+  "harvest": 6.2,
+  "harvest_low": 7.133,
+  "inspect": 3.867,
+  "scratch": 11.533,
+  "nod": 13.033,
+  "listen": 9.367
+ }
+}

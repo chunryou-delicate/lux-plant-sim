@@ -1269,3 +1269,18 @@
 - 붙일 것(총괄 · Meshy 계정): Tripo facez 판에 rig(키 1.4 · 5) + 동작 13(같은 번호 · 39) = 44 / 잔액 56
 - 받으면: `python tools/char/build_hero_unity.py <rig.glb> <clips 폴더> assets/v2/char/hero_unity.glb` — 머리 무게(--near) · 머리·티 색(hero2 값) · 클립 15 를 게임 이름으로(crouch ← repot · inspect ← a281) · 쓰는 구간·몸짓 구간을 extras 와 곁 .json 에 · 관문 «머리 팔 무게 >0.5 ≤ 0.5%»
 - Meshy 클립 15 는 몸을 벗겼다(5.2MB → 47~376KB · 뼈+트랙만) — Tripo 가 막히면 되돌아올 판으로 둔다
+
+### 유니티 주인공 — Tripo 판 G3 · G4 끝 (총괄 rig 01a12135 · 2026-10-10 char)
+- ⚠ 먼저 고친 것: `fix_hair_weights.py` · `recolor_hero_tex.py` 가 그림을 `images[0]` 으로 읽었다. Tripo 재질은 [노멀 · 바탕색 · 금속거칠기] 차례라 **노멀 맵**을 머리로 읽을 뻔했다 ⇒ 재질의 baseColorTexture 를 따라가게(`base_color_image`). hero2 · Meshy 판으로 되돌려 재니 수가 그대로(14,382 · [42,20,21]→[95,78,80])
+- G3 머리 정점 중 팔 무게 >0.5: 날것 **22.1%**(Meshy 12.3% 보다 많다 — 자동 리그가 뼈 거리로 칠한 것이지 닿아서가 아니다)
+  - 전부 떼기 **0.0%** · cheer·wave·idle 앞·옆·뒤·3/4 에 바늘 없음 · 앞 가닥이 곧게 내려온다(`docs/handoff/img/hero/unity_tripo_g3_cheer_wave.png` · `unity_tripo_g3_idle.png`)
+  - Meshy 는 전부 떼면 바늘이 났다 — 뒷머리 끝이 아래팔에 «닿아» 있었다. Tripo 는 G2 에서 2% 안 0(가장 가까움 키의 3.2%)이라 떼도 안 찢긴다 ⇒ **G2 의 «머리–팔 2%» 줄이 이 갈림을 미리 말해 준다**
+  - 서서히(0.08~0.20)는 6.2% 남아 cheer 에서 가닥이 들린다 ⇒ 안 씀
+- 머리 색: 이미 [101,84,82](정본 [95,78,80]) — 색 바꾸기 문턱(B≥G−2)에 반쯤 걸려 얼룩질 수 있어 그대로(`--keep-color`)
+- **G4 엮음**: `assets/v2/char/hero_unity.glb`(10.57MB · 그림 셋 2k 그대로 · 클립 15 통째 길이) + 곁 `hero_unity.json`(같은 extras — 유니티 glTFast 가 extras 를 못 읽을 때)
+  - 클립 이름(게임과 같음): walk · run · idle · sit · sleep · crouch(← repot 274) · cheer · wave · water(← 285 open_door) · harvest · harvest_low · inspect(← a281) · scratch · nod · listen
+  - 잰 것: 키 1.400 · 걷기 walkMps **1.002**(hero2 0.729 — 다리가 길어 보폭이 크다) · cheer 팔 높은 3초 [3.4, 6.4] · 쉬는 몸짓 scratch [0, 5.7] · nod [8.5, 12.9] · listen [0, 4.8] · 쓰는 구간 useWin(water 0.30~1.80 · harvest 0.30~2.10 · harvest_low 0.30~2.40 · inspect 0~1.6 · sit 끝자락)
+  - sleep 1.73초는 고리로 · nod 13초는 [8.5, 12.9] 만
+  - 관문: 버퍼 다시 짠 뒤 accessor 2,128개 되읽어 같음 ✔ · 머리 팔 무게 >0.5 0.0% ✔ · 엮은 파일로 cheer·crouch 그림(`unity_hero_merged.png`)
+  - ⚠ 남은 것 하나: crouch 로 숙일 때 앞 가닥 끝이 가슴 티 안으로 묻힌다(hero2 도 가닥 끝이 가슴 앞에서 안으로 말려 있다) — 유니티에서는 머리 흔들림 뼈(spring bone)로 받는 것이 보통이다. 지금 0 크레딧으로는 안 건드린다
+- 클립 날것 15(6.8MB씩)는 저장소 밖 `_hf_masters/assets/v2/char/_src/hero_unity/tripo/clips/` 에 그대로 두고(바이트 같음 확인), 저장소엔 몸 벗긴 판(47~375KB)
