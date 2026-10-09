@@ -815,8 +815,12 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     // ★ 조도 차폐체로 등록 (러그·조명처럼 빛을 막지 않는 것은 제외)
     const fsz=g.userData.size;
     // 충돌: 낮은 것(러그)·벽걸이·천장등 빼고 전부. 조도 차폐보다 기준이 넓다.
-    if(fsz && fsz.h>0.20 && !hang && g.userData.mount!=='wall' && !/^rug/.test(type))
-      pushCol(f.x??0, f.z??0, fsz.w, fsz.d, fsz.h, (f.rot||0)*Math.PI/180, 'furn');
+    if(fsz && fsz.h>0.20 && !hang && g.userData.mount!=='wall' && !/^rug/.test(type)){
+      /* ★ 2026-10-09 [house] D — 그림이 크기 상자보다 깊은 가구는 userData.collide(빌더가 낸 부딪히는 상자)로. 값·조도(occluders)는 size 그대로 */
+      const k=g.userData.collide, rr=(f.rot||0)*Math.PI/180;
+      if(k) pushCol((f.x??0)+k.dx*Math.cos(rr)+k.dz*Math.sin(rr), (f.z??0)-k.dx*Math.sin(rr)+k.dz*Math.cos(rr), k.w, k.d, fsz.h, rr, 'furn');
+      else  pushCol(f.x??0, f.z??0, fsz.w, fsz.d, fsz.h, rr, 'furn');
+    }
     /* ★ 두께가 아니라 '빛 길목에 있나' 가 기준이다.
        h>0.25 만 보면 창가 1.6m 창턱(두께 0.035)이 빠진다 — 화면은 막는데
        계산은 통과라 대조 검사에 잡혔다. 높이 1m 이상이면 얇아도 넣는다.

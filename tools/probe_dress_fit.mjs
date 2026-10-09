@@ -50,7 +50,7 @@ try {
     const loader = new T.GLTFLoader();
     let changed = null; const waitChange = () => new Promise(r => { changed = r; });
     const D = createFurnitureDress({ cam, loadGLB: url => new Promise((ok, no) => loader.load(url, g => ok(g.scene), undefined, no)),
-      propDelayMs: 0, onChange: () => changed && changed() });
+      propDelayMs: 0, onChange: () => changed && changed(), presets: () => Object.fromEntries(arr.map(x => [x.id, x])) });
     /* 한 점씩 찍는다 — 그 가구만 보이게, 상자에 맞춰 */
     const view = new T.Vector3(0.75, 0.62, 1).normalize();
     const camOf = [];

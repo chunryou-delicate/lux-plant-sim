@@ -361,7 +361,7 @@ export function createFurnitureDress(opt = {}) {
 
   /* ── 한 가구에 옷 입히기 ── */
   function dressOne(g, preset) {
-    const spec = FURN[preset];
+    const spec = specOf(preset);
     if (!spec) return false;
     if (g.children.some(c => c.userData && c.userData.v2dress)) return true;     // 이미 입었다
     const t = tpl.get(spec.file);
@@ -406,6 +406,7 @@ export function createFurnitureDress(opt = {}) {
     let glb;
     if (knots) glb = remapTiers(spec.file, t, spec.yaw, knots).clone(true);   // 기하는 틀과 나눠 쓴다(sharedGeometry)
     else { glb = t.scene.clone(true); glb.rotation.y = deg(spec.yaw); }
+    if (spec.tint) tintScene(glb, spec.tint);         // 색 변형 — 같은 옷에 몸 색만(§색 변형)
     const mid = new T.Group();
     mid.add(glb);
     mid.position.set(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
@@ -431,10 +432,97 @@ export function createFurnitureDress(opt = {}) {
       const hy = surfaceNear(dress, F.x0 + cl(p.u) * F.w, F.z0 + cl(p.v) * F.d, p.y);
       return hy == null ? null : +(hy - p.y).toFixed(4);
     });
-    report.set(g.userData.uid, { preset, file: spec.file, yaw: spec.yaw, uniform: !!(spec.uniform || spec.box),
+    report.set(g.userData.uid, { preset, file: spec.file, yaw: spec.yaw, uniform: !!(spec.uniform || spec.box), tint: spec.tint || undefined, base: spec.base || undefined,
       scale: [+sx.toFixed(4), +sy.toFixed(4), +sz.toFixed(4)], tiers: knots ? knots.map(k => k.map(v => +v.toFixed(3))) : undefined,
       height: +(knots ? knots[knots.length - 1][1] : H * sy).toFixed(3), targets: pts.map(p => p.y == null ? null : +p.y.toFixed(3)), topErr: errs });
     return true;
+  }
+
+  /* ── 색 변형 (2026-10-09 · [house] · 총괄 D39 A) ──────────────────────────────
+     가구점의 색 변형(의자 민트·책상 월넛·소파 세이지 …)은 옷 층 표에 없어 **옛 상자 그림**으로 섰다 — 색을 고르면 옛 그림이 되는 셈.
+     ⇒ 같은 type 의 옷 있는 프리셋(바탕)과 크기가 거의 같으면(가로·깊이·높이 각각 0.8~1.25배) 바탕 옷을 입히고 **몸 색만** 바꾼다.
+       크기가 크게 다른 것(더블 침대 · 넓은 책상 · 낮은 책장 · 3단 에타제르)은 늘이면 찌그러져 옛 그림 그대로 둔다.
+     몸 색 바꾸기(셰이더): 텍스처에서 가장 흔한 색(몸 색)과 «빛깔»이 가까운 화소만 변형 색으로 칠하고 밝기 비는 살린다.
+       빛깔이 먼 화소(손잡이 놋쇠·다리 쇠 같은 것)는 그대로 — 손잡이까지 물드는 것을 막는다.
+     값·크기·자리는 프리셋 그대로다(그림만). 프리셋 표는 room_view 가 opt.presets 로 준다. */
+  const variantCache = new Map();
+  function specOf(preset) {
+    if (FURN[preset]) return FURN[preset];
+    if (variantCache.has(preset)) return variantCache.get(preset);
+    let out = null;
+    const P = typeof opt.presets === 'function' ? opt.presets() : null;
+    const p = P && P[preset];
+    if (p && p.type && p.color) {
+      const sz = q => (q && q.size_m) || {};
+      const close = (a, b) => a > 0 && b > 0 && a / b >= 0.8 && a / b <= 1 / 0.8;    // 학생 의자 0.42 = 바탕 0.50 의 0.84
+      for (const k of Object.keys(FURN)) {
+        const b = P[k];
+        if (!b || b.type !== p.type || FURN[k].lamp) continue;
+        if (!['w', 'd', 'h'].every(ax => close(sz(p)[ax], sz(b)[ax]))) continue;
+        out = { ...FURN[k], tint: p.color, base: k };
+        break;
+      }
+    }
+    if (P) variantCache.set(preset, out);       // 표가 아직 없으면 다음에 다시 본다
+    return out;
+  }
+  const tintMats = new Map();                  // 원래 재질 uuid|색 → 칠한 재질(나눠 쓴다)
+  const domCache = new WeakMap();              // 텍스처 → 몸 색(선형)
+  function domColorOf(tex) {
+    if (!tex || !tex.image) return null;
+    if (domCache.has(tex)) return domCache.get(tex);
+    let out = null;
+    try {
+      const N = 48, cv = document.createElement('canvas'); cv.width = N; cv.height = N;
+      const cx = cv.getContext('2d'); cx.drawImage(tex.image, 0, 0, N, N);
+      const px = cx.getImageData(0, 0, N, N).data, bins = new Map();
+      const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+      let sumL = 0, nL = 0;
+      for (let i = 0; i < px.length; i += 4) {
+        const r = px[i], gg = px[i + 1], b = px[i + 2], l = (r + gg + b) / 3;
+        if (l < 40) continue;                               // 그림 선(짙은 테두리)은 몸 색이 아니다
+        sumL += 0.2126 * lin(r) + 0.7152 * lin(gg) + 0.0722 * lin(b); nL++;
+        const key = (r >> 4) << 8 | (gg >> 4) << 4 | (b >> 4);
+        const e = bins.get(key) || [0, 0, 0, 0]; e[0]++; e[1] += r; e[2] += gg; e[3] += b; bins.set(key, e);
+      }
+      let best = null; for (const e of bins.values()) if (!best || e[0] > best[0]) best = e;
+      /* 빛깔은 가장 흔한 색에서, 밝기 기준은 평균 밝기에서 — 가장 흔한 색이 짙은 나뭇결이면 전체가 밝게 뜬다(월넛 책상 10-09) */
+      if (best) out = { c: new T.Color(best[1] / best[0] / 255, best[2] / best[0] / 255, best[3] / best[0] / 255).convertSRGBToLinear(),
+                        l: nL ? sumL / nL : 0.5 };
+    } catch (_) { out = null; }                      // 창이 없는 환경(Node 검사) — 색을 안 바꾼다
+    domCache.set(tex, out);
+    return out;
+  }
+  function tintScene(root, hex) {
+    const want = new T.Color(hex).convertSRGBToLinear();
+    root.traverse(o => {
+      if (!o.isMesh || !o.material) return;
+      const one = m => {
+        const key = m.uuid + '|' + hex;
+        if (tintMats.has(key)) return tintMats.get(key);
+        const dom = domColorOf(m.map);
+        if (!dom) { tintMats.set(key, m); return m; }
+        const c = m.clone();
+        c.userData = { ...(m.userData || {}), v2tint: hex };
+        c.onBeforeCompile = sh => {
+          sh.uniforms.uTint = { value: want }; sh.uniforms.uDom = { value: dom.c }; sh.uniforms.uDomL = { value: dom.l };
+          sh.fragmentShader = 'uniform vec3 uTint;\nuniform vec3 uDom;\nuniform float uDomL;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+  {
+    vec3 _c = diffuseColor.rgb;
+    float _l = dot(_c, vec3(0.2126, 0.7152, 0.0722));
+    float _ld = max(dot(uDom, vec3(0.2126, 0.7152, 0.0722)), 1e-3);
+    vec3 _cn = _c / max(_l, 1e-3), _dn = uDom / _ld;          // 밝기를 뺀 «빛깔»
+    float _w = 1.0 - smoothstep(0.34, 0.62, distance(_cn, _dn)); // 몸 색에 가까울수록 1(나뭇결·그늘까지 · 방석·놋쇠는 멀다)
+    _w *= smoothstep(0.02, 0.08, _l);                           // 아주 짙은 선은 그대로
+    diffuseColor.rgb = mix(_c, uTint * (_l / max(uDomL, 1e-3)), _w);   // 평균 밝기 화소 = 변형 색 그대로
+  }`);
+        };
+        c.customProgramCacheKey = () => 'v2tint';
+        tintMats.set(key, c);
+        return c;
+      };
+      o.material = Array.isArray(o.material) ? o.material.map(one) : one(o.material);
+    });
   }
 
   /* ── 식물등 옷 (2026-10-09 · [house]) ──
@@ -555,11 +643,12 @@ export function createFurnitureDress(opt = {}) {
       if (!g.userData || !g.userData.uid) continue;
       try {
         const preset = presetOf(g, roomDef);
+        const spec = preset ? specOf(preset) : null;
         /* ★ 옷이 있는 프리셋은 색 바꾸기(RESTYLE · type 단위)보다 먼저 — 사다리 선반은 type 이 shelf_etagere 라 색만 바뀌던 것(10-09) */
-        if (!(preset && FURN[preset]) && restyleOne(g)) { n++; continue; }
-        if (!preset || !FURN[preset]) continue;
+        if (!spec && restyleOne(g)) { n++; continue; }
+        if (!spec) continue;
         if (dressOne(g, preset)) n++;
-        else if (!tpl.has(FURN[preset].file)) { missing = true; need.add(FURN[preset].file); }
+        else if (!tpl.has(spec.file)) { missing = true; need.add(spec.file); }
       } catch (e) {
         console.warn('[v2 가구] 옷을 못 입혔습니다 —', g.userData.uid, e && e.message);
       }

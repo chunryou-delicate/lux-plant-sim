@@ -581,6 +581,16 @@ B.shelf_etagere=(o)=>{
     }
   }
   g.userData.size={w,h,d}; if(ladder) g.userData.mount='lean-wall';
+  /* ★ 2026-10-09 [house] D(총괄 D39) — 사다리는 그림이 크기 상자보다 깊다: 아래 단이 상자 앞으로 0.25m 나온다
+       (기둥 밑동 z0 +0.18 에 깊이 0.30 단). 캐릭터가 그 단을 밟고 지나갔다. 값(= size_m 크기)은 그대로 두고
+       «부딪히는 상자»만 따로 낸다 — house.js 충돌·room_view 겹침/격자가 이것을 먼저 본다(없으면 size). */
+  if(ladder){
+    let z0f=Infinity, z1f=-Infinity;
+    g.traverse(o=>{ if(!o.isMesh) return; o.updateMatrix(); const bb=new THREE.Box3().setFromBufferAttribute(o.geometry.attributes.position).applyMatrix4(o.matrix);
+                    z0f=Math.min(z0f,bb.min.z); z1f=Math.max(z1f,bb.max.z); });
+    z0f=Math.min(z0f,-d/2); z1f=Math.max(z1f,d/2);
+    g.userData.collide={ dx:0, dz:+((z0f+z1f)/2).toFixed(3), w, d:+(z1f-z0f).toFixed(3) };
+  }
   return addSlots(g, sl, tiers, depths);
 };
 

@@ -799,7 +799,8 @@ export async function createRoomView(canvas, opts = {}) {
   /* v2: 가구 옷(GLB)·소품 — 그림만. 광선은 옛 상자(보이지 않는 대리)가 받고, 옷은 층 1 이라
      광선에 안 맞는다(카메라가 층 1 을 켠다). 끄기 ?v2furn=0 · 머리말은 furniture_dress.js */
   const furnDress = createFurnitureDress({ cam: ctx.cam, renderer: ctx.renderer, loadGLB,
-    furnK: () => (lightPolicy === 'house' ? 1 : FURN_DIM), onChange: () => furnDressChanged() });
+    furnK: () => (lightPolicy === 'house' ? 1 : FURN_DIM), onChange: () => furnDressChanged(),
+    presets: () => (Object.keys(furnNames).length ? furnNames : null) });   // v2: 색 변형이 바탕 옷을 찾는 표([house] 10-09)
 
   /* ── 상태 ── */
   const houseGroup = new THREE.Group();
@@ -6264,6 +6265,14 @@ export async function createRoomView(canvas, opts = {}) {
   }
 
   /* 회전 사각형 네 꼭짓점 — house.js 슬롯 변환과 같은 규약 */
+  /* ★ 2026-10-09 [house] D — 부딪히는 상자. 그림이 크기 상자보다 깊은 가구(사다리 선반)는 빌더가 userData.collide 를 낸다
+       (house.js 충돌과 같은 셈). 값(= 크기)·상판·자리는 size 그대로 — 여기는 «겹치나·길 칠하기»만. */
+  function footRect(n, x = n.position.x, z = n.position.z, rot = n.rotation.y || 0) {
+    const s = n.userData.size || {}, k = n.userData.collide;
+    if (!k) return { x, z, w: s.w, d: s.d, rot };
+    const c = Math.cos(rot), sn = Math.sin(rot);
+    return { x: x + k.dx * c + k.dz * sn, z: z - k.dx * sn + k.dz * c, w: k.w, d: k.d, rot };
+  }
   function rectCorners(r) {
     const c = Math.cos(r.rot), s = Math.sin(r.rot), hw = r.w / 2, hd = r.d / 2;
     return [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]]
@@ -6294,7 +6303,7 @@ export async function createRoomView(canvas, opts = {}) {
       return { ok: false, reason: `좌표가 유한한 숫자가 아닙니다: (${pos.x}, ${pos.z})` };
     const sz = g.userData.size;
     const rot = (pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot) * Math.PI / 180;
-    const me = { x: pos.x, z: pos.z, w: sz.w, d: sz.d, rot };
+    const me = footRect(g, pos.x, pos.z, rot);
     /* ★ 2026-08-16 (G-12) — **높이가 판정에 들어온다.**
        y 를 안 주면 예전 그대로 지금 높이다(제자리 불변식이 흔들리면 안 된다). */
     const y0 = Number.isFinite(pos.y) ? pos.y : g.position.y;
@@ -6367,7 +6376,7 @@ export async function createRoomView(canvas, opts = {}) {
       if (!s2 || s2.h <= 0.05) continue;                 // 러그처럼 납작한 것 위로는 지나가도 된다
       /* 물린 것(클립등·바 등)은 furnNodes 에 없다 — 애초에 장애물이 아니다 */
       if (vClear(n)) continue;                           // 높이가 안 겹친다(위/아래로 지나간다)
-      const r2 = { x: n.position.x, z: n.position.z, w: s2.w, d: s2.d, rot: n.rotation.y || 0 };
+      const r2 = footRect(n);
       if (already(r2)) continue;
       if (hits(r2))
         return { ok: false, reason: `${furnInfo(n).name} 와(과) 겹칩니다` };
@@ -6584,7 +6593,7 @@ export async function createRoomView(canvas, opts = {}) {
         if (n === gu) continue;
         const s2 = n.userData.size;
         if (!s2 || s2.h <= 0.05) continue;             // 러그처럼 납작한 것 위로는 지나간다
-        obs.push({ x: n.position.x, z: n.position.z, w: s2.w, d: s2.d, rot: n.rotation.y || 0 });
+        obs.push(footRect(n));
       }
       /* 붙박이(창턱)·칸막이도 장애물이다. 바깥 벽은 같은 kind('wall')지만 **그리는 칸 밖**에
          있어 저절로 안 걸린다 — 격자를 안쪽 면에 깔기 때문이다(§gridSpan).
