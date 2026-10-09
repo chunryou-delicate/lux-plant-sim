@@ -3428,6 +3428,8 @@ function noteTurn(t) {
   if (!t) resetStageMemo();   /* 새 판(같은 쪽에서 S = newState → noteTurn(null)) — 어제 값이 남으면 첫 배너가 빠지거나 거짓으로 뜬다 */
   noteLeafGrades(t);
   checkStarved(t);          /* ★ 굶어 죽었나 — 턴이 낸 신호 하나로 본다(§gameOver) */
+  /* ★ D35 — 창 끝날 결산에서 난 반찬가게 주문(수확 때 난 것은 그 단추가 배너를 낸다) */
+  try { const nb = neighborOrderBannerOf((t && t.tutorial && t.tutorial.events) || []); if (nb.length) banners(nb); } catch { }
 }
 
 /* ══ ★★★ 게임오버 — 굶어 쓰러졌다 (2026-08-17 · 박사님) ══════════════════════
@@ -11564,6 +11566,11 @@ const siruWater = guard((id, kind) => {
    ⚠ **숫자를 손으로 적지 않는다.** 이번에 못 받은 몫은 코어가 낸 `r.surplusWon`,
      넘겼을 때 받을 돈은 `cropSurplusStatus` 가 낸 값이다 — 판매가(85%)를 여기 안 적는다.
      ⇒ START-HERE §2.8 이 그 사고다(문구에 박은 값이 낡아 화면이 거짓말을 했다). */
+/* ★ 2026-10-09 D35 — 반찬가게 주문 배너(사건 neighbor_order · 코어 loop §neighborOrderStep). 글은 코어 ko 그대로 */
+function neighborOrderBannerOf(events) {
+  const e = (events || []).find(x => x && x.id === 'neighbor_order');
+  return e ? [{ title: '🧺 ' + e.ko }] : [];
+}
 function surplusBannerOf(r) {
   const gained = Math.round((r && r.surplusWon) || 0);
   if (gained <= 0) return [];
@@ -11581,7 +11588,7 @@ const siruHarvest = guard((id, kind) => {
   let ko = '콩나물'; try { ko = cropKindOf(kind).ko; } catch { }
   banners([{ title: `🥣 ${josa(ko, '을', '를')} 거뒀습니다`,
              sub: `${r.qualityKo || ''} · 밥값 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원어치` },
-           ...surplusBannerOf(r)]);
+           ...surplusBannerOf(r), ...neighborOrderBannerOf(r.events)]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   if (r.events && r.events.length) dlgOpen(story.events(r.events));
   checkQuests(lastTurn);    /* 회전이 하나 늘었다 — 다섯 줄을 다시 본다 (§퀘스트). 배너는 draw 가 낸다 */
@@ -16922,7 +16929,7 @@ const reallyHarvest = guard(() => {
   lastTurn = lastTurn || null;
   banners([{ title: `🥣 콩나물을 거뒀습니다`,
              sub: `${r.qualityKo || ''} · 밥값 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원어치` },
-           ...surplusBannerOf(r)]);
+           ...surplusBannerOf(r), ...neighborOrderBannerOf(r.events)]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   /* 대사는 턴과 같은 창구로 낸다 — 수확 → 배움 → 식물신 → 도착 순서가 여기서 지켜진다 */
   if (r.events && r.events.length) dlgOpen(story.events(r.events));

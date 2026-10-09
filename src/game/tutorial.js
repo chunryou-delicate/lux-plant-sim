@@ -177,6 +177,12 @@ export const TUTORIAL_RULES = Object.freeze({
      ★ 갚는 규칙은 **안 넣었다.** 박사님 말씀은 「구호 금액을 주는 것」이고, 빚 계통을
        새로 세우면 월세·전기와 더해져 이 판이 다른 게임이 된다. 이름만 「긴급자금」이다. */
   reliefWon: 500_000,
+  /* ★★ 2026-10-09 D35(총괄 결정 · 박사님 «재미있게» · plan «반찬가게 주문») — **반지하 중반 작은 수입 한 번.**
+       게임 Day 90~110 · 반지하 · 무늬 삽수를 판 적 없음 · 그 사이 처음 거둔 날 그날 거둔 곳간 몫을 반찬가게가 사 가고 이 값을 준다.
+       110일까지 안 거두면 110일에 곳간의 가장 최근 몫으로 한 번(곳간이 비었으면 없음). 한 판에 한 번(세이브 `neighborOrderDay`).
+       크기는 총괄 D35(반지하 한 달 월세만큼). 구호금 `reliefWon` 과 같은 꼴 — 값 칸만 여기 두고 문은 loop §neighborOrderStep 이 맡는다 */
+  neighborOrderWon: 200_000,
+  neighborOrderDays: Object.freeze([90, 110]),
   lampPriceWon: 120_000,
   /* 등마다 값이 다르다 — 앞에서부터 이 순서로 산다(§buyLamp).
      ⚠ 목록이 짧으면 마지막 값을 되쓴다. 등이 늘어도 안 던진다. */
@@ -305,6 +311,8 @@ export function createTutorialState(opt = {}) {
     brokeSinceDay: null,
     /* 구호금을 이미 받았나 — **한 번뿐이다**(§reliefWon) */
     reliefTaken: false,
+    /* ★ D35 — 반찬가게 주문이 난 날(한 판에 한 번 · §neighborOrderWon). null = 아직 */
+    neighborOrderDay: null,
     /* 굶어 죽었나 — 한 번 켜지면 새 판을 깔기 전까지 안 꺼진다 */
     starved: false
   };

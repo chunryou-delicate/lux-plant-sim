@@ -384,6 +384,7 @@ export async function play(name, seed, opt = {}) {
   /* 끝까지 안 풀린 막힘 */
   for (const [id, q] of qOpen) if (q.run >= STUCK_DAYS) out.stuck.push({ id, from: q.since, days: q.run, room: ts.movedOut ? 'oneroom' : 'banjiha', open: true });
   out.lastDay = S.day; out.cashEnd = ts.cashWon;
+  out.neighborOrderDay = ts.neighborOrderDay ?? null;   /* D35 반찬가게 주문이 난 날 */
   return out;
 }
 
@@ -507,6 +508,7 @@ for (const name of NAMES) {
     if (r.otherLog && r.otherLog.length) console.log('    기타 — ' + r.otherLog.map(o => `${o.day}일 ${won(o.won)}(${o.ev.join(',') || '사건 없음'})`).join(' · '));
   }
   const stay = rs.filter(r => r.moveDay == null && r.starvedDay == null);
+  { const no = rs.filter(r => r.neighborOrderDay != null); console.log(`  🧺 반찬가게 주문 — ${no.length}/${N}판 · 날 중앙 ${med(no.map(r => r.neighborOrderDay)) ?? '—'}`); }
   if (stay.length) console.log(`  이사 못 한 판 ${stay.length} — 무늬 잎을 낸 적 없음 ${stay.filter(r => r.varieDay == null).length} · 이사 자금 모자람 ${stay.filter(r => r.moneyDay == null).length}` +
                                ` · (이사한 판의 무늬 첫날 중앙 ${med(rs.filter(r => r.moveDay != null).map(r => r.varieDay))}일)`);
   console.log(`  ★막힘 — ${Object.keys(stuckBy).length ? Object.entries(stuckBy).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}판`).join(' · ') : '없음'}`);

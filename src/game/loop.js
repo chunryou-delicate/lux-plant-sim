@@ -71,6 +71,7 @@ import { stepShop, stepMarket } from './shop.js';
 /* ★ 2026-10-08 [plan] 지도 13 — turn.cropNow(콩 씨앗 재고 · 빈 시루)를 짓는 데 쓴다(§attachEvents) */
 import { stockOf as shopStockOf } from './shop.js';
 import { cropPotList as cropPotListNow } from './first_play.js';
+import { pantryLotsOf } from './first_play.js';   /* ★ D35 — 반찬가게가 가져갈 곳간 꾸러미(§neighborOrderStep) */
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { resetDay, spend as spendStamina, canAct as canActStamina,
          staminaView } from './stamina.js';
@@ -649,6 +650,8 @@ function stepTutorial(S, turn, io) {
       lampCount: (S.lamps && S.lamps.count) || 0,
       lampHours: (S.lamps && S.lamps.litHours)
     });
+    /* ★ D35 — 반찬가게 주문의 마지막 날(창 끝날까지 안 거뒀으면 곳간의 가장 최근 몫으로 · §neighborOrderStep) */
+    if (r && !r.error) { const no = neighborOrderStep(S, { lastDay: true }); if (no) r.events = [...(r.events || []), no]; }
     if (r && r.events) for (const e of r.events) pushLog(S, '📅 ' + e.ko);
     /* ★확정 무늬는 **배움·돈이 오늘 값이 된 뒤에** 본다 — 조건 ②·④가 오늘 값이라야 맞다 */
     const vg = stepVarieGrantOfTurn(S, io);
@@ -661,6 +664,43 @@ function stepTutorial(S, turn, io) {
     pushLog(S, '⚠ 튜토리얼 진행 실패 — ' + e.message);
     return { error: e.message };
   }
+}
+
+/* ══ ★★ 2026-10-09 D35 — 반찬가게 주문 (총괄 · plan «반찬가게 주문» · 값 TUTORIAL_RULES.neighborOrderWon) ═══════════
+   언제: 게임 Day(S.day) neighborOrderDays[0]~[1] · 반지하(!movedOut) · 무늬 삽수를 판 적 없음(varieSale.count 0) · 한 판에 한 번.
+     ① opt.harvested — 창 안의 수확(harvestCrop 끝) — 그날 거둔 곳간 꾸러미(day === 오늘)를 가져간다
+     ② opt.lastDay   — 창 끝날 하루 결산 — 그때까지 안 났고 곳간이 있으면 가장 최근 날의 꾸러미를 가져간다
+   한 일: 그 꾸러미를 곳간에서 빼고(pantryWon 도 · 값은 안 받는다 — 사 간 값은 정한 금액 하나다) 지갑에 금액을 넣는다.
+   반환: 사건 { id:'neighbor_order', ko, won, takenWon, day } 또는 null. 대사는 dialogue §neighborOrder(EVENT_SCRIPT) · 배너는 화면.
+   ⚠ 가져갈 꾸러미가 없으면 안 난다(오늘 거둔 것이 0 이면 다음 수확을 기다린다) — 빈손으로 돈만 주지 않는다. */
+export function neighborOrderStep(S, opt = {}) {
+  const ts = S && S.tutorial && S.tutorial.enabled ? S.tutorial : null;
+  const fp = S && S.firstPlay;
+  if (!ts || !fp || !fp.food) return null;
+  if (ts.movedOut || ts.neighborOrderDay != null) return null;
+  const R = ts.rules || {};
+  const won = R.neighborOrderWon, win = R.neighborOrderDays;
+  if (!Number.isFinite(won) || won <= 0 || !Array.isArray(win) || win.length < 2) return null;
+  const day = S.day;
+  if (!Number.isInteger(day) || day < win[0] || day > win[1]) return null;
+  if (((ts.varieSale && ts.varieSale.count) || 0) > 0) return null;
+  const lots = pantryLotsOf(fp);
+  let take = [];
+  if (opt.harvested) take = lots.filter(l => l.day === day);
+  else if (opt.lastDay && day === win[1]) {
+    const dated = lots.filter(l => Number.isInteger(l.day));
+    const last = dated.length ? Math.max(...dated.map(l => l.day)) : null;
+    take = last == null ? lots.slice(-1) : lots.filter(l => l.day === last);
+  }
+  if (!take.length) return null;
+  const takenWon = take.reduce((a, l) => a + (l.won || 0), 0);
+  fp.food.pantryLots = lots.filter(l => !take.includes(l));
+  fp.food.pantryWon = Math.max(0, Math.round((fp.food.pantryWon || 0) - takenWon));
+  ts.cashWon += won;
+  ts.neighborOrderDay = day;
+  const ko = `반찬가게에서 오늘 거둔 것을 사 갔습니다 — +${won.toLocaleString()}원`;
+  if (opt.harvested) pushLog(S, '🧺 ' + ko);   /* 결산 길(lastDay)은 stepTutorial 이 사건마다 «📅» 로그를 남긴다 — 두 번 안 적는다 */
+  return { id: 'neighbor_order', ko, won, takenWon, day };
 }
 
 /* ══ turn.events — 이 턴에 난 일 **한 목록** (2026-08-03 신설) ═══════════
@@ -1589,6 +1629,8 @@ export function harvestCrop(S, io, opt = {}) {
     noteLearning(ts, { harvested: true, cycleSavedWon: r.cycleSavedWon, cropAvgDli: r.avgDli });
     events.push(...learnEventsOf(ts, learnedBefore));
   }
+  /* ★ D35 — 반찬가게 주문(창 안의 첫 수확이면 그날 거둔 몫을 사 간다 · §neighborOrderStep) */
+  { const no = neighborOrderStep(S, { harvested: true }); if (no) events.push(no); }
   return { ...r, arrived, growthPhase: arrivalPhase, events };
 }
 

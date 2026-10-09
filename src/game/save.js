@@ -895,7 +895,14 @@ function packTutorial(ts) {
       soldWon: needNum((ts.crop || {}).soldWon ?? 0, 'tutorial.crop.soldWon', { min: 0 })
     },
     movedOut: !!ts.movedOut,
-    bankrupt: !!ts.bankrupt
+    bankrupt: !!ts.bankrupt,
+    /* ★★ 2026-10-09 — 살림의 «한 번뿐»·시계 칸을 싣는다. 예전엔 안 실려(tutorial.js 주석은 «그 칸은 세이브에 있다»였지만 없었다)
+         새로 켜면 구호금을 또 받고 · 굶주림 시계가 풀리고 · 쓰러진 판이 살아났다. 옛 세이브는 칸이 없어 처음 값(false · null)으로 연다.
+         neighborOrderDay — D35 반찬가게 주문이 난 날(한 판에 한 번) */
+    reliefTaken: !!ts.reliefTaken,
+    starved: !!ts.starved,
+    brokeSinceDay: ts.brokeSinceDay == null ? null : needInt(ts.brokeSinceDay, 'tutorial.brokeSinceDay', { min: 0 }),
+    neighborOrderDay: ts.neighborOrderDay == null ? null : needInt(ts.neighborOrderDay, 'tutorial.neighborOrderDay', { min: 0 })
   };
 }
 
@@ -1812,6 +1819,7 @@ export function deserialize(raw, opt = {}) {
     ts.varieLeaf = { ...ts.varieLeaf, ...t.varieLeaf };
     ts.crop = { ...ts.crop, ...t.crop };
     ts.movedOut = t.movedOut; ts.bankrupt = t.bankrupt;
+    ts.reliefTaken = t.reliefTaken; ts.starved = t.starved; ts.brokeSinceDay = t.brokeSinceDay; ts.neighborOrderDay = t.neighborOrderDay;
     /* ★★ 옛 세이브에는 `varieSale` 칸이 **아예 없다** — 위 §무늬 삽수 판매 이관.
        ⚠ 「없다」와 「0건이다」는 다른 말이다. 그래서 `t.varieSale`(없으면 0으로 채워진다)이
          아니라 **날 세이브에 그 칸이 있었는지**를 본다. 뭉개면 실제로 0건인 판까지
