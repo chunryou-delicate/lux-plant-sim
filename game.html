@@ -561,6 +561,7 @@
     background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
   .shopRow .nm{flex:1;min-width:0;font-size:12.5px;color:rgba(255,255,255,.86)}
   .shopRow .nm small{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
+  .shopRow .fthumb{width:40px;height:40px;flex:0 0 40px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,.04)}
   .shopRow .won{font-weight:700;font-size:13px;color:var(--gold);white-space:nowrap}
   .shopRow button{min-height:34px;padding:0 12px;border-radius:9px;font-size:12px;flex:0 0 auto}
   .shopRow .have{font-size:11px;color:var(--leaf);white-space:nowrap;min-width:34px;text-align:right}
@@ -8418,8 +8419,11 @@ function drawShop() {
       </div>`;
     }
     const have = st.stock[it.id] || 0;
+    /* ★ 2026-10-09 [house] B — 가구 줄 그림(방에 놓였을 때와 같은 모습 · assets/v2/thumbs/furn) · 없으면 글만 · 둘째 줄 한 줄 소개(.intro · [plan]) */
+    const fth = (it.preset && FURN_THUMBS[it.preset] && FURN_THUMBS[it.preset].file) || null;
     return `<div class="shopRow">
-      <div class="nm">${it.ko}<small>${it.leadDays}일 뒤 도착</small></div>
+      ${fth ? `<img class="fthumb" src="./${fth}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+      <div class="nm">${it.ko}<small>${it.leadDays}일 뒤 도착</small>${it.intro ? `<small>${it.intro}</small>` : ''}</div>
       <div class="have">${have ? '보유 ' + have : ''}</div>
       <div class="won">${it.buyWon.toLocaleString()}원</div>
       <button class="ghost" data-buy="${it.id}">주문</button>
@@ -11704,6 +11708,9 @@ function siruPick(id) {
 /* ★ 2026-10-09 (char 추천 · core 정함) — 주인공 낮 옷. 반지하 = 늘 summer(빛이 여름·맑음 고정 D1 — 옷만 바뀌면 «한 낱말 두 방») ·
      원룸부터 = 빛과 같은 달력 계절(io.light.skyFor) · 눕기 동안 pajama 는 방뷰가 맡는다 · rain 은 보류(사람이 늘 방 안) */
 let heroOutfitAsked = null;
+/* ★ 2026-10-09 [house] B — 가구점 줄 그림 목록(열쇠 = 프리셋 id). 부팅을 안 막는다(받으면 다음 그리기부터) · 못 받으면 글만 */
+let FURN_THUMBS = {};
+fetch('./assets/v2/thumbs/furn/index.json').then(r => (r.ok ? r.json() : null)).then(j => { if (j && typeof j === 'object') FURN_THUMBS = j; }).catch(() => { });
 function syncHeroOutfit() {
   if (!roomView || typeof roomView.setHeroOutfit !== 'function') return;
   let want = 'summer';
