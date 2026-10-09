@@ -60,7 +60,8 @@ import { getPlantAssembler } from '../render3d/plant_assemble.js';
 /* 걷는 길은 render3d/character.js 가 쓰던 것과 **같은 한 벌**을 쓴다.
    복사하면 방과 방 도구에서 통행 판정이 어긋난다(floor_nav.js 머리말). */
 import { createFloorNav } from '../render3d/floor_nav.js';
-import { createFurnitureDress } from '../render3d/furniture_dress.js';   // v2: 가구 옷(GLB)·소품 — 그림만
+import { createFurnitureDress } from '../render3d/furniture_dress.js';   /* ↓ 벽 걸이 v1 걸이 자리(10-10 [house]) */
+import { hangSpotsOf, hangPoseOf, hangFits, hangSpotAt } from './hang_spots.js';   // v2: 가구 옷(GLB)·소품 — 그림만
 /* ★ 배치 규칙은 game/place.js 한 벌만 쓴다.
    place.js 는 THREE 도 DOM 도 없이 도는 순수 모듈이라, 화면과 Node 테스트가
    **같은 식**으로 판정한다. 여기서 다시 짜면 두 벌이 되고 두 벌은 반드시 어긋난다
@@ -5985,7 +5986,7 @@ export async function createRoomView(canvas, opts = {}) {
        그대로 열리고, 새 칸이 하나도 안 늘었다.
   ============================================================ */
   const RAISED_Y = 0.02;
-  const isRider = u => !!(u && (u.mount || u.hangFromCeiling));
+  const isRider = u => !!(u && ((u.mount && u.mount !== 'wall-hang') || u.hangFromCeiling));   // wall-hang(10-10): 걸이 자리로 옮기는 «가구»다 — 물린 것이 아니다
   /* 그 uid 가 조명 기구인가 — 조립이 만든 rig 목록이 정본이다(여기서 이름으로 짐작하지 않는다) */
   function isLampUid(uid) {
     return !!(built && built.lightRigs && built.lightRigs.some(r => r.uid === uid));
@@ -6045,7 +6046,7 @@ export async function createRoomView(canvas, opts = {}) {
     for (const n of built.furniture.children) {
       if (n === g || !n.userData || !n.userData.uid || !n.userData.size) continue;
       if (n.userData.fixed || n.userData.hangFromCeiling) continue;
-      if (n.userData.mount === 'wall' || n.userData.mount === 'window') continue;
+      if (n.userData.mount === 'wall' || n.userData.mount === 'window' || n.userData.mount === 'wall-hang') continue;   // 벽 것 — 밑 가구를 안 따라간다
       if (!riderNode(n)) continue;
       const s2 = n.userData.size;
       if (!rectOverlap(base, { x: n.position.x, z: n.position.z, w: s2.w, d: s2.d,
@@ -6321,6 +6322,67 @@ export async function createRoomView(canvas, opts = {}) {
     return { ...furnInfo(g), lit: swaps.length, screen: furnScreenPos(g, 0), top: furnScreenPos(g, 1) };
   }
 
+  /* ── 벽 걸이 v1 «걸이 자리» (2026-10-10 · [house] · 총괄 결정) ──
+     산 그림(mount wall-hang)은 방마다 정해 둔 자리(roomDef.hangSpots)에 걸린다. 자리표 셈은 hang_spots.js 한 곳.
+     ★ 어느 자리에 걸렸나는 놓인 자리표로 거꾸로 찾는다(2cm 안) — 세이브 꼴(가구 한 줄 x·z·rot·y)을 안 바꾼다. */
+  const isHang = g => !!(g && g.userData && g.userData.mount === 'wall-hang');
+  function hangNodes() {
+    if (!built || !built.furniture) return [];
+    return built.furniture.children.filter(g => g.userData && g.userData.uid && isHang(g));
+  }
+  function presetOfUid(uid) {
+    const f = roomDef && (roomDef.furniture || []).find(x => x.uid === uid);
+    return f ? f.preset : null;
+  }
+  function hangSpotOfNode(g) {
+    return hangSpotAt(hangSpotsOf(roomDef), built.size, { x: g.position.x, z: g.position.z, y: g.position.y }, g.userData.size || {});
+  }
+  function hangFit(g, pos) {
+    const spots = hangSpotsOf(roomDef);
+    const size = g.userData.size || {};
+    const sp = pos.hang ? spots.find(s => s.id === pos.hang)
+      : (Number.isFinite(pos.x) && Number.isFinite(pos.z)
+          ? hangSpotAt(spots, built.size, { x: pos.x, z: pos.z, y: Number.isFinite(pos.y) ? pos.y : g.position.y }, size) : null);
+    if (!sp) {
+      /* 제자리 불변식 — 걸이 자리 밖에 처음부터 걸려 있던 것(방 데이터)도 제자리는 통과한다 */
+      const same = Number.isFinite(pos.x) && Math.abs(pos.x - g.position.x) < 1e-3 && Math.abs(pos.z - g.position.z) < 1e-3;
+      return same ? { ok: true, reason: null } : { ok: false, reason: '걸이 자리가 아닙니다 — 벽에 걸 자리를 골라 주세요' };
+    }
+    const f = hangFits(sp, presetOfUid(g.userData.uid), size);
+    if (!f.ok) return f;
+    const other = hangNodes().find(n => n !== g && hangSpotOfNode(n) === sp);
+    if (other) return { ok: false, reason: `${furnInfo(other).name} 이(가) 이미 걸려 있습니다` };
+    return { ok: true, reason: null, hang: sp.id };
+  }
+  /* 걸이 자리 목록 — 원을 그릴 화면 좌표·비었나·누가 걸렸나 */
+  function hangSpotList() {
+    if (!built || !roomDef) return [];
+    const occ = new Map();
+    for (const n of hangNodes()) { const s = hangSpotOfNode(n); if (s) occ.set(s.id, n.userData.uid); }
+    const r = canvas.getBoundingClientRect();
+    return hangSpotsOf(roomDef).map(s => {
+      const q = hangPoseOf(s, built.size, { d: 0.01 });
+      tmp.set(q.x, q.y, q.z).project(ctx.cam);
+      const screen = tmp.z > 1 ? null : { x: +((tmp.x * 0.5 + 0.5) * r.width).toFixed(1), y: +((-tmp.y * 0.5 + 0.5) * r.height).toFixed(1) };
+      return { id: s.id, wall: s.wall, x: q.x, y: q.y, z: q.z, rot: q.rot, maxW: s.maxW, maxH: s.maxH, only: s.only || null,
+               free: !occ.has(s.id), uid: occ.get(s.id) || null, screen };
+    });
+  }
+  /* 산 그림을 그 자리에 걸 자리표 — 코어가 state.placeBoughtFurniture(S, itemId, pose) 에 그대로 넘긴다 */
+  function hangPoseFor(spotId, preset) {
+    if (!built || !roomDef) throw new Error('방이 아직 없습니다');
+    const sp = hangSpotsOf(roomDef).find(s => s.id === spotId);
+    if (!sp) throw new Error(`없는 걸이 자리입니다: ${spotId}`);
+    const p = (furnNames || {})[preset] || {};
+    const size = p.size_m || {};
+    if (p.mount !== 'wall-hang') throw new Error(`벽 걸이가 아닙니다: ${preset}`);
+    const f = hangFits(sp, preset, size);
+    if (!f.ok) throw new Error(f.reason);
+    const busy = hangSpotList().find(s => s.id === spotId);
+    if (busy && !busy.free) throw new Error('벽에 걸 자리가 다 찼습니다');
+    return hangPoseOf(sp, built.size, size);
+  }
+
   /* 그 가구가 화면 어디에 찍히나 — **캔버스 기준 CSS 픽셀**(screenPosOf 와 같은 규약).
      up=0 이면 **발밑**(바닥과 맞바꿀 수 있는 점 — 상대 끌기의 기준점),
      up=1 이면 **머리 위**(메뉴를 띄우기 좋은 점). 카메라 뒤면 null 이다. */
@@ -6369,6 +6431,7 @@ export async function createRoomView(canvas, opts = {}) {
   function furnitureFit(uid, pos) {
     const g = furnNode(uid);
     if (!g) return { ok: false, reason: `못 옮기는 가구입니다: ${uid}` };
+    if (isHang(g)) return hangFit(g, pos);           // ★ 벽 걸이(10-10) — 바닥 겹침·받칠 상판이 아니라 «걸이 자리»로 가른다
     if (!Number.isFinite(pos.x) || !Number.isFinite(pos.z))
       return { ok: false, reason: `좌표가 유한한 숫자가 아닙니다: (${pos.x}, ${pos.z})` };
     const sz = g.userData.size;
@@ -7043,6 +7106,14 @@ export async function createRoomView(canvas, opts = {}) {
     if (!built) throw new Error('방이 아직 없습니다');
     const g = furnNode(uid);
     if (!g) throw new Error(`못 옮기는 가구입니다: ${uid}`);
+    /* ★ 벽 걸이(10-10) — {hang: 자리 id} 를 그 자리의 자리표로 바꿔 «되돌리기 길»(grid:false)로 태운다. 격자 스냅을 안 탄다 */
+    if (isHang(g)) {
+      if (!pos.hang) throw new Error('가구를 못 놓습니다 — 벽 걸이는 걸이 자리(hang)로 옮깁니다');
+      const sp = hangSpotsOf(roomDef).find(s => s.id === pos.hang);
+      if (!sp) throw new Error(`가구를 못 놓습니다 — 없는 걸이 자리입니다: ${pos.hang}`);
+      const q = hangPoseOf(sp, built.size, g.userData.size || {});
+      pos = { x: q.x, z: q.z, rot: q.rot, y: q.y, grid: false, hang: pos.hang };
+    }
     /* ★ 미리보기와 **같은 스냅**을 탄다. 여기서만 다르면 "파란 유령을 봤는데 딴 데 놓인다" 가 된다. */
     const sn = pos.grid === false ? { x: pos.x, z: pos.z, y: null,
                  rot: pos.rot == null ? (g.rotation.y || 0) * 180 / Math.PI : pos.rot }
@@ -9995,6 +10066,10 @@ export async function createRoomView(canvas, opts = {}) {
     },
     /* 그 자리에 놓을 수 있나 — { ok, reason }. rot 는 도(°) */
     furnitureFit(uid, pos) { return furnitureFit(uid, pos || {}); },
+    /* ★ 벽 걸이 v1(10-10 [house]) — 걸이 자리 · 산 그림을 걸 자리표 · 달력 계절 */
+    hangSpots() { return hangSpotList(); },
+    hangPose(spotId, preset) { try { return hangPoseFor(spotId, preset); } catch (e) { throw fail(e); } },
+    setSeason(s) { const ch = furnDress.setSeason(s); if (ch) needsRender = true; return ch; },
     previewFurnitureAt(uid, pos) { try { return previewFurnitureAt(uid, pos); } catch (e) { throw fail(e); } },
     clearFurniturePreview() { disposeFurnGhost(); },
     /* 실제로 옮긴다 — 방을 다시 조립하고 화분을 규칙대로 되돌린다(위 ⑧-b 주석).

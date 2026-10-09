@@ -815,7 +815,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
     // ★ 조도 차폐체로 등록 (러그·조명처럼 빛을 막지 않는 것은 제외)
     const fsz=g.userData.size;
     // 충돌: 낮은 것(러그)·벽걸이·천장등 빼고 전부. 조도 차폐보다 기준이 넓다.
-    if(fsz && fsz.h>0.20 && !hang && g.userData.mount!=='wall' && !/^rug/.test(type)){
+    if(fsz && fsz.h>0.20 && !hang && g.userData.mount!=='wall' && g.userData.mount!=='wall-hang' && !/^rug/.test(type)){   // wall-hang: 벽 걸이 v1(10-10) — 벽에 붙어 길을 안 막는다
       /* ★ 2026-10-09 [house] D — 그림이 크기 상자보다 깊은 가구는 userData.collide(빌더가 낸 부딪히는 상자)로. 값·조도(occluders)는 size 그대로 */
       const k=g.userData.collide, rr=(f.rot||0)*Math.PI/180;
       if(k) pushCol((f.x??0)+k.dx*Math.cos(rr)+k.dz*Math.sin(rr), (f.z??0)-k.dx*Math.sin(rr)+k.dz*Math.cos(rr), k.w, k.d, fsz.h, rr, 'furn');
@@ -825,7 +825,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
        h>0.25 만 보면 창가 1.6m 창턱(두께 0.035)이 빠진다 — 화면은 막는데
        계산은 통과라 대조 검사에 잡혔다. 높이 1m 이상이면 얇아도 넣는다.
        바닥의 얇은 것(러그)은 y<1 이라 그대로 빠진다. */
-    if(fsz && (fsz.h>0.25 || yBase>=1.0) && !/^rug|^lamp|light|^picture|^wall_clock|^mirror/.test(type)){
+    if(fsz && (fsz.h>0.25 || yBase>=1.0) && g.userData.mount!=='wall-hang' && !/^rug|^lamp|light|^picture|^wall_clock|^mirror/.test(type)){   // 벽 걸이(종이 한 장)는 빛을 안 막는다
       g.userData.occIdx = occluders.length;   // 자기 자신은 자기 슬롯을 가리지 않게(자가차폐 방지)
       occluders.push({ x:(f.x??0)-fsz.w/2, z:(f.z??0)-fsz.d/2,
                        w:fsz.w, d:fsz.d, h:fsz.h, y0:yBase, rot:(f.rot||0)*Math.PI/180,

@@ -46,6 +46,13 @@
         "d": 4,
         "h": 2.3
       },
+      "_hangSpots": "★ 2026-10-10 [house] 벽 걸이 v1 걸이 자리(총괄: 반지하 4 · 원룸 5 · 투룸 6) — 뒷벽 창 양옆 · 왼벽 침대 위 · 왼벽 난방기 위. 기본 카메라에 보이는 뒷벽·왼벽 위주 · 창·문·키 큰 가구를 비켰다. 자리표 셈은 src/game/hang_spots.js.",
+      "hangSpots": [
+        {"id": "banjiha-hang-1", "wall": "back", "cu": -1.95, "cy": 1.45, "maxW": 0.45, "maxH": 0.62},
+        {"id": "banjiha-hang-2", "wall": "back", "cu": 1.95, "cy": 1.45, "maxW": 0.45, "maxH": 0.62},
+        {"id": "banjiha-hang-3", "wall": "left", "cu": 0.9, "cy": 1.45, "maxW": 0.45, "maxH": 0.62},
+        {"id": "banjiha-hang-4", "wall": "left", "cu": -0.6, "cy": 1.4, "maxW": 0.45, "maxH": 0.62}
+      ],
       "furniture": [
         {
           "preset": "shelf_sill_pot1",
@@ -287,6 +294,14 @@
         "d": 5,
         "h": 2.5
       },
+      "_hangSpots": "★ 2026-10-10 [house] 벽 걸이 v1 걸이 자리(총괄: 반지하 4 · 원룸 5 · 투룸 6) — 뒷벽 창 양옆 · 왼벽 셋(협탁 위 · 가운데 · 서랍장 위). 기본 카메라에 보이는 뒷벽·왼벽 위주 · 창·문·키 큰 가구를 비켰다. 자리표 셈은 src/game/hang_spots.js.",
+      "hangSpots": [
+        {"id": "oneroom-hang-1", "wall": "back", "cu": -1.75, "cy": 1.5, "maxW": 0.45, "maxH": 0.62},
+        {"id": "oneroom-hang-2", "wall": "back", "cu": 2.35, "cy": 1.5, "maxW": 0.45, "maxH": 0.62},
+        {"id": "oneroom-hang-3", "wall": "left", "cu": 1.6, "cy": 1.5, "maxW": 0.45, "maxH": 0.62},
+        {"id": "oneroom-hang-4", "wall": "left", "cu": 0.0, "cy": 1.5, "maxW": 0.45, "maxH": 0.62},
+        {"id": "oneroom-hang-5", "wall": "left", "cu": -1.2, "cy": 1.5, "maxW": 0.45, "maxH": 0.62}
+      ],
       "furniture": [
         {
           "preset": "shelf_sill_pot4",
@@ -1373,6 +1388,15 @@
         }
       ],
       "_shop_layout": "★ 2026-10-10 가게 기준 배치(총괄 · plan 80dd6cb4 · [house] docs/handoff/house-tworoom-check-20261010.md) — 투룸은 식물 가게(산 집)로 쓴다. 남쪽 창 방(칸막이 왼쪽)이 «가게 방»: 다단 선반을 창 앞에 · 그 앞에 진열대(자리 9) · 계단식은 창 동쪽 끝. 침대·협탁은 거실(칸막이 오른쪽)로, 소파·책장·테이블·깔개는 그 자리를 비켜 옮겼다(uid 는 그대로 — 세이브가 이 이름으로 자리를 찾는다). 식물등 셋을 원룸 결(바 → 집게 → 거치 차례)로 넣었다 — 등 자리 0 이면 들고 온 등이 아무 데도 안 켜져 겨울에 자라는 자리가 없었다. 잰 것(가구 빛 갈래 · 날씨 기댓값 · 문턱 2.7 · 자리 하나씩): 한 해 내내 자라는 자리(겨울에 등을 다 켜면 넘음) 옛 배치 0 → 8 · 등 없이 한 해 내내 0. 스탠드는 거실 쪽(5)보다 가게 방 쪽(8)이 많아 가게 방에 섰다. 방 측정판(room_profile)은 growth 가 다시 굽는다.",
+      "_hangSpots": "★ 2026-10-10 [house] 벽 걸이 v1 걸이 자리(총괄: 반지하 4 · 원룸 5 · 투룸 6) — 주문판 자리(가게 방 뒷벽 창 옆 — 문은 앞벽이라 기본 카메라에서 깎인다) · 거실 뒷벽 둘 · 가게 방 왼벽 둘 · 오른벽 책장 위. 기본 카메라에 보이는 뒷벽·왼벽 위주 · 창·문·키 큰 가구를 비켰다. 자리표 셈은 src/game/hang_spots.js.",
+      "hangSpots": [
+        {"id": "tworoom-hang-order", "wall": "back", "cu": -1.02, "cy": 1.5, "maxW": 0.62, "maxH": 0.5, "only": "order_board"},
+        {"id": "tworoom-hang-1", "wall": "back", "cu": -0.05, "cy": 1.5, "maxW": 0.45, "maxH": 0.62},
+        {"id": "tworoom-hang-2", "wall": "back", "cu": 3.1, "cy": 1.5, "maxW": 0.45, "maxH": 0.62},
+        {"id": "tworoom-hang-3", "wall": "left", "cu": 1.0, "cy": 1.5, "maxW": 0.45, "maxH": 0.62},
+        {"id": "tworoom-hang-4", "wall": "left", "cu": -0.3, "cy": 1.5, "maxW": 0.45, "maxH": 0.62},
+        {"id": "tworoom-hang-5", "wall": "right", "cu": 1.3, "cy": 1.5, "maxW": 0.45, "maxH": 0.62}
+      ],
       "furniture": [
         {
           "preset": "bed_double",

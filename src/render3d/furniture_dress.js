@@ -106,6 +106,24 @@ const FURN = {
   rug_check_butter:  { topTex: 'textures/rug/rug_check_butter.webp' },
   rug_leaf_sage:     { topTex: 'textures/rug/rug_leaf_sage.webp' },
   rug_runner_stripe: { topTex: 'textures/rug/rug_runner_stripe.webp' },
+  /* 벽 걸이 v1(10-10 · 걸이 자리) — 코드 그림의 artFace 면에만 Higgsfield 그림을 입힌다(종이·테이프·틀은 코드 그대로).
+       엽서는 코드 카드 셋을 숨기고 투명 그림 한 장(hideOthers) · 달력은 계절마다 쪽(faceTexSeason · setSeason) */
+  poster_monstera:     { faceTex: 'textures/wall/poster_monstera.webp' },
+  poster_seaside:      { faceTex: 'textures/wall/poster_seaside.webp' },
+  poster_windowcat:    { faceTex: 'textures/wall/poster_windowcat.webp' },
+  poster_mountain:     { faceTex: 'textures/wall/poster_mountain.webp' },
+  poster_moon:         { faceTex: 'textures/wall/poster_moon.webp' },
+  poster_fruit:        { faceTex: 'textures/wall/poster_fruit.webp' },
+  poster_plantshelf:   { faceTex: 'textures/wall/poster_plantshelf.webp' },
+  poster_shapes:       { faceTex: 'textures/wall/poster_shapes.webp' },
+  poster_rainyalley:   { faceTex: 'textures/wall/poster_rainyalley.webp' },
+  frame_field:         { faceTex: 'textures/wall/frame_field.webp' },
+  frame_tinymonstera:  { faceTex: 'textures/wall/frame_tinymonstera.webp' },
+  frame_dog:           { faceTex: 'textures/wall/frame_dog.webp' },
+  frame_pressedflower: { faceTex: 'textures/wall/frame_pressedflower.webp' },
+  postcards:           { faceTex: 'textures/wall/postcards.webp', hideOthers: true },
+  calendar_season:     { faceTexSeason: { spring: 'textures/wall/calendar_spring.webp', summer: 'textures/wall/calendar_summer.webp',
+                                          autumn: 'textures/wall/calendar_autumn.webp', winter: 'textures/wall/calendar_winter.webp' } },
   growlight_clip:     { file: 'furniture/growlight_clip.glb',     yaw: 0,  lazy: true, lamp: { band: 0.6 } },
   growlight_stand:    { file: 'furniture/growlight_stand.glb',    yaw: 90, lazy: true, lamp: { band: 0.8 } }
 };
@@ -401,6 +419,7 @@ export function createFurnitureDress(opt = {}) {
     if (!spec) return false;
     if (g.children.some(c => c.userData && c.userData.v2dress)) return true;     // 이미 입었다
     if (spec.topTex) return dressTopTex(g, preset, spec);
+    if (spec.faceTex || spec.faceTexSeason) return dressFaceTex(g, preset, spec);
     const t = tpl.get(spec.file);
     if (!t || !t.ok) return false;
     if (spec.lamp) return dressLamp(g, preset, spec, t);
@@ -520,6 +539,43 @@ export function createFurnitureDress(opt = {}) {
     const hm = hidden();
     for (const p of proxies) { if (!origMat.has(p)) origMat.set(p, p.material); p.material = hm; }
     report.set(g.userData.uid, { preset, topTex: spec.topTex, size: [size.w, size.d] });
+    return true;
+  }
+
+  /* ── 그림 면 (2026-10-10 · [house] · 벽 걸이 v1) ──
+     빌더가 artFace 로 표시한 면의 재질만 바꾼다(그림을 받은 뒤 · 러그와 같은 받기 규약). 옛 재질은 origMat 에 —
+     벗기면(undress) 돌아온다. 입었다는 표지는 빈 v2dress 묶음 하나(다시 입히지 않게 · 벗길 때 같이 걷힌다) */
+  let season = 'spring';
+  const faceFileOf = spec => spec.faceTexSeason ? (spec.faceTexSeason[season] || spec.faceTexSeason.spring) : spec.faceTex;
+  function dressFaceTex(g, preset, spec) {
+    const file = faceFileOf(spec);
+    const mat = topTexMats.get(file);
+    if (!mat) return false;                   // 아직 못 받음 — dress 가 받으러 간다
+    const faces = [], others = [];
+    g.traverse(o => { if (!o.isMesh) return; (o.userData && o.userData.artFace ? faces : others).push(o); });
+    if (!faces.length) return false;
+    for (const f of faces) { if (!origMat.has(f)) origMat.set(f, f.material); f.material = mat; }
+    if (spec.hideOthers) { const hm = hidden(); for (const o of others) { if (!origMat.has(o)) origMat.set(o, o.material); o.material = hm; } }
+    const mark = new T.Group(); mark.name = 'v2dress'; mark.userData.v2dress = true; mark.userData.v2face = file;
+    g.add(mark);
+    report.set(g.userData.uid, { preset, faceTex: file, season: spec.faceTexSeason ? season : undefined });
+    return true;
+  }
+  /* 계절이 바뀌면 달력 쪽만 다시 입힌다 — 다른 옷은 «이미 입었다»로 그대로 */
+  function setSeason(s) {
+    if (!['spring', 'summer', 'autumn', 'winter'].includes(s) || s === season) return false;
+    season = s;
+    const b = cur.built;
+    if (!b || !b.furniture) return true;
+    for (const g of b.furniture.children) {
+      const preset = g.userData && g.userData.uid ? presetOf(g, cur.roomDef) : null;
+      const spec = preset ? specOf(preset) : null;
+      if (!spec || !spec.faceTexSeason) continue;
+      for (const c of [...g.children]) if (c.userData && c.userData.v2dress) g.remove(c);
+      g.traverse(o => { if (o.isMesh && origMat.has(o)) { o.material = origMat.get(o); origMat.delete(o); } });
+    }
+    dress(cur.built, cur.roomDef);
+    onChange('furniture');
     return true;
   }
 
@@ -745,6 +801,7 @@ export function createFurnitureDress(opt = {}) {
         if (!spec) { if (restyleOne(g)) n++; }
         else if (dressOne(g, preset)) n++;
         else if (spec.topTex) { if (!topTexMats.has(spec.topTex)) { missing = true; needTex.add(spec.topTex); } }
+        else if (spec.faceTex || spec.faceTexSeason) { const f = faceFileOf(spec); if (!topTexMats.has(f)) { missing = true; needTex.add(f); } }
         else if (!tpl.has(spec.file)) { missing = true; need.add(spec.file); }
       } catch (e) {
         console.warn('[v2 가구] 옷을 못 입혔습니다 —', g.userData.uid, e && e.message);
@@ -1033,7 +1090,7 @@ export function createFurnitureDress(opt = {}) {
 
   const api = {
     get enabled() { return on; },
-    furnReady, preload, dress, props, yieldTo, blobRects, setEnabled,
+    furnReady, preload, dress, props, yieldTo, blobRects, setEnabled, setSeason,   // setSeason: 달력 쪽(10-10)
     hasDress: preset => !!specOf(preset) || !!DECOR['preset:' + preset],   // 이 프리셋에 v2 그림(옷·색 변형·위 소품)이 있나 — 가구점 그림 자(tools/shot_furn_thumbs)가 묻는다
     set: setEnabled,
     hold: setHeld,

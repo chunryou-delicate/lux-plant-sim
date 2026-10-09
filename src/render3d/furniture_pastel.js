@@ -1277,8 +1277,48 @@ B.picture_frame=(o)=>{
   g.add(panel(w,h,0.03,m,0,0,0,0.015));
   const art=new THREE.Mesh(new THREE.PlaneGeometry(w-0.07,h-0.07),
     new THREE.MeshStandardMaterial({ color:col(o.accent??'#dfe6ea'), roughness:0.8 }));
-  art.position.z=0.017; g.add(art);
-  g.userData.size={w,h,d:0.03}; g.userData.mount='wall'; return g;
+  art.position.z=0.017; art.userData.artFace=true; g.add(art);   // artFace: 옷 층이 그림을 입히는 면(10-10)
+  /* mount — 프리셋이 정하면 그것(벽 걸이 «wall-hang» · 사고팔고 걸이 자리로 옮김), 아니면 예전대로 붙박이 'wall' */
+  g.userData.size={w,h,d:0.03}; g.userData.mount=o.mount||'wall'; return g;
+};
+/* ★ 2026-10-10 [house] 벽 걸이 v1(총괄 · «걸이 자리») — 포스터 · 엽서 묶음 · 달력.
+     원점 = 물건 가운데(벽걸이 규약 · house.js 가 y 를 그 높이로 놓는다) · 앞 = +Z · 뒤가 벽에 닿는다(z −d/2).
+     그림은 옷 층이 artFace 면에 입힌다(Higgsfield) — 코드 그림은 종이 색 + 테이프만. 부딪힘·빛 차폐에서 빠진다(house.js · mount wall-hang). */
+B.poster=(o)=>{
+  const w=o.w??0.30, h=o.h??0.42, d=o.d??0.01;
+  const g=new THREE.Group();
+  g.add(bx(w,h,d*0.6,furnMat(o.color??'#efe6d6','matte'),0,0,-d*0.2));                 // 종이
+  const art=new THREE.Mesh(new THREE.PlaneGeometry(w*0.96,h*0.97),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#d9cdb8'), roughness:0.9 }));
+  art.position.z=d*0.12; art.userData.artFace=true; g.add(art);
+  const tape=furnMat('#f3ead2','matte');                                                // 모서리 테이프 넷
+  for(const [sx,sy] of [[-1,1],[1,1],[-1,-1],[1,-1]]){
+    const t=bx(0.05,0.018,0.002,tape,sx*(w/2-0.012),sy*(h/2-0.006),d*0.15); t.rotation.z=sx*sy*0.7; g.add(t);
+  }
+  g.userData.size={w,h,d}; g.userData.mount=o.mount||'wall-hang'; return g;
+};
+B.postcards=(o)=>{
+  const w=o.w??0.36, h=o.h??0.26, d=o.d??0.01;
+  const g=new THREE.Group();
+  /* 코드 그림 — 겹친 엽서 셋. 옷 층은 이 셋을 숨기고 투명 그림 한 장(artFace)을 보인다 */
+  const card=furnMat(o.color??'#f1e8d8','matte');
+  for(const [cx,cy,r] of [[-0.10,0.02,0.10],[0.0,-0.03,-0.06],[0.10,0.03,0.05]]){
+    const c=bx(0.13,0.09,0.002,card,cx*w/0.36,cy*h/0.26,0); c.rotation.z=r; g.add(c);
+  }
+  const art=new THREE.Mesh(new THREE.PlaneGeometry(w,h), new THREE.MeshStandardMaterial({ visible:false }));
+  art.position.z=d*0.3; art.userData.artFace=true; art.userData.artAlpha=true; g.add(art);
+  g.userData.size={w,h,d}; g.userData.mount=o.mount||'wall-hang'; return g;
+};
+B.calendar=(o)=>{
+  const w=o.w??0.30, h=o.h??0.45, d=o.d??0.015;
+  const g=new THREE.Group();
+  g.add(bx(w,h,d*0.5,furnMat(o.color??'#f4ede0','matte'),0,0,-d*0.25));                // 판
+  const art=new THREE.Mesh(new THREE.PlaneGeometry(w*0.97,h*0.97),
+    new THREE.MeshStandardMaterial({ color:col(o.accent??'#e2d8c6'), roughness:0.9 }));
+  art.position.z=d*0.02; art.userData.artFace=true; art.userData.artSeason=true; g.add(art);
+  const ring=furnMat('#8a8a86','satin');                                                // 위 고리 둘
+  for(const sx of [-1,1]){ const r=cyl(0.008,0.008,0.03,ring,sx*w*0.22,h/2-0.004,d*0.1,8); r.rotation.x=Math.PI/2; g.add(r); }
+  g.userData.size={w,h,d}; g.userData.mount=o.mount||'wall-hang'; return g;
 };
 B.wall_clock=(o)=>{
   const r=(o.w??0.3)/2;
@@ -1334,7 +1374,7 @@ B.bulletin_board=(o)=>{
   const pin=furnMat('#e8e4dc','satin');
   for(const [px,py] of [[-0.25,0.18],[0.2,0.1],[0.05,-0.2]])
     g.add(bx(0.16,0.2,0.006,pin, px*w, py*h, 0.037));   // 붙여둔 종이
-  g.userData.size={w,h,d:0.04}; g.userData.mount='wall'; return g;
+  g.userData.size={w,h,d:0.04}; g.userData.mount=o.mount||'wall'; return g;   // 10-10: 가게 주문판은 프리셋 mount wall-hang(걸이 자리)
 };
 
 /* 교탁 — 상판이 살짝 기운 연단 */
