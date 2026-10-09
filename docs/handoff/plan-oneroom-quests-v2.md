@@ -96,10 +96,11 @@ null = 「모른다」 → 원룸 줄은 안 열리고 안 끝난다(지금 그�
 | 날(원룸 n일째) | 무엇이 서나 | 어디 |
 |---|---|---|
 | 0 도착 | `questOneroomUnpack` → `movedInOneroom` → **`movedInBagCuttings`**(«들고 온 삽수부터 창가에 놓자. 가방에선 하루가 안 가.») | `scriptsForEvents` 가 도착 장면 바로 뒤에 붙인다 — 가방 수는 S.cuttings 에서 직접 센다(core `turn.bagCuttings` 와 같은 자: 안 죽음 · method 있음 · at·slotId 없음) |
-| 0~ | 할 일 머리 `oneroom_unpack` todo = **«들고 온 삽수부터 방에 놓으세요»** (가방 삽수 > 0) · 아니면 예전 «가방의 식물을 원룸에 놓으세요» | quest.js — 스냅샷 칸 `bagCuttings`(null = 모른다 → 예전 글) |
+| 0~ | 할 일 머리 `oneroom_unpack` todo = **«들고 온 삽수부터 창가에 놓으세요»** (가방 삽수 > 0) · 아니면 예전 «가방의 식물을 원룸에 놓으세요» | quest.js — 스냅샷 칸 `bagCuttings`(null = 모른다 → 예전 글) |
 | 1 | 가방 줄 쉼(어제 한 말) | — |
 | 2 · 5 | 아직 가방이면 `statusBagCuttingsMove` | 상태 줄 gap 3 · 원룸 2~7일 |
 | 8~ | 아직 가방이면 일반 `statusBagCuttings`(gap 7) | — |
 
 - 사건 날엔 상태 줄이 안 서므로(사건 > 독촉 > 상태 > 잡담) 도착 날 말은 사건 장면에 붙였다. 상태 줄과 같은 날 겹치지 않는다.
 - **[core] 몫:** `questSnapshotNow` 에 `bagCuttings: Number.isFinite(lastTurn && lastTurn.bagCuttings) ? lastTurn.bagCuttings : null` 한 칸 · 손가락 목적지·칩(총괄이 청함). 그 칸이 오기 전까지 할 일은 예전 글이다(안 깨진다).
+- ★ 10-09 뒤 — [core] 4a7ebd14 가 `questSnapshotNow.bagCuttings` 를 넣었다(lastTurn 이 아니라 **지금 상태**로 센다 — 낮에 놓자마자 머리가 바뀐다). 낱말은 셋 다 **«창가»** 로 맞춘다: 몬이 «…창가에 놓자» · 할 일 «들고 온 삽수부터 창가에 놓으세요» · 손가락(core) 칸 짚기 «들고 온 삽수부터 창가에 놓으세요» · [가방] 문 짚기 «가방을 열어 보세요 — 들고 온 삽수가 기다립니다»(core 임시 문안 그대로 씀).

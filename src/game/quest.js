@@ -851,7 +851,7 @@ const ONEROOM_QUESTS = Object.freeze([
     why: '들고 온 것은 가방에서 아무 일도 안 합니다. 놓아야 빛을 받습니다.',
     /* ★ 2026-10-09 [plan] D43 — 들고 온 삽수가 가방에 있으면 할 일 머리를 «삽수부터»로(가방 삽수는 하루가 안 감 · D29). 칸 bagCuttings 는 [core] — 없으면 예전 글 */
     todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
-      ? '들고 온 삽수부터 방에 놓으세요' : '가방의 식물을 원룸에 놓으세요',
+      ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 원룸에 놓으세요',
     opens: s => yes(s.movedOut),
     /* bagPlants — 가방에 든 그루·삽수·시루 수(가구는 안 센다 · 원룸 첫 장면의 «끝»과 같은 말) */
     done:  s => yes(s.movedOut) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
