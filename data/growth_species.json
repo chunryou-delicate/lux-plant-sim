@@ -63,7 +63,30 @@
         "mother_keeps_min": 1,
         "cutting_takes_min": 1
       },
-      "dormancy": null
+      "dormancy": null,
+      "draw": {
+        "_doc": [
+          "그림(조립기 youngPlantOf · src/render3d/plant_assemble.js §speciesYoungPlant)이 읽는 칸 — 첫 판 · leaf 가 손볼 수 있다.",
+          "잎 GLB 는 몬스테라와 같은 규약(잎자루 포함 · 자루 끝이 원점 · 높이 1 · 잎몸이 +Z 로 기움)이라 plant_grow §normalizeAsset 을 그대로 쓴다.",
+          "잎 크기 = leaf_size_m[단계] × adj[단계].scale (잎자루 포함 가장 긴 변).",
+          "덩굴(vine): 흙에서 줄기가 오르고 잎 한 장마다 마디 하나 — 마디 사이 internode_m[그 잎 단계] · 잎 방위는 마디마다 phyllotaxis_deg 씩 돈다.",
+          "  아래(오래된) 잎일수록 older_tilt_deg 씩 더 바깥으로 눕는다(위에서 n 번째 잎 = n × older_tilt_deg · 상한 max_tilt_deg)."
+        ],
+        "form": "vine",
+        "internode_m": { "young": 0.012, "mid": 0.022, "mature": 0.032 },
+        "stem_r_m": { "young": 0.0028, "mid": 0.004, "mature": 0.0055 },
+        "stem_color": "#4a3036",
+        "phyllotaxis_deg": 150,
+        "lean_deg": 7,
+        "older_tilt_deg": 7,
+        "max_tilt_deg": 40,
+        "adj": {
+          "_doc": "단계마다 조정표 한 줄(같은 뼈대라 무늬판은 그 단계 줄을 같이 쓴다) — scale: 크기 배 · tilt_deg: 바깥으로 눕힘 · ry_deg: 방위 덧돌림",
+          "young":  { "scale": 1, "tilt_deg": 0, "ry_deg": 0 },
+          "mid":    { "scale": 1, "tilt_deg": 0, "ry_deg": 0 },
+          "mature": { "scale": 1, "tilt_deg": 0, "ry_deg": 0 }
+        }
+      }
     },
     "alocasia_frydek": {
       "ko": "알로카시아 프라이덱",
@@ -126,6 +149,24 @@
         "drop_every_days": 7,
         "wake_days": 7,
         "wake_ladder_drop": 1
+      },
+      "draw": {
+        "_doc": [
+          "그림 — 로제트(rosette): 잎자루가 흙 속 구근에서 곧장 오른다(줄기 없음). 잎 방위는 phyllotaxis_deg 씩 돈다.",
+          "가장 새 잎이 가운데서 가장 곧게 서고, 오래된 잎일수록 older_tilt_deg 씩 더 바깥으로 눕는다(상한 max_tilt_deg).",
+          "잎자루 밑동은 가운데에서 spread_m 만큼 벌어진다. 크기 = leaf_size_m[단계] × adj[단계].scale."
+        ],
+        "form": "rosette",
+        "spread_m": 0.006,
+        "phyllotaxis_deg": 137.5,
+        "older_tilt_deg": 14,
+        "max_tilt_deg": 50,
+        "adj": {
+          "_doc": "단계마다 조정표 한 줄 — scale · tilt_deg · ry_deg (무늬판은 그 단계 줄을 같이 쓴다)",
+          "young":  { "scale": 1, "tilt_deg": 0, "ry_deg": 0 },
+          "mid":    { "scale": 1, "tilt_deg": 0, "ry_deg": 0 },
+          "mature": { "scale": 1, "tilt_deg": 0, "ry_deg": 0 }
+        }
       }
     }
   }

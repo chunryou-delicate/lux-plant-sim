@@ -60,6 +60,7 @@
 | `test_varie_boost.mjs` | ★ **D40 성숙 전 무늬 ×2 · 상한 0.9** — 파일 값이 실렸나 · 갈라진 잎 한 장이면 꺼지나 · 무늬가 줄지 않나 (크롬 없음) |
 | `test_skin_room_matches_zoom.mjs` | ★ **방이 그리는 그림 == 확대가 그리는 그림** — 이미 두 번 난 사고를 지킨다 |
 | `test_young_plant.mjs` | ★ **D46 흙에 자리 잡은 삽수 = «작은 그루»(조립기 youngPlantOf)** — 잎 N 장 = 그린 잎 N 장 · 화분만 걷힘 · 밑동 y=0 · 정본 무늬만 무늬 · 모주 조립을 안 흔듦 · 사진 |
+| `test_species_draw.mjs` | ★ **새 두 종 그림(youngPlantOf 종 갈래)** — PP 잎 N = 그린 잎 N · 줄기 마디 N · 판 = 정본 leafRows · 무늬판만 틴트 금지 · 흙 밑으로 안 들어감 · AL 새 잎이 가장 곧게 · 크기 = 실측 · null 셋 · 재질 따로 · 판 늦게 옴 → 알림 · 사진 |
 | `test_species_growth.mjs` | ★ **새 두 종(PP · AL) 생장 규칙** — 잎 간격 · 분홍 흐름 · 분홍 잎 줄 시듦 · 자르기 · 구근 · 겨울잠 · 무늬 몫 · 판 표 (크롬 없음 · 값은 파일에서 읽음) |
 | `test_prologue_varie.mjs` | 프롤로그 무늬 보장이 캐논(20% · 난수 스트림)을 안 깨나 — ⚠ §E 씨앗 92158 → **92231**(10-09 · D40 뒤 92158 은 잎1·2 가 굴림으로 무늬라 보장이 안 쓰임) |
 
@@ -210,6 +211,26 @@ plant_grow 헤드리스 · 씨앗 40판 · 코어와 같은 걸음(밝기 1.25�
         예전에 잎2 가 잠기던 59판을 첫 그루로 400일 ⇒ ✂ 열림 59/59 · 중앙 122일(10% 102 · 90% 182)
         표준 40판 ⇒ 잎3 갈라짐 중앙 114 · ✂ 중앙 118 그대로
 ```
+
+### 2026-10-09 · D45 그림 — 새 두 종을 «작은 그루» 입구(youngPlantOf)로 그린다
+
+✅ 총괄 · core D46 잇기 뒤(12a9540c). 몬스테라 길(원본 plant_grow)과 안 섞인다 — 원본에 PP·AL 그리개가 없어 새로 세웠다(두 벌 아님).
+```
+입구    asm.youngPlantOf({ species:'pink_princess'|'alocasia_frydek', plant: <species_growth 그루 상태> 또는 rows: leafRows, seed?, lightAz? })
+        → THREE.Group(밑동 y=0 · 화분 없음) | null(규칙 못 실음 · draw 칸 없음 · 잎 0장 = AL 구근·잠 → 화분만 그리면 된다)
+빌린 것  잎 GLB 정규화 = 원본 normalizeAsset 그대로(TAIL 로 냄) · 잎 상태 = 정본 leafRows(여기서 안 굴림)
+새 것    꼴 둘 — PP 덩굴(잎 한 장 = 마디 하나 · 마디 사이·줄기 굵기는 그 잎 단계) · AL 로제트(자루가 구근에서 곧장 · 새 잎이 가운데서 가장 곧게)
+값      growth_species.json 그 종 draw 칸 — 마디 사이 · 줄기 굵기·색 · 잎차례 각 · 기울기 · 오래된 잎 눕힘 · 단계마다 조정표 한 줄(scale · tilt_deg · ry_deg)
+크기    실측 미터(leaf_size_m) — 몬스테라 길처럼 그릇 지름에 맞춰 줄이지 않는다(potD 안 씀)
+흙      눕힌 잎이 흙 밑으로 들어가면 들어가지 않을 만큼만 눕힌다(정점으로 잼 · 자루 밑 8% 는 흙 속이라 뺌)
+        ⚠ 기하 상자 모서리로 재면 밑동이 흙에 붙은 AL 이 하나도 못 눕는다 — 처음 그렇게 짜서 걸렸다
+판      «쓸 때 한 장» 받는다(부팅 무게 0) · 받는 중이면 그 잎이 빠지고 skinsPending → 도착하면 onSkinChange 알림(다시 지을 것)
+재질    잎마다 떼어 낸다 — 방이 밴드 색을 재질에 얹으므로 나눠 쓰면 다른 그루까지 물든다 · 무늬판(skins/) 잎몸만 varieSkin 표
+userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRows · leafPivots(잎마다 피벗) · varieLeafKeys · missingAssets ·
+        failedAssets · skinsPending · tiltClamped · sizeM{h,d} · leaves:[](몬스테라와 같은 규약)
+```
+사진: docs/handoff/img/species_young_row.png (PP 잎 1·3·5·8 · AL 구근에서 40·100·160·200일)
+⚠ 확대창(plant_grow iframe)은 아직 PP·AL 을 못 그린다 — 확대도 같은 입구를 부르면 «방 = 확대»가 저절로 선다(core·leaf 차례).
 
 ### 2026-10-09 · D52 AL 구근은 «잠에 들 때» 찾는다 — 원룸 이사 계절별 «구근 첫 열어 보기» 몫
 
