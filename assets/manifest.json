@@ -16319,9 +16319,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "d3f7c5a6-4956-48d5-975f-1e475d5fd35f",
@@ -16346,7 +16346,8 @@
           "note": "cream marbling between white veins, matches ref"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_al_marble.png"
     },
     {
       "id": 830,
@@ -16359,9 +16360,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "bc016ec1-6cbb-485a-9cd2-d86b080dc4f2",
@@ -16399,9 +16400,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "2a20dbf6-9509-4844-a091-da8c782c581b",
@@ -16426,7 +16427,8 @@
           "note": "velvety dark green arrowhead with bold white veins"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_al_plain.png"
     },
     {
       "id": 832,
@@ -16439,9 +16441,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "7a63a1df-e54a-44f7-8deb-3fcba362acaf",
@@ -16479,9 +16481,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "73d7de56-9cb7-4bbf-83a5-81cb3ccaf874",
@@ -16506,7 +16508,8 @@
           "note": "upper half cream sector, lower half green with white veins, matches ref"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_al_sector.png"
     },
     {
       "id": 834,
@@ -16519,9 +16522,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "0d0be129-3c02-4d56-af8f-0f42e1843932",
@@ -16559,9 +16562,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "69b9539d-a42b-4c04-9d73-b527361f0894",
@@ -16586,7 +16589,8 @@
           "note": "veins and every split readable (not a silhouette); QA-4 brightness borderline 0.20-0.25; ref's mauve petiole shows in style B; QA-4 brightness ok on at least one measure (luma 0.237, HSV-V 0.254)"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_charcoal.png"
     },
     {
       "id": 836,
@@ -16599,9 +16603,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "2203e1f9-17e3-45cf-be67-697c43a33985",
@@ -16639,9 +16643,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "71185d4b-79e9-4a2e-9d13-63c1ba2e94d5",
@@ -16666,7 +16670,8 @@
           "note": "white leaf; interior saturation < 0.10 in all (style A ivory-warm 0.07-0.08, style B cool 0.03-0.04); white check ok: interior saturation 0.084"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_fullalbo.png"
     },
     {
       "id": 838,
@@ -16679,9 +16684,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "352997d7-b0cf-49ee-bea8-92c67e872c49",
@@ -16719,9 +16724,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "d6f8c8d5-d23f-4c8e-8a87-0f65a93f82e0",
@@ -16746,7 +16751,8 @@
           "note": "splits, veins and star specks readable (not a silhouette) but QA-4 brightness below 0.25 in every image; QA-4 brightness < 0.25 (luma 0.201, HSV-V 0.228)"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_galaxy_darkteal.png"
     },
     {
       "id": 840,
@@ -16759,9 +16765,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "64773f67-9e68-4f2f-bb73-c739c7b51e88",
@@ -16799,9 +16805,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "23037033-9328-40d4-9f31-1bfa81e83bc5",
@@ -16826,7 +16832,8 @@
           "note": "deep teal with gold veins and specks (not a listed dark family; luma 0.24-0.27)"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_galaxy_tealgold.png"
     },
     {
       "id": 842,
@@ -16839,9 +16846,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "89e8313f-2f43-4e4a-8743-6f2b9b4a2acb",
@@ -16879,9 +16886,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "f419e7ea-b285-4d7a-965d-c784fa03e28c",
@@ -16906,7 +16913,8 @@
           "note": "deep green with one lemon patch near the edge, matches ref"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_green_lemonpatch.png"
     },
     {
       "id": 844,
@@ -16919,9 +16927,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "26043740-0eae-4223-966b-3f0b7fe9eb61",
@@ -16959,9 +16967,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "c4906997-360e-454e-9786-0086ec256764",
@@ -16986,7 +16994,8 @@
           "note": "lime-yellow aurea streaks on deep green"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_green_yellow.png"
     },
     {
       "id": 846,
@@ -16999,9 +17008,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "8752b9b3-6f5e-46ea-998d-4afa1da7dce5",
@@ -17039,9 +17048,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "6310c089-96ae-4c35-8ce7-e05a6e73b535",
@@ -17066,7 +17075,8 @@
           "note": "cream sits in the centre/right following the ref rather than a strict half split along the midrib (most visible in _a)"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_halfmoon_greencream.png"
     },
     {
       "id": 848,
@@ -17079,9 +17089,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "1c7eed59-d90c-413e-8765-a021c0d472d9",
@@ -17119,9 +17129,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "e099b0ff-3c88-4b03-bf4a-83492e76170a",
@@ -17146,7 +17156,8 @@
           "note": "half white / half green readable"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_halfmoon_greenwhite.png"
     },
     {
       "id": 850,
@@ -17159,9 +17170,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "b0380266-ceb3-43f3-9080-d087636d1ce7",
@@ -17199,9 +17210,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "fadc737d-69a1-4f0f-8d17-e786da6782fa",
@@ -17226,7 +17237,8 @@
           "note": "mauve lavender-grey, darker on one side"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_mauve.png"
     },
     {
       "id": 852,
@@ -17239,9 +17251,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "767ca49b-531c-4d08-8496-69928959ea46",
@@ -17279,9 +17291,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "e3286a41-93af-4af9-a4b3-bf4e31dcaede",
@@ -17306,7 +17318,8 @@
           "note": "neon lime all over"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_neon_lime.png"
     },
     {
       "id": 854,
@@ -17319,9 +17332,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "dbeed628-16af-460c-8c8e-8d4f58a985cf",
@@ -17359,9 +17372,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "64163468-12a8-4796-85d1-e8f88836ca4a",
@@ -17386,7 +17399,8 @@
           "note": "plain deep green"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_plain.png"
     },
     {
       "id": 856,
@@ -17399,9 +17413,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "66dbc8e4-373e-499f-91fb-430bb687d57f",
@@ -17439,9 +17453,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "18790a45-7489-493a-8eb4-c070dc948700",
@@ -17466,7 +17480,8 @@
           "note": "coral rose-pink with pale veins and star flecks"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_rose_pink.png"
     },
     {
       "id": 858,
@@ -17479,9 +17494,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "431a2087-75fc-49c3-b38d-efa473c0eac5",
@@ -17519,9 +17534,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "a74c80c5-929d-431d-818a-46dec81612a3",
@@ -17546,7 +17561,8 @@
           "note": "cream speckled patches over green, matches ref"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_speckle_greencream.png"
     },
     {
       "id": 860,
@@ -17559,9 +17575,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "fcf1b222-7832-4f01-a1a6-0dac54de1202",
@@ -17599,9 +17615,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "e2ecdb67-495a-42de-afe4-ed78f7dcd1db",
@@ -17626,7 +17642,8 @@
           "note": "mostly cream with green margins (+ yellow tinge at top like ref); star flecks faint; style-B _a very pale"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_star_greenwhite.png"
     },
     {
       "id": 862,
@@ -17639,9 +17656,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "edefe7b1-8ca3-4300-995c-29f3f9a1566a",
@@ -17679,9 +17696,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "d25298e3-cb34-45c9-babf-502fc4acf668",
@@ -17706,7 +17723,8 @@
           "note": "cream + golden-yellow streaks; star flecks faint (ref shows none clearly either)"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_star_greenyellow.png"
     },
     {
       "id": 864,
@@ -17719,9 +17737,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "f016f509-c67b-4bcb-a767-d95479862b86",
@@ -17759,9 +17777,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "4d20667f-1b5a-4a2d-8abd-77157f77fc53",
@@ -17786,7 +17804,8 @@
           "note": "olive pale green with clearly visible cream star flecks"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_star_palegreen.png"
     },
     {
       "id": 866,
@@ -17799,9 +17818,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "69d512ab-65e6-484f-abc6-b64693fa2204",
@@ -17839,9 +17858,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "05f141e4-6a86-4aa8-8c0d-4136fe00d353",
@@ -17866,7 +17885,8 @@
           "note": "pink-white / mint split along midrib with flecks"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_star_pinkmint.png"
     },
     {
       "id": 868,
@@ -17879,9 +17899,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "6f7429cd-17dc-4efe-86cb-dd0951755203",
@@ -17919,9 +17939,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "3ceb083e-ff1c-4905-995c-8ddd5d999c54",
@@ -17946,7 +17966,8 @@
           "note": "golden-orange sector about half the leaf"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_variegata_gold.png"
     },
     {
       "id": 870,
@@ -17959,9 +17980,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 고른 판: 흰 테두리(반투명 흰 화소) 적은 쪽(10-09 잼) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "1a06930a-a966-4d8e-892a-b61ebace548c",
@@ -17999,9 +18020,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "89627105-01b5-4181-a357-76510cf1ef1b",
@@ -18026,7 +18047,8 @@
           "note": "dusty rose-pink with dark green vein streaks"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_variegata_pink.png"
     },
     {
       "id": 872,
@@ -18039,9 +18061,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "bdd3e6d8-b139-432d-be97-e7262d2df315",
@@ -18079,9 +18101,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "b8af938a-47d2-48e4-86f8-794996f85aea",
@@ -18106,7 +18128,8 @@
           "note": "thin white zebra stripes from midrib, matches ref"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_mon_zebra.png"
     },
     {
       "id": 874,
@@ -18119,9 +18142,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "ad9582ae-31c5-4eaf-b9db-230c789e2c40",
@@ -18159,9 +18182,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · r2 판(1차는 옅은 초록 줄무늬로 무지가 무늬로 읽힘) · b 고름(a 는 잎자루 뒤 덧잎) · 어두워 밝힘(hf_review1009)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · r2 판(1차는 옅은 초록 줄무늬로 무지가 무늬로 읽힘) · b 고름(a 는 잎자루 뒤 덧잎) · 어두워 밝힘(hf_review1009) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "5f052ad9-d63a-4feb-b2ca-6d8b80f93b77",
@@ -18204,7 +18227,8 @@
           "note": "r2 민무늬 · 잎자루 홈 · 밝힘 γ0.83~0.85(→0.25)"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_pp_green.png"
     },
     {
       "id": 876,
@@ -18217,9 +18241,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · r2 판 · a 고름(b 는 잎자루 뒤 덧잎) · 어두워 밝힘(hf_review1009)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · r2 판 · a 고름(b 는 잎자루 뒤 덧잎) · 어두워 밝힘(hf_review1009) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "0a471297-d9eb-46e2-8381-4311b71875e7",
@@ -18275,9 +18299,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "21796cb0-4453-4806-8de2-5a3818978e5b",
@@ -18302,7 +18326,8 @@
           "note": "large pink sectors over most of the leaf, matches ref"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_pp_heavy.png"
     },
     {
       "id": 878,
@@ -18315,9 +18340,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "dab22ee0-81f9-475a-9d75-c38bd4291e41",
@@ -18355,9 +18380,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "8ed28ff3-2c17-4381-8f7e-a2234d4d3225",
@@ -18382,7 +18407,8 @@
           "note": "dark green with pink marbled flecks/streak, matches ref"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_pp_marble.png"
     },
     {
       "id": 880,
@@ -18395,9 +18421,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "3a186114-d3b0-4986-af1f-bee01d5b9996",
@@ -18435,9 +18461,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "손그림(잉크·과슈)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "채택",
+      "final_status": "approved",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 총괄 결정 «카드는 결 A» — 게임 크기 512 투명 PNG = game_file",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "712f685f-40e7-4a4a-b08e-342385f45251",
@@ -18462,7 +18488,8 @@
           "note": "entirely bubblegum pink, no green (follows prompt; ref is darker maroon-pink)"
         }
       ],
-      "ledger": "gen/hf_runs/leaf_20261009.json"
+      "ledger": "gen/hf_runs/leaf_20261009.json",
+      "game_file": "illust/cards/card_pp_pink.png"
     },
     {
       "id": 882,
@@ -18475,9 +18502,9 @@
       "type": "카드-잎",
       "category": "카드·식물",
       "style": "파스텔저폴리(그림)",
-      "status": "후보(결 고르기 전)",
-      "final_status": "candidate",
-      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로)",
+      "status": "참고(유니티)",
+      "final_status": "reference",
+      "note": "저장소 사본 1024 PNG · 잎끝 줄기 지움·어두운 가족 밝힘은 tools/leaf/hf_review1009.py(2k 원본은 그대로) · 10-10 결 A 로 정해짐 — 결 B 는 유니티 판 참고로 남김(지우지 않음)",
       "is_glb": false,
       "model": "gpt_image_2_5",
       "job_id": "606ad95e-8427-432a-83d8-7956dbe5627d",
