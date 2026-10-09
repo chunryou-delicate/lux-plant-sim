@@ -14666,7 +14666,7 @@ function commitPlaceInner(what, hit, opt = {}) {
     if (!q) return placeFailed(new Error(`그 식물을 못 찾았습니다 (${spIdOf(what)})`));
     try {
       const r = resolvePlacement(q.id, atOf(hit), placeOpt());
-      if (youngTooWide(q, r.slotId)) { const e = new Error('이 칸엔 너무 크게 자랐습니다 — 바닥이나 더 넓은 자리에 두세요'); e.tutorialInput = true; return placeFailed(e); }   /* D55 ② */
+      if (youngTooWide(q, r.slotId)) { const e = new Error(YOUNG_WIDE_NO_KO); e.tutorialInput = true; return placeFailed(e); }   /* D55 ② */
       SPC.setSpeciesAt(S, q.id, { slotId: r.slotId, at: r.at });
       banner(`🌿 ${SPC.SPECIES_KO[q.species] || '새 식물'}을 놓았습니다`, speciesPlaceSub(q));
       unlockAfterFix();
@@ -14688,7 +14688,7 @@ function commitPlaceInner(what, hit, opt = {}) {
     try {
       const to = resolvePlacement(c.id, atOf(hit), placeOpt());
       const w = c.status === 'established' ? youngTooWide(c, to.slotId) : null;
-      if (w) { const e = new Error(`이 칸엔 너무 크게 자랐습니다 — 바닥이나 더 넓은 자리에 두세요`); e.tutorialInput = true; return placeFailed(e); }
+      if (w) { const e = new Error(YOUNG_WIDE_NO_KO); e.tutorialInput = true; return placeFailed(e); }
     } catch { /* 못 재면 막지 않는다 */ }
     try {
       setCuttingAt(S, c, atOf(hit), placeOpt());
@@ -15489,6 +15489,7 @@ function cutSpeciesNow(id, nodeNo) {
    ② 새로 놓기 — 그 칸 한도의 2배를 넘는 그루는 그 칸에 안 놓이고 «더 넓은 자리» 안내(§commitPlace 삽수 갈래 · 강제로 옮기지 않는다)
    폭의 자는 방이 그린 그 그루(growth sizeM.d · 회전 무관 지름) — 못 재면(안 그렸으면) 말을 안 한다(지어내지 않는다) */
 const YOUNG_WIDE_X = 2;
+const YOUNG_WIDE_NO_KO = '이 그루는 이 칸엔 너무 큽니다 — 더 넓은 자리에 두세요';   /* [plan] cf7bbabe */
 const youngWideSaid = new Set();     /* `${cuttingId}|${slotId}` — 이 판에서 한 번 */
 let youngWideDay = null;
 function slotLimitOf(slotId) {
@@ -15518,7 +15519,8 @@ function maybeSayYoungWide() {
       const w = youngTooWide(c, c.slotId);
       if (!w) continue;
       youngWideSaid.add(k); youngWideDay = S.day;
-      const ev = { id: 'cut_too_wide', ko: `키운 그루가 ${slotLabel(c.slotId)}보다 크게 자랐습니다 — 바닥이나 더 넓은 자리로 옮겨 주세요`,
+      /* [plan] cf7bbabe — «바닥»은 뺀다(원룸 바닥은 가구 빛 D · 옮기면 멈춘다) · 대사는 cutTooWide */
+      const ev = { id: 'cut_too_wide', ko: `키운 그루가 ${slotLabel(c.slotId)}보다 크게 자랐습니다 — 더 넓고 밝은 자리로 옮겨 주세요`,
                    cuttingId: c.id, slotId: c.slotId, d: +w.d.toFixed(2), limit: w.lim };
       pushLog(S, '🌿 ' + ev.ko);
       try { dlgOpen(story.events([ev], S)); } catch { }
@@ -15828,7 +15830,9 @@ function provisionalSpot() {
    ⚠ 못 재면 null — 말을 안 한다(지어내지 않는다). 그날 하늘 하나로 잰다(7일 평균은 자라는 쪽 몫) — «그날 이미 어두운 자리»만 말한다.
    ⚠ 글은 [plan] 몫이다 — 아래 PLACE_DARK_KO 한 곳에만 둔다(초안: [house] 안). */
 const PLACE_DARK_KO = Object.freeze({
-  who: { pot: '몬스테라', empty: '몬스테라', cutting: '삽수' },
+  who: { pot: '몬스테라', empty: '몬스테라', cutting: '삽수',
+         /* ★ D57(총괄 · plan 10fcda13) — 무늬 삽수는 자람 문턱이 ×1.4(propagation §stepCuttings · 띠는 이미 무늬로 잰다) · 주어 «무늬 삽수» */
+         varieCutting: '무늬 삽수' },
   /* ⏸ 2026-10-09 [plan] a0d4b825 «무늬 그루는 무늬 문턱(×1.4) · 주어 무늬 몬스테라» — **안 넣었다(core · 참이 아님)**:
        그루의 자람 문턱은 무늬여도 TH.min 2.7 이다(plant_grow §growthMin · ×1.4 는 무늬 확률 대역에만). 무늬 모주는 반지하 창턱 3.68 에서
        실제로 자란다(튜토 판 잎 1 → 3). ×1.4 로 가르면 그 창턱에 «무늬 몬스테라가 자라기엔 어둡습니다»가 뜬다 — plan 에 되물음 */
@@ -15886,7 +15890,7 @@ function darkPlaceWarn(g) {
   if (!g || !g.obj || (!g.obj.at && !g.obj.slotId)) return null;
   const here = growBandAt(g.obj.at ? g.obj : g.obj.slotId, g.variegated);
   if (!here || !here.dark) return null;
-  const who = PLACE_DARK_KO.who[g.kind] || '몬스테라';
+  const who = (g.kind === 'cutting' && g.variegated) ? PLACE_DARK_KO.who.varieCutting : (PLACE_DARK_KO.who[g.kind] || '몬스테라');
   const fill = t => t.replace('{who}', who);
   /* 제일 밝은 칸 — 손가락·아래글과 «같은 칸»(§guideBrightSlot) */
   const best = guideBrightSlot(null);
@@ -15941,8 +15945,17 @@ const FURN_LIGHT_KO = Object.freeze({
        atTop(가르는 자리가 이미 맨 윗단)이면 «맨 윗단에 두고 » → «여기에 » · «집게등»은 화면에서 «클립형 식물등»(상점 이름) */
   clipWinter: '{at}클립형 식물등을 물리면 겨울에도 자랍니다',
   clipSummer: '{at}클립형 식물등을 물리면 여름엔 자랍니다',
-  clipNovice: '{at}클립형 식물등을 물리면 자랍니다'
-  /* ⏸ 무늬 첫 줄(vA~vnone)은 걷었다 — plan e6421e0d: 무늬 그루도 자람 문턱이 같다(plant_grow §growthMin 2.7) · 같은 첫 줄을 쓴다 */
+  clipNovice: '{at}클립형 식물등을 물리면 자랍니다',
+  /* ⏸ 무늬 «그루» 첫 줄은 없다 — 무늬 모주도 자람 문턱 2.7(plant_grow §growthMin · plan e6421e0d) · 같은 첫 줄을 쓴다.
+     ★ D57(총괄 · plan 10fcda13 · house ffaf0d84) — **무늬 삽수**(placeVerdict kind:'cutting' · variegated)만 첫 줄이 따로다(문턱 ×1.4 · 참) */
+  cA:  '여기면 무늬 삽수가 겨울에도 자랍니다',
+  cB:  '무늬 삽수는 여름엔 등 없이 자랍니다 — 겨울엔 식물등을 켜야 자랍니다',
+  cBp: '무늬 삽수는 여름엔 등 없이 자랍니다 — 겨울엔 등을 켜도 모자랍니다',
+  cC:  '무늬 삽수는 여기선 식물등이 있어야 자랍니다',
+  cD:  '여기선 무늬 삽수가 안 자랍니다 — 무늬 삽수는 더 밝아야 자랍니다',
+  cgrow: '여기면 무늬 삽수가 자랍니다',
+  clamp: '무늬 삽수는 여기선 식물등이 있어야 자랍니다',
+  cnone: '여기선 무늬 삽수가 안 자랍니다 — 창턱에 두고 등을 켜세요'
 });
 function furnLightLine(uid) {
   if (!uid || !io.light || typeof io.light.placeVerdict !== 'function') return null;
@@ -15961,7 +15974,7 @@ function furnLightLine(uid) {
 function furnLightTextOf(v, novice) {
   try {
     const K = FURN_LIGHT_KO;
-    const first = K[v.key];
+    const first = (v.kind === 'cutting' && v.variegated && K['c' + v.key]) ? K['c' + v.key] : K[v.key];   /* D57 — 무늬 삽수만 */
     const text = first + (v.key === 'C' && v.wnShort ? K.Cshort : '');
     const hGrow = !!(v.higher && !(v.key === 'A' || v.key === 'B' || v.key === 'Bp')
                      && Number.isFinite(v.higher.s0) && Number.isFinite(v.th) && v.higher.s0 >= v.th);

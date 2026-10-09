@@ -53,7 +53,7 @@ try {
   /* ③ 같은 가구 다른 칸 */
   const r3 = await J(`(()=>{ const r=window.__byeotCommitPlace('cutting:${set.id}', ${JSON.stringify(set.other)}); const c=window.__S().cuttings.find(x=>x.id===${JSON.stringify(set.id)}); return { r, slot:c.slotId }; })()`);
   console.log('③ —', JSON.stringify(r3));
-  ok(r3.slot === set.slot && /너무 크게/.test(r3.r.label || ''), `옆 칸엔 안 놓인다(제자리 ${r3.slot} · «${r3.r.label}»)`);
+  ok(r3.slot === set.slot && /너무 큽니다/.test(r3.r.label || ''), `옆 칸엔 안 놓인다(제자리 ${r3.slot} · «${r3.r.label}»)`);
   /* ④ 넉넉한 자리 */
   if (set.desk && set.desk.lim * 2 >= v1.d) {
     const r4 = await J(`(()=>{ const r=window.__byeotCommitPlace('cutting:${set.id}', ${JSON.stringify(set.desk.id)}); const c=window.__S().cuttings.find(x=>x.id===${JSON.stringify(set.id)}); return { r, slot:c.slotId }; })()`);
