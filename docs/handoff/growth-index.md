@@ -240,6 +240,7 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
         ⚠ 이 창은 엔진이기도 하다 — 새 종을 보는 동안에도 몬스테라는 가려진 채 굴러간다
 방=확대  test_species_room_zoom — PP 4·8 · AL 민무늬·무늬 · 잎마다 어긋남 0 · 대조(씨앗 바꿈)는 어긋남 · AL 잠(잎 0)은 화분만
          ⚠ 게임 판(test_skin_room_matches_zoom)에는 core 가 PP·AL 화분을 이은 뒤 이 두 종 판을 더한다
+           — core 10-09: 새 종은 S.pots 가 아니라 S.species.pots[]{ id, species, plant(species/1), slotId, … } 에 산다 → 판은 S.species.pots[i].plant 로
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
@@ -543,6 +544,8 @@ novice 은 등 0·1·2 모두 bright 100%
 ## ⑤ ⏸ 대기
 
 ```
+새 종 게임 판 방=확대   core 가 화면(cutpot spec species · 확대 setSpeciesView)을 이으면 test_skin_room_matches_zoom 에 PP·AL 판(S.species.pots[i].plant)
+원룸 이사 계절(YD0)     총괄 봇 판(cut1008c)이 정하면 probe_seedplant_oneroom ①· probe_cutting_firstleaf_oneroom ③ · probe_species_oneroom 다시
 원룸 「기준 배치」   박사님 결정. 후보 A~D 의 real 400일 표는 §10.22 에 있다 — 고르시면 그 판이 정본이 된다
 좌표 조도 계약      ✅ 닫힘 (D · 9d99c92). 「바닥에 시루를 둘 수 있게」는 다른 물음 — 박사님 묶음
 무늬 등급 → 성숙잎 그림  ✅ 박사님 D4 «잇기». 확대는 08-16 부터 이어져 있다. ⛔ «방»이 안 이어져 있다 — [core] 고침 대기(위 §등급과 그림 10-07)
