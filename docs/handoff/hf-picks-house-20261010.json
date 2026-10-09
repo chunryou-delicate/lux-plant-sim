@@ -1,0 +1,445 @@
+{
+ "_what": "[house] Higgsfield 고름 — 2D 44묶음(8104a5ae) · 3D 원화(f42b23ec) · 2026-10-10 · 총괄이 3D 입력·4k 참조로 쓴다",
+ "_engine": {
+  "web": "tripo_h3_1_image_to_3d · texture_quality standard · pbr false · face_limit 8000 (9)",
+  "unity": "tripo_h3_1_image_to_3d · texture_quality detailed · pbr true · face_limit 8000 (12)"
+ },
+ "run_3d_web": [
+  {
+   "id": "shop_display",
+   "k": 1,
+   "use": "web",
+   "job_id": "b905652d-01fc-4557-8ba2-9fb71c56674b",
+   "saved_path": "assets/gen/v2_furn/c_shop_display_1.jpg"
+  },
+  {
+   "id": "order_board",
+   "k": 2,
+   "use": "web",
+   "job_id": "e36be6c8-a3d3-4491-9513-42a0a4719216",
+   "saved_path": "assets/gen/v2_furn/c_order_board_2.jpg"
+  },
+  {
+   "id": "nightstand",
+   "k": 2,
+   "use": "web",
+   "job_id": "65452108-cacb-4d3c-b225-57d8d318aa07",
+   "saved_path": "assets/gen/v2_furn/c_nightstand_2.jpg"
+  },
+  {
+   "id": "bench",
+   "k": 3,
+   "use": "web",
+   "job_id": "f546279e-5a28-4137-98a5-72ec9f5fefb8",
+   "saved_path": "assets/gen/v2_furn/c_bench_3.jpg"
+  },
+  {
+   "id": "shop_sign_aframe",
+   "k": 1,
+   "use": "web",
+   "job_id": "a5f2e4b5-3874-429b-8001-84a886e9eca0",
+   "saved_path": "assets/gen/v2_furn/c_shop_sign_aframe_1.jpg"
+  }
+ ],
+ "run_3d_unity_kit": [
+  {
+   "id": "u_kit_wall_pipes",
+   "k": 2,
+   "use": "unity",
+   "job_id": "e39b1930-3a7c-4628-9e78-5f45d026e04d",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_pipes_2.jpg"
+  },
+  {
+   "id": "u_kit_meter_box",
+   "k": 1,
+   "use": "unity",
+   "job_id": "9c29f78d-0526-4f9c-b5c0-d0b310127401",
+   "saved_path": "assets/gen/v2_hf/unity/c_meter_box_1.jpg"
+  },
+  {
+   "id": "u_kit_window_well_grate",
+   "k": 2,
+   "use": "unity",
+   "job_id": "1ead83e7-9ce5-4010-b9d0-a183670a82e8",
+   "saved_path": "assets/gen/v2_hf/unity/c_window_well_grate_2.jpg"
+  },
+  {
+   "id": "u_kit_wall_shelf_bracket",
+   "k": 1,
+   "use": "unity",
+   "job_id": "485ad66c-12b7-452d-b397-e98505d510b7",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_shelf_bracket_1.jpg"
+  },
+  {
+   "id": "u_kit_wall_clothes_rail",
+   "k": 2,
+   "use": "unity",
+   "job_id": "29467939-df63-4128-9096-fb39383386b8",
+   "saved_path": "assets/gen/v2_hf/unity/c_wall_clothes_rail_2.jpg"
+  },
+  {
+   "id": "u_kit_door_mat",
+   "k": 1,
+   "use": "unity",
+   "job_id": "f8ad5344-8551-4b14-8dcc-bc845751098e",
+   "saved_path": "assets/gen/v2_hf/unity/c_door_mat_1.jpg"
+  },
+  {
+   "id": "u_kit_pendant_lamp",
+   "k": 1,
+   "use": "unity",
+   "job_id": "a658432b-27de-47e4-b0e9-37208b55f026",
+   "saved_path": "assets/gen/v2_hf/unity/c_pendant_lamp_1.jpg"
+  },
+  {
+   "id": "u_kit_shoe_rack_small",
+   "k": 2,
+   "use": "unity",
+   "job_id": "45def063-f9d4-432c-8594-035de3feebe4",
+   "saved_path": "assets/gen/v2_hf/unity/c_shoe_rack_small_2.jpg"
+  }
+ ],
+ "unity_tex_4k_done_pick": [
+  {
+   "id": "u_tex_concrete_wall",
+   "k": 4,
+   "use": "tex",
+   "job_id": "39e7f4b7-a798-4884-862c-6b67bb52d31c",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_wall_4.jpg"
+  },
+  {
+   "id": "u_tex_concrete_ceiling",
+   "k": 1,
+   "use": "tex",
+   "job_id": "5fe80f06-dd79-44aa-a069-fd5c50f0cba0",
+   "saved_path": "assets/gen/v2_hf/unity/tex_concrete_ceiling_1.jpg"
+  },
+  {
+   "id": "u_tex_stair_terrazzo",
+   "k": 1,
+   "use": "tex",
+   "job_id": "ab7868a1-a061-4ae4-be5c-28e305c17597",
+   "saved_path": "assets/gen/v2_hf/unity/tex_stair_terrazzo_1.jpg"
+  }
+ ],
+ "unity_tex_4k_refs_from_2d": {
+  "u_tex_banjiha_wallpaper": {
+   "id": "banjiha_wallpaper",
+   "k": 3,
+   "job_id": "bf00e808-4b94-4cbc-87e9-4af97e3c8f7e",
+   "saved_path": "assets/gen/v2_hf/room/banjiha_wallpaper_3.jpg",
+   "why": "이음 가장 좋음(2.3/2.4 · 귀 0.7%) · 꽃이 줄에 ~10 → 판 축척으로 6~8cm"
+  },
+  "u_tex_banjiha_lino": {
+   "id": "banjiha_lino",
+   "k": 4,
+   "job_id": "a65cbe21-d185-46a0-8292-9bbe1f84f62f",
+   "saved_path": "assets/gen/v2_hf/room/banjiha_lino_4.jpg",
+   "why": "이음 가장 좋음(1.39/1.59)"
+  },
+  "u_tex_oneroom_oak": {
+   "id": "oneroom_oak",
+   "k": 4,
+   "job_id": "a9d4d8e6-41dc-447f-8f03-08ec8b8a639b",
+   "saved_path": "assets/gen/v2_hf/room/oneroom_oak_4.jpg",
+   "why": "이음 가장 좋음 · 판 한 방향"
+  },
+  "u_tex_villa_brick": {
+   "id": "outside_villa_brick",
+   "k": 3,
+   "job_id": "386f8927-929a-4f81-bfa9-17c09f00f3e1",
+   "saved_path": "assets/gen/v2_hf/room/outside_villa_brick_3.jpg",
+   "why": "하나뿐 · 판에 창 4×4 → 축척"
+  },
+  "u_tex_oneroom_wallpaper": "총괄 r2(무늬 없음) 를 house 가 고른 뒤"
+ },
+ "picks_2d": [
+  {
+   "id": "rug",
+   "k": 2,
+   "job_id": "98e26aec-e71d-4dab-95de-ef7616f90bf3",
+   "saved_path": "assets/gen/v2_hf/rug/rug_2.jpg",
+   "why": "테두리 띠 또렷 · 틀 꽉"
+  },
+  {
+   "id": "rug_mint",
+   "k": 3,
+   "job_id": "3d1fac81-08f5-497d-aa0d-1f1fc3319f60",
+   "saved_path": "assets/gen/v2_hf/rug/rug_mint_3.jpg",
+   "why": "마름모 테두리 깨끗"
+  },
+  {
+   "id": "rug_check_butter",
+   "k": 4,
+   "job_id": "f2239492-275c-49f7-8e8c-b96c395ff7e5",
+   "saved_path": "assets/gen/v2_hf/rug/rug_check_butter_4.jpg",
+   "why": "술 양쪽 · 여백 적음"
+  },
+  {
+   "id": "rug_leaf_sage",
+   "k": 2,
+   "job_id": "899e9717-c4d6-4561-8952-7558ac4b9253",
+   "saved_path": "assets/gen/v2_hf/rug/rug_leaf_sage_2.jpg",
+   "why": "구멍 난 잎 · 술 양쪽"
+  },
+  {
+   "id": "rug_runner_stripe",
+   "k": 4,
+   "job_id": "550eb9da-9026-4e92-9b33-e34594e05274",
+   "saved_path": "assets/gen/v2_hf/rug/rug_runner_stripe_4.jpg",
+   "why": "술 위아래 · 틀 꽉"
+  },
+  {
+   "id": "poster_monstera",
+   "k": 1,
+   "job_id": "e5f3097a-ec37-4666-9a06-5c5dd1d24377",
+   "saved_path": "assets/gen/v2_hf/wall/poster_monstera_1.jpg",
+   "why": "구멍·공중뿌리 · 틀 장식 없음(k3 은 장식 테두리)"
+  },
+  {
+   "id": "poster_seaside",
+   "k": 1,
+   "job_id": "f98614de-3e88-48a9-bc91-2ef3999685b0",
+   "saved_path": "assets/gen/v2_hf/wall/poster_seaside_1.jpg",
+   "why": ""
+  },
+  {
+   "id": "poster_windowcat",
+   "k": 3,
+   "job_id": "fcbe7602-fbf9-4af8-852d-c17cc9a9fd79",
+   "saved_path": "assets/gen/v2_hf/wall/poster_windowcat_3.jpg",
+   "why": "고양이가 커서 작게도 읽힘"
+  },
+  {
+   "id": "frame_field",
+   "k": 1,
+   "job_id": "54b30b8f-d73c-44bc-b455-4465adfc8082",
+   "saved_path": "assets/gen/v2_hf/wall/frame_field_1.jpg",
+   "why": ""
+  },
+  {
+   "id": "frame_tinymonstera",
+   "k": 1,
+   "job_id": "65df7e27-285b-4549-b30c-f7b94c348b14",
+   "saved_path": "assets/gen/v2_hf/wall/frame_tinymonstera_1.jpg",
+   "why": ""
+  },
+  {
+   "id": "poster_mountain",
+   "k": 3,
+   "job_id": "96a1ec73-6027-47e9-9c43-74a29b0e6fe7",
+   "saved_path": "assets/gen/v2_hf/wall/poster_mountain_3.jpg",
+   "why": ""
+  },
+  {
+   "id": "poster_moon",
+   "k": 2,
+   "job_id": "41585ef4-5174-4083-a28b-2dae5fc799f0",
+   "saved_path": "assets/gen/v2_hf/wall/poster_moon_2.jpg",
+   "why": "여덟 · 완만한 호"
+  },
+  {
+   "id": "poster_fruit",
+   "k": 1,
+   "job_id": "4dc814d7-e13f-4c71-aadd-88aeb9b2fde7",
+   "saved_path": "assets/gen/v2_hf/wall/poster_fruit_1.jpg",
+   "why": ""
+  },
+  {
+   "id": "poster_plantshelf",
+   "k": 3,
+   "job_id": "1030dfe6-a749-4414-aec5-7ce78d609708",
+   "saved_path": "assets/gen/v2_hf/wall/poster_plantshelf_3.jpg",
+   "why": "작게 걸려도 읽힘(k1 은 빽빽)"
+  },
+  {
+   "id": "poster_shapes",
+   "k": 2,
+   "job_id": "c86d885d-08a9-49a7-baad-ab1836abadaa",
+   "saved_path": "assets/gen/v2_hf/wall/poster_shapes_2.jpg",
+   "why": "고요한 짜임"
+  },
+  {
+   "id": "frame_dog",
+   "k": 1,
+   "job_id": "3bab6eb8-ef40-4e2c-9ae3-fc0d58725b27",
+   "saved_path": "assets/gen/v2_hf/wall/frame_dog_1.jpg",
+   "why": "바탕 단순"
+  },
+  {
+   "id": "frame_pressedflower",
+   "k": 2,
+   "job_id": "20884693-09bd-4f7c-8e23-5ddefd9dac2b",
+   "saved_path": "assets/gen/v2_hf/wall/frame_pressedflower_2.jpg",
+   "why": "잎·뿌리 · 표본 결"
+  },
+  {
+   "id": "poster_rainyalley",
+   "k": 3,
+   "job_id": "1fbb94e0-5ee9-4e97-949e-532eae574704",
+   "saved_path": "assets/gen/v2_hf/wall/poster_rainyalley_3.jpg",
+   "why": "간판·글자 없음(일꾼 확대 확인)"
+  },
+  {
+   "id": "postcards",
+   "k": 2,
+   "job_id": "05064312-939d-4470-9cee-113e53e96241",
+   "saved_path": "assets/gen/v2_hf/wall/postcards_2.png",
+   "why": ""
+  },
+  {
+   "id": "calendar_spring",
+   "k": 2,
+   "job_id": "2bb27b2d-e7da-48f6-b29a-4e5c9f4521b3",
+   "saved_path": "assets/gen/v2_hf/wall/calendar_spring_2.jpg",
+   "why": "일꾼 고름 · 칸 격자 기준"
+  },
+  {
+   "id": "calendar_summer",
+   "k": 1,
+   "job_id": "e3ff6541-434f-476a-a87d-99dfd5c00ce0",
+   "saved_path": "assets/gen/v2_hf/wall/calendar_summer_1.jpg",
+   "why": "봄 격자와 4px 안"
+  },
+  {
+   "id": "calendar_autumn",
+   "k": 2,
+   "job_id": "9e5c773d-b5ce-404f-a712-12c15eac0441",
+   "saved_path": "assets/gen/v2_hf/wall/calendar_autumn_2.jpg",
+   "why": "봄 격자와 4px 안"
+  },
+  {
+   "id": "calendar_winter",
+   "k": 3,
+   "job_id": "6b4b8769-0d58-442f-85f9-c02f251d3a0b",
+   "saved_path": "assets/gen/v2_hf/wall/calendar_winter_3.jpg",
+   "why": "봄 격자와 4px 안"
+  },
+  {
+   "id": "bulletin_notes",
+   "k": 2,
+   "job_id": "844be7dd-e28d-4961-a96b-9676bfa93301",
+   "saved_path": "assets/gen/v2_hf/wall/bulletin_notes_2.jpg",
+   "why": "성글고 깨끗"
+  },
+  {
+   "id": "banjiha_wallpaper",
+   "k": 3,
+   "job_id": "bf00e808-4b94-4cbc-87e9-4af97e3c8f7e",
+   "saved_path": "assets/gen/v2_hf/room/banjiha_wallpaper_3.jpg",
+   "why": "이음 가장 좋음(2.3/2.4 · 귀 0.7%) · 꽃이 줄에 ~10 → 판 축척으로 6~8cm"
+  },
+  {
+   "id": "banjiha_lino",
+   "k": 4,
+   "job_id": "a65cbe21-d185-46a0-8292-9bbe1f84f62f",
+   "saved_path": "assets/gen/v2_hf/room/banjiha_lino_4.jpg",
+   "why": "이음 가장 좋음(1.39/1.59)"
+  },
+  {
+   "id": "stain_drip",
+   "k": 2,
+   "job_id": "70e26c2b-61a4-4c70-b6ae-3d69d3dc159e",
+   "saved_path": "assets/gen/v2_hf/room/stain_drip_2.png",
+   "why": "흘러내림 · 곱하기 섞기+흐림"
+  },
+  {
+   "id": "mold_corner",
+   "k": 1,
+   "job_id": "083f9831-2e5b-4e77-9a21-1fd98fd3c3c4",
+   "saved_path": "assets/gen/v2_hf/room/mold_corner_1.png",
+   "why": "점 결"
+  },
+  {
+   "id": "damp_under_window",
+   "k": 2,
+   "job_id": "10f9c6ea-5a3f-434d-ae2d-b38ae6d5e2be",
+   "saved_path": "assets/gen/v2_hf/room/damp_under_window_2.png",
+   "why": ""
+  },
+  {
+   "id": "banjiha_window_view_day",
+   "k": 3,
+   "job_id": "4730ba74-52d6-4c16-8c1a-fefcc539cd27",
+   "saved_path": "assets/gen/v2_hf/room/banjiha_window_view_day_3.jpg",
+   "why": "일꾼 고름"
+  },
+  {
+   "id": "banjiha_window_view_night",
+   "k": 2,
+   "job_id": "86d95e00-8fc7-4f69-ae62-503b0a02c88d",
+   "saved_path": "assets/gen/v2_hf/room/banjiha_window_view_night_2.jpg",
+   "why": "낮 k3 구도 그대로"
+  },
+  {
+   "id": "oneroom_oak",
+   "k": 4,
+   "job_id": "a9d4d8e6-41dc-447f-8f03-08ec8b8a639b",
+   "saved_path": "assets/gen/v2_hf/room/oneroom_oak_4.jpg",
+   "why": "이음 가장 좋음 · 판 한 방향"
+  },
+  {
+   "id": "oneroom_window_view_day",
+   "k": 3,
+   "job_id": "6cbaaf4e-ad6d-4e4f-9241-f82c7bd8a52d",
+   "saved_path": "assets/gen/v2_hf/room/oneroom_window_view_day_3.jpg",
+   "why": "일꾼 고름"
+  },
+  {
+   "id": "oneroom_window_view_dusk",
+   "k": 1,
+   "job_id": "a980584f-ddf9-4958-9c76-cc0cb6d34bd1",
+   "saved_path": "assets/gen/v2_hf/room/oneroom_window_view_dusk_1.jpg",
+   "why": ""
+  },
+  {
+   "id": "oneroom_window_view_night",
+   "k": 2,
+   "job_id": "e6498fb7-2210-461e-aa3e-93ebe0ba59e2",
+   "saved_path": "assets/gen/v2_hf/room/oneroom_window_view_night_2.jpg",
+   "why": "밤 하늘 · 창 불빛(k1 은 해질녘 같음)"
+  },
+  {
+   "id": "outside_villa_brick",
+   "k": 3,
+   "job_id": "386f8927-929a-4f81-bfa9-17c09f00f3e1",
+   "saved_path": "assets/gen/v2_hf/room/outside_villa_brick_3.jpg",
+   "why": "하나뿐 · 판에 창 4×4 → 축척"
+  },
+  {
+   "id": "card_laundry_basket",
+   "k": 2,
+   "job_id": "e1ed8531-02c7-4383-8dff-8809ed76b579",
+   "saved_path": "assets/gen/v2_hf/card/laundry_basket_2.png",
+   "why": "IoU 0.907 · ΔE 7.7"
+  },
+  {
+   "id": "card_heater",
+   "k": 2,
+   "job_id": "ce0c6b48-40c3-4ad1-9915-aedc7e7059ee",
+   "saved_path": "assets/gen/v2_hf/card/heater_2.png",
+   "why": "맞춘 IoU 0.931 · ΔE 11.3(근소) · 눈으로 같음"
+  },
+  {
+   "id": "card_backpack",
+   "k": 1,
+   "job_id": "5e7f312a-8fff-413a-8aa3-8b2894ffbb18",
+   "saved_path": "assets/gen/v2_hf/card/backpack_1.png",
+   "why": "맞춘 IoU 0.903 · ΔE 9.5"
+  },
+  {
+   "id": "card_drying_rack",
+   "k": 1,
+   "job_id": "1af30133-252f-483e-9e1c-da715a2df111",
+   "saved_path": "assets/gen/v2_hf/card/drying_rack_1.png",
+   "why": "가는 살 탓에 수가 못 넘음 · 눈으로 같음"
+  }
+ ],
+ "skipped_2d": {
+  "card_nightstand": "협탁 3D 를 다시 뽑는 중(r2) — 새 GLB 로 그림을 다시 찍는다",
+  "card_desk": "짙은 갈색으로 칠해져 방 안 주황 책상과 안 맞음(ΔE 19~22)",
+  "card_greenhouse_cabinet": "유리가 나무로 바뀜(ΔE 42)",
+  "oneroom_wallpaper": "넷 다 꽃무늬(참조 탓) — 총괄 r2 를 기다림"
+ },
+ "card_4B": "안 돌린다(지금). 일곱 중 넷만 쓸 만했고, 셋은 사는 물건과 어긋났다(책상 색 · 온실장 유리 · 협탁은 3D 다시). 84줄을 칠하면 장마다 이런 어긋남을 다 걸러야 한다 — 가게 그림은 3D 렌더(사는 그것)를 정본으로 두고, 어색한 것은 GLB 를 고친다. 쓸 만한 넷(빨래 바구니·난방기·배낭·건조대)만 바꿔 끼운다."
+}
