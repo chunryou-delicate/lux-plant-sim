@@ -717,6 +717,9 @@ const MAIN_QUESTS = Object.freeze([
        새로 짓지 않는다 — 삽수가 뿌리내린 날 그 자리의 밴드가 그대로 실린다. */
   Object.freeze({
     id: 'varie_bright',
+    /* ★ 2026-10-09 [plan] — 반지하 줄이다(원룸엔 oneroom_root_bright 가 따로 있다). 표지가 없어 이사 뒤에도 열린 채 남아
+       원룸에서 반지하 독촉을 했다([core] 6ebd882e 갈래 판 · 원룸 후반 13달). §questRoomOk — 안 끝내고 이사하면 «잠김»으로 남는다. */
+    room: 'banjiha',
     ko: '밝은 데서 뿌리내리기',
     /* ★ 체력이 0 인 까닭이 곧 이 이름이다 — 보상은 **등급 자체**다(위 ⚠) */
     reward: '무늬 등급이 오릅니다',
@@ -738,6 +741,9 @@ const MAIN_QUESTS = Object.freeze([
      ⚠ 보상은 체력이 아니다 — **이사가 열리는 것**이 보상이다. */
   Object.freeze({
     id: 'sell_varie',
+    /* ★ 2026-10-09 [plan] — 반지하 줄이다(«이사비»를 위한 판매 · 원룸엔 oneroom_sell). 표지가 없어 이사 뒤에도 열린 채 남아
+       원룸에서 「무늬를 팔아야 이사비가 모여」(nudgeSellPush)를 판당 스무 번 했다 — 이미 이사한 사람에게 거짓([core] 6ebd882e). */
+    room: 'banjiha',
     ko: '무늬를 값으로 만든다',
     /* ★ 이것이 이 게임의 마지막 문이다. 체력을 얹으면 그 사실이 가려진다 */
     reward: '이사가 열립니다',

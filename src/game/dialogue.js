@@ -348,10 +348,17 @@ export const SCRIPTS = {
      세어 주는 것이 일인 몬이가 매달 달력을 처음 보는 사람이 된다 — 2026-08-11 화면 실측에서
      Day 71 · Day 101 에 똑같이 놀랐다.
      넷째 줄 "그럼 지금부터 세자"도 뺐다 — **없는 조작을 가리킨다.** 세는 화면이 없다. */
+  /* ★ 2026-10-09 [plan] 원룸 후반 13달 — 「이레 남았어. 이십만 원.」을 걷었다: 몬이가 금액을 말했고(몬이는 수를 말하지 않는다 ·
+     금액은 로그·가계부가 말한다) 원룸 월세가 바뀌면(D8) 거짓이 된다. 그리고 달마다 같은 세 줄이라([core] 6ebd882e 판당 14번)
+     §scriptOf 가 «낸 달 수» 홀/짝으로 rentSoon2 와 번갈아 쓴다. */
   rentSoon: [
     { who: 'jachwi', face: 'worry', text: '달력에 동그라미 쳐 둔 날이 또 다가온다.' },
-    { who: 'moni',   face: 'worry', text: '이레 남았어. 이십만 원.' },
+    { who: 'moni',   face: 'worry', text: '곧 월세 날이야.' },
     { who: 'jachwi', face: 'tired', text: '…알아. 나도 세고 있었어.' }
+  ],
+  rentSoon2: [
+    { who: 'jachwi', face: 'think', text: '또 달력을 본다.' },
+    { who: 'moni',   face: 'calm',  text: '이번 달도 넘기자. 넘겨 왔잖아.' }
   ],
   rentFirst: [
     { who: 'jachwi', face: 'tired', text: '이십만 원. 들어오자마자 한 번에 빠져나갔다.' },
@@ -366,6 +373,11 @@ export const SCRIPTS = {
   rentAgain: [
     { who: 'jachwi', face: 'tired', text: '월세 날. 이제 놀라지도 않는다.' },
     { who: 'moni',   face: 'proud', text: '안 놀라게 된 것도 는 거야, 그것도.' }
+  ],
+  /* ★ 2026-10-09 [plan] — 둘째 판(낸 달 수 홀/짝으로 번갈아 · §scriptOf). 「한 달 더 버텼다」는 늘 참이다 */
+  rentAgain2: [
+    { who: 'jachwi', text: '월세를 냈다. 한 달 더 버텼다.' },
+    { who: 'moni',   face: 'calm', text: '버틴 달이 쌓이면 그게 이사비야.' }
   ],
   brokeTalk: [
     /* ★★ 2026-08-29 [Char]·[Plan] — worry 가 아니라 **numb**(말을 잃은 얼굴).
@@ -2043,6 +2055,7 @@ export const REPEATABLE = new Set(
              'lampUnderEmpty', 'statusBagCuttings',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear',
+             'rentSoon2', 'rentAgain2',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
@@ -2302,7 +2315,14 @@ function scriptOf(ev, S = null) {
                         : ev.season === 'autumn' ? 'autumnCameOneroom' : null;
     return ev.season === 'autumn' ? 'autumnCame' : null;
   }
-  if (id === 'rent') return ev.first ? 'rentFirst' : 'rentAgain';
+  /* ★ 2026-10-09 [plan] 원룸 후반 — 월세 «다시»는 낸 달 수(ev.count) 홀/짝으로 두 벌 번갈아 */
+  if (id === 'rent') return ev.first ? 'rentFirst'
+                          : (Number.isFinite(ev.count) && ev.count % 2 === 0) ? 'rentAgain2' : 'rentAgain';
+  /* ★ 2026-10-09 [plan] — 월세 예고도 두 벌(낸 달 수 홀/짝 · S.tutorial.rent.paidCount). 모르면 첫 벌 */
+  if (id === 'rent_soon') {
+    const paid = S && S.tutorial && S.tutorial.rent && S.tutorial.rent.paidCount;
+    return (Number.isFinite(paid) && paid % 2 === 1) ? 'rentSoon2' : 'rentSoon';
+  }
   /* ★ 2026-08-30 [Plan] — 파산도 «첫 번»과 «그다음»이 다르다(위 §brokeTalkAgain).
      ⚠ 옛 세이브·옛 코어는 `first` 를 안 싣는다 ⇒ `undefined` 면 «첫 번»으로 읽는다.
        모르면 위로하는 쪽이 낫다 — 「또 바닥이네」를 처음 겪는 사람에게 하면 안 된다. */
@@ -2558,18 +2578,20 @@ export const CHATTER = [
   { id: 'statusSill',     status: true, gap: 30, when: c => c.hasMonstera && !c.movedOut && !(c.lampOwned >= 1) && c.potOnSill === true
                                             && (c.band === 'mid' || c.band === 'bright') },
   /* ⓑ 게이지 가리킴 — 도착 사흘째까지 확대창을 한 번도 안 열었으면. 「날짜로는 못 세」의 짝: 셀 수 있는 것은 «쌓인 빛»이다 */
-  { id: 'statusGauge',    status: true, gap: 30, when: c => c.hasMonstera && fin(c.arrivedOnDay) && fin(c.day) && c.day - c.arrivedOnDay >= 3
+  { id: 'statusGauge',    status: true, gap: 120, when: c => c.hasMonstera && fin(c.arrivedOnDay) && fin(c.day) && c.day - c.arrivedOnDay >= 3
                                             && c.zoomOpenedSinceArrival === false },
   /* ⓒ 쉬지 않고 — 멈춤 없이 자란 날이 이레(그날 새 잎이 났으면 그 말이 먼저다) */
-  { id: 'statusStreak',   status: true, gap: 30, when: c => c.hasMonstera && fin(c.growStreak) && c.growStreak >= 7 && c.newLeafToday !== true },
+  { id: 'statusStreak',   status: true, gap: 90, when: c => c.hasMonstera && fin(c.growStreak) && c.growStreak >= 7 && c.newLeafToday !== true },
   /* ⓓ 첫 잎 넓어짐 — 가장 어린 펴진 잎의 leafM(렌더러가 잎 크기로 쓰는 값)이 반을 넘음 · 새 잎 뒤 사흘은 안 함 */
   { id: 'statusLeafWide', status: true, gap: 30, when: c => c.hasMonstera && fin(c.youngestLeafM) && c.youngestLeafM >= 0.5
                                             && fin(c.leafWaitDays) && c.leafWaitDays >= 3 },
   /* ⓕ 시루와 견줌 — 거둔 날 · 도착 뒤 둘째 거둠부터 · 잎이 이레 넘게 그대로. 두 이레에 한 번 */
-  { id: 'statusSiruVs',   status: true, gap: 14, when: c => c.hasMonstera && c.harvestedToday === true && fin(c.harvestsSinceArrival)
+  { id: 'statusSiruVs',   status: true, gap: 45, when: c => c.hasMonstera && c.harvestedToday === true && fin(c.harvestsSinceArrival)
                                             && c.harvestsSinceArrival >= 2 && fin(c.leafWaitDays) && c.leafWaitDays >= 7 },
   /* ⓖ 지갑 — 잎이 스무 날 그대로. 「돈은 매일 줄고」는 하루 지출이 늘 있어 참 · 「잎은 줄지는 않아」는 잎 떨굼 꺼짐(growth_tuning health.drop_enabled:false) */
-  { id: 'statusWallet',   status: true, gap: 30, when: c => c.hasMonstera && fin(c.leafWaitDays) && c.leafWaitDays >= 20 },
+  /* ★ 2026-10-09 [plan] 원룸 후반 13달 — 기다림 줄 넷의 간격을 늘렸다(게이지 30→120 · 쉬지 않고 30→90 · 시루 14→45 · 지갑 30→90).
+     첫 기다림(반지하)을 채우려고 지은 줄인데, 원룸에선 모주가 드물게 잎을 내 조건이 늘 참이라 판당 14~29번 되풀이됐다([core] 6ebd882e). */
+  { id: 'statusWallet',   status: true, gap: 90, when: c => c.hasMonstera && fin(c.leafWaitDays) && c.leafWaitDays >= 20 },
   /* ★ 2026-10-08 [plan] 단계 줄 — 막내 잎 단계가 바뀐 지 사흘 안(사건·독촉 날에 걸려도 다음 빈 날에 선다) · 한 단계 한 번(gap 20 — 다음 잎의 같은 단계는 다시) */
   { id: 'statusVarieHalf',    status: true, gap: 60, when: c => c.hasMonstera && c.varieMatured === 1 },
   { id: 'statusPhaseOpening', status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'spear_opening' && fin(c.phaseDays) && c.phaseDays <= 3 },
