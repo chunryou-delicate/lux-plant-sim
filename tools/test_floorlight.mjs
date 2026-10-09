@@ -330,7 +330,12 @@ check('① -2 skyViewK 1.00 은 아무것도 안 바꾼다 — 안 적은 방과
 check('① -3 조도는 skyViewK 에 **선형**이다 — 배수 그대로 움직인다', () => {
   /* 이 선형성이 있어야 "1.18 을 곱하면 4.30 이 된다"를 표로 예측할 수 있다.
      안 그러면 방마다 다시 다 재야 한다. */
-  const a = makeEngine({ oneroom: 1.0 }), b = makeEngine({ oneroom: 2.0 });
+  /* ★ 2026-10-10 [house] — 원룸을 비운 뒤(10-08 D6 · 방 정의 가구 0 · 자리는 창턱 넷뿐) 이 검사가 «표본이 너무 적습니다»로
+       늘 붉었다(1.0 넘는 칸 4 < 8). 선형성이 깨진 것이 아니라 **잴 칸이 없어진 것**이다.
+       ⇒ 원룸 기준 배치(reference_layout · gen_room_profile 이 굽는 그 방)를 얹어 칸을 되살린다. 배수는 그대로 원룸에 건다 */
+  const withRef = k => { const hr = JSON.parse(JSON.stringify(HOUSE)); const r = hr.rooms.oneroom;
+    r.furniture = [...(r.furniture || []), ...((r.reference_layout || {}).furniture || [])]; r.skyViewK = k; return makeEngineWith(hr); };
+  const a = withRef(1.0), b = withRef(2.0);
   const ra = a.build('oneroom'); b.build('oneroom');
   let worst = 0, n = 0;
   for (const s of ra.slots) {
