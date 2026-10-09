@@ -1,0 +1,511 @@
+{
+ "_what": "[house] Meshy 주문 — 가구점 코드 그림 35점 → v2 (총괄 10-09 · 회색 상자 길) · 총괄이 위에서부터 그대로 돌린다. 문서: docs/handoff/house-shop-v2-order-20261009.md",
+ "_cost": "한 점 39 = 원화 9 + 3D 30(면 줄이기는 같은 호출의 should_remesh)",
+ "_budget": {
+  "balance": 464,
+  "main9": 351,
+  "spare_bench": 39,
+  "cap": 390,
+  "left_after_main": 113
+ },
+ "_rule": "참조 둘: 첫째 = 코드 가구 찰흙 그림(tools/shot_furn_ref.mjs · 원화와 같은 각도) · 둘째 = style_keyframe_a. «모양 그대로 칠만». 다시 뽑기는 예비(벤치) 몫에서.",
+ "_after": "받으면 concept·raw 를 save_as 에 · task_id 는 assets/gen/v2_tasks.json «house_20261009» 에 · 크레딧은 assets/manifest.json _credit_log 에 한 줄. 잇기(webp 1024 → out · FURN · 가게 그림 다시 찍기)는 [house].",
+ "items": [
+  {
+   "n": 22,
+   "plan": "A",
+   "id": "shelf_etagere_3tier",
+   "ko": "선반-다단-3단",
+   "shop_rows": [
+    "선반-다단-3단",
+    "다단 선반(화이트·월넛·민트)"
+   ],
+   "shop_pos": "21~24",
+   "why": "반지하(첫 방)에 처음부터 서 있는 유일한 코드 상자 · 원룸 기준 배치에도 · 화분 자리 9(3단) · 원룸 창 앞이면 B",
+   "size_m_wdh": [
+    0.75,
+    0.25,
+    0.794
+   ],
+   "tiers": "3단 · 판 윗면 0.03 / 0.41 / 0.79m(코드 자리 높이) · 가는 둥근 기둥 넷",
+   "fit": "tiers:true(꺾은 선)",
+   "out": "assets/v2/furniture/shelf_etagere_3tier.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_shelf_etagere_3tier.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm off-white painted wood #e8dfd2 boards, slightly darker taupe #cbbfae thin round posts. All three boards empty.",
+    "save_as": "assets/gen/v2_furn/c_shelf_etagere_3tier.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 따뜻한 미색 칠한 나무 판 · 조금 진한 회갈색 가는 둥근 기둥 · 판 셋 다 비움"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_shelf_etagere_3tier.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 23,
+   "plan": "A",
+   "id": "stool",
+   "ko": "스툴",
+   "shop_rows": [
+    "스툴",
+    "스툴(블러시·차콜·민트)"
+   ],
+   "shop_pos": "7~10",
+   "why": "가게 첫 화면 넷 줄 · 가장 싼 앉을 것(53,500원) · 윗면에 화분(자유 놓기)",
+   "size_m_wdh": [
+    0.36,
+    0.36,
+    0.45
+   ],
+   "tiers": "둥근 앉음판 0.45m · 다리 넷",
+   "fit": "uniform 아님 · 몸 상자",
+   "out": "assets/v2/furniture/stool.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_stool.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 round seat, slightly darker #c3b49c legs. Seat empty.",
+    "save_as": "assets/gen/v2_furn/c_stool.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 밝은 베이지 나무 둥근 앉음판 · 조금 진한 다리 · 앉음판 비움"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_stool.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 24,
+   "plan": "A",
+   "id": "shelf_stool_1",
+   "ko": "선반-스툴-1단",
+   "shop_rows": [
+    "선반-스툴-1단"
+   ],
+   "shop_pos": "1",
+   "why": "가게 맨 첫 줄 · 가장 싼 가구(46,500원) · «작은 화분 받침» — 화분 자리 1",
+   "size_m_wdh": [
+    0.25,
+    0.25,
+    0.355
+   ],
+   "tiers": "네모 윗판 0.355m · 다리 넷",
+   "fit": "몸 상자",
+   "out": "assets/v2/furniture/shelf_stool_1.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_shelf_stool_1.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light warm wood #e3d3bd square top, slightly darker #cbbfae legs. Top empty.",
+    "save_as": "assets/gen/v2_furn/c_shelf_stool_1.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 밝은 따뜻한 나무 네모 윗판 · 조금 진한 다리 · 윗판 비움"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_shelf_stool_1.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 25,
+   "plan": "A",
+   "id": "chair_arm",
+   "ko": "암체어",
+   "shop_rows": [
+    "암체어",
+    "암체어(블러시·세이지·파스텔블루·라일락)"
+   ],
+   "shop_pos": "55~59",
+   "why": "한 점으로 가게 다섯 줄(색 넷은 칠 바꾸기) · 사고 싶게 만드는 것 — 푹신한 1인 의자",
+   "size_m_wdh": [
+    0.62,
+    0.66,
+    1.04
+   ],
+   "tiers": "자리 없음",
+   "fit": "몸 상자",
+   "out": "assets/v2/furniture/chair_arm.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_chair_arm.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: soft pale mint fabric #cdd9d5 back, arms and base, very pale #eef2f0 seat cushion, light wood #c3b49c short legs.",
+    "save_as": "assets/gen/v2_furn/c_chair_arm.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 옅은 민트 천(등받이·팔걸이·몸) · 아주 옅은 앉음 쿠션 · 밝은 나무 짧은 다리"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_chair_arm.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 26,
+   "plan": "A",
+   "id": "coffee_table",
+   "ko": "커피 테이블",
+   "shop_rows": [
+    "커피 테이블",
+    "커피 테이블(월넛·화이트)"
+   ],
+   "shop_pos": "34~36",
+   "why": "가게 세 줄 · 화분 자리 3(윗판 + 아랫선반 두 높이)",
+   "size_m_wdh": [
+    0.95,
+    0.52,
+    0.38
+   ],
+   "tiers": "2단 · 판 윗면 0.17 / 0.38m · 다리 넷",
+   "fit": "tiers:true",
+   "out": "assets/v2/furniture/coffee_table.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_coffee_table.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #e5d3b8 top and lower shelf, slightly darker #cbbba2 legs. Both boards empty.",
+    "save_as": "assets/gen/v2_furn/c_coffee_table.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 밝은 나무 윗판과 아랫선반 · 조금 진한 다리 · 두 판 다 비움"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_coffee_table.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 27,
+   "plan": "A",
+   "id": "table_round",
+   "ko": "원형 테이블",
+   "shop_rows": [
+    "원형 테이블",
+    "원형 테이블(월넛·화이트)"
+   ],
+   "shop_pos": "39~41",
+   "why": "가게 세 줄 · 화분 자리 1(윗판 0.45m)",
+   "size_m_wdh": [
+    0.75,
+    0.75,
+    0.45
+   ],
+   "tiers": "둥근 윗판 0.45m · 기둥 하나 · 둥근 받침",
+   "fit": "몸 상자",
+   "out": "assets/v2/furniture/table_round.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_table_round.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light wood #e5d3b8 round top, slightly darker #cbbba2 single pedestal and round foot. Top empty.",
+    "save_as": "assets/gen/v2_furn/c_table_round.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 밝은 나무 둥근 윗판 · 조금 진한 기둥 하나와 둥근 받침 · 윗판 비움"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_table_round.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 28,
+   "plan": "A",
+   "id": "shelf_low",
+   "ko": "낮은 책장",
+   "shop_rows": [
+    "낮은 책장"
+   ],
+   "shop_pos": "42",
+   "why": "화분 자리 6(두 단 · 0.02 / 0.44m) · 윗면 0.85m 는 원룸 창 아랫변(0.775m) 위",
+   "size_m_wdh": [
+    1,
+    0.3,
+    0.85
+   ],
+   "tiers": "2단 · 판 윗면 0.02 / 0.44m · 윗판 0.85m · 뒤는 트임(가는 살 하나)",
+   "fit": "tiers:true",
+   "ref_note": "참조는 책을 뺀 것(EMPTY=1) — 그 칸이 화분 자리라 책을 구워 넣으면 안 된다",
+   "out": "assets/v2/furniture/shelf_low.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_shelf_low.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm off-white painted wood #e8dfd2 low bookcase, two open shelves, open back. Shelves empty - no books.",
+    "save_as": "assets/gen/v2_furn/c_shelf_low.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 따뜻한 미색 칠한 나무 낮은 책장 · 트인 칸 둘 · 뒤 트임 · 칸 비움(책 없음)"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_shelf_low.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 29,
+   "plan": "A",
+   "id": "floor_cushion",
+   "ko": "바닥 쿠션",
+   "shop_rows": [
+    "바닥 쿠션"
+   ],
+   "shop_pos": "6",
+   "why": "가게 첫 화면 · 싼 것(53,400원) · 원룸 바닥 꾸밈",
+   "size_m_wdh": [
+    0.6,
+    0.6,
+    0.16
+   ],
+   "tiers": "자리 없음 · 0.16m",
+   "fit": "몸 상자",
+   "out": "assets/v2/furniture/floor_cushion.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_floor_cushion.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: soft linen fabric #dfe0d4, plump square floor cushion with rounded edges.",
+    "save_as": "assets/gen/v2_furn/c_floor_cushion.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 부드러운 리넨 천 · 모서리 둥근 네모 바닥 쿠션"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_floor_cushion.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 30,
+   "plan": "A",
+   "id": "storage_box",
+   "ko": "수납 박스",
+   "shop_rows": [
+    "수납 박스"
+   ],
+   "shop_pos": "4",
+   "why": "가게 첫 화면 · 싼 것(49,500원) · 화분 자리 1(뚜껑 0.30m)",
+   "size_m_wdh": [
+    0.5,
+    0.25,
+    0.3
+   ],
+   "tiers": "뚜껑 윗면 0.30m",
+   "fit": "몸 상자",
+   "out": "assets/v2/furniture/storage_box.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_storage_box.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: warm greige #dfd6c7 lidded storage box; the thin line across the front is the lid seam, small darker #c3b49c pull at its right end. Lid empty.",
+    "save_as": "assets/gen/v2_furn/c_storage_box.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 따뜻한 회베이지 뚜껑 수납 상자 · 앞 가는 선이 뚜껑 이음 · 오른끝에 조금 진한 손잡이 · 뚜껑 위 비움"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_storage_box.glb",
+    "credits": 30
+   }
+  },
+  {
+   "n": 31,
+   "plan": "예비",
+   "id": "bench",
+   "ko": "벤치",
+   "shop_rows": [
+    "벤치"
+   ],
+   "shop_pos": "44",
+   "why": "창가 벤치 — 화분 자리 2(0.44m) · 다시 뽑기가 없으면 돌린다",
+   "size_m_wdh": [
+    1.25,
+    0.5,
+    0.44
+   ],
+   "tiers": "앉음판 0.44m · 판 다리 둘",
+   "fit": "몸 상자",
+   "out": "assets/v2/furniture/bench.glb",
+   "concept": {
+    "tool": "meshy_image_to_image",
+    "ai_model": "nano-banana-pro",
+    "generate_multi_view": false,
+    "reference_file_paths": [
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_furn\\ref_bench.png",
+     "C:\\Users\\pc\\Desktop\\빛식물\\lux-plant-sim\\assets\\gen\\v2_room\\style_keyframe_a.png"
+    ],
+    "prompt": "Repaint the FIRST reference image. Keep its exact shape, proportions, number of parts, board heights, bar thicknesses and camera angle - do not add, remove or move anything. Only change the surface: cozy hand-painted matte style like the second reference room, soft outlines. One object alone on a plain off-white background: no floor, no frame, no text, no shadow. Colors: light beige wood #e0d5c2 seat board, two slightly darker #c3b49c panel legs. Seat empty.",
+    "save_as": "assets/gen/v2_furn/c_bench.png",
+    "credits": 9,
+    "prompt_ko": "첫째 참조 그림을 «다시 칠» — 모양·비율·부품 수·시점 그대로 · 둘째 참조 방처럼 손그림 무광 · 물건 하나 · 흰 바탕 · 바닥·액자·글자·그림자 없음 · 색: 밝은 베이지 나무 앉음판 · 조금 진한 판 다리 둘 · 앉음판 비움"
+   },
+   "mesh": {
+    "tool": "meshy_image_to_3d",
+    "input_task_id": "<concept task_id>",
+    "ai_model": "meshy-7.1",
+    "model_type": "standard",
+    "should_texture": true,
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "should_remesh": true,
+    "target_polycount": 6000,
+    "topology": "triangle",
+    "target_formats": [
+     "glb"
+    ],
+    "save_as": "assets/gen/v2_furn/raw_bench.glb",
+    "credits": 30
+   }
+  }
+ ]
+}

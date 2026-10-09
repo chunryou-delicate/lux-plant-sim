@@ -47,6 +47,11 @@ try {
       if (!g) return 'ERR 없는 id ' + id;
       /* 온실장은 유리를 뺀다(틀만) — 투명 재질 메시 */
       const drop = []; g.traverse(o => { if (o.isMesh && o.material && o.material.transparent && o.material.opacity < 0.5) drop.push(o); });
+      /* EMPTY=1 — 몸·테두리 색이 아닌 조각(책장의 책 · 자리에 얹힌 꾸밈)을 뺀다: 그 칸은 화분 자리라 원화·GLB 에 구워 넣으면 안 된다 */
+      if (${JSON.stringify(process.env.EMPTY === '1')} && p) {
+        const keep = [p.color, p.accent].filter(Boolean).map(c => new T.Color(c).convertSRGBToLinear().getHexString());
+        g.traverse(o => { if (o.isMesh && o.material && o.material.color && !keep.includes(o.material.color.getHexString())) drop.push(o); });
+      }
       for (const o of drop) o.parent.remove(o);
       /* ★ 찰흙 한 빛깔 — 가구 색(미색)이 흰 바탕에 묻혀 모양이 안 읽혔다(첫 찍기 · 창은 통째로 안 보였다). 모양만 넘긴다 · 칠은 기준 그림이 준다 */
       const clay = new T.MeshStandardMaterial({ color: new T.Color('#a89f92').convertSRGBToLinear(), roughness: 0.9, metalness: 0 });

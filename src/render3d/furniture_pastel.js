@@ -273,7 +273,8 @@ B.shelf=(o)=>{
   const m=furnMat(o.color??'#e8dfd2','matte');
   g.add(bx(t,h,d,m,-w/2+t/2,h/2,0)); g.add(bx(t,h,d,m,w/2-t/2,h/2,0));  // 측판
   g.add(bx(w,t,d,m,0,h-t/2,0)); g.add(bx(w,t,d,m,0,t/2,0));             // 상하판
-  g.add(bx(w-2*t,t*0.7,d,m,0,h/2,-d/2+t/2));                            // 뒷판 살짝
+  /* 뒷판 살짝 — ★ 10-09 [house] 크기 순서가 틀려(깊이 d) 판이 뒤로 d/2 삐져나왔다(낮은 책장 가게 그림 · 원화 참조). 뒤 가장자리 가는 살로 */
+  g.add(bx(w-2*t,t*0.7,t*0.7,m,0,h/2,-d/2+t*0.35));
   for(let i=1;i<n;i++) g.add(bx(w-2*t,t,d,m,0,h*i/n,0));                // 선반
   // 책 몇 권(파스텔)
   const bookCols=['#d8a7a0','#a9c4d4','#d9c98a','#b3cbb0','#c8b4d4'];
