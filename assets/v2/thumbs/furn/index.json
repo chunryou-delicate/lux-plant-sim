@@ -36,7 +36,7 @@
  },
  "shelf_low": {
   "file": "assets/v2/thumbs/furn/shelf_low.webp",
-  "v2": false
+  "v2": true
  },
  "sofa": {
   "file": "assets/v2/thumbs/furn/sofa.webp",
@@ -50,7 +50,7 @@
  },
  "table_round": {
   "file": "assets/v2/thumbs/furn/table_round.webp",
-  "v2": false
+  "v2": true
  },
  "table": {
   "file": "assets/v2/thumbs/furn/table.webp",
@@ -70,11 +70,11 @@
  },
  "shelf_stool_1": {
   "file": "assets/v2/thumbs/furn/shelf_stool_1.webp",
-  "v2": false
+  "v2": true
  },
  "shelf_etagere_3tier": {
   "file": "assets/v2/thumbs/furn/shelf_etagere_3tier.webp",
-  "v2": false
+  "v2": true
  },
  "shelf_ladder_4tier": {
   "file": "assets/v2/thumbs/furn/shelf_ladder_4tier.webp",
@@ -164,23 +164,29 @@
  },
  "table_round_white": {
   "file": "assets/v2/thumbs/furn/table_round_white.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "table_round"
  },
  "table_round_walnut": {
   "file": "assets/v2/thumbs/furn/table_round_walnut.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#b08a63",
+  "base": "table_round"
  },
  "chair_arm": {
   "file": "assets/v2/thumbs/furn/chair_arm.webp",
-  "v2": false
+  "v2": true
  },
  "chair_arm_blush": {
   "file": "assets/v2/thumbs/furn/chair_arm_blush.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#e6d3d0",
+  "base": "chair_arm"
  },
  "stool": {
   "file": "assets/v2/thumbs/furn/stool.webp",
-  "v2": false
+  "v2": true
  },
  "bench": {
   "file": "assets/v2/thumbs/furn/bench.webp",
@@ -208,11 +214,11 @@
  },
  "coffee_table": {
   "file": "assets/v2/thumbs/furn/coffee_table.webp",
-  "v2": false
+  "v2": true
  },
  "storage_box": {
   "file": "assets/v2/thumbs/furn/storage_box.webp",
-  "v2": false
+  "v2": true
  },
  "mirror": {
   "file": "assets/v2/thumbs/furn/mirror.webp",
@@ -268,7 +274,7 @@
  },
  "floor_cushion": {
   "file": "assets/v2/thumbs/furn/floor_cushion.webp",
-  "v2": false
+  "v2": true
  },
  "low_table": {
   "file": "assets/v2/thumbs/furn/low_table.webp",
@@ -276,15 +282,21 @@
  },
  "chair_arm_sage": {
   "file": "assets/v2/thumbs/furn/chair_arm_sage.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#d3d9c6",
+  "base": "chair_arm"
  },
  "chair_arm_sky": {
   "file": "assets/v2/thumbs/furn/chair_arm_sky.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#cddbe6",
+  "base": "chair_arm"
  },
  "chair_arm_lilac": {
   "file": "assets/v2/thumbs/furn/chair_arm_lilac.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#ddd4e6",
+  "base": "chair_arm"
  },
  "nightstand_white": {
   "file": "assets/v2/thumbs/furn/nightstand_white.webp",
@@ -330,23 +342,33 @@
  },
  "coffee_table_walnut": {
   "file": "assets/v2/thumbs/furn/coffee_table_walnut.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#b08a63",
+  "base": "coffee_table"
  },
  "coffee_table_white": {
   "file": "assets/v2/thumbs/furn/coffee_table_white.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "coffee_table"
  },
  "shelf_etagere_3tier_white": {
   "file": "assets/v2/thumbs/furn/shelf_etagere_3tier_white.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#f2f0ec",
+  "base": "shelf_etagere_3tier"
  },
  "shelf_etagere_3tier_walnut": {
   "file": "assets/v2/thumbs/furn/shelf_etagere_3tier_walnut.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#b08a63",
+  "base": "shelf_etagere_3tier"
  },
  "shelf_etagere_3tier_mint": {
   "file": "assets/v2/thumbs/furn/shelf_etagere_3tier_mint.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#c9d6d2",
+  "base": "shelf_etagere_3tier"
  },
  "cube_storage_mint": {
   "file": "assets/v2/thumbs/furn/cube_storage_mint.webp",
@@ -374,15 +396,21 @@
  },
  "stool_mint": {
   "file": "assets/v2/thumbs/furn/stool_mint.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#c9d6d2",
+  "base": "stool"
  },
  "stool_blush": {
   "file": "assets/v2/thumbs/furn/stool_blush.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#e6d3d0",
+  "base": "stool"
  },
  "stool_charcoal": {
   "file": "assets/v2/thumbs/furn/stool_charcoal.webp",
-  "v2": false
+  "v2": true,
+  "tint": "#5b6067",
+  "base": "stool"
  },
  "tv_crt": {
   "file": "assets/v2/thumbs/furn/tv_crt.webp",

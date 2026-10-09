@@ -82,6 +82,18 @@ const FURN = {
   plant_step_3:       { file: 'furniture/plant_step_3.glb',       yaw: 0, lazy: true, tiers: true },
   shelf_ladder_4tier: { file: 'furniture/shelf_ladder_4tier.glb', yaw: 0, lazy: true, tiers: true, fitProxyBox: true },
   greenhouse_cabinet: { file: 'furniture/greenhouse_cabinet.glb', yaw: 0, lazy: true, tiers: true, keepGlass: true },
+  /* 가구점 v2 아홉(10-09 · docs/handoff/house-shop-v2-order-20261009.md · 회색 상자 길) — 색 바꿈 열넷은 specOf 로 따라온다.
+       다단 선반은 반지하 첫 방에 처음부터 있어 lazy 아님(부팅에 받는다 · 첫 화면에 코드 상자가 안 보이게).
+       암체어·바닥 쿠션은 GLB 비율이 프리셋과 달라(×1.3 · ×1.2) uniform — 프리셋 크기(=가게 값)는 안 건드린다 */
+  shelf_etagere_3tier: { file: 'furniture/shelf_etagere_3tier.glb', yaw: 90, tiers: true },   // GLB 가 Z 로 길다(X 0.63 · Z 1.81)
+  stool:               { file: 'furniture/stool.glb',               yaw: 0, lazy: true, tintAll: true },   // 색 변형은 앉음판까지 통째로
+  shelf_stool_1:       { file: 'furniture/shelf_stool_1.glb',       yaw: 0, lazy: true },
+  chair_arm:           { file: 'furniture/chair_arm.glb',           yaw: 0, lazy: true, uniform: true },
+  coffee_table:        { file: 'furniture/coffee_table.glb',        yaw: 0, lazy: true, tiers: true },
+  table_round:         { file: 'furniture/table_round.glb',         yaw: 0, lazy: true },
+  shelf_low:           { file: 'furniture/shelf_low.glb',           yaw: 0, lazy: true, tiers: true },
+  floor_cushion:       { file: 'furniture/floor_cushion.glb',       yaw: 0, lazy: true, uniform: true },
+  storage_box:         { file: 'furniture/storage_box.glb',         yaw: 0, lazy: true },
   /* 식물등 — 몸통만 옷(LED 는 코드 것 · dressLamp). lazy — 부팅 미리 받기를 안 늘린다(방이 뜬 뒤 입는다) */
   growlight_clip:     { file: 'furniture/growlight_clip.glb',     yaw: 0,  lazy: true, lamp: { band: 0.6 } },
   growlight_stand:    { file: 'furniture/growlight_stand.glb',    yaw: 90, lazy: true, lamp: { band: 0.8 } }
@@ -419,7 +431,7 @@ export function createFurnitureDress(opt = {}) {
     let glb;
     if (knots) glb = remapTiers(spec.file, t, spec.yaw, knots).clone(true);   // 기하는 틀과 나눠 쓴다(sharedGeometry)
     else { glb = t.scene.clone(true); glb.rotation.y = deg(spec.yaw); }
-    if (spec.tint) tintScene(glb, spec.tint);         // 색 변형 — 같은 옷에 몸 색만(§색 변형)
+    if (spec.tint) tintScene(glb, spec.tint, !!spec.tintAll);   // 색 변형 — 같은 옷에 몸 색만(§색 변형) · tintAll 은 통째로
     const mid = new T.Group();
     mid.add(glb);
     mid.position.set(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
@@ -506,7 +518,9 @@ export function createFurnitureDress(opt = {}) {
     domCache.set(tex, out);
     return out;
   }
-  function tintScene(root, hex) {
+  /* all — 몸 색 가리개 없이 통째로 칠한다(짙은 선만 그대로). 스툴: Meshy 가 앉음판을 크림·다리를 갈색으로 따로 칠해
+       블러시가 다리만 분홍이 됐다(10-09 · 앉음판이 위에서 보이는 거의 전부라 «크림 스툴»으로 읽힘) */
+  function tintScene(root, hex, all = false) {
     const want = new T.Color(hex).convertSRGBToLinear();
     /* 옅은 색 변형(민트·하늘·블러시·버터·세이지)은 v2 의 밝은 결에서 «흰색»으로 읽혔다(총괄 10-09 — 코드 판은 옅게라도 민트).
        ⇒ 빛깔이 있는 옅은 색(빛깔 폭 10~34)만 채도를 2.2배(밝기는 그대로). 흰색(#f2f0ec · 폭 6) · 버터(폭 49) · 짙은 색(차콜)은 그대로. */
@@ -521,7 +535,7 @@ export function createFurnitureDress(opt = {}) {
     root.traverse(o => {
       if (!o.isMesh || !o.material) return;
       const one = m => {
-        const key = m.uuid + '|' + hex;
+        const key = m.uuid + '|' + hex + (all ? '|all' : '');
         if (tintMats.has(key)) return tintMats.get(key);
         const dom = domColorOf(m.map);
         if (!dom) { tintMats.set(key, m); return m; }
@@ -535,12 +549,12 @@ export function createFurnitureDress(opt = {}) {
     float _l = dot(_c, vec3(0.2126, 0.7152, 0.0722));
     float _ld = max(dot(uDom, vec3(0.2126, 0.7152, 0.0722)), 1e-3);
     vec3 _cn = _c / max(_l, 1e-3), _dn = uDom / _ld;          // 밝기를 뺀 «빛깔»
-    float _w = 1.0 - smoothstep(0.34, 0.62, distance(_cn, _dn)); // 몸 색에 가까울수록 1(나뭇결·그늘까지 · 방석·놋쇠는 멀다)
+    float _w = ${all ? '1.0' : '1.0 - smoothstep(0.34, 0.62, distance(_cn, _dn))'}; // 몸 색에 가까울수록 1(나뭇결·그늘까지 · 방석·놋쇠는 멀다)
     _w *= smoothstep(0.02, 0.08, _l);                           // 아주 짙은 선은 그대로
     diffuseColor.rgb = mix(_c, uTint * (_l / max(uDomL, 1e-3)), _w);   // 평균 밝기 화소 = 변형 색 그대로
   }`);
         };
-        c.customProgramCacheKey = () => 'v2tint';
+        c.customProgramCacheKey = () => (all ? 'v2tint_all' : 'v2tint');
         tintMats.set(key, c);
         return c;
       };
