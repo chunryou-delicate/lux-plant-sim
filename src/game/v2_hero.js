@@ -100,7 +100,7 @@ function prepare(g) {
   return { scene: g.scene, clips, fileH: h, act: new Map(), hairFixed: moved,
            hand: Array.isArray(X.crouchHand) ? X.crouchHand : null,
            walkMps: Number.isFinite(X.walkMps) ? X.walkMps : null,
-           emoteWin: X.emoteWin || {} };
+           emoteWin: X.emoteWin || {}, breakWin: X.breakWin || {} };
 }
 
 /* ⛔ 뒷머리가 «팔»에 묶여 있다 — 잰 것(바인드 · 파일 단위 1.10m):
@@ -297,6 +297,24 @@ function actClipFrom(src, kind, targetY) {
   return C.idle ? cut(C.idle, 0, C.idle.duration, 'idle:act') : null;
 }
 
+function breakClipFrom(src, name) {
+  const C = src.clips[name];
+  if (!C) return null;
+  const key = `break:${name}`;
+  if (src.act.has(key)) return src.act.get(key);
+  const w = src.breakWin && src.breakWin[name];
+  const U = THREE.AnimationUtils;
+  let c = C;
+  if (Array.isArray(w) && U && U.subclip) {
+    const a = Math.max(0, w[0]), b = Math.min(C.duration, w[1]);
+    if (b - a > 0.5) c = U.subclip(C, key, Math.round(a * 30), Math.round(b * 30), 30);
+  }
+  if (c === C) c = C.clone();
+  c.name = name;
+  src.act.set(key, c);
+  return c;
+}
+
 /* ── 사람 하나 ── makePerson 이 GLB 대신 받는다. 모양은 gltf 와 같게(scene · animations[0]=idle) */
 export async function makeHero() {
   const src = await loadSource();
@@ -320,7 +338,8 @@ export async function makeHero() {
     clipNames: Object.keys(src.clips),
     /* 10-09 (char): 서 있을 때 잠깐 몸짓(머리 긁적 · 끄덕 · 듣기) — hero2 에만 있다. 거는 자리는 core(room_view IDLE_BREAK) */
     breakClips: ['scratch', 'nod', 'listen'].filter(n => src.clips[n]),
-    breakClip: name => (src.clips[name] ? src.clips[name] : null),
+    /* 10-09 (char): 파일이 적어 온 구간(breakWin — 많이 움직이되 시작·끝이 쉬는 자세에 가까운 3~6초)만 잘라 준다 — core 는 받은 클립을 그대로 튼다 */
+    breakClip: name => breakClipFrom(src, name),
     emoteSkin   // 몸짓 무게를 건 메시 수(0 이면 hero.glb 에 _WEIGHTS_EMOTE 가 없다)
   };
 }
