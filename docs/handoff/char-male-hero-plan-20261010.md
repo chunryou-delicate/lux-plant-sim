@@ -692,4 +692,5 @@
 - 그림: `docs/handoff/img/hero/unity_g2_male_meshy_tripo.png`
 - ④ 리그·동작 13 은 크레딧 채운 뒤(총괄 10-10 · Higgsfield 3d_rigging 약 104). 서면 바로:
   `python tools/char/build_hero_unity.py <rig.glb> <clips 폴더> assets/v2/char/hero_m_unity.glb --keep-color --hero=hero2_m --from="sheet_hero_m_turnaround_toy_a → Tripo multiview e4df0454 (facez)"`
-  - 그다음 웹 판 `hero2_m.glb` = diet_hero2 로 줄임(그림 1024 · 쓰는 구간) → v2_hero `pickByGender` 두 곳 m 칸 · 옷은 기본만(옷 일곱 D68 미룸 · m 옷 표는 null 그대로면 기본 옷으로 둔다)
+  - 그다음 웹 판 `hero2_m.glb` = diet_hero2 로 줄임(그림 1024 · 쓰는 구간) → v2_hero `pickByGender` 두 곳 m 칸 · 옷은 기본만(옷 일곱 D68 미룸)
+  - ⛔ 그때 m 옷 표를 `null` 로 두지 말고 **`{}`(빈 표)** 로 — `null` 이면 pickByGender 가 'f' 옷 표로 떨어져 «여 몸 UV 로 칠한 옷 그림»을 남 몸에 입힌다(엉뚱하게 얼룩짐). 빈 표면 setOutfit 이 계절 옷을 거절하고(false) 기본 옷 그대로다. 몸만 'm' 이고 옷이 'f' 로 떨어지는 짝을 만들지 말 것(10-10 char 가 적음)
