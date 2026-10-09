@@ -1,0 +1,289 @@
+{
+ "_doc": "leaf 새 종 3D 주문(10-09) — 스킨답서스·칼라데아. 총괄이 Higgsfield 로 돌린다. 밑 메시 6(Tripo H3.1 · detailed · pbr true · get_cost 12) → 무늬판 6(meshy_v5_retexture · 밑 메시와 같은 UV · get_cost 9.5). REF_* = 고른 2D(media_upload). ⚠ Tripo 첫 시험(총괄): detailed + pbr false 는 failed — pbr true 로.",
+ "refs": {
+  "REF_SC_young": "assets/raw/plants/scindapsus/SC1_r2_<고른 판>.png",
+  "REF_SC_mid": "assets/raw/plants/scindapsus/SC2_a.jpg",
+  "REF_SC_mature": "assets/raw/plants/scindapsus/SC3_a.jpg",
+  "REF_CA_young": "assets/raw/plants/calathea/CA1_b.jpg",
+  "REF_CA_mid": "assets/raw/plants/calathea/CA2_a.jpg",
+  "REF_CA_mature": "assets/raw/plants/calathea/CA3_a.jpg"
+ },
+ "jobs": [
+  {
+   "name": "SC_young_3d",
+   "kind": "base_mesh",
+   "tool": "generate_3d",
+   "input_image": "assets/raw/plants/scindapsus/SC1_r2_<고른 판>.png",
+   "save_as": "assets/plants/scindapsus/_incoming1009/sc_leaf_young.glb",
+   "used_in": "② 스킨답서스 어린잎 밑 모양 — 종 잎 GLB(웹 · 유니티 기본 키트)",
+   "wait": "⏸ SC1 다시 뽑기(r2) 뒤",
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "REF_SC_young",
+      "role": "image_references"
+     }
+    ]
+   },
+   "cost": 12
+  },
+  {
+   "name": "SC_mid_3d",
+   "kind": "base_mesh",
+   "tool": "generate_3d",
+   "input_image": "assets/raw/plants/scindapsus/SC2_a.jpg",
+   "save_as": "assets/plants/scindapsus/_incoming1009/sc_leaf_mid.glb",
+   "used_in": "② 스킨답서스 중간잎 밑 모양 — 종 잎 GLB(웹 · 유니티 기본 키트)",
+   "wait": null,
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "REF_SC_mid",
+      "role": "image_references"
+     }
+    ]
+   },
+   "cost": 12
+  },
+  {
+   "name": "SC_mature_3d",
+   "kind": "base_mesh",
+   "tool": "generate_3d",
+   "input_image": "assets/raw/plants/scindapsus/SC3_a.jpg",
+   "save_as": "assets/plants/scindapsus/_incoming1009/sc_leaf_mature.glb",
+   "used_in": "② 스킨답서스 성숙잎 밑 모양 — 종 잎 GLB(웹 · 유니티 기본 키트)",
+   "wait": null,
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "REF_SC_mature",
+      "role": "image_references"
+     }
+    ]
+   },
+   "cost": 12
+  },
+  {
+   "name": "CA_young_3d",
+   "kind": "base_mesh",
+   "tool": "generate_3d",
+   "input_image": "assets/raw/plants/calathea/CA1_b.jpg",
+   "save_as": "assets/plants/calathea/_incoming1009/ca_leaf_young.glb",
+   "used_in": "② 칼라데아 어린잎(오비폴리아 줄무늬 = 원래 무늬) — 종 잎 GLB(웹 · 유니티 기본 키트)",
+   "wait": null,
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "REF_CA_young",
+      "role": "image_references"
+     }
+    ]
+   },
+   "cost": 12
+  },
+  {
+   "name": "CA_mid_3d",
+   "kind": "base_mesh",
+   "tool": "generate_3d",
+   "input_image": "assets/raw/plants/calathea/CA2_a.jpg",
+   "save_as": "assets/plants/calathea/_incoming1009/ca_leaf_mid.glb",
+   "used_in": "② 칼라데아 중간잎(오비폴리아) — 종 잎 GLB(웹 · 유니티 기본 키트)",
+   "wait": null,
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "REF_CA_mid",
+      "role": "image_references"
+     }
+    ]
+   },
+   "cost": 12
+  },
+  {
+   "name": "CA_mature_3d",
+   "kind": "base_mesh",
+   "tool": "generate_3d",
+   "input_image": "assets/raw/plants/calathea/CA3_a.jpg",
+   "save_as": "assets/plants/calathea/_incoming1009/ca_leaf_mature.glb",
+   "used_in": "② 칼라데아 성숙잎(오비폴리아) — 종 잎 GLB(웹 · 유니티 기본 키트)",
+   "wait": null,
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "REF_CA_mature",
+      "role": "image_references"
+     }
+    ]
+   },
+   "cost": 12
+  },
+  {
+   "name": "SC_mature_marblequeen",
+   "kind": "skin",
+   "tool": "generate_3d",
+   "after": "SC_mature_3d",
+   "save_as": "assets/plants/scindapsus/_incoming1009/sc_mature_marblequeen.glb",
+   "used_in": "② 성숙 · 마블퀸 무늬판 — 밑 메시(SC_mature_3d)와 같은 UV",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "model_url": "<SC_mature_3d 결과 GLB 주소>",
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC4_a.jpg",
+    "text_style_prompt": "Epipremnum 'Marble Queen' leaf: heavy creamy white marbled streaks and flecks over green, pastel low-poly, flat albedo, no lighting"
+   },
+   "cost": 9.5,
+   "alt": "첫 판이 무늬를 못 살리면 image_style_url 을 빼고 text_style_prompt 만으로 다시(재시도 몫)"
+  },
+  {
+   "name": "SC_mature_njoy",
+   "kind": "skin",
+   "tool": "generate_3d",
+   "after": "SC_mature_3d",
+   "save_as": "assets/plants/scindapsus/_incoming1009/sc_mature_njoy.glb",
+   "used_in": "② 성숙 · 엔조이 무늬판 — 밑 메시(SC_mature_3d)와 같은 UV",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "model_url": "<SC_mature_3d 결과 GLB 주소>",
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC5_b.jpg",
+    "text_style_prompt": "Epipremnum 'N'Joy' leaf: crisp clean white sections along the edges and a green center, no marbling, pastel low-poly, flat albedo, no lighting"
+   },
+   "cost": 9.5,
+   "alt": "첫 판이 무늬를 못 살리면 image_style_url 을 빼고 text_style_prompt 만으로 다시(재시도 몫)"
+  },
+  {
+   "name": "SC_mid_marblequeen",
+   "kind": "skin",
+   "tool": "generate_3d",
+   "after": "SC_mid_3d",
+   "save_as": "assets/plants/scindapsus/_incoming1009/sc_mid_marblequeen.glb",
+   "used_in": "② 중간 · 마블퀸 무늬판 — 밑 메시(SC_mid_3d)와 같은 UV",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "model_url": "<SC_mid_3d 결과 GLB 주소>",
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC4_a.jpg",
+    "text_style_prompt": "Epipremnum 'Marble Queen' leaf: heavy creamy white marbled streaks and flecks over green, pastel low-poly, flat albedo, no lighting"
+   },
+   "cost": 9.5,
+   "alt": "첫 판이 무늬를 못 살리면 image_style_url 을 빼고 text_style_prompt 만으로 다시(재시도 몫)"
+  },
+  {
+   "name": "SC_mid_njoy",
+   "kind": "skin",
+   "tool": "generate_3d",
+   "after": "SC_mid_3d",
+   "save_as": "assets/plants/scindapsus/_incoming1009/sc_mid_njoy.glb",
+   "used_in": "② 중간 · 엔조이 무늬판 — 밑 메시(SC_mid_3d)와 같은 UV",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "model_url": "<SC_mid_3d 결과 GLB 주소>",
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC5_b.jpg",
+    "text_style_prompt": "Epipremnum 'N'Joy' leaf: crisp clean white sections along the edges and a green center, no marbling, pastel low-poly, flat albedo, no lighting"
+   },
+   "cost": 9.5,
+   "alt": "첫 판이 무늬를 못 살리면 image_style_url 을 빼고 text_style_prompt 만으로 다시(재시도 몫)"
+  },
+  {
+   "name": "CA_mature_whitefusion",
+   "kind": "skin",
+   "tool": "generate_3d",
+   "after": "CA_mature_3d",
+   "save_as": "assets/plants/calathea/_incoming1009/ca_mature_whitefusion.glb",
+   "used_in": "② 성숙 · 화이트퓨전 무늬판 — 밑 메시(CA_mature_3d)와 같은 UV",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "model_url": "<CA_mature_3d 결과 GLB 주소>",
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/calathea/CA5_a.jpg",
+    "text_style_prompt": "Calathea 'White Fusion' leaf: light green with irregular brushstroke white and pale green marbling, pastel low-poly, flat albedo, no lighting"
+   },
+   "cost": 9.5,
+   "alt": "첫 판이 무늬를 못 살리면 image_style_url 을 빼고 text_style_prompt 만으로 다시(재시도 몫)"
+  },
+  {
+   "name": "CA_mid_whitefusion",
+   "kind": "skin",
+   "tool": "generate_3d",
+   "after": "CA_mid_3d",
+   "save_as": "assets/plants/calathea/_incoming1009/ca_mid_whitefusion.glb",
+   "used_in": "② 중간 · 화이트퓨전 무늬판 — 밑 메시(CA_mid_3d)와 같은 UV",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "model_url": "<CA_mid_3d 결과 GLB 주소>",
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/calathea/CA4_b.jpg",
+    "text_style_prompt": "Calathea 'White Fusion' leaf: light green with irregular brushstroke white and pale green marbling, pastel low-poly, flat albedo, no lighting"
+   },
+   "cost": 9.5,
+   "alt": "첫 판이 무늬를 못 살리면 image_style_url 을 빼고 text_style_prompt 만으로 다시(재시도 몫)"
+  }
+ ],
+ "cost": {
+  "base": 72,
+  "skins": 57.0,
+  "retry_share": 30,
+  "total_with_retry": 159.0
+ }
+}
