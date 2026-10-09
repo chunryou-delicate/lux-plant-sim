@@ -218,7 +218,12 @@ export async function play(name, seed, opt = {}) {
           if (node && stockOf(S, 'jar') >= 1) {
             const live = cuttingsOf(S).filter(c => c.status !== 'dead');
             const slot = moved ? brightestFree(live) : SILL;
-            try { takeCutting(S, { nodes: v.nodes, nodeId: node.nodeId, container: 'jar', at: atOf(light, slot), slots: light.room.slots, varieMaturedLeaves: vm }); out.cuts[room]++; } catch { }
+            /* ⚠⚠ 2026-10-09 자의 구멍 — 예전엔 «거른 목록»(v.nodes = cuttableNow)을 넘겼다. takeCutting 은 넘긴 목록으로 모주 잎 수를 센다
+                 (propagation §motherLeavesOf = 가장 큰 마디의 잎 · 거른 목록엔 밑동 마디가 없다) ⇒ 모주 잎 4장이 2장으로 읽혀
+                 «잎 2장 중 2장을 이미 잘랐습니다»로 원룸 자르기가 거의 다 던졌고 catch 가 삼켰다(씨앗 g: 원룸 자르기 2번 · 던짐 수백).
+                 게임(game.html §doCutFrom)은 growth 가 낸 «전체» 목록을 넘긴다 — 같게 v.all. 던진 말은 셈해 둔다(삼키지 않는다) */
+            try { takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar', at: atOf(light, slot), slots: light.room.slots, varieMaturedLeaves: vm }); out.cuts[room]++; }
+            catch (e) { const k = reasonKey(e && e.message); (out.cutThrow = out.cutThrow || {})[k] = (out.cutThrow[k] || 0) + 1; }
           }
         }
       }
@@ -442,6 +447,9 @@ for (const name of NAMES) {
   console.log(`  ★막힘 — ${Object.keys(stuckBy).length ? Object.entries(stuckBy).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}판`).join(' · ') : '없음'}`);
   console.log(`  자르기 — 반지하 ${rs.reduce((a, r) => a + r.cuts.banjiha, 0)} · 원룸 ${rs.reduce((a, r) => a + r.cuts.oneroom, 0)} · 삽수에서 ${recut.ok}/${recut.tried}` +
               (Object.keys(recutWhy).length ? `(막힘: ${Object.entries(recutWhy).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k, v]) => `${k} ${v}`).join(' · ')})` : ''));
+  { const t = {}; for (const r of rs) for (const [k, v] of Object.entries(r.cutThrow || {})) t[k] = (t[k] || 0) + v;
+    const top = Object.entries(t).sort((a, b) => b[1] - a[1]);
+    console.log(`  자르기가 던진 말(고른 마디를 실제로 잘랐을 때) — ${top.length ? top.slice(0, 3).map(([k, v]) => `${k} ${Math.round(v / N)}/판`).join(' · ') : '없음'}`); }
   console.log(`  ★자르기를 막은 말(날마다 · 가장 앞 마디) — 반지하: ${why('banjiha') || '—'}`);
   console.log(`                                          원룸: ${why('oneroom') || '—'}`);
 }
