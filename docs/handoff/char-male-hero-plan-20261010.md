@@ -670,3 +670,11 @@
 ```
 
 ### ③~⑤ (총괄) — 3D Meshy·Tripo 두 판 → G2(g2_check · 2% 줄 먼저 · 짧은 머리라 얼굴 쪽은 그림으로) → 고른 판 glb_face_z → Higgsfield 3d_rigging(키 1.4 · 동작 13 같은 번호) → char: build_hero_unity 와 같은 길로 hero2_m.glb(extras.hero='hero2_m') · 옷은 기본(크림 티·회색 조거)만 — 옷 일곱은 미룸
+
+### ①② 받음 (총괄 · 장부 assets/gen/hf_runs/char_male_20261010.json · 10-10 char)
+- ① 낯 여섯 — 여섯 다 A a 그 사람 · 같은 틀 · 표정 뜻 맞음(winter 니트·빨간 목도리 · apron 세이지 앞치마). 게임 판 `assets/characters/portraits/portrait_jachwi_m_{curious,scissors,bulb,beam,winter,apron}.png`
+  - 얼굴로 맞추니 넷(scissors 0.88 · bulb 0.87 · beam 0.93 · apron 0.98)은 원본 A a 와 «똑같은 네모»(x −46..1777 · y 12..2442)로 맞았다 = 같은 원본의 편집판은 틀이 같다. 고개 기울인 curious(0.68)·목도리 winter(0.59)는 얼굴로 못 찾는다(엉뚱한 배율 +5%)
+  - ⇒ `fit_portrait --match <정본> --match-via <A a 원본>` — 자리는 원본으로 찾고 이 그림을 그 네모로 자른다. 여섯을 다 이 길로(한 네모) · 자홍 바탕·눈코입 줄로 정본·옛 happy 와 견줌
+  - 이제 남 낯 열다섯 키가 다 있다(옛 여덟 + 정본 + 새 여섯) — core 66dfb4c0 «모자란 남 낯» 0
+- ② 턴어라운드 **a** — b 는 옆모습 팔이 앞으로 나와 앞모습(옆으로 45°)과 어긋난다. a 는 옆에서 팔이 곧게 내려와 A포즈와 맞다. 둘 다 짧은 머리라 머리–팔이 안 닿는다
+  - 칸 넷 `assets/characters/sheets/_hf/crops/hero_m_toy_a_{front,side,back,three_quarter}.png` — 같은 정사각 1874 · 같은 축척 · 같은 바닥선 1809. 장부에 칸 상자가 없어 연결 덩어리로 찾았다(옆–뒤 · 뒤–3/4 사이 틈이 25px 뿐이라 «틈 40px 미만 잇기»는 셋을 한 덩어리로 묶었다 — 덩어리로 가름)

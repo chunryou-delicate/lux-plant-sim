@@ -39,6 +39,7 @@
     python tools/char/fit_portrait.py ... --tol 8      (바탕이 깨끗한 순백이고 옷이 크림색일 때 · 기본 26)
     python tools/char/fit_portrait.py ... --tol 8 --pockets   (안 이어진 흰 틈도 지움 · 눈 반짝임은 남김 — §clear_pockets)
     python tools/char/fit_portrait.py <옷만 바꾼.png> <나갈.png> --match <원래 초상.png> --tol 8 --pockets   (얼굴 자리·크기를 원래 초상에 — §crop_to_match)
+    python tools/char/fit_portrait.py <편집판.png> <나갈.png> --match <정본 초상.png> --match-via <편집 원본.png> --match-min 0.8   (원본 자리로 자름 — 고개 기울임·목도리처럼 얼굴로 못 찾을 때)
 """
 import os
 import sys
@@ -120,7 +121,7 @@ def clear_pockets(rgb, bg, tol):
     return out
 
 
-def crop_to_match(im, orig_path, min_ncc=0.9):
+def crop_to_match(im, orig_path, min_ncc=0.9, via=None):
     """«옷만 바꾼 같은 낯»을 원래 초상과 얼굴 자리·크기가 같게 자른다 — --match <원래 초상.png> 일 때만.
 
     ★ 2026-10-09 앞치마 판 낯 넷: Higgsfield 가 몸을 더 넣어 얼굴이 원래보다 2~10% 작게 왔다.
@@ -136,9 +137,12 @@ def crop_to_match(im, orig_path, min_ncc=0.9):
     bx0, by0, bx1, by1 = int(ow * 0.25), int(oh * 0.175), int(ow * 0.75), int(oh * 0.5375)
     tpl = og[by0:by1, bx0:bx1]
     t = tpl - tpl.mean(); tn = float(np.sqrt((t ** 2).sum())); ones = np.ones_like(tpl)
-    g = im.convert('L')
+    # 10-10 --match-via <원본>: 이 그림이 «원본을 고쳐 그린 판»(같은 틀)이면 자리를 원본으로 찾고 이 그림을 그 네모로 자른다.
+    #   남 낯 여섯 중 넷은 원본 자리와 똑같은 네모로 맞았다(x -46..1777 y 12..2442) — 고개를 기울인 curious(0.68)·목도리 winter(0.59)는
+    #   얼굴만으로는 못 찾고(엉뚱한 배율 +5%) 원본 자리를 그대로 쓰는 것이 맞다
+    g = (Image.open(via).convert('RGB') if via else im).convert('L')
     best = None
-    base = ow / im.width
+    base = ow / g.width
     for s in np.arange(base * 0.75, base * 1.30, base * 0.0115):
         r = np.asarray(g.resize((round(g.width * s), round(g.height * s)), Image.LANCZOS)).astype(np.float32)
         if r.shape[0] < tpl.shape[0] or r.shape[1] < tpl.shape[1]:
@@ -151,7 +155,7 @@ def crop_to_match(im, orig_path, min_ncc=0.9):
             best = (float(ncc[i]), s, int(i[1]), int(i[0]))
     sc, s, lx, ly = best
     x, y, w, h = (lx - bx0) / s, (ly - by0) / s, ow / s, oh / s
-    print('얼굴 맞춤(%s): NCC %.3f · 배율 %.3f(폭 맞춤 %.3f → 얼굴 %+.0f%%) · 자를 네모 x %.0f..%.0f y %.0f..%.0f'
+    print(('원본 자리로 ' if via else '') + '얼굴 맞춤(%s): NCC %.3f · 배율 %.3f(폭 맞춤 %.3f → 얼굴 %+.0f%%) · 자를 네모 x %.0f..%.0f y %.0f..%.0f'
           % (os.path.basename(orig_path), sc, s, base, (s / base - 1) * 100, x, x + w, y, y + h))
     # 10-10 문턱을 열쇠로 — 옷만 바꾼 같은 그림은 0.95 언저리, «같은 사람을 새로 그린» 판(남 정본 A)은 0.84 언저리였다
     if sc < min_ncc:
@@ -233,7 +237,10 @@ def main():
     match = sys.argv[sys.argv.index('--match') + 1] if '--match' in sys.argv else None
     if match:
         mn = float(sys.argv[sys.argv.index('--match-min') + 1]) if '--match-min' in sys.argv else 0.9
-        im, (ow, oh) = crop_to_match(im, match, mn)
+        via = sys.argv[sys.argv.index('--match-via') + 1] if '--match-via' in sys.argv else None
+        if via and Image.open(via).size != im.size:
+            raise SystemExit('⛔ --match-via 원본과 크기가 다르다 — 같은 틀의 편집판이 아니다')
+        im, (ow, oh) = crop_to_match(im, match, mn, via)
     rgb = np.asarray(im)
     bg = edge_background(rgb, tol)
     print('배경 퍼뜨림 허용 %d' % tol)
