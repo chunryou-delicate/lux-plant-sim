@@ -18,14 +18,14 @@
      hero 는 제 클립 8개(walk·idle·sit·sleep·doze·crouch·wave·cheer)만 쓴다.
 ============================================================ */
 
-/* 10-09 (char): 새 주인공 hero2(긴 생머리 · A포즈 · Meshy rig 01a11e7a)는 «켜야만» 쓴다 — ?hero2=1 · localStorage 'hero2'='1'.
-   기본은 지금 hero.glb 그대로다(바꾸는 것은 총괄·박사님 확인 뒤). */
+/* 10-09 (char): 주인공 몸 = hero2(긴 생머리 · A포즈 · Meshy rig 01a11e7a) — 총괄 10-09 «기본을 hero2 로»(박사님 «초상화처럼 긴 생머리»).
+   옛 몸(hero.glb · T포즈)은 ?hero2=0 · localStorage 'hero2'='0' 으로 남긴다(되돌리기 쉽게). */
 function heroFile() {
   try {
     const q = new URLSearchParams(location.search);
-    const on = q.get('hero2') === '1' || (q.get('hero2') !== '0' && localStorage.getItem('hero2') === '1');
-    return on ? 'hero2.glb' : 'hero.glb';
-  } catch (e) { return 'hero.glb'; }
+    const off = q.get('hero2') === '0' || (q.get('hero2') !== '1' && localStorage.getItem('hero2') === '0');
+    return off ? 'hero.glb' : 'hero2.glb';
+  } catch (e) { return 'hero2.glb'; }
 }
 const HERO_URL = new URL('../../assets/v2/char/' + heroFile(), import.meta.url).href;
 

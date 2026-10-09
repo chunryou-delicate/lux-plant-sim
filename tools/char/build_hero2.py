@@ -227,6 +227,18 @@ def main():
         'crouchHand': tab, 'walkMps': mps, 'emoteWin': {'cheer': w}}
     write_glb(dst, js, bn2)
     update_extras(dst)
+    # 10-09 — 몸짓 무게(팔을 수평 위로 들 때만 · v2_hero installEmoteSkin): 앞 가닥이 환호 때 위팔(무게 평균 0.15)을 따라 들려 꺾였다.
+    #   전부 옮기면 팔·머리 맞닿은 자리에 흰 바늘이 났고, 팔 뼈 거리로 서서히(파일 키 1.4 라 0.08~0.20)면 바늘 없이 가닥이 곧다.
+    #   걷기·서기는 팔이 문턱까지 안 올라가 화소 0 차이(16장).
+    import subprocess
+    tmp = dst + '.emote.glb'
+    r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fix_hair_weights.py'),
+                        dst, tmp, '--as-emote', '--near=0.08,0.20'], capture_output=True, text=True, encoding='utf-8')
+    print('
+'.join(l for l in r.stdout.splitlines() if '--as-emote' in l or '⛔' in l))
+    if r.returncode != 0 or not os.path.exists(tmp):
+        print('⛔ 몸짓 무게를 못 실었다 — 몸짓 무게 없이 둔다'); return 0
+    os.replace(tmp, dst)
     print('■ 키(파일) %.3f · 쭈그리기 오른손 표 %s' % (fileH, tab))
     print('■ 걷기 디딘 발 속도  옛 %.3f · 새 %.3f m/s(같은 자) ⇒ walkMps %.3f (옛 0.76 × 비)' % (v_old, v_new, mps))
     print('■ cheer 팔이 가장 높은 3초 %s (벌림 평균 %.1f°)' % (w, s))

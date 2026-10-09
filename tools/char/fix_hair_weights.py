@@ -151,9 +151,14 @@ def main():
           % (xa, yHead, inner.sum(), (inner & (y > yHead + 0.03)).sum(), (inner & (y <= yHead + 0.03)).sum()))
     # --as-emote : 원래 무게는 «그대로» 두고 고친 무게를 _JOINTS_EMOTE·_WEIGHTS_EMOTE 로 «따로» 싣는다.
     #   ⛔ 고친 무게를 통째로 쓰면 걷기·idle 어깨에 바늘이 새로 난다(위 3단계 주석) ⇒ 팔을 수평 위로 들 때만 바꿔 쓴다(v2_hero.js).
-    vb = js['bufferViews'][js['accessors'][at['WEIGHTS_0']]['bufferView']]
-    vo = vb.get('byteOffset', 0)
-    orig = bytes(bn[vo:vo + vb['byteLength']])
+    # ⛔ 2026-10-09 hero2 — 관절·무게가 «서로 다른» bufferView 다(hero 는 한 구역에 끼워져 있었다).
+    #   첫 판은 무게 구역만 되돌려 관절이 바뀐 채 남았고, 아래 관문이 «원래 무게가 안 돌아왔다»로 잡았다 ⇒ 두 구역 다 되돌린다
+    origs = {}
+    for k in ('JOINTS_0', 'WEIGHTS_0'):
+        bvi = js['accessors'][at[k]]['bufferView']
+        vb = js['bufferViews'][bvi]
+        vo = vb.get('byteOffset', 0)
+        origs[bvi] = (vo, bytes(bn[vo:vo + vb['byteLength']]))
     putJ, putW = writer(js, at['JOINTS_0']), writer(js, at['WEIGHTS_0'])
     n = 0
     for i in np.where(pick | inner)[0]:
@@ -207,7 +212,8 @@ def main():
     if left:
         print('⛔ 팔 무게가 남았다 — 쓰지 않는다'); return 3
     if '--as-emote' in sys.argv:
-        bn[vo:vo + len(orig)] = orig                       # 원래 무게를 되돌린다
+        for vo, orig in origs.values():                    # 원래 관절·무게를 되돌린다
+            bn[vo:vo + len(orig)] = orig
         for name, arr, ct in (('_JOINTS_EMOTE', J2.astype('<u1'), 5121), ('_WEIGHTS_EMOTE', W2.astype('<f4'), 5126)):
             raw = np.ascontiguousarray(arr).tobytes()
             while len(bn) % 4:
