@@ -1494,6 +1494,21 @@ export const SCRIPTS = {
   moveLowCash: [
     { who: 'moni', face: 'worry', text: '이사비 내면 첫 달 월세가 모자라. 조금만 더 모으고 가자.' }
   ],
+  /* ★★ 2026-10-09 [plan] 재미 점검(plan-fun-audit §4) — 반지하 16주 구간(Day 50~165)의 «무순 다섯» 칩에 «무엇을»(D19).
+     ⚠ 「창턱 말고도 자랄 데가 있어」 = 반지하에서 창턱을 빼고 무순 문턱을 넘는 자리가 정확히 다섯(quest.js §radish5 주석 · [Plan] 실측) — 참.
+     ⚠ 「놓을 자리가 아직 남았어」 = 이 줄은 다섯을 «놓으면» 끝나므로 열려 있는 동안 늘 참. 16주 줄이라 한 달에 한 번(§CHATTER gap 30). */
+  nudgeRadishOffer: [ { who: 'moni', face: 'teach', text: '무순은 창턱 말고도 자랄 데가 있어. 놓을 자리를 찾아 봐.' } ],
+  nudgeRadishPush:  [ { who: 'moni', face: 'teach', text: '무순 놓을 자리가 아직 남았어.' } ],
+  /* ★ 2026-10-09 [plan] 재미 점검 — 수확 이정표(작은 새것). 콩나물을 열 번째·서른 번째 거둔 날 한 줄씩(한 판에 한 번).
+     칸 harvestTotal 은 [core] turn.cropNow.harvestTotal(누적 거둔 수) — 없으면 안 뜬다. 자취생은 수를 말해도 된다(몬이는 안 함). */
+  statusHarvest10: [
+    { who: 'jachwi', text: '시루를 열 번 열었다.' },
+    { who: 'moni',   face: 'proud', text: '손이 익었네.' }
+  ],
+  statusHarvest30: [
+    { who: 'jachwi', face: 'think', text: '서른 번째 콩나물이다.' },
+    { who: 'moni',   face: 'calm',  text: '이젠 눈 감고도 하겠다.' }
+  ],
   /* ★★ 2026-10-08 [plan] 갈래 지도 2 — **굶주림 경고에 «나가는 길»을 말한다.** 0원이 닷새 이어지면 매일 `hungry`(tutorial.js) —
      지금까지 로그(「굶은 지 N일째 — M일 남았습니다」)뿐이고 대사가 없었다. 게임오버 자체는 박사님 결정(08-17)이라 안 건드린다.
      ⚠ 수는 안 말한다(남은 날은 로그·화면이 말한다) · 「곳간」은 화면에서 걷힌 말이라(박사님 08-16 «그냥 보유 채소») «남은 채소».
@@ -2059,6 +2074,7 @@ export const REPEATABLE = new Set(
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
              'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'hungryTalk', 'hungryTalk2',
+             'nudgeRadishOffer', 'nudgeRadishPush', 'statusHarvest10', 'statusHarvest30',
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
@@ -2414,6 +2430,9 @@ export function scriptsForEvents(events = [], S = null) {
 /* ★ 독촉 날 문턱 — [plan] 밑값(plan-quest-nudge ⓔ: 열린 다음 날 · 사나흘 · 한 이레 · 두 이레).
    ⚠ 「뜬 날·열쇠」 표가 나온 뒤 [plan]이 다시 센다. 여기 것은 밑값이다. */
 export const NUDGE_DAYS = Object.freeze({ ask: 4, worry: 7, back: 14 });
+/* ★ 2026-10-09 [plan] — «제 줄이 있는 긴 줄»(한 달에 한 번 · 몇 달 열려 있음)은 범용 셋(Offer·Ask·Worry)에서 뺀다 —
+   제 줄 다음 날 범용 «걱정»이 붙어 달마다 두 번씩 났다(재미 점검 모의: 무순 다섯 37·38일). 집 자금(13달) · 무순 다섯(16주). */
+const LONG_OWN_LINES = new Set(['oneroom_home_fund', 'radish5']);
 export const CHATTER = [
   /* 첫 플레이 — 수확 전 사흘. ★날짜를 딱 집어 걸지 않는다(`===` 로 걸었더니
      조용한 날 세기와 어긋나 셋 다 못 나오는 날이 있었다). 둘 중 안 나온 쪽이 먼저 나온다. */
@@ -2573,6 +2592,9 @@ export const CHATTER = [
     { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
     { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry }
   ]),
+  /* ★ 2026-10-09 [plan] 재미 점검 — 무순 다섯(16주 칩)도 한 달에 한 번(gap 30) */
+  { id: 'nudgeRadishOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'radish5' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry },
+  { id: 'nudgeRadishPush',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'radish5' && c.nudge.days >= NUDGE_DAYS.worry },
   /* ★ 2026-10-09 [plan] 원룸 후반 — 집 자금 줄은 13달이라 한 달에 한 번(gap 30) */
   { id: 'nudgeHomeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry },
   { id: 'nudgeHomePush',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry
@@ -2583,9 +2605,9 @@ export const CHATTER = [
      ⚠ 걱정은 이제 «끝이 없다»(≥ worry) — 예전 ④ 물러섬 자리까지 걱정이 맡는다(30일에 한 번이라 잔소리가 안 된다). */
   /* ★ 2026-10-09 [plan] — 집 자금 줄(13달 · 모으는 중)은 범용 셋에서 뺀다. 「할 일이 며칠째 그대로야. 막힌 데 있어?」가 달마다 났는데
      ([core] 갈래 판 · 늘리는 사람 8.3/판) 그동안 사람은 막힌 게 아니라 모으는 중이다. 집 자금은 제 줄(nudgeHome…)이 말한다. */
-  { id: 'nudgeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id !== 'oneroom_home_fund' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
-  { id: 'nudgeAsk',   nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id !== 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
-  { id: 'nudgeWorry', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id !== 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry },
+  { id: 'nudgeOffer', nudge: true, gap: 30, when: c => !!c.nudge && !LONG_OWN_LINES.has(c.nudge.id) && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
+  { id: 'nudgeAsk',   nudge: true, gap: 30, when: c => !!c.nudge && !LONG_OWN_LINES.has(c.nudge.id) && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
+  { id: 'nudgeWorry', nudge: true, gap: 30, when: c => !!c.nudge && !LONG_OWN_LINES.has(c.nudge.id) && c.nudge.days >= NUDGE_DAYS.worry },
   /* ★ 「급한 건 아니야. 마음 내키면 해.」 — 독촉이 아니라 «잡담»이다(D19). 할 수 있는 퀘스트가 «없는» 날에만
      (다 끝났거나 · 시루가 도는 등 기다리는 중 — chatterContext.nudge 가 null). 할 일이 멎어 있는 날에 «급하지 않다»고 하면 거짓이다.
      범용 줄이라 30일에 한 번. ⚠ id 는 그대로 둔다(probe·세이브 이력이 이 이름을 안다). */
@@ -2622,6 +2644,9 @@ export const CHATTER = [
   /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
   { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0 },
   /* ★ 2026-10-09 [plan] 원룸 후반 — 한 해 · 목표 이정표 둘(처음 넘은 날 · 한 번씩 — gap 400 은 «한 판에 한 번») */
+  /* ★ 2026-10-09 [plan] 재미 점검 — 수확 이정표(열 번째 · 서른 번째 · 한 판에 한 번) */
+  { id: 'statusHarvest30',      status: true, gap: 9999, when: c => fin(c.harvestTotal) && c.harvestTotal >= 30 },
+  { id: 'statusHarvest10',      status: true, gap: 9999, when: c => fin(c.harvestTotal) && c.harvestTotal >= 10 && c.harvestTotal < 30 },
   { id: 'statusOneroomYear',    status: true, gap: 400, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 365 },
   { id: 'statusHomeNear',       status: true, gap: 400, when: c => c.movedOut && fin(c.homeTarget) && c.homeTarget > 0 && fin(c.cashWon)
                                                             && c.cashWon >= c.homeTarget * 0.85 && c.cashWon < c.homeTarget },
@@ -2755,7 +2780,9 @@ export function chatterContext(turn = {}, S = null) {
     ...(() => {
       const cn = (turn && turn.cropNow) || {};
       return { seedStock: cn.seedStock === undefined ? null : cn.seedStock,
-               emptySiru: cn.emptySiru === undefined ? null : cn.emptySiru };
+               emptySiru: cn.emptySiru === undefined ? null : cn.emptySiru,
+               /* ★ 2026-10-09 [plan] 재미 점검 — 누적 거둔 수([core] cropNow.harvestTotal · 모르면 null) */
+               harvestTotal: Number.isFinite(cn.harvestTotal) ? cn.harvestTotal : null };
     })(),
     /* ★ 2026-09-02 — 독촉의 임자: «가장 먼저 열렸는데 아직 안 끝난» 퀘스트가 열린 지 며칠째인가.
        열린 날은 stamina.questsOpenedOn(세이브에 실린다), 끝난 것은 stamina.questsTaken 이 안다. 새 칸은 열린 날 하나뿐이다. */
