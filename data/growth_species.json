@@ -48,15 +48,14 @@
       },
       "assets": {
         "_doc": [
-          "단계 × 등급 → 판(manifest path). leaf 14판 중 PP 7판(id 803~809).",
+          "단계 × 등급 → 판(manifest path). PP 10판(id 803~809 · 다 분홍 814~816 leaf 937aa642).",
           "⚠ 판이 없는 칸은 «대신 판»을 적었다 — 그 줄 밑 _gap 에 무엇이 없는지 적는다. leaf 가 판을 들이면 이 칸만 고친다."
         ],
-        "young":  { "green": "plants/pink_princess/pp_leaf_young.glb",  "marble": "plants/pink_princess/skins/pp_leaf_young_pinkmarble.glb",  "heavy": "plants/pink_princess/skins/pp_leaf_young_pinkmarble.glb",  "pink": "plants/pink_princess/skins/pp_leaf_young_pinkmarble.glb",
-                    "_gap": "heavy·pink 판 없음 → pinkmarble 로 대신" },
-        "mid":    { "green": "plants/pink_princess/pp_leaf_mid.glb",    "marble": "plants/pink_princess/skins/pp_leaf_mid_pinkmarble.glb",    "heavy": "plants/pink_princess/skins/pp_leaf_mid_pinkmarble.glb",    "pink": "plants/pink_princess/skins/pp_leaf_mid_pinkmarble.glb",
-                    "_gap": "heavy·pink 판 없음 → pinkmarble 로 대신" },
-        "mature": { "green": "plants/pink_princess/pp_leaf_mature.glb", "marble": "plants/pink_princess/skins/pp_leaf_mature_pinkmarble.glb", "heavy": "plants/pink_princess/skins/pp_leaf_mature_pinkheavy.glb", "pink": "plants/pink_princess/skins/pp_leaf_mature_pinkheavy.glb",
-                    "_gap": "pink(다 분홍) 판 없음 → pinkheavy 로 대신" }
+        "young":  { "green": "plants/pink_princess/pp_leaf_young.glb",  "marble": "plants/pink_princess/skins/pp_leaf_young_pinkmarble.glb",  "heavy": "plants/pink_princess/skins/pp_leaf_young_pinkmarble.glb",  "pink": "plants/pink_princess/skins/pp_leaf_young_allpink.glb",
+                    "_gap": "heavy 판 없음 → pinkmarble 로 대신 (pink = 다 분홍 판 · leaf 937aa642)" },
+        "mid":    { "green": "plants/pink_princess/pp_leaf_mid.glb",    "marble": "plants/pink_princess/skins/pp_leaf_mid_pinkmarble.glb",    "heavy": "plants/pink_princess/skins/pp_leaf_mid_pinkmarble.glb",    "pink": "plants/pink_princess/skins/pp_leaf_mid_allpink.glb",
+                    "_gap": "heavy 판 없음 → pinkmarble 로 대신 (pink = 다 분홍 판 · leaf 937aa642)" },
+        "mature": { "green": "plants/pink_princess/pp_leaf_mature.glb", "marble": "plants/pink_princess/skins/pp_leaf_mature_pinkmarble.glb", "heavy": "plants/pink_princess/skins/pp_leaf_mature_pinkheavy.glb", "pink": "plants/pink_princess/skins/pp_leaf_mature_allpink.glb" }
       },
       "propagation": {
         "_doc": "줄기 삽수. 마디 n «바로 위»를 자르면 n 위의 잎은 삽수로 가고 모주의 다음 잎은 마디 n 에서 다시 난다(그 잎의 분홍 몫에서 흐른다). 잎이 전부 분홍 잎인 삽수는 살지 못한다(viable:false · 뿌리 내리기는 core propagation 몫).",
@@ -85,6 +84,8 @@
           "무늬 모주의 구근이 무늬면 모주의 무늬 갈래를 잇는다. 상점 구근이 무늬면 갈래를 고르게 굴린다."
         ],
         "sprout_days": 14,
+        "sleeping_corm_makes_corms": true,
+        "_sleeping_doc": "D49(총괄 2026-10-09) — 잠 철(dormancy.seasons)을 기다린 구근은 «잠든 구근»: 싹틀 때(봄에 깰 때) 구근을 corms_on_wake 만큼 같이 낸다. 잎 0 으로 min_sleep_days 넘게 잔 그루와 같게 본다. 다른 철에 심은 구근은 «자람 → 겨울잠 → 봄 깸» 그대로. 무늬 몫(varie_chance)은 안 바뀐다.",
         "varie_chance": { "from_varie_mother": 0.75, "from_plain_mother": 0.0, "shop": 0.25 }
       },
       "varie_kinds": {

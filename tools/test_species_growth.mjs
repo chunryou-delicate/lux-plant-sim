@@ -13,6 +13,7 @@
      G AL 구근 → 싹(그때 무늬 굴림) · 잎 최대 장수 · 사다리
      H AL 겨울 → 잎이 하나씩 진다 → 잠 → 봄에 깸 + 구근 1~3알
      I AL 구근 수 고르게 · J 무늬 몫(무늬 모주 3/4 · 민무늬 0 · 상점) · K 어두워서 든 잠 · 짧은 잠엔 구근 없음
+     N D49 잠든 구근(겨울에 심은 구근은 싹틀 때 구근 1~3알)
      L 잘못 부르면 던진다 · M 그림 판이 실제로 있다
      node tools/test_species_growth.mjs
 ============================================================ */
@@ -198,6 +199,29 @@ ok(firstLeafDay(thPP.min - 0.1, 'summer') === null, `C PP 문턱(min ${thPP.min}
   const wb = walk(b, 30, k(6), k('summer')).find(e => e.type === 'wake');
   ok(R.summary(b).phase === 'growing' && wb && wb.corms.length === 0, `K 잠깐(잎 0 으로 ${AL.propagation.min_sleep_days}일 미만) 재웠다 깨우면 구근 0 — 어두운 데 넣었다 빼서 구근을 찍지 못한다`); }
 
+/* N — D49 잠든 구근: 잠 철을 기다린 구근은 싹틀 때 구근 1~3알 · 다른 철 구근은 그대로 */
+{ const N = 600, cnt = {}; let sleptAll = true, varie = 0, sameSeeds = 0, wokeAgain = 0;
+  const [lo, hi] = AL.propagation.corms_on_wake, span = hi - lo + 1;
+  for (let s = 1; s <= N; s++) {
+    const a = R.newPlant('alocasia_frydek', { seed: s * 7919 + 3, origin: 'shop' });
+    const ev = walk(a, 60, k(6), d => d <= 20 ? 'winter' : 'spring');
+    const sp = ev.find(e => e.type === 'sprout');
+    if (!sp || !sp.slept || sp.d !== 20 + Math.ceil(AL.corm.sprout_days / AL.season_speed.spring - 1e-9)) sleptAll = false;
+    const n = sp ? sp.corms.length : -1; cnt[n] = (cnt[n] || 0) + 1;
+    if (sp && sp.varie) varie++;
+    /* 다음 봄 깸의 구근은 싹틈의 구근과 다른 열쇠로 굴린다 */
+    if (s <= 40) { const w = walk(a, 420, k(6), d => seasonOf(90 + 40 + d)).find(e => e.type === 'wake');
+      if (w && w.corms.length) wokeAgain++;
+      if (w && w.corms.length && sp.corms.length && w.corms[0].seed === sp.corms[0].seed) sameSeeds++; }
+  }
+  const even = Array.from({ length: span }, (_, i) => cnt[lo + i] || 0).every(c => Math.abs(c / N - 1 / span) < 0.06);
+  ok(sleptAll && even && !cnt[-1] && !cnt[0], `N 겨울에 심은 구근 ${N}판 — 봄 첫날부터 ${AL.corm.sprout_days}일째 싹 · 그때 구근 ${lo}~${hi}알 고르게 ${JSON.stringify(cnt)}`);
+  ok(Math.abs(varie / N - AL.corm.varie_chance.shop) < 0.04, `N 잠든 구근도 무늬 몫은 그대로 — 상점 ${(varie / N).toFixed(3)}(기대 ${AL.corm.varie_chance.shop})`);
+  ok(wokeAgain >= 30 && sameSeeds === 0, `N 싹틈 구근과 다음 봄 깸 구근은 다른 굴림 — 다음 봄에 구근 내며 깬 판 ${wokeAgain}/40 · 같은 씨앗 ${sameSeeds}`);
+  const b = R.newPlant('alocasia_frydek', { seed: 5, origin: 'shop' });
+  const spb = walk(b, 40, k(6), k('summer')).find(e => e.type === 'sprout');
+  ok(spb && spb.slept === false && spb.corms.length === 0 && b.cormsMade === 0, '여름에 심은 구근은 싹틀 때 구근 없음(자람 → 겨울잠 → 봄 깸 그대로)'); }
+
 /* L — 잘못 부르면 던진다 */
 const pp = R.newPlant('pink_princess');
 ok(throws(() => R.stepDay(pp, { dli: 5 })), 'L 계절 없이 하루를 넘기면 던진다');
@@ -212,7 +236,7 @@ ok(throws(() => R.newPlant('alocasia_frydek', { origin: 'gift' })), 'L 모르는
     for (const [g, a] of Object.entries(row)) if (!g.startsWith('_') && !fs.existsSync(path.join(ROOT, 'assets', a))) miss.push(a);
   ok(miss.length === 0, `M 판 표의 GLB 가 assets/ 에 다 있다${miss.length ? ' — 없음 ' + miss.join(' · ') : ''}`);
   const rows = R.leafRows(R.newPlant('pink_princess', { pinks: [0, 0.3, 0.7, 0.95], nodes: 8 }));
-  ok(rows.map(r => r.grade).join() === 'green,marble,heavy,pink' && rows[3].asset.endsWith('pp_leaf_mature_pinkheavy.glb') && rows[0].size_m === PP.leaf_size_m.mid,
+  ok(rows.map(r => r.grade).join() === 'green,marble,heavy,pink' && rows[3].asset.endsWith('pp_leaf_mature_allpink.glb') && rows[2].asset.endsWith('pp_leaf_mid_pinkmarble.glb') && rows[0].size_m === PP.leaf_size_m.mid,
     `M PP 그림 줄 — ${rows.map(r => `${r.no}:${r.stage}/${r.grade}`).join(' ')}`); }
 
 console.log('\nspecies_growth: ' + (fail ? 'FAIL' : 'PASS'));

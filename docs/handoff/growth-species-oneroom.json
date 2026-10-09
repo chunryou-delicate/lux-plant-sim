@@ -10,68 +10,6 @@
  },
  "rows": [
   {
-   "yearDay0": 135,
-   "lamps": 0,
-   "pp": {
-    "newLeaves": 10,
-    "revertedPlants": 55,
-    "topPinkMedian": 0,
-    "witheredPlants": 0,
-    "pinkLeavesMedian": 0,
-    "marbleShareMedian": 0.2,
-    "cutsMedian": 0
-   },
-   "ppScissors": {
-    "newLeaves": 10,
-    "revertedPlants": 0,
-    "topPinkMedian": 0.166,
-    "witheredPlants": 0,
-    "pinkLeavesMedian": 0,
-    "marbleShareMedian": 0.7,
-    "cutsMedian": 3
-   },
-   "al": {
-    "sprout": 76,
-    "leaves": 7,
-    "sleep": 135,
-    "wake": 250,
-    "wokeWithin": 60,
-    "cormsMedian": 2,
-    "varie": 19
-   }
-  },
-  {
-   "yearDay0": 135,
-   "lamps": 1,
-   "pp": {
-    "newLeaves": 19,
-    "revertedPlants": 44,
-    "topPinkMedian": 0,
-    "witheredPlants": 5,
-    "pinkLeavesMedian": 0,
-    "marbleShareMedian": 0.32,
-    "cutsMedian": 0
-   },
-   "ppScissors": {
-    "newLeaves": 19,
-    "revertedPlants": 0,
-    "topPinkMedian": 0.407,
-    "witheredPlants": 0,
-    "pinkLeavesMedian": 0,
-    "marbleShareMedian": 0.84,
-    "cutsMedian": 2
-   },
-   "al": {
-    "sprout": 76,
-    "leaves": 10,
-    "sleep": 135,
-    "wake": 231,
-    "wokeWithin": 60,
-    "cormsMedian": 2,
-    "varie": 19
-   }
-  },
-  {
    "yearDay0": 0,
    "lamps": 0,
    "pp": {
@@ -96,9 +34,16 @@
     "sprout": 73,
     "leaves": 6,
     "sleep": 270,
-    "wake": 385,
-    "wokeWithin": 60,
-    "cormsMedian": 1,
+    "springWake": 385,
+    "springWakeWithin": 41,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 0,
+     "365": 0,
+     "395": 41
+    },
+    "cormsMedian": 2,
     "varie": 19
    }
   },
@@ -127,8 +72,91 @@
     "sprout": 73,
     "leaves": 10,
     "sleep": 270,
-    "wake": 366,
-    "wokeWithin": 60,
+    "springWake": 366,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 0,
+     "365": 0,
+     "395": 60
+    },
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 45,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 10,
+    "revertedPlants": 55,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.3,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 10,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.123,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.7,
+    "cutsMedian": 3
+   },
+   "al": {
+    "sprout": 72,
+    "leaves": 5,
+    "sleep": 225,
+    "springWake": 340,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 0,
+     "365": 60,
+     "395": 60
+    },
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 45,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 41,
+    "topPinkMedian": 0,
+    "witheredPlants": 7,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.42,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.354,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.84,
+    "cutsMedian": 2
+   },
+   "al": {
+    "sprout": 72,
+    "leaves": 10,
+    "sleep": 225,
+    "springWake": 321,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 0,
+     "365": 60,
+     "395": 60
+    },
     "cormsMedian": 2,
     "varie": 19
    }
@@ -158,9 +186,16 @@
     "sprout": 72,
     "leaves": 6,
     "sleep": 180,
-    "wake": 295,
-    "wokeWithin": 60,
-    "cormsMedian": 1,
+    "springWake": 295,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 41,
+     "365": 60,
+     "395": 60
+    },
+    "cormsMedian": 2,
     "varie": 19
    }
   },
@@ -189,8 +224,91 @@
     "sprout": 72,
     "leaves": 10,
     "sleep": 180,
-    "wake": 276,
-    "wokeWithin": 60,
+    "springWake": 276,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 135,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 10,
+    "revertedPlants": 55,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.2,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 10,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.166,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.7,
+    "cutsMedian": 3
+   },
+   "al": {
+    "sprout": 76,
+    "leaves": 7,
+    "sleep": 135,
+    "springWake": 250,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 135,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 44,
+    "topPinkMedian": 0,
+    "witheredPlants": 5,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.32,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.407,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.84,
+    "cutsMedian": 2
+   },
+   "al": {
+    "sprout": 76,
+    "leaves": 10,
+    "sleep": 135,
+    "springWake": 231,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 60,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
     "cormsMedian": 2,
     "varie": 19
    }
@@ -220,8 +338,15 @@
     "sprout": 76,
     "leaves": 7,
     "sleep": 90,
-    "wake": 205,
-    "wokeWithin": 60,
+    "springWake": 205,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 60,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
     "cormsMedian": 2,
     "varie": 19
    }
@@ -251,8 +376,91 @@
     "sprout": 76,
     "leaves": 10,
     "sleep": 90,
-    "wake": 186,
-    "wokeWithin": 60,
+    "springWake": 186,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 60,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 225,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 11,
+    "revertedPlants": 53,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.18,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 11,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.173,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.73,
+    "cutsMedian": 3
+   },
+   "al": {
+    "sprout": 148,
+    "leaves": 9,
+    "sleep": 224,
+    "springWake": 148,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 60,
+    "wokeBy": {
+     "240": 60,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 225,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 45,
+    "topPinkMedian": 0,
+    "witheredPlants": 9,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.21,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.407,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.84,
+    "cutsMedian": 2
+   },
+   "al": {
+    "sprout": 148,
+    "leaves": 11,
+    "sleep": null,
+    "springWake": 148,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 60,
+    "wokeBy": {
+     "240": 60,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
     "cormsMedian": 2,
     "varie": 19
    }
@@ -282,9 +490,16 @@
     "sprout": 103,
     "leaves": 9,
     "sleep": 360,
-    "wake": 189,
-    "wokeWithin": 19,
-    "cormsMedian": 0,
+    "springWake": 103,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 60,
+    "wokeBy": {
+     "240": 60,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
+    "cormsMedian": 2,
     "varie": 19
    }
   },
@@ -313,8 +528,91 @@
     "sprout": 103,
     "leaves": 12,
     "sleep": 360,
-    "wake": null,
-    "wokeWithin": 0,
+    "springWake": 103,
+    "springWakeWithin": 60,
+    "viaSleepingCorm": 60,
+    "wokeBy": {
+     "240": 60,
+     "300": 60,
+     "365": 60,
+     "395": 60
+    },
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 315,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 11,
+    "revertedPlants": 52,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.18,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 11,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.129,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.73,
+    "cutsMedian": 3
+   },
+   "al": {
+    "sprout": 73,
+    "leaves": 8,
+    "sleep": 315,
+    "springWake": null,
+    "springWakeWithin": 0,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 0,
+     "365": 0,
+     "395": 0
+    },
+    "cormsMedian": null,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 315,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 34,
+    "topPinkMedian": 0,
+    "witheredPlants": 10,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.53,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.331,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.84,
+    "cutsMedian": 1
+   },
+   "al": {
+    "sprout": 73,
+    "leaves": 11,
+    "sleep": 315,
+    "springWake": null,
+    "springWakeWithin": 0,
+    "viaSleepingCorm": 0,
+    "wokeBy": {
+     "240": 0,
+     "300": 0,
+     "365": 0,
+     "395": 0
+    },
     "cormsMedian": null,
     "varie": 19
    }

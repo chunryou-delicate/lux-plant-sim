@@ -18,7 +18,8 @@
 
    사건(events) — 코어가 대사·스냅샷에 쓴다
      PP  leaf { no, pink, grade } · tip_withering { streak, at } · tip_withered { count }   (자르기로 살린 것은 cutAbove 의 saved)
-     AL  sprout { varie } · leaf { no } · leaf_drop { no } · dormancy_start { why } · asleep · wake { corms: [{ seed, origin, motherKind }] }
+     AL  sprout { varie, slept, corms } · leaf { no } · leaf_drop { no } · dormancy_start { why } · asleep · wake { corms: [{ seed, origin, motherKind }] }
+         (slept = 잠 철을 기다린 «잠든 구근»의 싹틈 · D49 — 그때 corms 가 같이 온다)
 ============================================================ */
 import { judgeDLI, thresholdsFor } from '../engine/daily_light.js';
 import { seasonOf } from '../engine/weather.js';
@@ -87,7 +88,7 @@ export function createSpeciesRules(SPEC, TH) {
     if (species === 'alocasia_frydek') {
       const origin = opt.origin || 'shop';
       if (!(origin in S.corm.varie_chance)) throw new Error(`[종 생장] AL: 구근 출처 «${origin}» 를 모른다`);
-      return { ...base, phase: 'corm', origin, motherKind: opt.motherKind ?? null, varie: null, lad: 0,
+      return { ...base, phase: 'corm', origin, motherKind: opt.motherKind ?? null, varie: null, lad: 0, cormSlept: false,
         lowRun: 0, wakeRun: 0, dropRun: 0, sleptDays: 0, wakes: 0, cormsMade: 0 };
     }
     throw new Error(`[종 생장] 규칙이 없는 종 «${species}»`);
@@ -156,7 +157,12 @@ export function createSpeciesRules(SPEC, TH) {
     const D = S.dormancy, th = thOf(p), a = avg7(p);
     const sleepSeason = D.seasons.includes(season);
     if (p.phase === 'corm') {
-      /* 흙 속 구근 — 빛이 아니라 철로 깬다(잎이 없다). 잠 철엔 기다린다 */
+      /* 흙 속 구근 — 빛이 아니라 철로 깬다(잎이 없다). 잠 철엔 기다린다.
+         ★ D49(총괄 2026-10-09) — 잠 철을 기다린 구근은 «잠든 구근»이다: 잎 0 으로 오래 잔 그루와 같게 보아
+           싹틀 때(= 봄에 깰 때) 구근 1~3알을 같이 낸다(corm.sleeping_corm_makes_corms).
+           까닭: 원룸은 8~12달이라 겨울 이사 판이 «한 바퀴 자란 뒤 겨울잠 → 다음 봄»을 기다리면 열어 보기를 한 번도 못 본다.
+           ⚠ 잠 조건 가운데 «어둠 low_days»는 구근에 안 든다 — 구근은 빛을 안 본다(잎이 없다). 어둠은 싹튼 뒤 그루에 걸린다. */
+      if (sleepSeason) p.cormSlept = true;
       p.step += sleepSeason ? 0 : (S.season_speed[season] ?? 0);
       if (p.step < S.corm.sprout_days) return;
       p.step = 0;
@@ -167,7 +173,10 @@ export function createSpeciesRules(SPEC, TH) {
         varie = (p.origin === 'from_varie_mother' && kinds.includes(p.motherKind)) ? p.motherKind
           : kinds[Math.min(kinds.length - 1, Math.floor(u01(p.seed, 0, SALT.kind) * kinds.length))];
       p.varie = varie; p.phase = 'growing';
-      ev.push({ type: 'sprout', varie });
+      const slept = !!(p.cormSlept && S.corm.sleeping_corm_makes_corms);
+      const corms = slept ? makeCorms(p, S) : [];
+      if (slept) { p.wakes += 1; p.cormsMade += corms.length; }   // 잠든 구근의 싹틈 = 한 번의 깸
+      ev.push({ type: 'sprout', varie, slept, corms });
       addALLeaf(p, S, ev);
       return;
     }
@@ -211,18 +220,23 @@ export function createSpeciesRules(SPEC, TH) {
   function wakeAL(p, S, ev) {
     const G = S.propagation, D = S.dormancy;
     const slept = p.phase === 'asleep' && p.sleptDays >= G.min_sleep_days;
-    const corms = [];
-    if (slept) {
-      const [lo, hi] = G.corms_on_wake;
-      const n = lo + Math.min(hi - lo, Math.floor(u01(p.seed, p.wakes, SALT.corms) * (hi - lo + 1)));
-      for (let i = 0; i < n; i++)
-        corms.push({ seed: Math.floor(u01(p.seed, p.wakes * 16 + i, SALT.cormSeed) * 4294967296) >>> 0,
-          origin: p.varie ? 'from_varie_mother' : 'from_plain_mother', motherKind: p.varie });
-    }
+    const corms = slept ? makeCorms(p, S) : [];
     p.wakes += 1; p.cormsMade += corms.length;
     p.phase = 'growing'; p.step = 0; p.lowRun = 0; p.wakeRun = 0; p.dropRun = 0; p.sleptDays = 0;
     p.lad = Math.max(0, p.lad - D.wake_ladder_drop);
     ev.push({ type: 'wake', corms });
+  }
+
+  /* 깨는 날의 구근 — 수는 corms_on_wake 범위에서 고르게 · 출처는 «지금 이 그루»(무늬면 갈래를 잇는다).
+     ★ 열쇠는 p.wakes(몇 번째 깸인가) — 부르는 쪽이 낸 뒤 p.wakes 를 올린다. 잠든 구근의 싹틈(D49)도 한 번의 깸으로 센다 */
+  function makeCorms(p, S) {
+    const [lo, hi] = S.propagation.corms_on_wake;
+    const n = lo + Math.min(hi - lo, Math.floor(u01(p.seed, p.wakes, SALT.corms) * (hi - lo + 1)));
+    const out = [];
+    for (let i = 0; i < n; i++)
+      out.push({ seed: Math.floor(u01(p.seed, p.wakes * 16 + i, SALT.cormSeed) * 4294967296) >>> 0,
+        origin: p.varie ? 'from_varie_mother' : 'from_plain_mother', motherKind: p.varie });
+    return out;
   }
 
   /* ── PP 자르기 ─────────────────────────────── */
