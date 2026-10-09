@@ -1312,6 +1312,7 @@
       "floorNo": 5,
       "skyViewK": 1.4,
       "skyViewK_note": "★ 5층. 앞 건물 지붕선 위로 올라와 하늘이 넓어진다. 잰 값: 자연광 최고 자리 7일평균 3.63 → 5.08. 원룸(4.31)과 아파트(6.27) 사이다 — 무늬종 최소(4.2)는 자연광으로 여유 있게 넘고 갈라짐(6.0)은 아직 못 넘는다. 그 「아직」이 아파트로 가는 이유다.",
+      "skyViewK_note_D59": "★ D59 뒤 투룸 = 진로 방 · 갈라짐 허용(총괄 10-09). 위 «갈라짐은 아파트로 가는 이유»는 낡은 줄이다 — 지금 판에 아파트 단계가 없고, 투룸은 «내 집 + 식물 가게(진로) 방»이다. 등 셋(10-10 넣음)이면 다단 선반 윗단이 여름 9.76 으로 무늬 갈라짐(8.4)까지 넘는다 — 넘는 대로 둔다(갈라진 잎이 가게 주문의 «잎 수 · 무늬 등급»을 맞추는 재미).",
       "done": false,
       "size": {
         "w": 7,
@@ -1514,10 +1515,17 @@
           "_method": "0.25m 격자·높이 0.10~1.80m. 가구 제외. 고체 벽(외곽)·칸막이·도려낸 경계 벽 속 점은 빼고, 창·문 개구부(reveal)는 살린다 — 창턱이 실제로 그 안에 놓인다."
         },
         "slots": {
-          "peak_summer": 7.89,
-          "avg7_summer": 5.07,
-          "count": 20,
-          "sampled_peak_ratio_pct": 84,
+          "peak_summer": 8.12,
+          "avg7_summer": 5.22,
+          "count": 29,
+          "sampled_peak_ratio_pct": 121,
+          "verifiedAt": "2026-10-09",
+          "_was_2026_08_29": {
+            "peak_summer": 7.89, "avg7_summer": 5.07, "count": 20, "sampled_peak_ratio_pct": 84,
+            "_what_moved": "a3f78c5(2026-10-09 house · 총괄 10-10 D59) 투룸 가게 기준 배치 + 식물등 자리 셋 — 자리 20 → 29 · 가장 밝은 자리가 다단 선반 윗단(창 앞)으로.",
+            "_measured_by": "[growth] 2026-10-09 — tools/test_measured_fresh.mjs 가 그 자리에서 잰 «지금 값»을 옮겼다(손으로 안 적음 · 맑음·여름·등 0). 프로필(room_profile.tworoom.json)은 같은 날 gen_room_profile --rooms=tworoom --write 로 구웠다.",
+            "_not_touched": "space·area 는 이 자가 못 잰다(가구 없는 0.25m 격자 · 가구 배치에 안 흔들린다) · roomRev·measuredAt 은 «블록 전체»의 날짜라 안 건드렸다(반만 새 표를 «최신»이라 말하지 않게). sampled_peak_ratio_pct 121 = 8.12 ÷ space.peak 6.69(옛 84 는 08-02 값 5.64 의 비였다)."
+          },
           "_sampled_note": "slots.peak ÷ space.peak. 두 값의 표본이 다르다 — space 는 0.25m 격자 위 점이고 slots 는 가구가 정한 임의 높이다. 격자 사이에 더 좋은 자리가 있으면 100%를 넘을 수 있고, 그건 오차가 아니라 표본 차이다.",
           "_method": "지금 furniture 배치 기준. 차폐에 가구 포함.",
           "_was_2026_08_02": {
