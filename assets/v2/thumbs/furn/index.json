@@ -62,11 +62,11 @@
  },
  "rug": {
   "file": "assets/v2/thumbs/furn/rug.webp",
-  "v2": false
+  "v2": true
  },
  "rug_mint": {
   "file": "assets/v2/thumbs/furn/rug_mint.webp",
-  "v2": false
+  "v2": true
  },
  "shelf_stool_1": {
   "file": "assets/v2/thumbs/furn/shelf_stool_1.webp",
@@ -414,6 +414,18 @@
  },
  "tv_crt": {
   "file": "assets/v2/thumbs/furn/tv_crt.webp",
+  "v2": true
+ },
+ "rug_check_butter": {
+  "file": "assets/v2/thumbs/furn/rug_check_butter.webp",
+  "v2": true
+ },
+ "rug_leaf_sage": {
+  "file": "assets/v2/thumbs/furn/rug_leaf_sage.webp",
+  "v2": true
+ },
+ "rug_runner_stripe": {
+  "file": "assets/v2/thumbs/furn/rug_runner_stripe.webp",
   "v2": true
  }
 }

@@ -273,6 +273,51 @@
       "color": "#d6e2dc",
       "room": "공통"
     },
+    "rug_check_butter": {
+      "type": "rug",
+      "name_ko": "러그(체크 · 버터)",
+      "_B": "★ 2026-10-10 총괄 «B 넣습니다 · 가게 줄과 값은 크기 규칙대로» — Higgsfield 위에서 본 그림(v2 textures/rug · furniture_dress topTex). 코드 그림은 몸 색만(무늬는 v2).",
+      "size_m": {
+        "w": 1.6,
+        "d": 1.2,
+        "h": 0.012
+      },
+      "w": 1.6,
+      "d": 1.2,
+      "color": "#f1dc94",
+      "accent": "#f6efd9",
+      "room": "공통"
+    },
+    "rug_leaf_sage": {
+      "type": "rug",
+      "name_ko": "러그(잎무늬 · 세이지)",
+      "_B": "★ 2026-10-10 총괄 B — 세이지 바탕에 크림 몬스테라 잎(구멍 난 잎).",
+      "size_m": {
+        "w": 1.6,
+        "d": 1.2,
+        "h": 0.012
+      },
+      "w": 1.6,
+      "d": 1.2,
+      "color": "#a9b89a",
+      "accent": "#efe6d2",
+      "room": "공통"
+    },
+    "rug_runner_stripe": {
+      "type": "rug",
+      "name_ko": "러너 러그(줄무늬)",
+      "_B": "★ 2026-10-10 총괄 B — 기준 그림(style_keyframe_a) 반지하 바닥의 줄무늬 러너 결. 가늘고 긴 깔개(침대 옆·현관).",
+      "size_m": {
+        "w": 0.62,
+        "d": 1.1,
+        "h": 0.012
+      },
+      "w": 0.62,
+      "d": 1.1,
+      "color": "#cbbfae",
+      "accent": "#e3d6bf",
+      "room": "공통"
+    },
     "lamp_floor": {
       "type": "lamp_floor",
       "name_ko": "플로어 스탠드",

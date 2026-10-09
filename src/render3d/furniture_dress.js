@@ -95,6 +95,13 @@ const FURN = {
   floor_cushion:       { file: 'furniture/floor_cushion.glb',       yaw: 0, lazy: true, uniform: true },
   storage_box:         { file: 'furniture/storage_box.glb',         yaw: 0, lazy: true },
   /* 식물등 — 몸통만 옷(LED 는 코드 것 · dressLamp). lazy — 부팅 미리 받기를 안 늘린다(방이 뜬 뒤 입는다) */
+  /* 러그 — GLB 가 아니라 «윗면 그림»(topTex · 10-10 · Higgsfield 위에서 본 그림 · 둘레 흰 바탕은 투명으로 · tools/tex_rug_cutout.py).
+       1.2cm 깔개라 3D 를 뽑으면 눌려 무늬만 남는다 — 처음부터 무늬만. 코드 러그(대리)는 숨기고 발자국 크기 판 하나를 윗면에 깐다 */
+  rug:               { topTex: 'textures/rug/rug.webp' },
+  rug_mint:          { topTex: 'textures/rug/rug_mint.webp' },
+  rug_check_butter:  { topTex: 'textures/rug/rug_check_butter.webp' },
+  rug_leaf_sage:     { topTex: 'textures/rug/rug_leaf_sage.webp' },
+  rug_runner_stripe: { topTex: 'textures/rug/rug_runner_stripe.webp' },
   growlight_clip:     { file: 'furniture/growlight_clip.glb',     yaw: 0,  lazy: true, lamp: { band: 0.6 } },
   growlight_stand:    { file: 'furniture/growlight_stand.glb',    yaw: 90, lazy: true, lamp: { band: 0.8 } }
 };
@@ -208,7 +215,7 @@ export function createFurnitureDress(opt = {}) {
     return p;
   }
   const propFiles = id => [...new Set((PROPS[id] || []).filter(p => p.file).map(p => p.file))];
-  const bootFiles = () => [...new Set(Object.values(FURN).filter(s => !s.lazy).map(s => s.file))];
+  const bootFiles = () => [...new Set(Object.values(FURN).filter(s => !s.lazy && s.file).map(s => s.file))];   // topTex(러그)는 GLB 가 없다
   const furnReady = () => bootFiles().every(f => tpl.has(f));
 
   /* 부팅 때 한 번 — 가구 옷을 기다린다(너무 오래면 옛 모양으로 먼저 뜨고 나중에 입는다) */
@@ -389,6 +396,7 @@ export function createFurnitureDress(opt = {}) {
     const spec = specOf(preset);
     if (!spec) return false;
     if (g.children.some(c => c.userData && c.userData.v2dress)) return true;     // 이미 입었다
+    if (spec.topTex) return dressTopTex(g, preset, spec);
     const t = tpl.get(spec.file);
     if (!t || !t.ok) return false;
     if (spec.lamp) return dressLamp(g, preset, spec, t);
@@ -460,6 +468,54 @@ export function createFurnitureDress(opt = {}) {
     report.set(g.userData.uid, { preset, file: spec.file, yaw: spec.yaw, uniform: !!(spec.uniform || spec.box), tint: spec.tint || undefined, base: spec.base || undefined,
       scale: [+sx.toFixed(4), +sy.toFixed(4), +sz.toFixed(4)], tiers: knots ? knots.map(k => k.map(v => +v.toFixed(3))) : undefined,
       height: +(knots ? knots[knots.length - 1][1] : H * sy).toFixed(3), targets: pts.map(p => p.y == null ? null : +p.y.toFixed(3)), topErr: errs });
+    return true;
+  }
+
+  /* ── 윗면 그림 (2026-10-10 · [house] · 러그) ──
+     발자국(userData.size w×d) 크기 판 하나를 코드 러그 윗면(size.h) 바로 위에 깐다 · 그림 층(층 1)이라 광선·조도는 안 본다.
+     그림은 둘레가 투명(술 사이 포함) — alphaTest 로 자른다(투명 정렬 없이). 대리(코드 러그 몸·테두리)는 숨긴다.
+     판 가로 = w(X) · 세로 = d(Z) — 그림의 가로·세로도 그 비율로 뽑았다(러너는 세로 그림). 회전은 가구 그룹이 한다 */
+  /* ⚠ 그림을 다 받은 «뒤에» 판을 깔고 대리를 숨긴다 — 받기 전에 깔면 alphaTest 가 빈 그림을 통째로 잘라
+       러그 자리가 비었다(10-10 가게 그림이 텅 빔). GLB 처럼 dress() 가 받는 대로 다시 입힌다 */
+  const topTexMats = new Map();               // 파일 → 재질(받은 것만 · 나눠 쓴다)
+  const topTexLoading = new Map();            // 파일 → Promise
+  function loadTopTex(file) {
+    if (topTexMats.has(file)) return Promise.resolve(topTexMats.get(file));
+    if (topTexLoading.has(file)) return topTexLoading.get(file);
+    const p = new Promise(ok => {
+      new T.TextureLoader().load(ASSET(file), tex => {
+        tex.encoding = T.sRGBEncoding;
+        if (opt.renderer && opt.renderer.capabilities) tex.anisotropy = Math.min(4, opt.renderer.capabilities.getMaxAnisotropy());
+        const mat = new T.MeshStandardMaterial({ map: tex, roughness: 0.95, metalness: 0, alphaTest: 0.5,
+                                                 polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+        topTexMats.set(file, mat); ok(mat);
+      }, undefined, () => { console.warn('[v2 가구] 러그 그림을 못 받았습니다 —', file); topTexMats.set(file, null); ok(null); });
+    });
+    topTexLoading.set(file, p);
+    return p;
+  }
+  function dressTopTex(g, preset, spec) {
+    const size = g.userData.size || {};
+    if (!(size.w > 0 && size.d > 0)) return false;
+    const proxies = proxiesOf(g);
+    if (!proxies.length) return false;
+    const mat = topTexMats.get(spec.topTex);
+    if (!mat) return false;                   // 아직 못 받았거나(dress 가 받으러 간다) 받기 실패 — 코드 러그 그대로
+    const key = size.w + 'x' + size.d;
+    if (!rugGeo.has(key)) rugGeo.set(key, new T.PlaneGeometry(size.w, size.d));
+    const m = new T.Mesh(rugGeo.get(key), mat);
+    m.userData.sharedGeometry = true;
+    m.rotation.x = -Math.PI / 2;
+    m.receiveShadow = true; m.castShadow = false;
+    const dress = new T.Group();
+    dress.name = 'v2dress'; dress.userData.v2dress = true;
+    dress.add(m);
+    dress.position.set(0, (size.h > 0 ? size.h : 0.012) * 0.5 + 0.001, 0);   // 코드 러그 두께 가운데쯤 — 숨긴 몸 대신 바닥에서 살짝 뜬다
+    markVisual(dress);
+    g.add(dress);
+    const hm = hidden();
+    for (const p of proxies) { if (!origMat.has(p)) origMat.set(p, p.material); p.material = hm; }
+    report.set(g.userData.uid, { preset, topTex: spec.topTex, size: [size.w, size.d] });
     return true;
   }
 
@@ -675,7 +731,7 @@ export function createFurnitureDress(opt = {}) {
     report.clear();
     if (!on || held || !built || !built.furniture) return 0;
     let n = 0, missing = false;
-    const need = new Set();
+    const need = new Set(), needTex = new Set();
     for (const g of built.furniture.children) {
       if (!g.userData || !g.userData.uid) continue;
       try {
@@ -684,6 +740,7 @@ export function createFurnitureDress(opt = {}) {
         /* ★ 옷이 있는 프리셋은 색 바꾸기(RESTYLE · type 단위)보다 먼저 — 사다리 선반은 type 이 shelf_etagere 라 색만 바뀌던 것(10-09) */
         if (!spec) { if (restyleOne(g)) n++; }
         else if (dressOne(g, preset)) n++;
+        else if (spec.topTex) { if (!topTexMats.has(spec.topTex)) { missing = true; needTex.add(spec.topTex); } }
         else if (!tpl.has(spec.file)) { missing = true; need.add(spec.file); }
       } catch (e) {
         console.warn('[v2 가구] 옷을 못 입혔습니다 —', g.userData.uid, e && e.message);
@@ -704,7 +761,7 @@ export function createFurnitureDress(opt = {}) {
     /* 아직 못 받은 옷이 있으면 받는 대로 입히고 알린다(옛 방이면 안 입힌다)
        ★ 2026-10-09 — 방에 놓인 것만 받는다. 가구점 옷이 13벌 늘어, 전부 받으면 소파 하나 사도 5MB 를 받는다([house]). */
     if (missing) {
-      const go = () => Promise.all([...need].map(load)).then(() => {
+      const go = () => Promise.all([...[...need].map(load), ...[...needTex].map(loadTopTex)]).then(() => {
         if (disposed || !on || held || cur.built !== built) return;
         dress(built, roomDef);
         onChange('furniture');
@@ -988,6 +1045,8 @@ export function createFurnitureDress(opt = {}) {
       if (rugTex) rugTex.dispose();
       if (rugMat) rugMat.dispose();
       for (const [, g] of rugGeo) g.dispose();
+      for (const [, m] of topTexMats) { if (!m) continue; if (m.map) m.map.dispose(); m.dispose(); }
+      topTexMats.clear(); topTexLoading.clear();
       rugGeo.clear();
     }
   };
