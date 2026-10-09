@@ -8005,7 +8005,9 @@ export async function createRoomView(canvas, opts = {}) {
     /* idle 을 돌리다 8~20초마다 변주를 한 번 끼운다. 끝자세=시작자세인 클립만
        배정표에 들어 있어 crossfade 0.3s 면 안 튄다.
        ★ 걷는 동안은 끼우지 않는다 — 걸어가다 갑자기 머리를 긁으면 다리가 멈춘다. */
-    const pool = hero ? [] : (IDLE_BREAK[id] || []);   // v2: hero 에 옛 anim 클립을 얹지 않는다
+    /* v2: hero 에 옛 anim 클립을 얹지 않는다 · ★ 2026-10-09 ([char] 88d7fa14) — hero2 는 제 몸짓(breakClips: 긁적·끄덕·듣기)을 낸다.
+         hero.glb 는 breakClips 가 비어 그대로(몸짓 없음). 클립은 hero.breakClip(name) 이 준다(charLoad 안 함) */
+    const pool = hero ? ((hero.breakClips && hero.breakClips.slice()) || []) : (IDLE_BREAK[id] || []);
     const clips = {};
     function schedule() {
       if (!alive || !pool.length) return;
@@ -8016,8 +8018,9 @@ export async function createRoomView(canvas, opts = {}) {
         const name = pool[(Math.random() * pool.length) | 0];
         try {
           if (!clips[name]) {
-            const c = await charLoad(`${CHAR_ANIM}/char_${id}_${name}.glb`);
-            const cl = (c.animations || [])[0];
+            let cl = null;
+            if (hero && typeof hero.breakClip === 'function') cl = hero.breakClip(name);
+            else { const c = await charLoad(`${CHAR_ANIM}/char_${id}_${name}.glb`); cl = (c.animations || [])[0]; }
             if (!cl) throw new Error('클립 없음');
             cl.name = name; clips[name] = cl;
           }
