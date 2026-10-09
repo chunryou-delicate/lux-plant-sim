@@ -193,5 +193,56 @@
     "ev_monstera_arrive_v2_r2": "01a12029-b5cc-73f6-9c53-e7484f6146ec",
     "ev_first_varie_sanban_r3(확정)": "01a1203a-1f22-70b8-8732-de0cf6de9d1a",
     "ev_monstera_arrive_v2_r3(안 씀 · r2 확정)": "01a1203a-2713-77f1-8d84-a5eef510625d"
+  },
+  "house_shop_20261009": {
+    "_note": "2026-10-09 총괄이 돌림 · 주문표 docs/handoff/meshy-order-house-shop-20261009.json(n 22~31) · 원화 assets/gen/v2_furn/c_<id>.png · 3D raw_<id>.glb(meshy-7.1 2k) · 선반-다단-3단은 Z 로 길다(X ±0.31 · Z ±0.90) — 앞 방향 확인",
+    "concept_i2i": {
+      "shelf_etagere_3tier": "01a120d2-d78e-7107-83ba-6daff3147b58",
+      "stool": "01a120d2-ec7c-71ca-b18f-dc371281b1d5",
+      "shelf_stool_1": "01a120d3-008c-75f1-9647-6165ddfec479",
+      "chair_arm": "01a120d3-68e5-7394-b600-58f394857446",
+      "coffee_table": "01a120d3-b918-730d-8466-fe62537cd10e",
+      "table_round": "01a120d3-c09f-75eb-bd3c-0c9794f9cf07",
+      "shelf_low": "01a120d3-c874-73af-86b9-b2515d856a11",
+      "floor_cushion": "01a120d3-ce82-7786-a745-738ebbab42d6",
+      "storage_box": "01a120d3-d3f6-720d-bc64-3961fca7d455"
+    },
+    "mesh_i23d": {
+      "shelf_etagere_3tier": "01a120da-323d-74a7-96bf-104c02d5b659",
+      "stool": "01a120da-3701-7523-b201-25246998b015",
+      "shelf_stool_1": "01a120da-3c3b-70c1-9e44-01fac3aa7dd3",
+      "chair_arm": "01a120da-3ff8-7778-98c8-6f9dd80edd48",
+      "coffee_table": "01a120da-442a-75f7-96a4-ca32d5ab1f78",
+      "table_round": "01a120da-48c6-7132-841f-14e43f0eb22c",
+      "shelf_low": "01a120da-4da9-7672-82ed-a7f5d3ddd011",
+      "floor_cushion": "01a120da-5367-704f-8b5a-53be57457368",
+      "storage_box": "01a120da-582f-7502-af12-7f883b06b5ea"
+    }
+  },
+  "hf_20261009": {
+    "_note": "Higgsfield(장당 값 = get_cost) · 결과 장부는 assets/gen/hf_runs/<창>_20261009.json · 참조 media_id 는 raw GitHub 에서 media_import_url",
+    "refs": {
+      "assets/characters/portraits/portrait_jachwi_neutral.png": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "assets/characters/portraits/portrait_moni_neutral.png": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "assets/characters/portraits/portrait_moni_cheer.png": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "assets/illust/ev_home_ending.png": "7341859e-cecf-4685-b3da-844141b496d2",
+      "assets/illust/ev_moveout_sold.png": "d5bfff9e-828f-4bc6-8ae9-447ce413b4cb",
+      "assets/illust/ev_oneroom_firstday.png": "470e5a11-904a-4765-aafd-307a68b0ce23"
+    },
+    "ev_neighbor_order": {
+      "model": "gpt_image_2_5",
+      "quality": "max",
+      "resolution": "2k",
+      "aspect_ratio": "1:1",
+      "jobs": {
+        "a": "554fc579-ea0d-43ac-99d7-0cbf182d95cd",
+        "b": "694ba4e6-e848-4830-a0ef-f0f402049084"
+      },
+      "saved": [
+        "assets/illust/_hf/ev_neighbor_order_a.png",
+        "assets/illust/_hf/ev_neighbor_order_b.png"
+      ],
+      "prompt_note": "char 글에서 «She is the woman in image 1» 이 반찬가게 사장님과 섞일 수 있어 총괄이 한 줄 고침(주인공 = image 1 · 사장님은 다른 사람 · 짧은 파마)"
+    }
   }
 }
