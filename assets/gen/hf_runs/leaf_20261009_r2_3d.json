@@ -1,0 +1,1820 @@
+{
+ "run": "leaf Higgsfield 2026-10-09 r2 + new-species 3D + unity detail test step 1 (run 2026-10-10 00:02-00:30 KST)",
+ "orders": {
+  "redraw": "docs/handoff/leaf-higgsfield-order-20261009-r2.json (3 lines x count 2)",
+  "newspecies_3d": "docs/handoff/leaf-3d-order-newspecies-20261009.json (+ .md), 12 jobs",
+  "detail_test": "docs/handoff/leaf-unity-kit-20261009.md §6 step 1 only"
+ },
+ "tools": "generate_image_batch (8 requests, count 1 each) · generate_3d one call per job · jobs_wait · media_import_url / media_upload+PUT+media_confirm",
+ "reference_media": {
+  "redraw_refs": {
+   "REF_FAM_pp_green": {
+    "path": "assets/plants/pink_princess/thumbs/pp_leaf_mature.png",
+    "media_id": "ce7b1f5f-5c2b-4613-b743-1db1ba410e1c"
+   },
+   "REF_STYLE_A": {
+    "path": "assets/illust/ev_first_varie_halfmoon.png",
+    "media_id": "3e4abcac-cb81-4a70-a99b-7c2a4a5fdd50"
+   },
+   "REF_STYLE_B": {
+    "path": "assets/raw/plants/pink_princess/PP2_clean.png",
+    "media_id": "61c09b45-45fc-4437-b871-6ee7f210dfb7"
+   },
+   "REF_STYLE_B2": {
+    "path": "assets/raw/plants/alocasia/AL2_clean.png",
+    "media_id": "6f100be1-9e11-4c34-849f-4009e6c36cfa"
+   }
+  },
+  "redraw_refs_note": "r2 JSON refs map holds paths only; media IDs reused from the first run (assets/gen/hf_runs/leaf_20261009.json reference_media.by_key). Each file has a single commit on origin/main, made before the first-run import, so the media match the current files.",
+  "3d_inputs": {
+   "REF_SC_mid": {
+    "path": "assets/raw/plants/scindapsus/SC2_a.jpg",
+    "media_id": "7340586b-3841-48b2-9349-65c91620915d",
+    "origin_main_blob_equals_local": true
+   },
+   "REF_SC_mature": {
+    "path": "assets/raw/plants/scindapsus/SC3_a.jpg",
+    "media_id": "ec894741-ac7a-49a4-9920-d45c72572b59",
+    "origin_main_blob_equals_local": true
+   },
+   "REF_CA_young": {
+    "path": "assets/raw/plants/calathea/CA1_b.jpg",
+    "media_id": "bcdf86ea-31dd-4764-8571-98a36594507c",
+    "origin_main_blob_equals_local": true
+   },
+   "REF_CA_mid": {
+    "path": "assets/raw/plants/calathea/CA2_a.jpg",
+    "media_id": "482b5198-7623-4d49-bbbc-bc21a3c74eeb",
+    "origin_main_blob_equals_local": true
+   },
+   "REF_CA_mature": {
+    "path": "assets/raw/plants/calathea/CA3_a.jpg",
+    "media_id": "a53d816a-a1d8-4a03-a6c4-e82ecd6cac95",
+    "origin_main_blob_equals_local": true
+   }
+  },
+  "unity_ref": {
+   "path": "C:/Users/pc/Desktop/빛식물/unity_kit/pilot/monstera_leaf_mature_3q_2048.png",
+   "media_id": "76ddd450-b918-4ecb-bb53-9e396eca1c14",
+   "method": "media_upload + curl PUT (200) + media_confirm"
+  },
+  "diagnostic_uploads": {
+   "12f8e6fc-6ea7-4033-be13-8a37a44871b0": "file - SC_mature base GLB re-hosted (sha256 equal to the Tripo result)",
+   "a2140b18-7d26-49f8-8250-1110688f8b9c": "image - assets/raw/plants/scindapsus/SC5_b.jpg re-hosted",
+   "a968e41a-28b5-41ec-9a65-ec6321c8e656": "file - SC_mid base GLB stripped of textures (geometry/UV/index bytes identical)"
+  }
+ },
+ "preflight_get_cost": {
+  "tripo_h3_1_image_to_3d": 12,
+  "meshy_v5_retexture": 9.5,
+  "gpt_image_2_5 high 2k": "2.75 (order/first run; matched 8 transactions)"
+ },
+ "skipped": [
+  {
+   "job": "SC_young_3d",
+   "why": "waits on the SC1 r2 pick (order wait field \"⏸ SC1 다시 뽑기(r2) 뒤\"); leaf picks SC1_r2_a/_b first. The order has no SC_young skin line, so nothing else is skipped."
+  },
+  {
+   "job": "unity_kit §6 step 2 (Tripo from the chosen detail image)",
+   "why": "leaf picks mon_mature_detail_2d_a/_b first (instruction)."
+  }
+ ],
+ "retexture_finding": {
+  "result": "meshy_v5_retexture failed 12/12 (6 first attempts + 6 retries, one per job); every charge refunded; no error text exposed",
+  "ruled_out": [
+   "model_url host (generation CDN vs media-API file URL)",
+   "style image host (GitHub raw vs Higgsfield)",
+   "image guidance itself (text-only also fails)",
+   "GLB size / 4K PBR textures (stripped 158 KB GLB with identical geometry+UV also fails)",
+   "quotes in the prompt and the safety checker (removed / disabled - still fails)",
+   "original-UV mode (enable_original_uv false also fails)"
+  ],
+  "uv_preservation": "untestable - no output was produced, so vertex/UV equality with the base mesh could not be measured",
+  "not_tested": "a control retexture of a known-good GLB (outside the order) - would separate a provider outage from a rejection of these Tripo meshes",
+  "base_mesh_uv_check": "base UVs in [0,1], no degenerate or zero-UV-area triangles, ~62% atlas coverage, 32-bit indices",
+  "only_retexture_model_listed": "models_explore(type 3d) lists no other retexture model on Higgsfield"
+ },
+ "credits_before": 551.5,
+ "credits_after": 397.5,
+ "credits_spent": 82.0,
+ "credits_note": "this run = 8 x 2.75 (GPT Image 2.5 Flare, 15:04:25-27Z) + 5 x 12 (Tripo H3.1, 15:04:48-15:05:04Z) = 82.0; meshy_v5_retexture 12 x 9.5 spent and 12 x 9.5 refunded = 0. Account fell 154.0 because other sessions spent 72.0 in the same window (Nano Banana 2.1 2x3, GPT Image 2.5 Flare 6x9, Nano Banana Pro 6x2). Cap 220.",
+ "storage": {
+  "cards": "repo PNG 1024 RGBA; 2k original at _hf_masters/<same path>",
+  "opaque_repo": "JPEG q95 4:4:4 2048 in repo; PNG original at _hf_masters/<same path>.png",
+  "unity_pilot": "PNG originals at C:/Users/pc/Desktop/빛식물/unity_kit/pilot/ (order target, outside repo; no repo copy)",
+  "glb": "repo save_as paths (all < 40 MB: 5.8-8.8 MB, 4K textures - leaf shrinks for web)",
+  "sc1_r2_name_note": "3D order REF_SC_young expects SC1_r2_<pick>.png - repo copies are SC1_r2_a.jpg / SC1_r2_b.jpg, PNG masters in _hf_masters"
+ },
+ "qa_summary": {
+  "redraw_cards": "plain + petiole at notch fixed in all four; brightness still < 0.25 (luma 0.195-0.226) -> QA-4 fail; A_a and B_b have a flap behind the petiole top. No re-roll (no outright failure).",
+  "SC1_r2": "both pass - exactly one leaf",
+  "detail_test_2d": "both lit with readable curvature; loose silhouette match; photoreal look",
+  "base_meshes": "5/5 one connected mesh, 4670-4944 tris, textured PBR; all are closed shells (leaf_audit fill > 100% on 4 of 5)",
+  "skins": "0/6 produced"
+ },
+ "entries": [
+  {
+   "name": "card_pp_green_r2_A",
+   "line": "card_pp_green_r2_A",
+   "variant": "a",
+   "kind": "card",
+   "index": 0,
+   "job_id": "38d3bc73-ab12-4a9f-a47a-49ae59312e90",
+   "status": "completed",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 1,
+    "use_unlim": false,
+    "background": "transparent",
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf centered and filling about 80% of a square frame, the short petiole attached at the notch at the TOP of the leaf (the sinus) - no stem at the pointed tip, isolated on a transparent background. Keep the leaf shape of image 1 but make it COMPLETELY PLAIN: one solid, uniform dark green with a slight burgundy tint over the whole leaf, a mid-dark value (clearly lighter than black), veins only a little lighter so the leaf stays readable. Absolutely no streaks, no marbling, no lighter patches, no pink, no variegation of any kind. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "ce7b1f5f-5c2b-4613-b743-1db1ba410e1c",
+      "role": "image_references",
+      "ref": "REF_FAM_pp_green",
+      "path": "assets/plants/pink_princess/thumbs/pp_leaf_mature.png"
+     },
+     {
+      "value": "3e4abcac-cb81-4a70-a99b-7c2a4a5fdd50",
+      "role": "image_references",
+      "ref": "REF_STYLE_A",
+      "path": "assets/illust/ev_first_varie_halfmoon.png"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150424_38d3bc73-ab12-4a9f-a47a-49ae59312e90.png",
+   "cost": 2.75,
+   "saved_path": "assets/illust/cards/card_pp_green_r2_a.png",
+   "repo_copy": "PNG 1024 RGBA (2k original = master_path)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_green_r2_a.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGBA",
+   "qa_pass": false,
+   "qa_notes": "real transparency (bg alpha 0, corners 0), one connected alpha component, no edge touch; PLAIN - no light streaks/marbling (first-run fault fixed); petiole at the TOP notch (sinus), none at the tip; leaf alpha 253 not 255 (model trait, same as first run). QA-4 brightness FAIL: below 0.25 on both luma and HSV-V (improved from first run 0.167-0.187). style A: reads olive/dark green, burgundy tint weak (R-G -7); small leaf-coloured triangular flap behind the petiole top (artifact).",
+   "metrics": {
+    "size": [
+     2048,
+     2048
+    ],
+    "mode": "RGBA",
+    "alpha_frac_zero": 0.5647,
+    "alpha_frac_partial": 0.4353,
+    "alpha_frac_opaque": 0.0,
+    "corner_alpha_mean": 0.01,
+    "subject_bbox": [
+     251,
+     278,
+     1802,
+     1815
+    ],
+    "subject_extent_frac": 0.757,
+    "subject_area_frac": 0.422,
+    "touches_edge": false,
+    "subject_lum_mean": 0.2,
+    "hsv_v_mean": 0.215,
+    "subject_sat_mean": 0.487,
+    "subject_rgb_mean": [
+     47.7,
+     54.2,
+     28.4
+    ],
+    "alpha_components_ge_0.2pct": 1,
+    "alpha_component_sizes": [
+     1770488
+    ],
+    "interior": {
+     "lum_mean": 0.202,
+     "lum_std": 0.039,
+     "lum_p5_p50_p95": [
+      0.168,
+      0.194,
+      0.268
+     ],
+     "light_frac_gt_median_plus_0p10": 0.0445,
+     "light_frac_gt_median_plus_0p15": 0.0271,
+     "highpass_std": 0.0369,
+     "highpass_frac_gt_0p06": 0.0562,
+     "sat_mean": 0.481,
+     "rgb_mean": [
+      47.5,
+      54.9,
+      28.7
+     ],
+     "R_minus_G_mean": -7.4,
+     "dark_frac_lum_lt_0p12": 0.0008
+    },
+    "real_transparency": true
+   }
+  },
+  {
+   "name": "card_pp_green_r2_A",
+   "line": "card_pp_green_r2_A",
+   "variant": "b",
+   "kind": "card",
+   "index": 1,
+   "job_id": "5f052ad9-d63a-4feb-b2ca-6d8b80f93b77",
+   "status": "completed",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 1,
+    "use_unlim": false,
+    "background": "transparent",
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf centered and filling about 80% of a square frame, the short petiole attached at the notch at the TOP of the leaf (the sinus) - no stem at the pointed tip, isolated on a transparent background. Keep the leaf shape of image 1 but make it COMPLETELY PLAIN: one solid, uniform dark green with a slight burgundy tint over the whole leaf, a mid-dark value (clearly lighter than black), veins only a little lighter so the leaf stays readable. Absolutely no streaks, no marbling, no lighter patches, no pink, no variegation of any kind. Draw it as a 2D hand-drawn storybook illustration in the style of image 2: thin warm-brown ink outline, soft gouache and watercolor wash, gentle pastel tones, light paper grain only inside the leaf. No pot, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "ce7b1f5f-5c2b-4613-b743-1db1ba410e1c",
+      "role": "image_references",
+      "ref": "REF_FAM_pp_green",
+      "path": "assets/plants/pink_princess/thumbs/pp_leaf_mature.png"
+     },
+     {
+      "value": "3e4abcac-cb81-4a70-a99b-7c2a4a5fdd50",
+      "role": "image_references",
+      "ref": "REF_STYLE_A",
+      "path": "assets/illust/ev_first_varie_halfmoon.png"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150426_5f052ad9-d63a-4feb-b2ca-6d8b80f93b77.png",
+   "cost": 2.75,
+   "saved_path": "assets/illust/cards/card_pp_green_r2_b.png",
+   "repo_copy": "PNG 1024 RGBA (2k original = master_path)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/card_pp_green_r2_b.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGBA",
+   "qa_pass": false,
+   "qa_notes": "real transparency (bg alpha 0, corners 0), one connected alpha component, no edge touch; PLAIN - no light streaks/marbling (first-run fault fixed); petiole at the TOP notch (sinus), none at the tip; leaf alpha 253 not 255 (model trait, same as first run). QA-4 brightness FAIL: below 0.25 on both luma and HSV-V (improved from first run 0.167-0.187). style A: cleanest of the four - plain, clean petiole stub at the notch; olive green, burgundy tint weak (R-G -5).",
+   "metrics": {
+    "size": [
+     2048,
+     2048
+    ],
+    "mode": "RGBA",
+    "alpha_frac_zero": 0.5907,
+    "alpha_frac_partial": 0.4093,
+    "alpha_frac_opaque": 0.0,
+    "corner_alpha_mean": 0.0,
+    "subject_bbox": [
+     270,
+     337,
+     1777,
+     1800
+    ],
+    "subject_extent_frac": 0.736,
+    "subject_area_frac": 0.394,
+    "touches_edge": false,
+    "subject_lum_mean": 0.195,
+    "hsv_v_mean": 0.207,
+    "subject_sat_mean": 0.443,
+    "subject_rgb_mean": [
+     47.6,
+     52.2,
+     29.6
+    ],
+    "alpha_components_ge_0.2pct": 1,
+    "alpha_component_sizes": [
+     1651759
+    ],
+    "interior": {
+     "lum_mean": 0.196,
+     "lum_std": 0.03,
+     "lum_p5_p50_p95": [
+      0.166,
+      0.19,
+      0.262
+     ],
+     "light_frac_gt_median_plus_0p10": 0.0354,
+     "light_frac_gt_median_plus_0p15": 0.0046,
+     "highpass_std": 0.0279,
+     "highpass_frac_gt_0p06": 0.0502,
+     "sat_mean": 0.437,
+     "rgb_mean": [
+      47.4,
+      52.8,
+      29.8
+     ],
+     "R_minus_G_mean": -5.4,
+     "dark_frac_lum_lt_0p12": 0.0003
+    },
+    "real_transparency": true
+   }
+  },
+  {
+   "name": "card_pp_green_r2_B",
+   "line": "card_pp_green_r2_B",
+   "variant": "a",
+   "kind": "card",
+   "index": 2,
+   "job_id": "0a471297-d9eb-46e2-8381-4311b71875e7",
+   "status": "completed",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 1,
+    "use_unlim": false,
+    "background": "transparent",
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf centered and filling about 80% of a square frame, the short petiole attached at the notch at the TOP of the leaf (the sinus) - no stem at the pointed tip, isolated on a transparent background. Keep the leaf shape of image 1 but make it COMPLETELY PLAIN: one solid, uniform dark green with a slight burgundy tint over the whole leaf, a mid-dark value (clearly lighter than black), veins only a little lighter so the leaf stays readable. Absolutely no streaks, no marbling, no lighter patches, no pink, no variegation of any kind. Paint it as a hand-painted pastel low-poly illustration in the style of image 2: broad flat faceted planes like a low-poly model, soft pastel colors, a faint brush texture, no hard highlights. No pot, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "ce7b1f5f-5c2b-4613-b743-1db1ba410e1c",
+      "role": "image_references",
+      "ref": "REF_FAM_pp_green",
+      "path": "assets/plants/pink_princess/thumbs/pp_leaf_mature.png"
+     },
+     {
+      "value": "61c09b45-45fc-4437-b871-6ee7f210dfb7",
+      "role": "image_references",
+      "ref": "REF_STYLE_B",
+      "path": "assets/raw/plants/pink_princess/PP2_clean.png"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150426_0a471297-d9eb-46e2-8381-4311b71875e7.png",
+   "cost": 2.75,
+   "saved_path": "assets/illust/cards/_styleB/card_pp_green_r2_a.png",
+   "repo_copy": "PNG 1024 RGBA (2k original = master_path)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_green_r2_a.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGBA",
+   "qa_pass": false,
+   "qa_notes": "real transparency (bg alpha 0, corners 0), one connected alpha component, no edge touch; PLAIN - no light streaks/marbling (first-run fault fixed); petiole at the TOP notch (sinus), none at the tip; leaf alpha 253 not 255 (model trait, same as first run). QA-4 brightness FAIL: below 0.25 on both luma and HSV-V (improved from first run 0.167-0.187). style B: brightest (luma 0.226); low-poly facets with darker burgundy facets - tone varies facet to facet (dark, not light patches); clean petiole stub.",
+   "metrics": {
+    "size": [
+     2048,
+     2048
+    ],
+    "mode": "RGBA",
+    "alpha_frac_zero": 0.6067,
+    "alpha_frac_partial": 0.3933,
+    "alpha_frac_opaque": 0.0,
+    "corner_alpha_mean": 0.0,
+    "subject_bbox": [
+     282,
+     313,
+     1783,
+     1800
+    ],
+    "subject_extent_frac": 0.733,
+    "subject_area_frac": 0.385,
+    "touches_edge": false,
+    "subject_lum_mean": 0.226,
+    "hsv_v_mean": 0.238,
+    "subject_sat_mean": 0.249,
+    "subject_rgb_mean": [
+     54.2,
+     59.8,
+     45.6
+    ],
+    "alpha_components_ge_0.2pct": 1,
+    "alpha_component_sizes": [
+     1614145
+    ],
+    "interior": {
+     "lum_mean": 0.225,
+     "lum_std": 0.028,
+     "lum_p5_p50_p95": [
+      0.191,
+      0.22,
+      0.275
+     ],
+     "light_frac_gt_median_plus_0p10": 0.0153,
+     "light_frac_gt_median_plus_0p15": 0.0001,
+     "highpass_std": 0.021,
+     "highpass_frac_gt_0p06": 0.0295,
+     "sat_mean": 0.248,
+     "rgb_mean": [
+      54.0,
+      59.7,
+      45.5
+     ],
+     "R_minus_G_mean": -5.7,
+     "dark_frac_lum_lt_0p12": 0.0
+    },
+    "real_transparency": true
+   }
+  },
+  {
+   "name": "card_pp_green_r2_B",
+   "line": "card_pp_green_r2_B",
+   "variant": "b",
+   "kind": "card",
+   "index": 3,
+   "job_id": "ba0d1b35-a8ce-4aff-9d63-d9740190f8ad",
+   "status": "completed",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 1,
+    "use_unlim": false,
+    "background": "transparent",
+    "prompt": "A single Philodendron 'Pink Princess' heart-shaped leaf, front view seen straight on (flat, like a pressed specimen), the whole leaf centered and filling about 80% of a square frame, the short petiole attached at the notch at the TOP of the leaf (the sinus) - no stem at the pointed tip, isolated on a transparent background. Keep the leaf shape of image 1 but make it COMPLETELY PLAIN: one solid, uniform dark green with a slight burgundy tint over the whole leaf, a mid-dark value (clearly lighter than black), veins only a little lighter so the leaf stays readable. Absolutely no streaks, no marbling, no lighter patches, no pink, no variegation of any kind. Paint it as a hand-painted pastel low-poly illustration in the style of image 2: broad flat faceted planes like a low-poly model, soft pastel colors, a faint brush texture, no hard highlights. No pot, no text, no border, no drop shadow, not a photo, not a 3D render.",
+    "medias": [
+     {
+      "value": "ce7b1f5f-5c2b-4613-b743-1db1ba410e1c",
+      "role": "image_references",
+      "ref": "REF_FAM_pp_green",
+      "path": "assets/plants/pink_princess/thumbs/pp_leaf_mature.png"
+     },
+     {
+      "value": "61c09b45-45fc-4437-b871-6ee7f210dfb7",
+      "role": "image_references",
+      "ref": "REF_STYLE_B",
+      "path": "assets/raw/plants/pink_princess/PP2_clean.png"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150425_ba0d1b35-a8ce-4aff-9d63-d9740190f8ad.png",
+   "cost": 2.75,
+   "saved_path": "assets/illust/cards/_styleB/card_pp_green_r2_b.png",
+   "repo_copy": "PNG 1024 RGBA (2k original = master_path)",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/cards/_styleB/card_pp_green_r2_b.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGBA",
+   "qa_pass": false,
+   "qa_notes": "real transparency (bg alpha 0, corners 0), one connected alpha component, no edge touch; PLAIN - no light streaks/marbling (first-run fault fixed); petiole at the TOP notch (sinus), none at the tip; leaf alpha 253 not 255 (model trait, same as first run). QA-4 brightness FAIL: below 0.25 on both luma and HSV-V (improved from first run 0.167-0.187). style B: most burgundy (R~G) and darkest of B; triangular flap behind the petiole top (artifact).",
+   "metrics": {
+    "size": [
+     2048,
+     2048
+    ],
+    "mode": "RGBA",
+    "alpha_frac_zero": 0.5807,
+    "alpha_frac_partial": 0.4193,
+    "alpha_frac_opaque": 0.0,
+    "corner_alpha_mean": 0.0,
+    "subject_bbox": [
+     237,
+     307,
+     1811,
+     1783
+    ],
+    "subject_extent_frac": 0.769,
+    "subject_area_frac": 0.413,
+    "touches_edge": false,
+    "subject_lum_mean": 0.207,
+    "hsv_v_mean": 0.216,
+    "subject_sat_mean": 0.266,
+    "subject_rgb_mean": [
+     53.8,
+     53.6,
+     40.5
+    ],
+    "alpha_components_ge_0.2pct": 1,
+    "alpha_component_sizes": [
+     1731826
+    ],
+    "interior": {
+     "lum_mean": 0.207,
+     "lum_std": 0.022,
+     "lum_p5_p50_p95": [
+      0.18,
+      0.203,
+      0.242
+     ],
+     "light_frac_gt_median_plus_0p10": 0.007,
+     "light_frac_gt_median_plus_0p15": 0.0001,
+     "highpass_std": 0.0184,
+     "highpass_frac_gt_0p06": 0.0219,
+     "sat_mean": 0.266,
+     "rgb_mean": [
+      53.8,
+      53.6,
+      40.5
+     ],
+     "R_minus_G_mean": 0.2,
+     "dark_frac_lum_lt_0p12": 0.0
+    },
+    "real_transparency": true
+   }
+  },
+  {
+   "name": "SC1_r2",
+   "line": "SC1_r2",
+   "variant": "a",
+   "kind": "species_leaf",
+   "index": 4,
+   "job_id": "f6e10c52-ce28-4b41-bd14-b4aaf7e108a9",
+   "status": "completed",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 1,
+    "use_unlim": false,
+    "background": "opaque",
+    "prompt": "A single Epipremnum aureum (scindapsus / pothos) heart-shaped leaf with a slightly asymmetric pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a small young leaf just unrolled, fresh light green, plain, no variegation. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. Exactly one leaf - no bud, no second leaf, no new shoot curling at the tip. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "61c09b45-45fc-4437-b871-6ee7f210dfb7",
+      "role": "image_references",
+      "ref": "REF_STYLE_B",
+      "path": "assets/raw/plants/pink_princess/PP2_clean.png"
+     },
+     {
+      "value": "6f100be1-9e11-4c34-849f-4009e6c36cfa",
+      "role": "image_references",
+      "ref": "REF_STYLE_B2",
+      "path": "assets/raw/plants/alocasia/AL2_clean.png"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150425_f6e10c52-ce28-4b41-bd14-b4aaf7e108a9.png",
+   "cost": 2.75,
+   "saved_path": "assets/raw/plants/scindapsus/SC1_r2_a.jpg",
+   "repo_copy": "JPEG q95 4:4:4 2048 (PNG original = master_path), PSNR 52.2 dB",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC1_r2_a.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGB",
+   "qa_pass": true,
+   "qa_notes": "PASS: exactly one leaf (one connected subject, no bud / second leaf / curl at the tip - first-run fault fixed); young light green, pastel low-poly, 3/4 view, petiole down, pure white bg.",
+   "metrics": {
+    "size": [
+     2048,
+     2048
+    ],
+    "mode": "RGB",
+    "alpha_min": 255.0,
+    "border_white_frac": 1.0,
+    "border_rgb_mean": [
+     254.2,
+     254.0,
+     254.1
+    ],
+    "subject_bbox": [
+     518,
+     251,
+     1594,
+     1893
+    ],
+    "subject_extent_frac": 0.802,
+    "subject_area_frac": 0.219,
+    "touches_edge": false,
+    "subject_lum_mean": 0.661,
+    "subject_sat_mean": 0.53,
+    "subject_rgb_mean": [
+     141.4,
+     184.7,
+     87.2
+    ],
+    "subject_components_ge_0.2pct": 1,
+    "subject_component_sizes": [
+     918550
+    ]
+   }
+  },
+  {
+   "name": "SC1_r2",
+   "line": "SC1_r2",
+   "variant": "b",
+   "kind": "species_leaf",
+   "index": 5,
+   "job_id": "3859305b-12f0-4a66-9db5-6ba9a06cac3d",
+   "status": "completed",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 1,
+    "use_unlim": false,
+    "background": "opaque",
+    "prompt": "A single Epipremnum aureum (scindapsus / pothos) heart-shaped leaf with a slightly asymmetric pointed tip with its petiole, isolated on a plain pure white background, 3/4 view, petiole pointing down, the whole leaf visible and centered, a small young leaf just unrolled, fresh light green, plain, no variegation. Pastel low-poly 3D game asset style like images 1 and 2: broad flat faceted planes, soft pastel colors, soft even light. Exactly one leaf - no bud, no second leaf, no new shoot curling at the tip. No pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "61c09b45-45fc-4437-b871-6ee7f210dfb7",
+      "role": "image_references",
+      "ref": "REF_STYLE_B",
+      "path": "assets/raw/plants/pink_princess/PP2_clean.png"
+     },
+     {
+      "value": "6f100be1-9e11-4c34-849f-4009e6c36cfa",
+      "role": "image_references",
+      "ref": "REF_STYLE_B2",
+      "path": "assets/raw/plants/alocasia/AL2_clean.png"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150427_3859305b-12f0-4a66-9db5-6ba9a06cac3d.png",
+   "cost": 2.75,
+   "saved_path": "assets/raw/plants/scindapsus/SC1_r2_b.jpg",
+   "repo_copy": "JPEG q95 4:4:4 2048 (PNG original = master_path), PSNR 52.3 dB",
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/raw/plants/scindapsus/SC1_r2_b.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGB",
+   "qa_pass": true,
+   "qa_notes": "PASS: exactly one leaf; near-twin of _a (same pose), petiole slightly longer and straighter.",
+   "metrics": {
+    "size": [
+     2048,
+     2048
+    ],
+    "mode": "RGB",
+    "alpha_min": 255.0,
+    "border_white_frac": 1.0,
+    "border_rgb_mean": [
+     254.2,
+     254.1,
+     254.1
+    ],
+    "subject_bbox": [
+     487,
+     223,
+     1561,
+     1869
+    ],
+    "subject_extent_frac": 0.804,
+    "subject_area_frac": 0.2,
+    "touches_edge": false,
+    "subject_lum_mean": 0.663,
+    "subject_sat_mean": 0.509,
+    "subject_rgb_mean": [
+     140.4,
+     185.5,
+     91.6
+    ],
+    "subject_components_ge_0.2pct": 1,
+    "subject_component_sizes": [
+     837365
+    ]
+   }
+  },
+  {
+   "name": "mon_mature_detail_2d",
+   "line": "unity_kit §6 step 1",
+   "variant": "a",
+   "kind": "detail_test_2d",
+   "index": 6,
+   "job_id": "2ac617d6-82b9-4cc0-840e-da3c461fe6f6",
+   "status": "completed",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 1,
+    "use_unlim": false,
+    "background": "opaque",
+    "prompt": "A single Monstera deliciosa mature leaf with its petiole, the same silhouette, splits and holes as image 1, 3/4 view, petiole pointing down, the whole leaf visible and centered, plain healthy deep green with natural veins and a soft waxy sheen, soft even studio light with gentle shading so the leaf's curvature is readable, isolated on a plain pure white background, no pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "76ddd450-b918-4ecb-bb53-9e396eca1c14",
+      "role": "image_references",
+      "ref": "unity_kit/pilot/monstera_leaf_mature_3q_2048.png (media_upload + PUT + media_confirm)"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150426_2ac617d6-82b9-4cc0-840e-da3c461fe6f6.png",
+   "cost": 2.75,
+   "saved_path": "C:/Users/pc/Desktop/빛식물/unity_kit/pilot/mon_mature_detail_2d_a.png",
+   "repo_copy": "none - order target is unity_kit/pilot (outside repo); PNG original saved there",
+   "master_path": "C:/Users/pc/Desktop/빛식물/unity_kit/pilot/mon_mature_detail_2d_a.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGB",
+   "qa_pass": null,
+   "qa_notes": "lit, gentle shading + waxy sheen, curvature readable; photoreal glossy look (not the pastel game style); silhouette only loosely follows the ref (shallower splits than the ref, which splits nearly to the midrib); smaller in frame (extent 0.68). Leaf picks one for step 2 (Tripo, not run).",
+   "metrics": {
+    "size": [
+     2048,
+     2048
+    ],
+    "mode": "RGB",
+    "alpha_min": 255.0,
+    "border_white_frac": 1.0,
+    "border_rgb_mean": [
+     254.1,
+     254.0,
+     254.0
+    ],
+    "subject_bbox": [
+     474,
+     323,
+     1626,
+     1717
+    ],
+    "subject_extent_frac": 0.681,
+    "subject_area_frac": 0.202,
+    "touches_edge": false,
+    "subject_lum_mean": 0.255,
+    "subject_sat_mean": 0.721,
+    "subject_rgb_mean": [
+     36.6,
+     77.5,
+     26.4
+    ],
+    "subject_components_ge_0.2pct": 1,
+    "subject_component_sizes": [
+     846286
+    ]
+   }
+  },
+  {
+   "name": "mon_mature_detail_2d",
+   "line": "unity_kit §6 step 1",
+   "variant": "b",
+   "kind": "detail_test_2d",
+   "index": 7,
+   "job_id": "fca4223d-cf23-4411-9372-fff4c7a1f6ca",
+   "status": "completed",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "variant": "flare",
+    "quality": "high",
+    "resolution": "2k",
+    "aspect_ratio": "1:1",
+    "count": 1,
+    "use_unlim": false,
+    "background": "opaque",
+    "prompt": "A single Monstera deliciosa mature leaf with its petiole, the same silhouette, splits and holes as image 1, 3/4 view, petiole pointing down, the whole leaf visible and centered, plain healthy deep green with natural veins and a soft waxy sheen, soft even studio light with gentle shading so the leaf's curvature is readable, isolated on a plain pure white background, no pot, no shadow, no text.",
+    "medias": [
+     {
+      "value": "76ddd450-b918-4ecb-bb53-9e396eca1c14",
+      "role": "image_references",
+      "ref": "unity_kit/pilot/monstera_leaf_mature_3q_2048.png (media_upload + PUT + media_confirm)"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150425_fca4223d-cf23-4411-9372-fff4c7a1f6ca.png",
+   "cost": 2.75,
+   "saved_path": "C:/Users/pc/Desktop/빛식물/unity_kit/pilot/mon_mature_detail_2d_b.png",
+   "repo_copy": "none - order target is unity_kit/pilot (outside repo); PNG original saved there",
+   "master_path": "C:/Users/pc/Desktop/빛식물/unity_kit/pilot/mon_mature_detail_2d_b.png",
+   "size": [
+    2048,
+    2048
+   ],
+   "mode": "RGB",
+   "qa_pass": null,
+   "qa_notes": "lit, curvature readable; larger in frame (extent 0.83), longer petiole; same loose silhouette match as _a. Leaf picks one for step 2 (Tripo, not run).",
+   "metrics": {
+    "size": [
+     2048,
+     2048
+    ],
+    "mode": "RGB",
+    "alpha_min": 255.0,
+    "border_white_frac": 1.0,
+    "border_rgb_mean": [
+     254.0,
+     253.9,
+     254.0
+    ],
+    "subject_bbox": [
+     391,
+     176,
+     1672,
+     1874
+    ],
+    "subject_extent_frac": 0.829,
+    "subject_area_frac": 0.26,
+    "touches_edge": false,
+    "subject_lum_mean": 0.251,
+    "subject_sat_mean": 0.744,
+    "subject_rgb_mean": [
+     36.6,
+     76.3,
+     23.8
+    ],
+    "subject_components_ge_0.2pct": 1,
+    "subject_component_sizes": [
+     1089691
+    ]
+   }
+  },
+  {
+   "name": "SC_mid_3d",
+   "kind": "base_mesh",
+   "job_id": "e5956e07-76a8-424a-8b23-55c28cea1b24",
+   "status": "completed",
+   "model": "tripo_h3_1_image_to_3d",
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "count": 1,
+    "use_unlim": false,
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "7340586b-3841-48b2-9349-65c91620915d",
+      "role": "image_references",
+      "ref": "REF_SC_mid",
+      "path": "assets/raw/plants/scindapsus/SC2_a.jpg",
+      "import": "media_import_url https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC2_a.jpg"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150447_e5956e07-76a8-424a-8b23-55c28cea1b24.glb",
+   "cost": 12,
+   "saved_path": "assets/plants/scindapsus/_incoming1009/sc_leaf_mid.glb",
+   "master_path": null,
+   "bytes": 6558208,
+   "tris": 4788,
+   "verts": 3108,
+   "images": 3,
+   "glb": {
+    "magic_ok": true,
+    "version": 2,
+    "header_length_matches": true,
+    "meshes": 1,
+    "primitives": 1,
+    "has_uv0": true,
+    "uv_count": 3108,
+    "image_detail": [
+     {
+      "index": 0,
+      "mime": "image/jpeg",
+      "name": "Color_f7c7ac50-ed83-4cce-b5a6-af09d7b1b476",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1195729
+     },
+     {
+      "index": 1,
+      "mime": "image/jpeg",
+      "name": "ORM_f7c7ac50-ed83-4cce-b5a6-af09d7b1b476",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1145863
+     },
+     {
+      "index": 2,
+      "mime": "image/png",
+      "name": "NormalGL_f7c7ac50-ed83-4cce-b5a6-af09d7b1b476",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 4057439
+     }
+    ],
+    "material": [
+     {
+      "name": "tripo_material_f7c7ac50-ed83-4cce-b5a6-af09d7b1b476",
+      "baseColorTexture": true,
+      "metallicRoughnessTexture": true,
+      "normalTexture": true,
+      "occlusionTexture": false,
+      "emissiveTexture": false,
+      "baseColorFactor": [
+       1,
+       1,
+       1,
+       1
+      ],
+      "metallicFactor": 1.0,
+      "roughnessFactor": 1.0,
+      "doubleSided": false,
+      "alphaMode": null
+     }
+    ],
+    "textured": true,
+    "components_pos_welded": 1,
+    "bbox_extent": [
+     0.4052,
+     1.0,
+     0.7066
+    ],
+    "watertight_closed_shell": true,
+    "pos_sha1": "78dcec867594a961",
+    "uv_sha1": "79e0f98f8e999c5a"
+   },
+   "leaf_audit": {
+    "정점": 3108,
+    "삼각": 4788,
+    "두께%": 45.3,
+    "길이비": 1.12,
+    "이음매%": 0.0,
+    "채움%": 104.4,
+    "메시": 1,
+    "tex": "4096x4096",
+    "흰%": 0.0,
+    "따뜻%": 0.3,
+    "초록%": 100.0,
+    "대비": 0.135
+   },
+   "qa_pass": true,
+   "qa_notes": "one connected mesh (1 component after position weld), 4788 tris <= 5000, textured PBR (baseColor+ORM+normal, all 4096x4096), UVs in [0,1], no degenerate tris; Tripo closed watertight shell (front+back surfaces) -> leaf_audit fill 104.4% (leaf rule <=100% flags two layers), thickness 45.3%, seam split 0.0%. heart leaf with raised vein relief and petiole; reads as scindapsus mid leaf."
+  },
+  {
+   "name": "SC_mature_3d",
+   "kind": "base_mesh",
+   "job_id": "7f7318af-3d83-4c5e-8477-aef9da51231c",
+   "status": "completed",
+   "model": "tripo_h3_1_image_to_3d",
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "count": 1,
+    "use_unlim": false,
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "ec894741-ac7a-49a4-9920-d45c72572b59",
+      "role": "image_references",
+      "ref": "REF_SC_mature",
+      "path": "assets/raw/plants/scindapsus/SC3_a.jpg",
+      "import": "media_import_url https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC3_a.jpg"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150451_7f7318af-3d83-4c5e-8477-aef9da51231c.glb",
+   "cost": 12,
+   "saved_path": "assets/plants/scindapsus/_incoming1009/sc_leaf_mature.glb",
+   "master_path": null,
+   "bytes": 5757604,
+   "tris": 4862,
+   "verts": 3156,
+   "images": 3,
+   "glb": {
+    "magic_ok": true,
+    "version": 2,
+    "header_length_matches": true,
+    "meshes": 1,
+    "primitives": 1,
+    "has_uv0": true,
+    "uv_count": 3156,
+    "image_detail": [
+     {
+      "index": 0,
+      "mime": "image/jpeg",
+      "name": "Color_7e5b2c7c-99b4-4152-9756-b67bee59fccd",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 883748
+     },
+     {
+      "index": 1,
+      "mime": "image/jpeg",
+      "name": "ORM_7e5b2c7c-99b4-4152-9756-b67bee59fccd",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1039901
+     },
+     {
+      "index": 2,
+      "mime": "image/png",
+      "name": "NormalGL_7e5b2c7c-99b4-4152-9756-b67bee59fccd",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 3672360
+     }
+    ],
+    "material": [
+     {
+      "name": "tripo_material_7e5b2c7c-99b4-4152-9756-b67bee59fccd",
+      "baseColorTexture": true,
+      "metallicRoughnessTexture": true,
+      "normalTexture": true,
+      "occlusionTexture": false,
+      "emissiveTexture": false,
+      "baseColorFactor": [
+       1,
+       1,
+       1,
+       1
+      ],
+      "metallicFactor": 1.0,
+      "roughnessFactor": 1.0,
+      "doubleSided": false,
+      "alphaMode": null
+     }
+    ],
+    "textured": true,
+    "components_pos_welded": 1,
+    "bbox_extent": [
+     0.444,
+     1.0,
+     0.698
+    ],
+    "watertight_closed_shell": true,
+    "pos_sha1": "17fbbf312a84a53f",
+    "uv_sha1": "81cdfca51693d60a"
+   },
+   "leaf_audit": {
+    "정점": 3156,
+    "삼각": 4862,
+    "두께%": 36.7,
+    "길이비": 1.08,
+    "이음매%": 0.0,
+    "채움%": 81.6,
+    "메시": 1,
+    "tex": "4096x4096",
+    "흰%": 0.0,
+    "따뜻%": 0.3,
+    "초록%": 100.0,
+    "대비": 0.092
+   },
+   "qa_pass": true,
+   "qa_notes": "one connected mesh (1 component after position weld), 4862 tris <= 5000, textured PBR (baseColor+ORM+normal, all 4096x4096), UVs in [0,1], no degenerate tris; Tripo closed watertight shell (front+back surfaces) -> leaf_audit fill 81.6% (leaf rule <=100% flags two layers), thickness 36.7%, seam split 0.0%. plain heart leaf with petiole; base colour very uniform (texture contrast 0.092), little vein detail from above."
+  },
+  {
+   "name": "CA_young_3d",
+   "kind": "base_mesh",
+   "job_id": "439934e2-26f5-4b08-8b2a-281b78660ecf",
+   "status": "completed",
+   "model": "tripo_h3_1_image_to_3d",
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "count": 1,
+    "use_unlim": false,
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "bcdf86ea-31dd-4764-8571-98a36594507c",
+      "role": "image_references",
+      "ref": "REF_CA_young",
+      "path": "assets/raw/plants/calathea/CA1_b.jpg",
+      "import": "media_import_url https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/calathea/CA1_b.jpg"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150454_439934e2-26f5-4b08-8b2a-281b78660ecf.glb",
+   "cost": 12,
+   "saved_path": "assets/plants/calathea/_incoming1009/ca_leaf_young.glb",
+   "master_path": null,
+   "bytes": 7062064,
+   "tris": 4944,
+   "verts": 3166,
+   "images": 3,
+   "glb": {
+    "magic_ok": true,
+    "version": 2,
+    "header_length_matches": true,
+    "meshes": 1,
+    "primitives": 1,
+    "has_uv0": true,
+    "uv_count": 3166,
+    "image_detail": [
+     {
+      "index": 0,
+      "mime": "image/jpeg",
+      "name": "Color_1493a516-6c6b-4966-b1ac-d2d1ab1e91b0",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1505309
+     },
+     {
+      "index": 1,
+      "mime": "image/jpeg",
+      "name": "ORM_1493a516-6c6b-4966-b1ac-d2d1ab1e91b0",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1233969
+     },
+     {
+      "index": 2,
+      "mime": "image/png",
+      "name": "NormalGL_1493a516-6c6b-4966-b1ac-d2d1ab1e91b0",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 4159878
+     }
+    ],
+    "material": [
+     {
+      "name": "tripo_material_1493a516-6c6b-4966-b1ac-d2d1ab1e91b0",
+      "baseColorTexture": true,
+      "metallicRoughnessTexture": true,
+      "normalTexture": true,
+      "occlusionTexture": false,
+      "emissiveTexture": false,
+      "baseColorFactor": [
+       1,
+       1,
+       1,
+       1
+      ],
+      "metallicFactor": 1.0,
+      "roughnessFactor": 1.0,
+      "doubleSided": false,
+      "alphaMode": null
+     }
+    ],
+    "textured": true,
+    "components_pos_welded": 1,
+    "bbox_extent": [
+     0.258,
+     1.0,
+     0.5525
+    ],
+    "watertight_closed_shell": true,
+    "pos_sha1": "609c6feb0aa1be39",
+    "uv_sha1": "310d43cc00b70140"
+   },
+   "leaf_audit": {
+    "정점": 3166,
+    "삼각": 4944,
+    "두께%": 40.0,
+    "길이비": 1.85,
+    "이음매%": 0.0,
+    "채움%": 113.6,
+    "메시": 1,
+    "tex": "4096x4096",
+    "흰%": 14.6,
+    "따뜻%": 3.3,
+    "초록%": 77.4,
+    "대비": 0.357
+   },
+   "qa_pass": true,
+   "qa_notes": "one connected mesh (1 component after position weld), 4944 tris <= 5000, textured PBR (baseColor+ORM+normal, all 4096x4096), UVs in [0,1], no degenerate tris; Tripo closed watertight shell (front+back surfaces) -> leaf_audit fill 113.6% (leaf rule <=100% flags two layers), thickness 40.0%, seam split 0.0%. oval orbifolia leaf with silver stripes, curved petiole at top; small pale-yellow lobe at the leaf tip (check against CA1_b)."
+  },
+  {
+   "name": "CA_mid_3d",
+   "kind": "base_mesh",
+   "job_id": "74dae83b-641f-45b0-95f1-9003943672df",
+   "status": "completed",
+   "model": "tripo_h3_1_image_to_3d",
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "count": 1,
+    "use_unlim": false,
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "482b5198-7623-4d49-bbbc-bc21a3c74eeb",
+      "role": "image_references",
+      "ref": "REF_CA_mid",
+      "path": "assets/raw/plants/calathea/CA2_a.jpg",
+      "import": "media_import_url https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/calathea/CA2_a.jpg"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150500_74dae83b-641f-45b0-95f1-9003943672df.glb",
+   "cost": 12,
+   "saved_path": "assets/plants/calathea/_incoming1009/ca_leaf_mid.glb",
+   "master_path": null,
+   "bytes": 8021704,
+   "tris": 4850,
+   "verts": 3104,
+   "images": 3,
+   "glb": {
+    "magic_ok": true,
+    "version": 2,
+    "header_length_matches": true,
+    "meshes": 1,
+    "primitives": 1,
+    "has_uv0": true,
+    "uv_count": 3104,
+    "image_detail": [
+     {
+      "index": 0,
+      "mime": "image/jpeg",
+      "name": "Color_2dd9074a-2442-4584-a31a-02766d8e5933",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1579554
+     },
+     {
+      "index": 1,
+      "mime": "image/jpeg",
+      "name": "ORM_2dd9074a-2442-4584-a31a-02766d8e5933",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1170301
+     },
+     {
+      "index": 2,
+      "mime": "image/png",
+      "name": "NormalGL_2dd9074a-2442-4584-a31a-02766d8e5933",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 5112049
+     }
+    ],
+    "material": [
+     {
+      "name": "tripo_material_2dd9074a-2442-4584-a31a-02766d8e5933",
+      "baseColorTexture": true,
+      "metallicRoughnessTexture": true,
+      "normalTexture": true,
+      "occlusionTexture": false,
+      "emissiveTexture": false,
+      "baseColorFactor": [
+       1,
+       1,
+       1,
+       1
+      ],
+      "metallicFactor": 1.0,
+      "roughnessFactor": 1.0,
+      "doubleSided": false,
+      "alphaMode": null
+     }
+    ],
+    "textured": true,
+    "components_pos_welded": 1,
+    "bbox_extent": [
+     0.2799,
+     1.0,
+     0.6778
+    ],
+    "watertight_closed_shell": true,
+    "pos_sha1": "37232a2443d10043",
+    "uv_sha1": "f9fb7b707f721054"
+   },
+   "leaf_audit": {
+    "정점": 3104,
+    "삼각": 4850,
+    "두께%": 18.3,
+    "길이비": 1.49,
+    "이음매%": 0.0,
+    "채움%": 107.5,
+    "메시": 1,
+    "tex": "4096x4096",
+    "흰%": 26.9,
+    "따뜻%": 0.1,
+    "초록%": 69.8,
+    "대비": 0.342
+   },
+   "qa_pass": true,
+   "qa_notes": "one connected mesh (1 component after position weld), 4850 tris <= 5000, textured PBR (baseColor+ORM+normal, all 4096x4096), UVs in [0,1], no degenerate tris; Tripo closed watertight shell (front+back surfaces) -> leaf_audit fill 107.5% (leaf rule <=100% flags two layers), thickness 18.3%, seam split 0.0%. round orbifolia leaf with silver stripes, petiole at top."
+  },
+  {
+   "name": "CA_mature_3d",
+   "kind": "base_mesh",
+   "job_id": "b6327cb8-c795-4931-8610-5486d78995a8",
+   "status": "completed",
+   "model": "tripo_h3_1_image_to_3d",
+   "params": {
+    "model": "tripo_h3_1_image_to_3d",
+    "count": 1,
+    "use_unlim": false,
+    "texture": true,
+    "pbr": true,
+    "texture_quality": "detailed",
+    "geometry_quality": "standard",
+    "face_limit": 5000,
+    "quad": false,
+    "orientation": "align_image",
+    "auto_size": false,
+    "medias": [
+     {
+      "value": "a53d816a-a1d8-4a03-a6c4-e82ecd6cac95",
+      "role": "image_references",
+      "ref": "REF_CA_mature",
+      "path": "assets/raw/plants/calathea/CA3_a.jpg",
+      "import": "media_import_url https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/calathea/CA3_a.jpg"
+     }
+    ]
+   },
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150503_b6327cb8-c795-4931-8610-5486d78995a8.glb",
+   "cost": 12,
+   "saved_path": "assets/plants/calathea/_incoming1009/ca_leaf_mature.glb",
+   "master_path": null,
+   "bytes": 8773588,
+   "tris": 4670,
+   "verts": 3011,
+   "images": 3,
+   "glb": {
+    "magic_ok": true,
+    "version": 2,
+    "header_length_matches": true,
+    "meshes": 1,
+    "primitives": 1,
+    "has_uv0": true,
+    "uv_count": 3011,
+    "image_detail": [
+     {
+      "index": 0,
+      "mime": "image/jpeg",
+      "name": "Color_d3dc1876-2aea-45dd-bf00-ae8714d6d0e4",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1741197
+     },
+     {
+      "index": 1,
+      "mime": "image/jpeg",
+      "name": "ORM_d3dc1876-2aea-45dd-bf00-ae8714d6d0e4",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 1225252
+     },
+     {
+      "index": 2,
+      "mime": "image/png",
+      "name": "NormalGL_d3dc1876-2aea-45dd-bf00-ae8714d6d0e4",
+      "size": [
+       4096,
+       4096
+      ],
+      "mode": "RGB",
+      "bytes": 5652484
+     }
+    ],
+    "material": [
+     {
+      "name": "tripo_material_d3dc1876-2aea-45dd-bf00-ae8714d6d0e4",
+      "baseColorTexture": true,
+      "metallicRoughnessTexture": true,
+      "normalTexture": true,
+      "occlusionTexture": false,
+      "emissiveTexture": false,
+      "baseColorFactor": [
+       1,
+       1,
+       1,
+       1
+      ],
+      "metallicFactor": 1.0,
+      "roughnessFactor": 1.0,
+      "doubleSided": false,
+      "alphaMode": null
+     }
+    ],
+    "textured": true,
+    "components_pos_welded": 1,
+    "bbox_extent": [
+     0.2226,
+     1.0,
+     0.732
+    ],
+    "watertight_closed_shell": true,
+    "pos_sha1": "eee5a71136343515",
+    "uv_sha1": "34c75e3f0274fa6e"
+   },
+   "leaf_audit": {
+    "정점": 3011,
+    "삼각": 4670,
+    "두께%": 16.7,
+    "길이비": 1.39,
+    "이음매%": 0.0,
+    "채움%": 109.4,
+    "메시": 1,
+    "tex": "4096x4096",
+    "흰%": 36.2,
+    "따뜻%": 0.2,
+    "초록%": 63.3,
+    "대비": 0.386
+   },
+   "qa_pass": true,
+   "qa_notes": "one connected mesh (1 component after position weld), 4670 tris <= 5000, textured PBR (baseColor+ORM+normal, all 4096x4096), UVs in [0,1], no degenerate tris; Tripo closed watertight shell (front+back surfaces) -> leaf_audit fill 109.4% (leaf rule <=100% flags two layers), thickness 16.7%, seam split 0.0%. round orbifolia leaf with bold silver stripes, petiole at top."
+  },
+  {
+   "name": "SC_mature_marblequeen",
+   "kind": "skin",
+   "attempt": "first",
+   "after": "SC_mature_3d",
+   "job_id": "2a7307c7-8ca1-42f6-93d9-53aab13c581b",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150451_7f7318af-3d83-4c5e-8477-aef9da51231c.glb",
+    "text_style_prompt": "Epipremnum 'Marble Queen' leaf: heavy creamy white marbled streaks and flecks over green, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC4_a.jpg",
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "as ordered",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/scindapsus/_incoming1009/sc_mature_marblequeen.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:13:10.6Z, refund in the 15:13:18-37Z group",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "SC_mature_marblequeen",
+   "kind": "skin",
+   "attempt": "retry",
+   "after": "SC_mature_3d",
+   "job_id": "81a5a028-00b8-43d2-b5ba-76dd13d3e97c",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/12f8e6fc-6ea7-4033-be13-8a37a44871b0.glb",
+    "text_style_prompt": "Epipremnum 'Marble Queen' leaf: heavy creamy white marbled streaks and flecks over green, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC4_a.jpg",
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "model_url = same base GLB bytes (sha256 equal) re-hosted via media_upload type=file (media 12f8e6fc-6ea7-4033-be13-8a37a44871b0) - the route the model spec names",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/scindapsus/_incoming1009/sc_mature_marblequeen.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:16:46.9Z -> refund 15:16:51.6Z (4.7 s)",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "SC_mature_njoy",
+   "kind": "skin",
+   "attempt": "first",
+   "after": "SC_mature_3d",
+   "job_id": "14622bf3-b3e6-4219-a3ab-e6e7dea51dac",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150451_7f7318af-3d83-4c5e-8477-aef9da51231c.glb",
+    "text_style_prompt": "Epipremnum 'N'Joy' leaf: crisp clean white sections along the edges and a green center, no marbling, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC5_b.jpg",
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "as ordered",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/scindapsus/_incoming1009/sc_mature_njoy.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:13:14.4Z, refund in the 15:13:18-37Z group",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "SC_mature_njoy",
+   "kind": "skin",
+   "attempt": "retry",
+   "after": "SC_mature_3d",
+   "job_id": "a4a489ed-e658-4c8b-8940-19076d9ab89f",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/12f8e6fc-6ea7-4033-be13-8a37a44871b0.glb",
+    "text_style_prompt": "Epipremnum 'N'Joy' leaf: crisp clean white sections along the edges and a green center, no marbling, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "image_style_url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/a2140b18-7d26-49f8-8250-1110688f8b9c.jpg",
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "all inputs Higgsfield-hosted: file GLB 12f8e6fc + SC5_b.jpg re-uploaded (image media a2140b18-7d26-49f8-8250-1110688f8b9c)",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/scindapsus/_incoming1009/sc_mature_njoy.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:18:15.6Z -> refund 15:18:17.3Z (1.6 s)",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "SC_mid_marblequeen",
+   "kind": "skin",
+   "attempt": "first",
+   "after": "SC_mid_3d",
+   "job_id": "ff35546a-aac1-42f3-820f-40a870339a46",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150447_e5956e07-76a8-424a-8b23-55c28cea1b24.glb",
+    "text_style_prompt": "Epipremnum 'Marble Queen' leaf: heavy creamy white marbled streaks and flecks over green, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC4_a.jpg",
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "as ordered",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/scindapsus/_incoming1009/sc_mid_marblequeen.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:13:17.4Z, refund in the 15:13:18-37Z group",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "SC_mid_marblequeen",
+   "kind": "skin",
+   "attempt": "retry",
+   "after": "SC_mid_3d",
+   "job_id": "37db832c-7f5a-4805-ad8e-503498d360c4",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150447_e5956e07-76a8-424a-8b23-55c28cea1b24.glb",
+    "text_style_prompt": "Epipremnum 'Marble Queen' leaf: heavy creamy white marbled streaks and flecks over green, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "order's own alt: image_style_url dropped, text_style_prompt only",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/scindapsus/_incoming1009/sc_mid_marblequeen.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:18:42.5Z -> refund 15:19:10.1Z (27.6 s)",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "SC_mid_njoy",
+   "kind": "skin",
+   "attempt": "first",
+   "after": "SC_mid_3d",
+   "job_id": "c2c3bfc9-ea16-4dc5-bb8e-ccd737a8164c",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150447_e5956e07-76a8-424a-8b23-55c28cea1b24.glb",
+    "text_style_prompt": "Epipremnum 'N'Joy' leaf: crisp clean white sections along the edges and a green center, no marbling, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/scindapsus/SC5_b.jpg",
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "as ordered",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/scindapsus/_incoming1009/sc_mid_njoy.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:13:18.8Z, refund in the 15:13:18-37Z group",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "SC_mid_njoy",
+   "kind": "skin",
+   "attempt": "retry",
+   "after": "SC_mid_3d",
+   "job_id": "d47d5814-b0c9-40c2-973e-cde3f259820d",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d2ol7oe51mr4n9.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/a968e41a-28b5-41ec-9a65-ec6321c8e656.glb",
+    "text_style_prompt": "Epipremnum 'N'Joy' leaf: crisp clean white sections along the edges and a green center, no marbling, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "text only + stripped base GLB (158 KB: textures removed, POSITION/NORMAL/TEXCOORD_0/indices bytes verbatim, verified identical; file media a968e41a-28b5-41ec-9a65-ec6321c8e656)",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/scindapsus/_incoming1009/sc_mid_njoy.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:21:07.8Z -> refund 15:21:40.1Z (32.2 s)",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "CA_mature_whitefusion",
+   "kind": "skin",
+   "attempt": "first",
+   "after": "CA_mature_3d",
+   "job_id": "6bf5d60a-2c41-4fa6-aba1-d9d3340d6e4b",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150503_b6327cb8-c795-4931-8610-5486d78995a8.glb",
+    "text_style_prompt": "Calathea 'White Fusion' leaf: light green with irregular brushstroke white and pale green marbling, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/calathea/CA5_a.jpg",
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "as ordered",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/calathea/_incoming1009/ca_mature_whitefusion.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:13:23.1Z, refund in the 15:13:18-37Z group",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "CA_mature_whitefusion",
+   "kind": "skin",
+   "attempt": "retry",
+   "after": "CA_mature_3d",
+   "job_id": "ffa682db-180a-43c4-8bb5-0437e5d9a7f6",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150503_b6327cb8-c795-4931-8610-5486d78995a8.glb",
+    "text_style_prompt": "Calathea White Fusion leaf: light green with irregular brushstroke white and pale green marbling, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "enable_safety_checker": false
+   },
+   "change_vs_order": "text only, quotes removed from the prompt, enable_safety_checker false",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/calathea/_incoming1009/ca_mature_whitefusion.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:22:33.4Z -> refund 15:22:46.4Z (13.0 s)",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "CA_mid_whitefusion",
+   "kind": "skin",
+   "attempt": "first",
+   "after": "CA_mid_3d",
+   "job_id": "983bdd50-c1ee-46b8-a33b-741bd6775450",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150500_74dae83b-641f-45b0-95f1-9003943672df.glb",
+    "text_style_prompt": "Calathea 'White Fusion' leaf: light green with irregular brushstroke white and pale green marbling, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": true,
+    "enable_pbr": false,
+    "image_style_url": "https://raw.githubusercontent.com/chunryou-delicate/lux-plant-sim/main/assets/raw/plants/calathea/CA4_b.jpg",
+    "enable_safety_checker": true,
+    "_note": "enable_safety_checker not sent (server default true)"
+   },
+   "change_vs_order": "as ordered",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/calathea/_incoming1009/ca_mid_whitefusion.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:13:26.0Z, refund in the 15:13:18-37Z group",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  },
+  {
+   "name": "CA_mid_whitefusion",
+   "kind": "skin",
+   "attempt": "retry",
+   "after": "CA_mid_3d",
+   "job_id": "73ec1b96-5768-4973-bf5b-3872da485033",
+   "status": "failed",
+   "model": "meshy_v5_retexture",
+   "params": {
+    "model": "meshy_v5_retexture",
+    "count": 1,
+    "use_unlim": false,
+    "model_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_150500_74dae83b-641f-45b0-95f1-9003943672df.glb",
+    "text_style_prompt": "Calathea White Fusion leaf: light green with irregular brushstroke white and pale green marbling, pastel low-poly, flat albedo, no lighting",
+    "enable_original_uv": false,
+    "enable_pbr": false,
+    "enable_safety_checker": false
+   },
+   "change_vs_order": "DIAGNOSTIC: enable_original_uv false (would not have shared base UVs), text only, no quotes, safety off - to tell a UV-mode failure from a service failure",
+   "result_url": null,
+   "saved_path": null,
+   "planned_save_as": "assets/plants/calathea/_incoming1009/ca_mid_whitefusion.glb",
+   "master_path": null,
+   "cost": 0,
+   "charge": "9.5 spent then 9.5 refunded (net 0)",
+   "timing": "spend 15:24:00.1Z -> refund 15:24:20.5Z (20.4 s)",
+   "qa_notes": "failed outright; no error text exposed by jobs_wait / job_display / show_generation_by_ids."
+  }
+ ]
+}
