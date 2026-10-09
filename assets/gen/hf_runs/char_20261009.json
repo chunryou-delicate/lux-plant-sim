@@ -1,0 +1,1583 @@
+{
+ "run": "char_20261009",
+ "order_file": "docs/handoff/char-higgsfield-plan-20261009.md",
+ "scope": "items 2-19 (11 scenes + 7 portraits), 2 variants each. Item 1 ev_neighbor_order was run earlier by the coordinator and is not in this ledger.",
+ "tool": "generate_image_batch (3 calls x 12) + jobs_wait; no folder_id (get_preferences auto_create_project=false); use_unlim omitted",
+ "model": "gpt_image_2_5",
+ "quality": "max",
+ "resolution": "2k",
+ "reference_media": {
+  "REF_JACHWI": "be4f952f-02df-4277-a8c8-b616e8067711",
+  "REF_MONI": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+  "REF_MONI_CHEER": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+  "REF_STYLE": "7341859e-cecf-4685-b3da-844141b496d2",
+  "REF_BANJIHA": "d5bfff9e-828f-4bc6-8ae9-447ce413b4cb",
+  "REF_ONEROOM": "470e5a11-904a-4765-aafd-307a68b0ce23"
+ },
+ "prompt_edits": "none. No scene in items 2-19 has a second adult, so the \"image 1\" clarification was not needed; every prompt is verbatim from the order file.",
+ "retries": "none. No item had both variants fail a hard check (3, 4 or 5).",
+ "credits_before": 2388.75,
+ "credits_after": 1464.25,
+ "credits_spent": 324,
+ "credits_note": "credits_spent is this task only: 36 jobs x 9 credits = 324, matched one-to-one in Higgsfield transactions (12 x -9 at 13:46:29-13:46:32Z, 12 x -9 at 13:47:31-13:47:35Z, 12 x -9 at 13:48:06-13:48:10Z). The balance fell by more than that because other sessions spent at the same time (Nano Banana 2.1, other GPT Image 2.5 jobs at 2.75/9/15 credits, Tripo 3D from 13:48:29Z on). get_cost preflight returned 9 credits per image.",
+ "recommended_picks": {
+  "ev_furniture_shop": "ev_furniture_shop_b.png",
+  "ev_pp_trade_offer": "ev_pp_trade_offer_b.png",
+  "ev_pp_trade_done": "ev_pp_trade_done_b.png",
+  "ev_al_corm": "ev_al_corm_a.png",
+  "ev_al_sprout_varie": "ev_al_sprout_varie_b.png",
+  "ev_home_mark_quarter": "ev_home_mark_quarter_a.png",
+  "ev_home_mark_half": "ev_home_mark_half_b.png",
+  "ev_home_mark_threequarter": "ev_home_mark_threequarter_a.png",
+  "ev_home_mark_near": "ev_home_mark_near_a.png",
+  "ev_oneroom_full": "ev_oneroom_full_a.png",
+  "ev_first_story_end": "ev_first_story_end_a.png",
+  "portrait_jachwi_scissors": "portrait_jachwi_scissors_a.png",
+  "portrait_jachwi_bulb": "portrait_jachwi_bulb_a.png",
+  "portrait_jachwi_beam": "portrait_jachwi_beam_b.png",
+  "portrait_jachwi_winter": "portrait_jachwi_winter_b.png",
+  "portrait_moni_bulb": "portrait_moni_bulb_b.png",
+  "portrait_moni_shh": "portrait_moni_shh_a.png",
+  "portrait_moni_scissors": "portrait_moni_scissors_a.png"
+ },
+ "qa_checks": "order file checklist 1-7; previews <=768px viewed; hands, Moni leaves and portrait framing checked on full-res crops; portrait bg corners 253-254; non-white bbox compared with the reference portraits",
+ "entries": [
+  {
+   "item": 2,
+   "name": "ev_furniture_shop",
+   "variant": "a",
+   "index": 20,
+   "kind": "scene",
+   "job_id": "4fdf8454-1546-47c3-abfe-2f6199b0b6d4",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "A small cozy neighborhood furniture shop with wooden shelves and plant stands on display; she looks around, curious and hopeful; Moni points at a plant stand. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134629_4fdf8454-1546-47c3-abfe-2f6199b0b6d4.png",
+   "saved_path": "assets/illust/_hf/ev_furniture_shop_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5838852,
+   "qa_pass": true,
+   "qa_notes": "pass. Cozy wooden shop, shelves and plant stands; hair brown, bangs, cream tee, grey joggers; Moni in pot with two holed leaves. Soft point: Moni sits on a plant stand but does not point (5).",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_furniture_shop_a.png"
+  },
+  {
+   "item": 2,
+   "name": "ev_furniture_shop",
+   "variant": "b",
+   "index": 21,
+   "kind": "scene",
+   "job_id": "ddbe7005-8b0e-4037-ba9c-f7e915dc3d1f",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "A small cozy neighborhood furniture shop with wooden shelves and plant stands on display; she looks around, curious and hopeful; Moni points at a plant stand. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134630_ddbe7005-8b0e-4037-ba9c-f7e915dc3d1f.png",
+   "saved_path": "assets/illust/_hf/ev_furniture_shop_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5716359,
+   "qa_pass": true,
+   "qa_notes": "pass. All checks ok; Moni points toward the wooden stands; shelves/stools read as a furniture shop; hand at chin clean at full res.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_furniture_shop_b.png"
+  },
+  {
+   "item": 3,
+   "name": "ev_pp_trade_offer",
+   "variant": "a",
+   "index": 30,
+   "kind": "scene",
+   "job_id": "370fc07a-2828-4906-b37f-973c8cd589c3",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     },
+     {
+      "value": "d5bfff9e-828f-4bc6-8ae9-447ce413b4cb",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE",
+     "REF_BANJIHA"
+    ]
+   },
+   "prompt_used": "In a stairwell, a plant-swap note pinned on a board (no readable text) beside a small pot of Pink Princess philodendron, dark leaves splashed with bubblegum pink; she holds her own small potted variegated monstera cutting, thinking; Moni looks up asking. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border. Setting like image 4.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134629_370fc07a-2828-4906-b37f-973c8cd589c3.png",
+   "saved_path": "assets/illust/_hf/ev_pp_trade_offer_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5823616,
+   "qa_pass": true,
+   "qa_notes": "pass. Stairwell, cork board with blank notes and a leaf sketch (no text), Pink Princess (dark leaves, pink splashes) on the ledge, she holds a variegated monstera cutting and thinks; Moni looks up.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_pp_trade_offer_a.png"
+  },
+  {
+   "item": 3,
+   "name": "ev_pp_trade_offer",
+   "variant": "b",
+   "index": 31,
+   "kind": "scene",
+   "job_id": "51326c2a-9e89-4da6-8a8b-d5fe11a0eba8",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     },
+     {
+      "value": "d5bfff9e-828f-4bc6-8ae9-447ce413b4cb",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE",
+     "REF_BANJIHA"
+    ]
+   },
+   "prompt_used": "In a stairwell, a plant-swap note pinned on a board (no readable text) beside a small pot of Pink Princess philodendron, dark leaves splashed with bubblegum pink; she holds her own small potted variegated monstera cutting, thinking; Moni looks up asking. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border. Setting like image 4.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134629_51326c2a-9e89-4da6-8a8b-d5fe11a0eba8.png",
+   "saved_path": "assets/illust/_hf/ev_pp_trade_offer_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5976539,
+   "qa_pass": true,
+   "qa_notes": "pass. Same facts; swap note is a circular-arrows + plant icon (no text) so the swap reads clearly; hands clean at full res.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_pp_trade_offer_b.png"
+  },
+  {
+   "item": 4,
+   "name": "ev_pp_trade_done",
+   "variant": "a",
+   "index": 40,
+   "kind": "scene",
+   "job_id": "37d2fa07-5cac-440a-bb85-00b6288ed7aa",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI_CHEER",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "She happily holds a small pot of Pink Princess philodendron, its dark leaves splashed with bubblegum pink; Moni cheers beside her. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134630_37d2fa07-5cac-440a-bb85-00b6288ed7aa.png",
+   "saved_path": "assets/illust/_hf/ev_pp_trade_done_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5676777,
+   "qa_pass": true,
+   "qa_notes": "pass. She sits holding the pink-splashed Pink Princess; Moni cheers in its pot; sunny room.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_pp_trade_done_a.png"
+  },
+  {
+   "item": 4,
+   "name": "ev_pp_trade_done",
+   "variant": "b",
+   "index": 41,
+   "kind": "scene",
+   "job_id": "2c3ed40d-132f-433a-9dae-fb00b9ca4e08",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI_CHEER",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "She happily holds a small pot of Pink Princess philodendron, its dark leaves splashed with bubblegum pink; Moni cheers beside her. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134632_2c3ed40d-132f-433a-9dae-fb00b9ca4e08.png",
+   "saved_path": "assets/illust/_hf/ev_pp_trade_done_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5488286,
+   "qa_pass": true,
+   "qa_notes": "pass. Same; Moni arms up with sparkles (stronger cheer); fingers on the pot clean at full res.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_pp_trade_done_b.png"
+  },
+  {
+   "item": 5,
+   "name": "ev_al_corm",
+   "variant": "a",
+   "index": 50,
+   "kind": "scene",
+   "job_id": "590fe244-6086-4a14-be14-b54c1df0d4a4",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Close-up: in a pot whose Alocasia leaves have all withered, her fingers lift a small round brown corm (bulb) out of the soil; she is surprised; Moni beside her, teaching gesture. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134631_590fe244-6086-4a14-be14-b54c1df0d4a4.png",
+   "saved_path": "assets/illust/_hf/ev_al_corm_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5626189,
+   "qa_pass": true,
+   "qa_notes": "pass. Withered Alocasia pot; fingers lift a round brown corm with roots and falling soil; surprised; Moni raises a hand (teaching); both holed leaves clear; hand anatomy clean at full res.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_al_corm_a.png"
+  },
+  {
+   "item": 5,
+   "name": "ev_al_corm",
+   "variant": "b",
+   "index": 51,
+   "kind": "scene",
+   "job_id": "d147fba8-641d-4356-9a22-25346b44d67a",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Close-up: in a pot whose Alocasia leaves have all withered, her fingers lift a small round brown corm (bulb) out of the soil; she is surprised; Moni beside her, teaching gesture. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134631_d147fba8-641d-4356-9a22-25346b44d67a.png",
+   "saved_path": "assets/illust/_hf/ev_al_corm_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5651481,
+   "qa_pass": true,
+   "qa_notes": "pass (minor). Same facts plus trowel; Moni's left leaf is mostly hidden behind the arm/pot rim, so only one holed leaf is fully visible.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_al_corm_b.png"
+  },
+  {
+   "item": 6,
+   "name": "ev_al_sprout_varie",
+   "variant": "a",
+   "index": 60,
+   "kind": "scene",
+   "job_id": "04204ef2-058f-4c01-b62a-a9026a545034",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI_CHEER",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Close-up: a tiny new Alocasia sprout from a corm, its arrow-shaped leaf splashed with cream variegation; she gasps happily; Moni cheers. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134631_04204ef2-058f-4c01-b62a-a9026a545034.png",
+   "saved_path": "assets/illust/_hf/ev_al_sprout_varie_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5521682,
+   "qa_pass": true,
+   "qa_notes": "pass. Arrow-shaped, cream-variegated Alocasia sprout rising from a corm; she gasps happily; Moni cheers.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_al_sprout_varie_a.png"
+  },
+  {
+   "item": 6,
+   "name": "ev_al_sprout_varie",
+   "variant": "b",
+   "index": 61,
+   "kind": "scene",
+   "job_id": "ca5e7896-420d-4d11-af41-7a5379c5dfdf",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI_CHEER",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Close-up: a tiny new Alocasia sprout from a corm, its arrow-shaped leaf splashed with cream variegation; she gasps happily; Moni cheers. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134630_ca5e7896-420d-4d11-af41-7a5379c5dfdf.png",
+   "saved_path": "assets/illust/_hf/ev_al_sprout_varie_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5583331,
+   "qa_pass": true,
+   "qa_notes": "pass. Same; sprout larger and clearer, corm visible; fists clean at full res.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_al_sprout_varie_b.png"
+  },
+  {
+   "item": 7,
+   "name": "ev_home_mark_quarter",
+   "variant": "a",
+   "index": 70,
+   "kind": "scene",
+   "job_id": "b0b64d29-72f0-425d-a89e-9f9f2d335f13",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Storybook vista, same composition every time: a winding path over four gentle hills toward a small house with a sunny window on the farthest hill. She walks the path carrying Moni in her arms. She has just crossed the first hill; the house is still far and tiny. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134632_b0b64d29-72f0-425d-a89e-9f9f2d335f13.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_quarter_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6861385,
+   "qa_pass": true,
+   "qa_notes": "pass. Winding path over hills to a tiny far house with a window; she walks carrying Moni (two holed leaves); hands clean.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_quarter_a.png"
+  },
+  {
+   "item": 7,
+   "name": "ev_home_mark_quarter",
+   "variant": "b",
+   "index": 71,
+   "kind": "scene",
+   "job_id": "5b1380a1-6257-4612-b431-6cab2d3f29bb",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Storybook vista, same composition every time: a winding path over four gentle hills toward a small house with a sunny window on the farthest hill. She walks the path carrying Moni in her arms. She has just crossed the first hill; the house is still far and tiny. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134629_5b1380a1-6257-4612-b431-6cab2d3f29bb.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_quarter_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 7024408,
+   "qa_pass": true,
+   "qa_notes": "pass. Same layout; house tiny on the farthest hill.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_quarter_b.png"
+  },
+  {
+   "item": 8,
+   "name": "ev_home_mark_half",
+   "variant": "a",
+   "index": 80,
+   "kind": "scene",
+   "job_id": "8ef48541-7501-401f-8671-ba0baf551644",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Storybook vista, same composition every time: a winding path over four gentle hills toward a small house with a sunny window on the farthest hill. She walks the path carrying Moni in her arms. She stands on top of the second hill, exactly halfway; the house looks closer. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134731_8ef48541-7501-401f-8671-ba0baf551644.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_half_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6800048,
+   "qa_pass": true,
+   "qa_notes": "pass (minor). House closer than quarter, but she is walking on the path rather than standing on top of a hill, so \"halfway\" reads weakly.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_half_a.png"
+  },
+  {
+   "item": 8,
+   "name": "ev_home_mark_half",
+   "variant": "b",
+   "index": 81,
+   "kind": "scene",
+   "job_id": "353e3da7-5c69-4aff-bdb7-7df5df764d45",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Storybook vista, same composition every time: a winding path over four gentle hills toward a small house with a sunny window on the farthest hill. She walks the path carrying Moni in her arms. She stands on top of the second hill, exactly halfway; the house looks closer. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134732_353e3da7-5c69-4aff-bdb7-7df5df764d45.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_half_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6731869,
+   "qa_pass": true,
+   "qa_notes": "pass. She stands on a crest; house closer; Moni two leaves; hands clean.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_half_b.png"
+  },
+  {
+   "item": 9,
+   "name": "ev_home_mark_threequarter",
+   "variant": "a",
+   "index": 90,
+   "kind": "scene",
+   "job_id": "72f7c709-1f4b-48fb-a1a0-a1e51a24fd21",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Storybook vista, same composition every time: a winding path over four gentle hills toward a small house with a sunny window on the farthest hill. She walks the path carrying Moni in her arms. She climbs the last hill; the house is near, its window glowing. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134734_72f7c709-1f4b-48fb-a1a0-a1e51a24fd21.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_threequarter_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6607867,
+   "qa_pass": true,
+   "qa_notes": "pass. Climbing the last slope, seen from behind; house near with glowing window; Moni two holed leaves (checked at full res).",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_threequarter_a.png"
+  },
+  {
+   "item": 9,
+   "name": "ev_home_mark_threequarter",
+   "variant": "b",
+   "index": 91,
+   "kind": "scene",
+   "job_id": "bd38bf42-38bb-440c-8b53-4ae15cd45a5a",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Storybook vista, same composition every time: a winding path over four gentle hills toward a small house with a sunny window on the farthest hill. She walks the path carrying Moni in her arms. She climbs the last hill; the house is near, its window glowing. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134733_bd38bf42-38bb-440c-8b53-4ae15cd45a5a.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_threequarter_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6499534,
+   "qa_pass": false,
+   "qa_notes": "FAIL check 3: Moni has only one monstera leaf (left leaf missing, checked at full res). Otherwise fine.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_threequarter_b.png"
+  },
+  {
+   "item": 10,
+   "name": "ev_home_mark_near",
+   "variant": "a",
+   "index": 100,
+   "kind": "scene",
+   "job_id": "494d9422-c5ee-4679-8144-3c61e8360b6e",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Storybook vista, same composition every time: a winding path over four gentle hills toward a small house with a sunny window on the farthest hill. She walks the path carrying Moni in her arms. She stops right before the house gate, the sunny window bright ahead. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134734_494d9422-c5ee-4679-8144-3c61e8360b6e.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_near_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6630353,
+   "qa_pass": true,
+   "qa_notes": "pass (minor). She stops at a wooden gate, sunny window bright ahead; the house is still up the slope at about the same size as in three-quarter, so the gate carries the \"near\" beat.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_near_a.png"
+  },
+  {
+   "item": 10,
+   "name": "ev_home_mark_near",
+   "variant": "b",
+   "index": 101,
+   "kind": "scene",
+   "job_id": "7628003d-2df4-43f1-bfad-489b0a8cdd8f",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Storybook vista, same composition every time: a winding path over four gentle hills toward a small house with a sunny window on the farthest hill. She walks the path carrying Moni in her arms. She stops right before the house gate, the sunny window bright ahead. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134732_7628003d-2df4-43f1-bfad-489b0a8cdd8f.png",
+   "saved_path": "assets/illust/_hf/ev_home_mark_near_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6853501,
+   "qa_pass": true,
+   "qa_notes": "pass (minor). Same as a, gate set in a stone wall; house slightly farther than in a.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_home_mark_near_b.png"
+  },
+  {
+   "item": 11,
+   "name": "ev_oneroom_full",
+   "variant": "a",
+   "index": 110,
+   "kind": "scene",
+   "job_id": "eb6989d0-a980-4220-b249-5e65344a121c",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     },
+     {
+      "value": "470e5a11-904a-4765-aafd-307a68b0ce23",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI_CHEER",
+     "REF_STYLE",
+     "REF_ONEROOM"
+    ]
+   },
+   "prompt_used": "Her studio room in bright sun: every shelf and plant stand is full of thriving monstera and cutting pots she grew; she stands back admiring, proud; Moni cheers. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border. Setting like image 4.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134734_eb6989d0-a980-4220-b249-5e65344a121c.png",
+   "saved_path": "assets/illust/_hf/ev_oneroom_full_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6334451,
+   "qa_pass": true,
+   "qa_notes": "pass. Sunny studio; shelves and stands full of monstera and cutting jars; she stands back admiring, hands clasped (clean); Moni cheers on a stand.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_oneroom_full_a.png"
+  },
+  {
+   "item": 11,
+   "name": "ev_oneroom_full",
+   "variant": "b",
+   "index": 111,
+   "kind": "scene",
+   "job_id": "fb5b9559-b800-4541-a448-b7a186ac4691",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "dd21af3c-a412-40c3-82a0-46ce7a308402",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     },
+     {
+      "value": "470e5a11-904a-4765-aafd-307a68b0ce23",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI_CHEER",
+     "REF_STYLE",
+     "REF_ONEROOM"
+    ]
+   },
+   "prompt_used": "Her studio room in bright sun: every shelf and plant stand is full of thriving monstera and cutting pots she grew; she stands back admiring, proud; Moni cheers. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border. Setting like image 4.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134733_fb5b9559-b800-4541-a448-b7a186ac4691.png",
+   "saved_path": "assets/illust/_hf/ev_oneroom_full_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 6658118,
+   "qa_pass": true,
+   "qa_notes": "pass. Same facts; she is seen from behind in profile, so her face is less visible.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_oneroom_full_b.png"
+  },
+  {
+   "item": 12,
+   "name": "ev_first_story_end",
+   "variant": "a",
+   "index": 120,
+   "kind": "scene",
+   "job_id": "70ff6623-1c6c-4d89-bb45-d9a4afa7d634",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Evening in her new sunny home, quiet: she sits by the window beside the tall monstera with Moni, watching a soft sunset, peaceful, a chapter closing. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134733_70ff6623-1c6c-4d89-bb45-d9a4afa7d634.png",
+   "saved_path": "assets/illust/_hf/ev_first_story_end_a.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5468039,
+   "qa_pass": true,
+   "qa_notes": "pass. Sunset window; she sits beside the tall monstera with Moni on the sill; peaceful; hand on cheek clean.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_first_story_end_a.png"
+  },
+  {
+   "item": 12,
+   "name": "ev_first_story_end",
+   "variant": "b",
+   "index": 121,
+   "kind": "scene",
+   "job_id": "015754a1-c6e2-40d7-aada-6a23159b6dc0",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "1:1",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     },
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     },
+     {
+      "value": "7341859e-cecf-4685-b3da-844141b496d2",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI",
+     "REF_MONI",
+     "REF_STYLE"
+    ]
+   },
+   "prompt_used": "Evening in her new sunny home, quiet: she sits by the window beside the tall monstera with Moni, watching a soft sunset, peaceful, a chapter closing. She is the woman in image 1: same face, LONG straight dark chocolate-brown hair (clearly brown, NOT black), blunt bangs, cream tee, grey joggers. Moni is image 2: tiny light-green sprout sitting INSIDE a terracotta pot with two holed monstera leaves - never remove the pot or the leaves. Draw in the 2D storybook style of image 3 (ink lines, soft warm wash), full-frame eye-level scene, no text, no border.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134735_015754a1-c6e2-40d7-aada-6a23159b6dc0.png",
+   "saved_path": "assets/illust/_hf/ev_first_story_end_b.jpg",
+   "width": 2048,
+   "height": 2048,
+   "bytes": 5555798,
+   "qa_pass": false,
+   "qa_notes": "FAIL check 5: no tall monstera (only a blurred leaf in the corner). Otherwise fine.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/illust/_hf/ev_first_story_end_b.png"
+  },
+  {
+   "item": 13,
+   "name": "portrait_jachwi_scissors",
+   "variant": "a",
+   "index": 130,
+   "kind": "portrait",
+   "job_id": "fa2418bf-9c0d-4bc0-b0c5-e62800d9d922",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI"
+    ]
+   },
+   "prompt_used": "She holds small garden scissors near her chin, pondering, eyes to the side. Same character and same art style as image 1 (flat 2D anime portrait, clean thin lines, soft flat shading): bust portrait, same framing and size as image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134734_fa2418bf-9c0d-4bc0-b0c5-e62800d9d922.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_scissors_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3592851,
+   "qa_pass": true,
+   "qa_notes": "pass. Garden snips at the chin, eyes to the side; hand clean at full res; white bg; framing matches the reference (non-white bbox 0,0.007,1,1 vs ref 0,0.008,1,1). Hair near-black like the reference (median RGB 65,54,54 vs ref 69,57,58); lift with tools/char/illust_hair_lift.py if needed.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_scissors_a.png"
+  },
+  {
+   "item": 13,
+   "name": "portrait_jachwi_scissors",
+   "variant": "b",
+   "index": 131,
+   "kind": "portrait",
+   "job_id": "25581f2a-26e6-4866-987c-6ff3f81b8469",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI"
+    ]
+   },
+   "prompt_used": "She holds small garden scissors near her chin, pondering, eyes to the side. Same character and same art style as image 1 (flat 2D anime portrait, clean thin lines, soft flat shading): bust portrait, same framing and size as image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134732_25581f2a-26e6-4866-987c-6ff3f81b8469.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_scissors_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3563729,
+   "qa_pass": true,
+   "qa_notes": "pass. Nearly identical to a; hand clean. Hair near-black like the reference.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_scissors_b.png"
+  },
+  {
+   "item": 14,
+   "name": "portrait_jachwi_bulb",
+   "variant": "a",
+   "index": 140,
+   "kind": "portrait",
+   "job_id": "81f69ee7-10f7-466f-862b-6d1bcbdc69f9",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI"
+    ]
+   },
+   "prompt_used": "Surprised, eyes wide, holding a small round brown bulb (corm) up in her palm. Same character and same art style as image 1 (flat 2D anime portrait, clean thin lines, soft flat shading): bust portrait, same framing and size as image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134809_81f69ee7-10f7-466f-862b-6d1bcbdc69f9.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_bulb_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3387196,
+   "qa_pass": true,
+   "qa_notes": "pass. Wide eyes, open mouth, round brown corm with a sprout tip in her palm; hand clean; white bg. Hair near-black like the reference.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_bulb_a.png"
+  },
+  {
+   "item": 14,
+   "name": "portrait_jachwi_bulb",
+   "variant": "b",
+   "index": 141,
+   "kind": "portrait",
+   "job_id": "e504a645-d45f-409f-bca7-992be0922d71",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI"
+    ]
+   },
+   "prompt_used": "Surprised, eyes wide, holding a small round brown bulb (corm) up in her palm. Same character and same art style as image 1 (flat 2D anime portrait, clean thin lines, soft flat shading): bust portrait, same framing and size as image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134810_e504a645-d45f-409f-bca7-992be0922d71.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_bulb_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3655508,
+   "qa_pass": true,
+   "qa_notes": "pass (minor). Bulb reads more like an onion or shallot than a corm. Hair near-black like the reference.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_bulb_b.png"
+  },
+  {
+   "item": 15,
+   "name": "portrait_jachwi_beam",
+   "variant": "a",
+   "index": 150,
+   "kind": "portrait",
+   "job_id": "7ec24937-b4b7-4c14-b8d5-15b07e5b2fcd",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI"
+    ]
+   },
+   "prompt_used": "Beaming with pride, both hands clasped at her chest, eyes slightly wet. Same character and same art style as image 1 (flat 2D anime portrait, clean thin lines, soft flat shading): bust portrait, same framing and size as image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134807_7ec24937-b4b7-4c14-b8d5-15b07e5b2fcd.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_beam_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3450970,
+   "qa_pass": true,
+   "qa_notes": "pass (minor). Beaming, wet eyes, interlaced hands clean; wears a long-sleeved cream top instead of the tee.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_beam_a.png"
+  },
+  {
+   "item": 15,
+   "name": "portrait_jachwi_beam",
+   "variant": "b",
+   "index": 151,
+   "kind": "portrait",
+   "job_id": "27a34945-16d1-4e70-b622-11e9e237bc78",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI"
+    ]
+   },
+   "prompt_used": "Beaming with pride, both hands clasped at her chest, eyes slightly wet. Same character and same art style as image 1 (flat 2D anime portrait, clean thin lines, soft flat shading): bust portrait, same framing and size as image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134808_27a34945-16d1-4e70-b622-11e9e237bc78.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_beam_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3325239,
+   "qa_pass": true,
+   "qa_notes": "pass. Beaming, wet eyes, hands clasped at the chest; tee as in the reference. Hair near-black like the reference.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_beam_b.png"
+  },
+  {
+   "item": 16,
+   "name": "portrait_jachwi_winter",
+   "variant": "a",
+   "index": 160,
+   "kind": "portrait",
+   "job_id": "de92e982-8d81-42c8-9b64-0e6589dd35a5",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI"
+    ]
+   },
+   "prompt_used": "Worried, wearing a cream knit sweater and a red scarf, looking down gently. Same character and same art style as image 1 (flat 2D anime portrait, clean thin lines, soft flat shading): bust portrait, same framing and size as image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134806_de92e982-8d81-42c8-9b64-0e6589dd35a5.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_winter_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3655569,
+   "qa_pass": true,
+   "qa_notes": "pass. Worried; cream cable-knit sweater and red scarf; white bg. Hair near-black like the reference.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_winter_a.png"
+  },
+  {
+   "item": 16,
+   "name": "portrait_jachwi_winter",
+   "variant": "b",
+   "index": 161,
+   "kind": "portrait",
+   "job_id": "a39598dc-e659-43a0-a3e7-3810ea3855a2",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "be4f952f-02df-4277-a8c8-b616e8067711",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_JACHWI"
+    ]
+   },
+   "prompt_used": "Worried, wearing a cream knit sweater and a red scarf, looking down gently. Same character and same art style as image 1 (flat 2D anime portrait, clean thin lines, soft flat shading): bust portrait, same framing and size as image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134806_a39598dc-e659-43a0-a3e7-3810ea3855a2.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_jachwi_winter_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 3502659,
+   "qa_pass": true,
+   "qa_notes": "pass. Same; eyes lowered more (closer to \"looking down gently\").",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_jachwi_winter_b.png"
+  },
+  {
+   "item": 17,
+   "name": "portrait_moni_bulb",
+   "variant": "a",
+   "index": 170,
+   "kind": "portrait",
+   "job_id": "6eff381b-8e63-4119-ad27-8d94decbd5f9",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_MONI"
+    ]
+   },
+   "prompt_used": "Moni proudly holds up a small round brown bulb with its leaves, teaching. Same character and same art style as image 1: Moni, tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), bust framing like image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134807_6eff381b-8e63-4119-ad27-8d94decbd5f9.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_moni_bulb_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 2438735,
+   "qa_pass": true,
+   "qa_notes": "pass. Holds a sprouting brown bulb up; pot and two holed leaves intact; white bg; framing matches the reference.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_moni_bulb_a.png"
+  },
+  {
+   "item": 17,
+   "name": "portrait_moni_bulb",
+   "variant": "b",
+   "index": 171,
+   "kind": "portrait",
+   "job_id": "09a97366-f838-446f-9d02-aed1b649e402",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_MONI"
+    ]
+   },
+   "prompt_used": "Moni proudly holds up a small round brown bulb with its leaves, teaching. Same character and same art style as image 1: Moni, tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), bust framing like image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134808_09a97366-f838-446f-9d02-aed1b649e402.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_moni_bulb_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 2446558,
+   "qa_pass": true,
+   "qa_notes": "pass. Same with \"!\" marks (teaching feel); pot and two holed leaves intact.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_moni_bulb_b.png"
+  },
+  {
+   "item": 18,
+   "name": "portrait_moni_shh",
+   "variant": "a",
+   "index": 180,
+   "kind": "portrait",
+   "job_id": "3f6cb6e4-8213-4fe4-a4fa-1f8a6e4e65b3",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_MONI"
+    ]
+   },
+   "prompt_used": "Moni puts a leaf tip to its mouth: shh, someone is sleeping. Same character and same art style as image 1: Moni, tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), bust framing like image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134806_3f6cb6e4-8213-4fe4-a4fa-1f8a6e4e65b3.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_moni_shh_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 2412523,
+   "qa_pass": true,
+   "qa_notes": "pass. Holds a small plain prop leaf upright at its mouth (shh); its two holed leaves and pot are intact.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_moni_shh_a.png"
+  },
+  {
+   "item": 18,
+   "name": "portrait_moni_shh",
+   "variant": "b",
+   "index": 181,
+   "kind": "portrait",
+   "job_id": "3c91b16f-2e06-430f-ac07-b46939f0206c",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_MONI"
+    ]
+   },
+   "prompt_used": "Moni puts a leaf tip to its mouth: shh, someone is sleeping. Same character and same art style as image 1: Moni, tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), bust framing like image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134808_3c91b16f-2e06-430f-ac07-b46939f0206c.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_moni_shh_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 2423577,
+   "qa_pass": false,
+   "qa_notes": "FAIL check 3: the prop leaf at its mouth is a third holed monstera leaf, and it reads more like nibbling than shh.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_moni_shh_b.png"
+  },
+  {
+   "item": 19,
+   "name": "portrait_moni_scissors",
+   "variant": "a",
+   "index": 190,
+   "kind": "portrait",
+   "job_id": "2b81ee39-5cd6-466b-a476-df70844f9e36",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_MONI"
+    ]
+   },
+   "prompt_used": "Moni holds tiny garden scissors carefully with its leaves, cautioning. Same character and same art style as image 1: Moni, tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), bust framing like image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134807_2b81ee39-5cd6-466b-a476-df70844f9e36.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_moni_scissors_a.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 2432452,
+   "qa_pass": true,
+   "qa_notes": "pass. Holds tiny green-handled scissors carefully in both hands; pot and two holed leaves intact.",
+   "recommended": true,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_moni_scissors_a.png"
+  },
+  {
+   "item": 19,
+   "name": "portrait_moni_scissors",
+   "variant": "b",
+   "index": 191,
+   "kind": "portrait",
+   "job_id": "815967b4-5ea2-43e5-8f12-3253cc688ee6",
+   "model": "gpt_image_2_5",
+   "params": {
+    "model": "gpt_image_2_5",
+    "aspect_ratio": "3:4",
+    "quality": "max",
+    "resolution": "2k",
+    "count": 1,
+    "medias": [
+     {
+      "value": "7e9f9400-640c-4e77-a3fb-f1f89de1a284",
+      "role": "image_references"
+     }
+    ],
+    "media_refs": [
+     "REF_MONI"
+    ]
+   },
+   "prompt_used": "Moni holds tiny garden scissors carefully with its leaves, cautioning. Same character and same art style as image 1: Moni, tiny chubby light-green sprout sitting INSIDE the SAME terracotta pot with the SAME two holed monstera leaves (never remove pot or leaves), bust framing like image 1, plain pure white background, no text.",
+   "prompt_edited": false,
+   "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_134808_815967b4-5ea2-43e5-8f12-3253cc688ee6.png",
+   "saved_path": "assets/characters/portraits/_hf/portrait_moni_scissors_b.jpg",
+   "width": 1744,
+   "height": 2336,
+   "bytes": 2420729,
+   "qa_pass": false,
+   "qa_notes": "FAIL: an extra small leaf is held up to the open blades, so it reads as about to snip (the opposite of caution) and adds a third leaf. Worried brows otherwise fit.",
+   "recommended": false,
+   "master_path": "C:/Users/pc/Desktop/빛식물/_hf_masters/assets/characters/portraits/_hf/portrait_moni_scissors_b.png"
+  }
+ ],
+ "_storage": "opaque → JPEG q95 4:4:4 in repo, PNG master moved to C:/Users/pc/Desktop/빛식물/_hf_masters/ (same relative path) · transparent stays PNG"
+}
