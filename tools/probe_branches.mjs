@@ -9,6 +9,7 @@
      node tools/probe_branches.mjs --targets 5000000,10000000 --days 660
      node tools/probe_branches.mjs --noprologue           (잎 2·3 무늬 보장 끔 — 게임은 켠다 · 견주기용)
      node tools/probe_branches.mjs --rent 275000          (D8 — 이사하는 순간 원룸 월세 R 을 «짝»으로 꽂는다 · 없으면 게임 그대로(원룸 월세 미정 = 반지하 월세))
+     node tools/probe_branches.mjs --trace                   (판마다 날마다 기록 → tools/_out/trace/<사람>_<씨앗>.json · [plan] 원룸 «주마다» 표용)
      node tools/probe_branches.mjs --boost 2                 (D40 — 삽수 «어린 그루» 무늬 배율을 이 판에서만 바꿔 끼운다 · 상한 0.9 · 1 = 캐논)
      node tools/probe_branches.mjs --grades <varie_grades.json>   (재는 판에서만 무늬 등급 표를 그 파일로 바꿔 끼운다 — 전/후 견주기용 · 게임 값은 안 건드림)
      node tools/probe_branches.mjs --persona guide --seeds g --targets 5000000 --days 1500 --rent 275000 --ledger
@@ -128,7 +129,9 @@ export async function play(name, seed, opt = {}) {
                                                      rent: 0, living: 0, power: 0, buy: 0, relief: 0, nVarie: 0, nPlain: 0, endCash: null });
     return out.ledger[i];
   };
-  const book = (cat, dw) => { if (!LG || !dw) return; bucket()[cat] += dw; LG.today += dw; };
+  /* ★ 2026-10-09 --trace — 그날 들어온 돈(갈래별 · 장부와 같은 부름에서) · 그날 자른 수 · 그날 처음 정해진 등급 */
+  let dayIn = {}, dayCuts = 0, dayGrades = [];
+  const book = (cat, dw) => { if (dw > 0) dayIn[cat] = (dayIn[cat] || 0) + dw; if (!LG || !dw) return; bucket()[cat] += dw; LG.today += dw; };
   const led = (cat, fn) => { const c0 = ts.cashWon; const r = fn(); book(cat, ts.cashWon - c0); return r; };
   const ord = (id, n) => led('buy', () => orderItem(S, id, n));   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
   /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
@@ -154,10 +157,15 @@ export async function play(name, seed, opt = {}) {
     const rest = P.lazy && (d % 2 === 1);
     if (!rest) { try { waterPot(S); } catch { } }
     let turn = null;
+    dayIn = {}; dayCuts = 0; dayGrades = [];
     try { turn = nextDay(S, io).turn; } catch (e) { out.crash = (e && e.message) || String(e); break; }
     /* ★ 2026-10-09 (D30 «먼저 확인») — 모주 무늬 잎 등급(game.html §noteTurn → noteLeafGrades 와 같게: 이 턴의 밴드로 · 한 번 정하면 안 바뀜).
          ⚠ 예전엔 이 줄이 없어 장부가 비었고 무늬 삽수는 모두 legacy 산반(35만)으로 값이 매겨졌다 — lightGrade 를 바꿔도 이 판은 안 움직였다 */
-    if (pot0(S)) { try { assignPotLeafGrades(S, { leafState: io.growth.leafState(), band: (turn && turn.growthSpeed && turn.growthSpeed.band) || null }); } catch { } }
+    if (pot0(S)) { try { const gr = assignPotLeafGrades(S, { leafState: io.growth.leafState(), band: (turn && turn.growthSpeed && turn.growthSpeed.band) || null });
+                         for (const g of (gr && gr.graded) || []) dayGrades.push({ who: 'mother', leafBirth: g.leafBirth, grade: g.grade }); } catch { } }
+    for (const e of ((turn && turn.cuttings && turn.cuttings.events) || [])) if (e && e.id === 'cutting_leaf' && e.grade) dayGrades.push({ who: e.cuttingId, grade: e.grade });
+    /* 결산 수입(구호금 · 반찬가게 결산 길) — 장부 밖에서도 그날 들어온 돈으로 센다 */
+    for (const e of ((turn && turn.tutorial && turn.tutorial.events) || [])) if (e && (e.id === 'relief' || e.id === 'neighbor_order') && !LG) dayIn[e.id] = (dayIn[e.id] || 0) + (e.won || 0);
     if (LG) { const t = (turn && turn.tutorial) || {};   /* 하루 결산 — 월세 · 생활비(밥값 − 콩나물로 아낀 것) · 전기 */
               book('rent', -(t.rentWon || 0)); book('power', -(t.electricityWon || 0)); book('living', -((t.spentWon || 0) - (t.electricityWon || 0)));
               /* ⚠ 구호금(tutorial §reliefWon · 처음 0원이 된 그날 한 번)은 결산 «안에서» 지갑을 메운다 — 끝 지갑만 보면 0원이 된 날이 안 보인다 */
@@ -242,7 +250,7 @@ export async function play(name, seed, opt = {}) {
                  cuttableNow 는 자른 «마디 이름»만 빼서, 같은 가지의 위쪽 마디가 이미 판 끝잎을 다시 싣고 잘린다(씨앗 3: 프롤로그 하프문 잎 3번) */
             const carried = (() => { const nn = v.all.find(x => x.nodeId === node.nodeId); return (nn && Array.isArray(nn.leafKeys)) ? nn.leafKeys : null; })();
             const ghost = carried ? carried.filter(k => cutKeys.has(k)).length : 0;
-            try { takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar', at: atOf(light, slot), slots: light.room.slots, varieMaturedLeaves: vm, ...(lg ? { leafGrades: lg } : {}) }); out.cuts[room]++;
+            try { takeCutting(S, { nodes: v.all, nodeId: node.nodeId, container: 'jar', at: atOf(light, slot), slots: light.room.slots, varieMaturedLeaves: vm, ...(lg ? { leafGrades: lg } : {}) }); out.cuts[room]++; dayCuts++;
                   if (carried) { if (ghost) { out.ghostCuts = (out.ghostCuts || 0) + 1; out.ghostLeaves = (out.ghostLeaves || 0) + ghost; } for (const k of carried) cutKeys.add(k); } }
             catch (e) { const k = reasonKey(e && e.message); (out.cutThrow = out.cutThrow || {})[k] = (out.cutThrow[k] || 0) + 1; }
           }
@@ -272,7 +280,7 @@ export async function play(name, seed, opt = {}) {
                ⚠ 화면(game.html)에는 삽수에서 자르는 단추가 «없다» — 여기 숫자는 «규칙은 되나»이지 «사람이 할 수 있나»가 아니다 */
           const cn = cuttableNodesOfCutting(c), pick = cn.find(n => n.variegatedLeaves > 0) || cn[0];
           if (!pick) { out.recut.why['마디 없음'] = (out.recut.why['마디 없음'] || 0) + 1; break; }
-          try { takeCutting(S, { motherCuttingId: c.id, nodes: cn, nodeId: pick.nodeId, container: 'jar', at: atOf(light, brightestFree(cuttingsOf(S).filter(x => x.status !== 'dead'))), slots: light.room.slots }); out.recut.ok++; out.cuts.fromCutting++; }
+          try { takeCutting(S, { motherCuttingId: c.id, nodes: cn, nodeId: pick.nodeId, container: 'jar', at: atOf(light, brightestFree(cuttingsOf(S).filter(x => x.status !== 'dead'))), slots: light.room.slots }); out.recut.ok++; out.cuts.fromCutting++; dayCuts++; }
           catch (e) { const k = reasonKey(e && e.message); out.recut.why[k] = (out.recut.why[k] || 0) + 1; }
           break;
         }
@@ -344,6 +352,8 @@ export async function play(name, seed, opt = {}) {
     try {
       const snap = questSnapshotOf(S, io, { mealKinds: meals, targetWon: targets[0] });
       const qr = stepQuests(S, snap);
+      if (opt.trace) { out._qDone = (qr && qr.finished) || []; out._qEv = ((qr && qr.events) || []).map(e => e && e.id).filter(Boolean);
+                       try { const cur = questView(S, snap).current; out._chip = cur ? cur.id : null; } catch { out._chip = null; } }
       for (const id of (qr && qr.finished) || []) { try { grantStaminaQuest(S, id); } catch { } }   /* 게임 checkQuests 와 같다 — 끝낸 것은 stamina.questsTaken 이 기억한다 */
       try { if (qr && qr.events && qr.events.length) { const q2 = story.events(qr.events) || []; saidToday += q2.length; saidIds = saidIds.concat(q2); } } catch { }
       noteQuestWaits(S, S.day);
@@ -366,6 +376,12 @@ export async function play(name, seed, opt = {}) {
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
     out.cashDaily.push(cash);
+    if (opt.trace) (out._trace = out._trace || []).push({ day: S.day, room: ts.movedOut ? 'oneroom' : 'banjiha', cash,
+      cashIn: Object.keys(dayIn).length ? dayIn : null, said: saidIds.length ? saidIds : null,
+      events: [...new Set([...((turn && turn.events) || []).map(e => e && e.id), ...(out._qEv || [])].filter(Boolean))],
+      questsDone: (out._qDone || []).length ? out._qDone : null, chip: out._chip ?? null,
+      newGrades: dayGrades.length ? dayGrades : null, cuts: dayCuts || null });
+    out._qDone = []; out._qEv = [];
     if (ts.movedOut) { const g = cuttingsOf(S).filter(c => c && c.status === 'established' && c.varieFromCut && !listingFor(S, c)).length;
                        if (g > (out.grownMax || 0)) out.grownMax = g; }   /* D41 — 원룸에서 키운 무늬 그루(흙에 자리 잡은 · 안 내놓은) 최대 */
     /* ★ 2026-10-09 (총괄 D36 ③) — 원룸에서 «새 잎»이 달마다 몇 장 나나: 모주(leafState 의 새 leafBirth) · 삽수(cutting_leaf 사건) · 그중 무늬 */
@@ -408,6 +424,13 @@ export async function play(name, seed, opt = {}) {
   /* 끝까지 안 풀린 막힘 */
   for (const [id, q] of qOpen) if (q.run >= STUCK_DAYS) out.stuck.push({ id, from: q.since, days: q.run, room: ts.movedOut ? 'oneroom' : 'banjiha', open: true });
   out.lastDay = S.day; out.cashEnd = ts.cashWon;
+  if (opt.trace && out._trace) {
+    const dir = path.join(ROOT, 'tools', '_out', 'trace'); fs.mkdirSync(dir, { recursive: true });
+    const f = path.join(dir, `${name}_${seed}.json`);
+    fs.writeFileSync(f, JSON.stringify({ name, seed, moveDay: out.moveDay, days: out._trace }));
+    out.traceFile = path.relative(ROOT, f);
+  }
+  delete out._trace; delete out._qDone; delete out._qEv; delete out._chip;
   out.neighborOrderDay = ts.neighborOrderDay ?? null;   /* D35 반찬가게 주문이 난 날 */
   return out;
 }
@@ -430,9 +453,10 @@ const SELF = fileURLToPath(import.meta.url);
 const RENT = arg('rent', null) == null ? null : Number(arg('rent'));
 const GRADES = arg('grades', null);
 const BOOST = arg('boost', null) == null ? null : Number(arg('boost'));
+const TRACE = !!arg('trace', false);
 const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false),
                                                          ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}),
-                                                         ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}) })));
+                                                         ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}), ...(TRACE ? { trace: true } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {
