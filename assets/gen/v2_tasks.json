@@ -27,5 +27,75 @@
     "drawer": "01a0d356-27e1-778f-84a4-3e4db663a48e",
     "shelf": "01a0d356-35dc-7719-b655-81ecad6d8851",
     "cabinet": "01a0d356-448d-7664-abbb-eeaf77c7b71f"
+  },
+  "hero2_20261009": {
+    "_note": "2026-10-09 총괄이 돌림(char 주문표 · 박사님 «초상화처럼 긴 생머리»). 게임 잇기 = char 88d7fa14 (assets/v2/char/hero2.glb)",
+    "concept_i2i": [
+      "01a11e70-223b-705a-b82f-1a80de034747",
+      "01a11e73-12c1-76ea-8147-bd52ba3bef33"
+    ],
+    "mesh_i23d": "01a11e76-9f8e-7016-9e28-5d3c10b8d1a5",
+    "rig": "01a11e7a-322a-748f-9f2e-b72090b5f5b3",
+    "clips": {
+      "idle": "01a11e88-5a75-7530-96d6-9c728cebc514",
+      "sit": "01a11e88-5c47-7749-ad26-97b098fbcde4",
+      "sleep": "01a11e88-5e18-773d-aaf6-17a138fa78da",
+      "crouch": "01a11e88-5fc1-737d-be9c-fab8ea744480",
+      "cheer": "01a11e88-614b-767c-b2ed-1e7eef80e163",
+      "wave": "01a11e88-62e4-7593-a1af-26fa17e1e000",
+      "water(285 open_door_1 · 옛 게임도 같은 구간)": "01a11e88-646e-70c7-b8e6-076b1e7adfa4",
+      "harvest": "01a11e88-6614-7346-805a-e75c206fd70f",
+      "harvest_low": "01a11e88-67ba-7231-a689-4612f4ad1989",
+      "pickup": "01a11e88-6954-7594-b01c-8f0a66730a44",
+      "scratch": "01a11e88-6b0e-7422-8a3d-0f7a2e26d420",
+      "nod": "01a11e88-6cd4-72ca-9aa1-f416998d7cf0",
+      "listen": "01a11e88-6e73-75b6-ba40-bca657b3932a"
+    }
+  },
+  "house_20261009": {
+    "_note": "2026-10-09 총괄이 돌림 · 주문표 docs/handoff/meshy-order-house-20261009.json · 원화 assets/gen/v2_furn/c_<id>.png(_clean = 치수 글씨만 지운 것 · _r2 = 다시 뽑기) · 3D raw_<id>.glb",
+    "concept_i2i": {
+      "plant_step_3": "01a11e88-d49e-73b9-b441-e83285356aa8",
+      "plant_pedestal": "01a11e88-da81-7188-b255-d1f6b84cbe13",
+      "shelf_cart_3tier": "01a11e88-dea9-705b-8725-04091a24deec",
+      "shelf_ladder_4tier": "01a11e88-e332-749f-88d0-8cc14a5e1062",
+      "greenhouse_cabinet": "01a11e88-e7de-72c0-ae70-e8fa90fbc0af",
+      "low_table": "01a11e88-ec78-734a-b7c1-9f8792d1f28c",
+      "wardrobe": "01a11e89-3ff0-7083-acd8-870726f50ae0",
+      "mattress": "01a11e89-4650-7254-8570-621b2f417625",
+      "win_studio_cross": "01a11e89-4ae5-7417-868b-cd07829aa007",
+      "door_wood": "01a11e89-4fa6-754a-b408-4012ddd0247d",
+      "growlight_clip": "01a11e89-54b6-71ca-a1db-4570f47274e6",
+      "growlight_stand": "01a11e89-59dc-70aa-a943-5df3810356c3",
+      "cube_storage": "01a11e89-b17c-74fe-907b-dcafd83d13d8",
+      "bookshelf": "01a11e89-b8ac-7016-888b-d58a1d59865c",
+      "shelf_corner_3tier": "01a11e89-c0b3-72aa-8bee-cd679bbb0cd5",
+      "clothes_rack": "01a11e89-c704-7101-97e0-585d2fddac1f",
+      "sofa": "01a11e89-cf0f-76c2-b778-2351dd6bbb21"
+    },
+    "retake_r2": {
+      "plant_step_3": "01a11e96-efd6-7321-b10a-4cd708d1abd7",
+      "shelf_ladder_4tier": "01a11e96-f625-7793-8855-e36fec5ee7ec",
+      "greenhouse_cabinet": "01a11e96-fb2e-7202-90d9-7cc43f4ce887",
+      "growlight_stand": "01a11e96-ff9b-7240-b555-9be9ce832270",
+      "cube_storage": "01a11e97-04ca-7676-b8d2-ec1b15b5e7fd",
+      "shelf_corner_3tier": "01a11e97-08d5-736c-945a-b94efa7fecd1",
+      "win_studio_cross": "01a11ea8-0e77-742e-a0bc-87547210b380"
+    },
+    "mesh_i23d": {
+      "plant_pedestal(_clean)": "01a11e97-0d38-76a5-924e-f9095f584e50",
+      "shelf_cart_3tier(_clean)": "01a11e97-1091-76d3-8c08-48daad5d6e54",
+      "low_table": "01a11e97-150b-767b-ab3c-9aca047c0e3e",
+      "wardrobe": "01a11e97-187f-751a-a9cc-3f4b4859bec8",
+      "mattress(_clean)": "01a11e97-1bca-7126-a5b5-23c1a378416e",
+      "door_wood": "01a11e97-205c-762e-9b8f-db482dbcdd9f",
+      "growlight_clip": "01a11e97-2443-75e9-87d6-7fa854bed480",
+      "bookshelf": "01a11e97-280a-700e-8597-d8f96065391b",
+      "clothes_rack": "01a11e97-2ce1-73a0-919b-d57295854490",
+      "sofa": "01a11e97-3057-7707-9748-4b031cb1648c",
+      "growlight_stand(r2)": "01a11ea9-a8c2-77ef-9301-e4ff69b7ae1f",
+      "cube_storage(r2)": "01a11ea9-ade4-7669-9cfc-6438e4bd5ae9",
+      "shelf_corner_3tier(r2)": "01a11ea9-b17f-73c0-acf0-eeaa94d54ee4"
+    }
   }
 }
