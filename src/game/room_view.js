@@ -2726,6 +2726,7 @@ export async function createRoomView(canvas, opts = {}) {
       g.add(plant);
       const u = plant.userData || {};
       g.userData.young = { species: sp, leafCount: u.leafCount, leafCountWanted: u.leafCountWanted, h: u.sizeM && u.sizeM.h,
+                           d: u.sizeM && Number.isFinite(u.sizeM.d) ? u.sizeM.d : null,   /* D55 */
                            drawn: true, varieLeafKeys: u.varieLeafKeys || [], skinsPending: u.skinsPending || 0 };
       if (u.skinsPending) { try { watchSkins(asm); noteSkinTip(asm); } catch { } }
       return true;
@@ -2754,7 +2755,9 @@ export async function createRoomView(canvas, opts = {}) {
     const u = plant.userData || {};
     g.userData.leaves = [];
     /* ★ 재는 자가 무엇을 그렸는지 보는 창구 — 게임은 안 읽는다 */
+    /* ★ 2026-10-09 D55 — d(회전 무관 지름 · growth sizeM.d)를 같이 낸다: 칸 한도(maxPotD)의 2배를 넘으면 몬이 한 줄 · 그 칸엔 새로 안 놓임(game.html) */
     g.userData.young = { leafCount: u.leafCount, leafCountWanted: u.leafCountWanted, growthDays: u.growthDays,
+                         d: u.sizeM && Number.isFinite(u.sizeM.d) ? u.sizeM.d : null,
                          h: u.sizeM && u.sizeM.h, nextLeaf01Given: u.nextLeaf01Given !== false, varieLeafKeys: u.varieLeafKeys || [] };
     g.userData.cutLeaves = { leaves: u.leafCount, leavesTrue: spec.leafVarie.length, files: [], stemR: null };
     if (u.skinsPending) { try { watchSkins(asm); noteSkinTip(asm); } catch { } }

@@ -11916,6 +11916,7 @@ function syncHeroOutfit() {
 function draw() {
   try { syncHeroOutfit(); } catch { }
   try { setTimeout(maybeAskPPTrade, 0); } catch { }   /* ★ D45 — 교환 물음(걸려 있고 대사가 끝났으면 하루 한 번) */
+  try { setTimeout(maybeSayYoungWide, 0); } catch { }   /* ★ D55 — 칸보다 크게 자란 작은 그루(그 그루·그 칸에서 한 번) */
   saveSoon();
   renderHUD($('hud'), S, lastTurn, io);
   renderLog($('log'), S);
@@ -14596,6 +14597,14 @@ function commitPlace(what, hit, opt = {}) {
   try { return commitPlaceInner(what, hit, opt); }
   finally { afterPlace(); }
 }
+/* 재는 손잡이 — 끌기를 놓은 그 길(§commitPlace)을 자리 이름으로 부른다(D55 «그 칸엔 안 놓임»을 걸어서 잰다) */
+window.__byeotCommitPlace = (what, slotId) => {
+  const sl = (io.light.room.slots || []).find(x => x && x.slotId === slotId);
+  if (!sl) return { ok: false, why: 'no-slot' };
+
+  commitPlace(what, { x: sl.x, y: sl.y, z: sl.z, slotId }, {});
+  return { ok: true, label: ($('dropLabel') || {}).textContent || '', banner: (($('event') || {}).textContent || '').slice(0, 120) };
+};
 function commitPlaceInner(what, hit, opt = {}) {
   /* ★ 작물은 종류만 갈아 끼우면 같은 길이다 (2026-08-05 · 무순).
      `setCropAt` 이 이미 `opt.kind` 를 받는다 — 화면이 규칙을 또 갖지 않는다.
@@ -14644,6 +14653,7 @@ function commitPlaceInner(what, hit, opt = {}) {
     if (!q) return placeFailed(new Error(`그 식물을 못 찾았습니다 (${spIdOf(what)})`));
     try {
       const r = resolvePlacement(q.id, atOf(hit), placeOpt());
+      if (youngTooWide(q, r.slotId)) { const e = new Error('이 칸엔 너무 크게 자랐습니다 — 바닥이나 더 넓은 자리에 두세요'); e.tutorialInput = true; return placeFailed(e); }   /* D55 ② */
       SPC.setSpeciesAt(S, q.id, { slotId: r.slotId, at: r.at });
       banner(`🌿 ${SPC.SPECIES_KO[q.species] || '새 식물'}을 놓았습니다`, speciesPlaceSub(q));
       unlockAfterFix();
@@ -14661,6 +14671,12 @@ function commitPlaceInner(what, hit, opt = {}) {
     const id = cutIdOf(what);
     const c = cuttingsOf(S).find(x => x && x.id === id);
     if (!c) return placeFailed(new Error(`그 삽수를 못 찾았습니다 (${id})`));
+    /* ★ D55 ② — 칸 한도의 2배를 넘게 자란 그루는 그 칸에 안 놓인다(«더 넓은 자리» 안내 · 바닥·자유 자리는 그대로 된다) */
+    try {
+      const to = resolvePlacement(c.id, atOf(hit), placeOpt());
+      const w = c.status === 'established' ? youngTooWide(c, to.slotId) : null;
+      if (w) { const e = new Error(`이 칸엔 너무 크게 자랐습니다 — 바닥이나 더 넓은 자리에 두세요`); e.tutorialInput = true; return placeFailed(e); }
+    } catch { /* 못 재면 막지 않는다 */ }
     try {
       setCuttingAt(S, c, atOf(hit), placeOpt());
       { const darkC = placeLightWarn({ obj: c, kind: 'cutting', variegated: !!c.variegated });   /* ★ 2026-10-08 A·B */
@@ -15432,6 +15448,50 @@ function cutSpeciesNow(id, nodeNo) {
   try { checkQuests(lastTurn); } catch { }
   draw();
 }
+/* ══ ★★ 2026-10-09 D55(총괄 · 값 0) — **칸보다 크게 자란 작은 그루** ══════════════════════
+   ① 칸(가구 자리 · house maxPotD)에 놓인 작은 그루(흙에 자리 잡은 삽수 · D46 youngPlantOf)의 그림 지름이 칸 한도의 2배를 넘으면
+     몬이 한 줄(사건 cut_too_wide · 대사는 plan) — 그 그루·그 칸에서 한 번(같은 칸에 두는 동안 되풀이 안 함 · 하루에 하나만)
+   ② 새로 놓기 — 그 칸 한도의 2배를 넘는 그루는 그 칸에 안 놓이고 «더 넓은 자리» 안내(§commitPlace 삽수 갈래 · 강제로 옮기지 않는다)
+   폭의 자는 방이 그린 그 그루(growth sizeM.d · 회전 무관 지름) — 못 재면(안 그렸으면) 말을 안 한다(지어내지 않는다) */
+const YOUNG_WIDE_X = 2;
+const youngWideSaid = new Set();     /* `${cuttingId}|${slotId}` — 이 판에서 한 번 */
+let youngWideDay = null;
+function slotLimitOf(slotId) {
+  if (!slotId || /^free:/.test(String(slotId))) return null;
+  const sl = (io.light.room.slots || []).find(x => x && x.slotId === slotId);
+  return sl && Number.isFinite(sl.maxPotD) && sl.maxPotD > 0 ? sl.maxPotD : null;
+}
+function youngDrawnD(id) {
+  try { const p = (roomView && roomView.plants ? roomView.plants() : []).find(x => x && x.potId === id); return p && p.young && Number.isFinite(p.young.d) ? p.young.d : null; }
+  catch { return null; }
+}
+function youngTooWide(c, slotId) {
+  const lim = slotLimitOf(slotId), d = youngDrawnD(c.id);
+  return (lim != null && d != null && d > lim * YOUNG_WIDE_X) ? { d, lim } : null;
+}
+function maybeSayYoungWide() {
+  try {
+    if (youngWideDay === S.day) return;
+    if ($('stage').classList.contains('talking')) return;
+    /* 새 두 종 그루도 같은 자(D45 · 알로카시아 성숙 잎 0.45m) */
+    const growers = [...cuttingsOf(S).filter(c => c && c.status === 'established'),
+                     ...(() => { try { return SPC.speciesPotsOf(S).filter(SPC.speciesPlaced); } catch { return []; } })()];
+    for (const c of growers) {
+      if (!c || !c.slotId) continue;
+      const k = `${c.id}|${c.slotId}`;
+      if (youngWideSaid.has(k)) continue;
+      const w = youngTooWide(c, c.slotId);
+      if (!w) continue;
+      youngWideSaid.add(k); youngWideDay = S.day;
+      const ev = { id: 'cut_too_wide', ko: `키운 그루가 ${slotLabel(c.slotId)}보다 크게 자랐습니다 — 바닥이나 더 넓은 자리로 옮겨 주세요`,
+                   cuttingId: c.id, slotId: c.slotId, d: +w.d.toFixed(2), limit: w.lim };
+      pushLog(S, '🌿 ' + ev.ko);
+      try { dlgOpen(story.events([ev], S)); } catch { }
+      return;
+    }
+  } catch (e) { console.warn('[칸 넘침]', e && e.message); }
+}
+
 /* PP 교환 물음 — 걸려 있으면 하루에 한 번 카드로 묻는다(대사가 끝난 뒤) */
 let ppTradeAskedDay = null;
 function maybeAskPPTrade() {
@@ -15846,16 +15906,8 @@ const FURN_LIGHT_KO = Object.freeze({
        atTop(가르는 자리가 이미 맨 윗단)이면 «맨 윗단에 두고 » → «여기에 » · «집게등»은 화면에서 «클립형 식물등»(상점 이름) */
   clipWinter: '{at}클립형 식물등을 물리면 겨울에도 자랍니다',
   clipSummer: '{at}클립형 식물등을 물리면 여름엔 자랍니다',
-  clipNovice: '{at}클립형 식물등을 물리면 자랍니다',
-  /* 무늬 그루·무늬 삽수를 놓을 때(v.variegated) 첫 줄 — 주어가 «무늬» */
-  vA:  '여기면 무늬 몬스테라가 겨울에도 자랍니다',
-  vB:  '무늬는 여름엔 등 없이 자랍니다 — 겨울엔 식물등을 켜야 자랍니다',
-  vBp: '무늬는 여름엔 등 없이 자랍니다 — 겨울엔 등을 켜도 모자랍니다',
-  vC:  '무늬는 여기선 식물등이 있어야 자랍니다',
-  vD:  '여기선 무늬 몬스테라가 안 자랍니다 — 창에 더 붙여 보세요',
-  vgrow: '여기면 무늬 몬스테라가 자랍니다',
-  vlamp: '무늬는 여기선 식물등이 있어야 자랍니다',
-  vnone: '여기선 무늬 몬스테라가 안 자랍니다 — 창턱에 두고 등을 켜세요'
+  clipNovice: '{at}클립형 식물등을 물리면 자랍니다'
+  /* ⏸ 무늬 첫 줄(vA~vnone)은 걷었다 — plan e6421e0d: 무늬 그루도 자람 문턱이 같다(plant_grow §growthMin 2.7) · 같은 첫 줄을 쓴다 */
 });
 function furnLightLine(uid) {
   if (!uid || !io.light || typeof io.light.placeVerdict !== 'function') return null;
@@ -15874,7 +15926,7 @@ function furnLightLine(uid) {
 function furnLightTextOf(v, novice) {
   try {
     const K = FURN_LIGHT_KO;
-    const first = (v.variegated && K['v' + v.key]) ? K['v' + v.key] : K[v.key];
+    const first = K[v.key];
     const text = first + (v.key === 'C' && v.wnShort ? K.Cshort : '');
     const hGrow = !!(v.higher && !(v.key === 'A' || v.key === 'B' || v.key === 'Bp')
                      && Number.isFinite(v.higher.s0) && Number.isFinite(v.th) && v.higher.s0 >= v.th);
