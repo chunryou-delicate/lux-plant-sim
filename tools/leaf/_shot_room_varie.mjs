@@ -80,7 +80,7 @@ console.log('방이 쥔 잎(전문):', await page.eval(`(()=>{try{return JSON.st
 /* ★ 화분에 카메라를 댄다 — 방 거리에서 작아 안 보이는 것과 «안 그려진 것»을 가른다 */
 console.log('★ 콘솔(방·생장·조립):', await page.eval(`JSON.stringify((window.__leafLog||[]).filter(s=>/방뷰|생장|조립|plant|assemble|샘플|skin|GLB|무늬/i.test(s)).slice(0,12))`));
 console.log('★ 콘솔 전체 수:', await page.eval(`String((window.__leafLog||[]).length)`));
-console.log('붙음:', await page.eval(`(()=>{try{const p=(window.__S().pots||[])[0]; window.__rv.focusSlot(p.slotId,true); return 'ok '+p.slotId;}catch(e){return 'ERR '+e.message;}})()`));
+console.log('붙음:', await page.eval(`(()=>{try{const p=(window.__S().pots||[])[0]; const key=p.at?('free:'+p.id):p.slotId; /* ★ 게임과 같은 열쇠(game.html §focusOnMonstera) — 자리 이름으로 부르면 D23 뒤 그루를 못 찾아 «자리+0.22»를 당긴다(10-09 정정) */ window.__rv.focusSlot(key,true); return 'ok '+key;}catch(e){return 'ERR '+e.message;}})()`));
 for(let i=0;i<30;i++){ const b=await page.eval(`(()=>{try{return String(!!window.__rv.camBusy());}catch(e){return 'false';}})()`); if(b==='false') break; await sleep(300); }
 await sleep(2500); await page.eval(`(()=>{try{window.__rv.redraw();}catch(e){}})()`,false); await sleep(800);
 await page.shot(`${OUTDIR}/room_focus.png`);
