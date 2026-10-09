@@ -1,0 +1,323 @@
+{
+ "meta": {
+  "profile": "data/profiles/room_profile.oneroom.json",
+  "slot": "oneroom-sill:0",
+  "end": 395,
+  "seeds": 60,
+  "ppDay": 30,
+  "alDay": 60,
+  "mode": "real"
+ },
+ "rows": [
+  {
+   "yearDay0": 135,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 10,
+    "revertedPlants": 55,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.2,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 10,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.166,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.7,
+    "cutsMedian": 3
+   },
+   "al": {
+    "sprout": 76,
+    "leaves": 7,
+    "sleep": 135,
+    "wake": 250,
+    "wokeWithin": 60,
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 135,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 44,
+    "topPinkMedian": 0,
+    "witheredPlants": 5,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.32,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.407,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.84,
+    "cutsMedian": 2
+   },
+   "al": {
+    "sprout": 76,
+    "leaves": 10,
+    "sleep": 135,
+    "wake": 231,
+    "wokeWithin": 60,
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 0,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 10,
+    "revertedPlants": 53,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.3,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 10,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.151,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.7,
+    "cutsMedian": 3
+   },
+   "al": {
+    "sprout": 73,
+    "leaves": 6,
+    "sleep": 270,
+    "wake": 385,
+    "wokeWithin": 60,
+    "cormsMedian": 1,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 0,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 39,
+    "topPinkMedian": 0,
+    "witheredPlants": 10,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.53,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.302,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.79,
+    "cutsMedian": 2
+   },
+   "al": {
+    "sprout": 73,
+    "leaves": 10,
+    "sleep": 270,
+    "wake": 366,
+    "wokeWithin": 60,
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 90,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 10,
+    "revertedPlants": 55,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.3,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 10,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.123,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.7,
+    "cutsMedian": 3
+   },
+   "al": {
+    "sprout": 72,
+    "leaves": 6,
+    "sleep": 180,
+    "wake": 295,
+    "wokeWithin": 60,
+    "cormsMedian": 1,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 90,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 41,
+    "topPinkMedian": 0,
+    "witheredPlants": 5,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.42,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.376,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.84,
+    "cutsMedian": 2
+   },
+   "al": {
+    "sprout": 72,
+    "leaves": 10,
+    "sleep": 180,
+    "wake": 276,
+    "wokeWithin": 60,
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 180,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 11,
+    "revertedPlants": 55,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.18,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 11,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.147,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.64,
+    "cutsMedian": 4
+   },
+   "al": {
+    "sprout": 76,
+    "leaves": 7,
+    "sleep": 90,
+    "wake": 205,
+    "wokeWithin": 60,
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 180,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 49,
+    "topPinkMedian": 0,
+    "witheredPlants": 3,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.26,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.425,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.84,
+    "cutsMedian": 2
+   },
+   "al": {
+    "sprout": 76,
+    "leaves": 10,
+    "sleep": 90,
+    "wake": 186,
+    "wokeWithin": 60,
+    "cormsMedian": 2,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 270,
+   "lamps": 0,
+   "pp": {
+    "newLeaves": 11,
+    "revertedPlants": 52,
+    "topPinkMedian": 0,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.18,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 11,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.129,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.73,
+    "cutsMedian": 3
+   },
+   "al": {
+    "sprout": 103,
+    "leaves": 9,
+    "sleep": 360,
+    "wake": 189,
+    "wokeWithin": 19,
+    "cormsMedian": 0,
+    "varie": 19
+   }
+  },
+  {
+   "yearDay0": 270,
+   "lamps": 1,
+   "pp": {
+    "newLeaves": 19,
+    "revertedPlants": 45,
+    "topPinkMedian": 0,
+    "witheredPlants": 6,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.16,
+    "cutsMedian": 0
+   },
+   "ppScissors": {
+    "newLeaves": 19,
+    "revertedPlants": 0,
+    "topPinkMedian": 0.337,
+    "witheredPlants": 0,
+    "pinkLeavesMedian": 0,
+    "marbleShareMedian": 0.84,
+    "cutsMedian": 2
+   },
+   "al": {
+    "sprout": 103,
+    "leaves": 12,
+    "sleep": 360,
+    "wake": null,
+    "wokeWithin": 0,
+    "cormsMedian": null,
+    "varie": 19
+   }
+  }
+ ]
+}

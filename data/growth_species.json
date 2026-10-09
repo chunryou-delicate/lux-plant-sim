@@ -1,0 +1,125 @@
+{
+  "_doc": [
+    "새 식물 두 종의 생장 규칙 값 ([growth] 소유 · 2026-10-09 첫 판 · 총괄 D45).",
+    "몬스테라는 여기 없다 — 몬스테라 캐논은 plant_grow.html + data/growth_tuning.json 이 정본이고 이 파일은 그쪽을 한 칸도 안 읽고 안 고친다.",
+    "규칙(코드)은 src/growth/species_growth.js 다. 이 파일은 «값»만 든다.",
+    "★ 모든 수는 «첫 판»이다 — core 가 판(probe)으로 재서 바로잡는다. 바로잡을 때 이 파일만 고치면 된다.",
+    "★ 빛 문턱은 여기 없다 — data/balance/light_thresholds.json 의 plants[light_id] 가 정본이다(숫자 두 벌 금지).",
+    "  방 프로필·자리 판정(thresholdsFor)도 같은 줄을 읽으므로 새 종도 «어느 자리가 자라나»가 저절로 선다.",
+    "낱말: 단계 young/mid/mature 는 leaf 의 판 이름(assets/plants/<종>/<종>_leaf_<단계>.glb)과 같다.",
+    "      잎 간격은 «잎 하나에 드는 생장 걸음 수»다 — 걸음은 날마다 speed_by_band[avg7 밴드] × season_speed[계절] 만큼 쌓인다."
+  ],
+  "schema": "species/1",
+  "species": {
+    "pink_princess": {
+      "ko": "핑크프린세스",
+      "light_id": "philodendron_pink_princess",
+      "interval_days": 21,
+      "_interval_doc": "속도 1.0(느림 밴드 · 봄)에서 21일. 최적 밴드 여름 21/(1.25×1.15)=14.6일 · 느림 밴드 겨울 21/(1.0×0.75)=28일 — plan 후보 14~28 과 맞춘다.",
+      "speed_by_band": { "critical": 0, "poor": 0, "stagnant": 0, "slow": 1.0, "best": 1.25, "good": 1.25, "over": 1.0 },
+      "season_speed": { "spring": 1.0, "summer": 1.15, "autumn": 0.9, "winter": 0.75 },
+      "_season_doc": "겨울잠 없음 — 겨울엔 느려질 뿐이다(0 이 아니다). 빛이 문턱(min) 밑이면 그건 계절이 아니라 빛이 막는 것이다.",
+      "leaf_ladder": ["young", "young", "young", "mid", "mid", "mid", "mid", "mature"],
+      "_ladder_doc": "줄기의 n 번째 마디 잎이 어느 단계인가(마지막 칸이 그 뒤 전부). 덩굴이라 잎이 쌓이고 마디마다 한 장. 잘라도 남은 줄기의 마디 수는 그대로다(성숙한 줄기는 성숙한 잎을 낸다).",
+      "leaf_size_m": { "young": 0.10, "mid": 0.18, "mature": 0.25 },
+      "pink": {
+        "_doc": [
+          "새 잎의 분홍 몫 = 바로 아래(그 잎이 나는) 마디 잎의 몫 + 흔들림(±jitter 고르게) + 빛 모자람 끌림(avg7 < best_lo 이면 drift_low_light).",
+          "green_max 이하인 잎에서 나는 잎은 0 이다(되돌아감 — 가위로 좋은 마디까지 잘라야 돌아온다).",
+          "pink_leaf_min 이상 = «분홍 잎»(다 분홍 · 양분을 못 만든다). 위에서부터 wither_streak 장이 연달아 분홍 잎이면",
+          "  wither_grace_days 동안 새 잎이 멎고(줄기 끝이 시드는 중), 그 사이 안 자르면 그 분홍 잎들이 진다.",
+          "⚠ «풀문»이라는 낱말을 쓰지 않는다(one-word-two-rooms) — 몬스테라 풀문은 제일 비싼 좋은 잎, PP 분홍 잎은 그루를 해치는 잎."
+        ],
+        "start": 0.35,
+        "jitter": 0.25,
+        "drift_low_light": -0.10,
+        "green_max": 0.05,
+        "heavy_min": 0.60,
+        "pink_leaf_min": 0.90,
+        "wither_streak": 3,
+        "wither_grace_days": 14
+      },
+      "grades": {
+        "_doc": "분홍 몫 → 등급(growth 쪽 이름 · 값·낱말 표는 plan). green ≤ green_max < marble < heavy_min ≤ heavy < pink_leaf_min ≤ pink",
+        "green": "초록 잎(되돌아감)",
+        "marble": "분홍 마블",
+        "heavy": "분홍 많음",
+        "pink": "분홍 잎"
+      },
+      "assets": {
+        "_doc": [
+          "단계 × 등급 → 판(manifest path). leaf 14판 중 PP 7판(id 803~809).",
+          "⚠ 판이 없는 칸은 «대신 판»을 적었다 — 그 줄 밑 _gap 에 무엇이 없는지 적는다. leaf 가 판을 들이면 이 칸만 고친다."
+        ],
+        "young":  { "green": "plants/pink_princess/pp_leaf_young.glb",  "marble": "plants/pink_princess/skins/pp_leaf_young_pinkmarble.glb",  "heavy": "plants/pink_princess/skins/pp_leaf_young_pinkmarble.glb",  "pink": "plants/pink_princess/skins/pp_leaf_young_pinkmarble.glb",
+                    "_gap": "heavy·pink 판 없음 → pinkmarble 로 대신" },
+        "mid":    { "green": "plants/pink_princess/pp_leaf_mid.glb",    "marble": "plants/pink_princess/skins/pp_leaf_mid_pinkmarble.glb",    "heavy": "plants/pink_princess/skins/pp_leaf_mid_pinkmarble.glb",    "pink": "plants/pink_princess/skins/pp_leaf_mid_pinkmarble.glb",
+                    "_gap": "heavy·pink 판 없음 → pinkmarble 로 대신" },
+        "mature": { "green": "plants/pink_princess/pp_leaf_mature.glb", "marble": "plants/pink_princess/skins/pp_leaf_mature_pinkmarble.glb", "heavy": "plants/pink_princess/skins/pp_leaf_mature_pinkheavy.glb", "pink": "plants/pink_princess/skins/pp_leaf_mature_pinkheavy.glb",
+                    "_gap": "pink(다 분홍) 판 없음 → pinkheavy 로 대신" }
+      },
+      "propagation": {
+        "_doc": "줄기 삽수. 마디 n «바로 위»를 자르면 n 위의 잎은 삽수로 가고 모주의 다음 잎은 마디 n 에서 다시 난다(그 잎의 분홍 몫에서 흐른다). 잎이 전부 분홍 잎인 삽수는 살지 못한다(viable:false · 뿌리 내리기는 core propagation 몫).",
+        "method": "stem_cutting",
+        "mother_keeps_min": 1,
+        "cutting_takes_min": 1
+      },
+      "dormancy": null
+    },
+    "alocasia_frydek": {
+      "ko": "알로카시아 프라이덱",
+      "light_id": "alocasia_frydek",
+      "interval_days": 28,
+      "_interval_doc": "속도 1.0(느림 밴드 · 봄)에서 28일. 최적 밴드 여름 28/(1.25×1.1)=20.4일 · 느림 밴드 가을 28/0.85=32.9일.",
+      "speed_by_band": { "critical": 0, "poor": 0, "stagnant": 0, "slow": 1.0, "best": 1.25, "good": 1.25, "over": 1.0 },
+      "season_speed": { "spring": 1.0, "summer": 1.1, "autumn": 0.85, "winter": 0 },
+      "leaf_ladder": ["young", "young", "mid", "mid", "mature"],
+      "_ladder_doc": "싹튼 뒤 n 번째 잎이 어느 단계인가 — 잎이 날 때마다 한 칸씩 큰다. 잠에서 깨면 wake_ladder_drop 칸 내려와서 다시 오른다.",
+      "leaf_size_m": { "young": 0.15, "mid": 0.30, "mature": 0.45 },
+      "max_leaves": 4,
+      "_max_doc": "새 잎이 펴져 max_leaves 를 넘으면 가장 오래된 잎이 진다.",
+      "corm": {
+        "_doc": [
+          "구근 = 잎 없는 그루. 심은 뒤 sprout_days 만큼 생장 걸음이 쌓이면 싹(첫 잎 · young)이 튼다 — 무늬는 «그 순간» 그루마다 굴린다.",
+          "varie_chance: 무늬 모주의 구근 3/4 · 민무늬 모주의 구근 0 · 상점 구근 shop(첫 판).",
+          "무늬 모주의 구근이 무늬면 모주의 무늬 갈래를 잇는다. 상점 구근이 무늬면 갈래를 고르게 굴린다."
+        ],
+        "sprout_days": 14,
+        "varie_chance": { "from_varie_mother": 0.75, "from_plain_mother": 0.0, "shop": 0.25 }
+      },
+      "varie_kinds": {
+        "_doc": "그루마다 하나(잎마다 크게 안 바뀐다). marble = 크림 마블 · sector = 중간잎 크림 중심 → 성숙잎 반달.",
+        "marble": "크림 마블",
+        "sector": "크림 중심·반달"
+      },
+      "assets": {
+        "_doc": [
+          "단계 × (plain | 무늬 갈래) → 판(manifest path). leaf 14판 중 AL 7판(id 800~802 · 810~813).",
+          "⚠ 판이 없는 칸은 «대신 판» — 그 줄 밑 _gap 에 적는다."
+        ],
+        "young":  { "plain": "plants/alocasia/al_leaf_young.glb",  "marble": "plants/alocasia/al_leaf_young.glb",                    "sector": "plants/alocasia/al_leaf_young.glb",
+                    "_gap": "무늬 어린잎 판 없음 → 민무늬 어린잎으로 대신(무늬 그루도 어린잎은 민무늬로 보인다)" },
+        "mid":    { "plain": "plants/alocasia/al_leaf_mid.glb",    "marble": "plants/alocasia/skins/al_leaf_mid_marble.glb",       "sector": "plants/alocasia/skins/al_leaf_mid_creamcenter.glb" },
+        "mature": { "plain": "plants/alocasia/al_leaf_mature.glb", "marble": "plants/alocasia/skins/al_leaf_mature_marble.glb",    "sector": "plants/alocasia/skins/al_leaf_mature_half.glb" }
+      },
+      "propagation": {
+        "_doc": "자르지 않는다 — 구근으로 는다. 깨는 날 corms_on_wake 범위에서 고르게 굴린다. 잠(잎 0장)을 min_sleep_days 이상 잔 그루만 구근을 낸다(어두운 데 잠깐 두었다 빼는 길로 구근을 찍어 내지 못하게).",
+        "method": "corm",
+        "corms_on_wake": [1, 3],
+        "min_sleep_days": 30
+      },
+      "dormancy": {
+        "_doc": [
+          "잠 드는 길 둘: ① 계절이 seasons 에 들면 ② avg7 이 문턱(min) 밑인 날이 low_days 일 이어지면.",
+          "잠이 들면 새 잎이 멎고 drop_every_days 마다 가장 오래된 잎이 하나씩 진다 → 0장 = «잠»(구근은 산다).",
+          "깨는 길: 계절이 seasons 밖이고 avg7 ≥ min 인 날이 wake_days 일 이어지면. 깨면 걸음을 0 부터 다시 쌓는다."
+        ],
+        "seasons": ["winter"],
+        "low_days": 21,
+        "drop_every_days": 7,
+        "wake_days": 7,
+        "wake_ladder_drop": 1
+      }
+    }
+  }
+}

@@ -145,15 +145,20 @@ console.log('\nD. shown — 무늬가 실제로 그려지는 날을 낸다');
 /* ── E. ★★ 두 장 보장 (2026-08-15 박사님 확정 — 잎 2·3) ──
    ★ 한 장이면 어느 쪽으로도 못 간다: 모주에 두면 탈출이 안 열리고, 떼면 모주가 0 등급이 된다.
      두 장이라야 「한 장은 잘라 꽂고 한 장은 남긴다」가 성립한다.
-   ⚠ 여기서도 재는 것은 **캐논이 안 깨졌는가**다 — 확률·난수 스트림·잎 수가 그대로여야 한다. */
-console.log('\nE. 두 장 보장 — 잎 2·3 (seed 92158 · DLI 8 · 400일)');
+   ⚠ 여기서도 재는 것은 **캐논이 안 깨졌는가**다 — 확률·난수 스트림·잎 수가 그대로여야 한다.
+   ★ 씨앗 92231 (2026-10-09 [growth]) — D40(성숙 전 무늬 ×2 · growth_tuning varie_boost) 뒤 92158 은 잎 1·2 가
+     굴림으로 이미 무늬라 «두 장이 났으면 덤을 안 준다»(F)대로 보장이 한 번도 안 쓰인다 — 규칙은 맞고 이 자가 낡았다.
+     보장이 실제로 잎 2·3 «둘 다»에 떨어지는 씨앗으로 바꿨다(DLI 8 · 92174~ 를 vm 으로 훑어 92197·92231·92248).
+     잎 4 가 굴림으로 무늬가 아닌 92231 을 골랐다 — «네 번째 잎부터는 안 붙는다»가 헛돌지 않게. */
+const E_SEED = 92231;
+console.log(`\nE. 두 장 보장 — 잎 2·3 (seed ${E_SEED} · DLI 8 · 400일)`);
 {
   const r = await page.eval(`(()=>{
     const probBefore = P.varieProb;
-    plantSeed(92158); matResetAll(); resetDailyLight(); setPrologueVarieLeaf(0);
+    plantSeed(${E_SEED}); matResetAll(); resetDailyLight(); setPrologueVarieLeaf(0);
     setGrowth(0); setDailyLightSteady(8); for(let d=1; d<=400; d++) advanceTo(d);
     const plain = varieStateAll().map(x=>[x.leafBirth, x.varie, x.prologue]);
-    plantSeed(92158); matResetAll(); resetDailyLight(); setPrologueVarieLeaf([2,3]);
+    plantSeed(${E_SEED}); matResetAll(); resetDailyLight(); setPrologueVarieLeaf([2,3]);
     setGrowth(0); setDailyLightSteady(8); for(let d=1; d<=400; d++) advanceTo(d);
     const armed = varieStateAll().map(x=>[x.leafBirth, x.varie, x.prologue]);
     const st = prologueVarieState(), probAfter = P.varieProb;
