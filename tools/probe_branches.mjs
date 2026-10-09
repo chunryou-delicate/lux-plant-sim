@@ -19,6 +19,7 @@
      move         asap · withCuttings   이사 문이 열리면 바로 · 무늬 삽수를 하나 들고 갈 때까지 기다림(60일 넘으면 그냥 감)
      lazy         0 · 1              1 이면 홀수 날엔 아무것도 안 한다([다음 날]만)
      follow       true · false       열린 퀘스트가 말하는 대로 시루를 늘리고(5·8·16) 무순을 들이나(crop_mix 1 · radish5 5)
+     grow         true               원룸에서 처음 뿌리낸 무늬 삽수 하나를 안 팔고 키워 거기서 다시 자른다(«삽수에서 자르기» 단추 · 4e70d1e9)
    날마다 적는 것:
      ★ 막힘 — 퀘스트가 열려 있고 «기다림»(nudge_wait)도 아닌데 14일 넘게 안 풀린 구간(퀘스트 · 시작 날 · 길이)
      첫 0원 · 굶음 · 이사 날 · 엔딩 닿은 날(가정 목표 둘 · --targets · 현금 / 다 팔면)
@@ -64,7 +65,9 @@ export const PERSONAS = {
   carrier: { ko: '삽수 들고 이사',      lamps: 1, siruCap: 5,  cut: 'asap',  sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true },
   lazy:    { ko: '게으름(이틀에 한 번)', lamps: 1, siruCap: 5,  cut: 'asap',  sellMother: 'never', move: 'asap',         lazy: 1, follow: true },
   nocut:   { ko: '안 자름',            lamps: 1, siruCap: 5,  cut: 'none',  sellMother: 'never', move: 'asap',         lazy: 0, follow: true },
-  big:     { ko: '크게(시루 16 · 등 2)', lamps: 2, siruCap: 16, cut: 'asap',  sellMother: 'never', move: 'asap',         lazy: 0, follow: true }
+  big:     { ko: '크게(시루 16 · 등 2)', lamps: 2, siruCap: 16, cut: 'asap',  sellMother: 'never', move: 'asap',         lazy: 0, follow: true },
+  /* ★ 2026-10-09 (총괄 11:12 ①) — 원룸에서 처음 뿌리낸 무늬 삽수 하나는 «안 팔고» 키워(혹 → 흙) 거기서 다시 자른다 · 등 1 · 오늘 가장 밝은 빈 창턱 */
+  grower:  { ko: '늘리는 사람(삽수 하나 남겨 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, grow: true }
 };
 const DARK = 'banjiha-dresser:1', SILL = 'banjiha-sill:0', ONE_SILL = 'oneroom-sill:0', ONE_BRIGHT = ['oneroom-sill:1', 'oneroom-sill:2', 'oneroom-sill:3'];
 const STUCK_DAYS = 14;
@@ -211,8 +214,18 @@ export async function play(name, seed, opt = {}) {
       for (const c of [...cuttingsOf(S)]) if (c.status === 'node' && stockOf(S, 'pot') >= 1) { try { repotCutting(S, c.id); } catch { } }
       /* ── 팔기 ── */
       const keepVarie = !ts.movedOut && P.move === 'withCuttings' && ts.varieSale && ts.varieSale.count >= 1;
+      /* 늘리는 사람의 «남긴 삽수» — 원룸에서 처음 뿌리낸 무늬 삽수(죽으면 다음 것으로 갈아 듦) */
+      if (P.grow && ts.movedOut) {
+        const k = out.keeperId && cuttingsOf(S).find(c => c && c.id === out.keeperId);
+        if (!k || k.status === 'dead') {
+          const nk = cuttingsOf(S).find(c => c && c.varieFromCut && c.status !== 'dead' && c.status !== 'rooting' && Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= (out.moveDay || 0) && !listingFor(S, c));
+          out.keeperId = nk ? nk.id : null;
+          if (nk) out.keepers = (out.keepers || 0) + 1;
+        }
+      }
       for (const c of [...cuttingsOf(S)]) {
         if (!SELLABLE_CUTTING_STATUS.includes(c.status) || listingFor(S, c)) continue;
+        if (P.grow && c.id === out.keeperId) continue;
         const varie = (c.variegatedLeaves || 0) > 0 || !!c.varieFromCut;
         if (varie && keepVarie) continue;
         try { listCutting(S, c.id); } catch { }
