@@ -1879,6 +1879,22 @@
    ],
    "images": 3,
    "magic_ok": true
+  },
+  {
+   "name": "SC_young_3d",
+   "job_id": "21adf207-33bc-40f6-9429-ed42df8d8db1",
+   "url": "https://d8j0ntlcm91z4.cloudfront.net/user_3GQzX4xQJEfcWgDDAQ4ejC4obRh/hf_20261009_155000_21adf207-33bc-40f6-9429-ed42df8d8db1.glb",
+   "path": "assets/plants/scindapsus/_incoming1009/sc_leaf_young.glb",
+   "note": "Tripo detailed pbr 5000 align_image · 입력 SC1_r2_a(121b41a6 · leaf 고름)",
+   "bytes": 6493168,
+   "tris": 4944,
+   "dims_xyz": [
+    0.439,
+    1.0,
+    0.67
+   ],
+   "images": 3,
+   "magic_ok": true
   }
  ]
 }
