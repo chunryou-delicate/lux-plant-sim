@@ -59,6 +59,9 @@ import { grantStaminaQuest } from '../src/game/stamina.js';
 import { createStoryteller } from '../src/game/dialogue.js';
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i >= 0 ? (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true) : d; };
+/* ⚖ 재는 손잡이(--d31 · 10-10) — 안내대로가 D31 «첫 달 월세가 모자라» 말을 따르나. 자식 판에도 가게 env 로도 넘긴다 */
+const D31FOLLOW = !!arg('d31', false) || process.env.BRANCH_D31 === '1';
+if (D31FOLLOW) process.env.BRANCH_D31 = '1';
 const list = v => String(v).split(',').map(x => x.trim()).filter(Boolean);
 const range = v => list(v).flatMap(t => { const m = t.match(/^(\d+)-(\d+)$/); return m ? Array.from({ length: +m[2] - +m[1] + 1 }, (_, i) => +m[1] + i) : [t === 'g' ? 'g' : Number(t)]; });
 /* ★ 씨앗 'g' = **게임이 실제로 주는 판** — 모주 생장 씨앗 92158(plant_grow 기본 · room_view 도 같은 값 · headroom.js §씨앗) · S.sim.seed 0(newState 기본).
@@ -413,7 +416,15 @@ export async function play(name, seed, opt = {}) {
             if (waitForCut) out.moveCutWait = (out.moveCutWait || 0) + 1;
           } catch { waitForCut = false; }
         }
-        if (!waitForCut && (P.move === 'asap' || holding || waited)) {
+        /* ★ 10-10 D31 — 안내대로(follow)는 «이사비 내면 첫 달 월세가 모자라. 조금만 더 모으고 가자.»를 따른다(--d31 일 때 · 재는 손잡이):
+             지갑 − 이사비 < 원룸 첫 달 월세면 오늘은 안 간다 */
+        let waitForRent = false;
+        if (D31FOLLOW && P.follow) {
+          const rent1 = Number.isFinite(ts.rules.oneroomRentWon) ? ts.rules.oneroomRentWon : ts.rules.rentWon;
+          waitForRent = (ts.cashWon - ts.rules.moveOutCostWon) < rent1;
+          if (waitForRent) out.d31Wait = (out.d31Wait || 0) + 1;
+        }
+        if (!waitForCut && !waitForRent && (P.move === 'asap' || holding || waited)) {
           try {
             /* D31 — 이사 되묻기 «이사비 내면 첫 달 월세가 모자라»(move_low_cash)가 서는 판인가: 지갑 − 이사비 < 원룸 첫 달 월세 */
             { const need = ts.rules.moveOutCostWon, rent1 = Number.isFinite(ts.rules.oneroomRentWon) ? ts.rules.oneroomRentWon : ts.rules.rentWon;
