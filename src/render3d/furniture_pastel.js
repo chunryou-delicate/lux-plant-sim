@@ -862,7 +862,10 @@ B.shelf_corner=(o)=>{
     const sh=new THREE.Shape();                       // 부채꼴(4분원)
     sh.moveTo(0,0); sh.lineTo(w,0); sh.absarc(0,0,w,0,Math.PI/2,false); sh.lineTo(0,0);
     const geo=new THREE.ExtrudeGeometry(sh,{depth:t,bevelEnabled:false,curveSegments:10});
-    geo.rotateX(-Math.PI/2); geo.translate(-w/2,y,-w/2);
+    /* ★ 2026-10-09 [house] — 판이 발자국 «뒤로» 0.5m 나가 있었다(rotateX(−π/2) 는 부채를 −Z 쪽으로 펴서 판이 z −0.75~−0.25).
+         기둥·자리는 발자국 안(직각 꼭짓점 뒤-왼)이라 화분이 판 없는 허공에 섰다(v2 옷을 맞추다 찾음 · probe_dress_fit).
+         +π/2 로 펴면 부채가 +X·+Z 쪽(꼭짓점 −w/2,−w/2) — 기둥·자리와 같은 자리. 판 두께는 y~y+t 그대로. */
+    geo.rotateX(Math.PI/2); geo.translate(-w/2,y+t,-w/2);
     const mesh=new THREE.Mesh(geo,m); g.add(mesh);
     tiers.push(+y.toFixed(3)); dep.push(w*0.7);
     sl.push({x:+(-w*0.16).toFixed(3),y:+(y+t/2).toFixed(3),z:+(-w*0.16).toFixed(3)},

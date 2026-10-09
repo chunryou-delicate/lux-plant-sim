@@ -60,7 +60,21 @@ const FURN = {
   drying_rack: { file: 'props/drying_rack.glb', yaw: 0, uniform: true, lazy: true },
   heater:      { file: 'props/heater.glb',      yaw: 0, uniform: true, lazy: true },
   trash:       { file: 'props/trash.glb',       yaw: 0, uniform: true, lazy: true },
-  backpack:    { file: 'props/backpack.glb',    yaw: 0, uniform: true, lazy: true }
+  backpack:    { file: 'props/backpack.glb',    yaw: 0, uniform: true, lazy: true },
+  /* ★ 2026-10-09 — Meshy 주문표 house 몫(docs/handoff/meshy-plan-20261008.md · [house]).
+       방에 처음부터 있는 것이 아니라 가구점에서 사는 것이라 lazy(놓였을 때만 받는다).
+       yaw: Meshy 가 «앞 = +Z» 로 내보냈다 — 원화의 앞 방향과 상관없다(가구 13점을 한 장에 찍어 봄 · 10-09).
+       크기는 프리셋 그대로(가구점 값) · 가로·깊이는 발자국에, 세로는 자리/대리 윗면에 맞춘다(위 dressOne). */
+  plant_pedestal: { file: 'furniture/plant_pedestal.glb', yaw: 0, lazy: true },
+  low_table:      { file: 'furniture/low_table.glb',      yaw: 0, lazy: true },
+  wardrobe:       { file: 'furniture/wardrobe.glb',       yaw: 0, lazy: true },
+  mattress:       { file: 'furniture/mattress.glb',       yaw: 0, lazy: true, probes: [[0.5, 0.5], [0.3, 0.6], [0.7, 0.6]] },
+  sofa:           { file: 'furniture/sofa.glb',           yaw: 0, lazy: true, probes: [[0.3, 0.58], [0.7, 0.58]] },   // 좌석 쿠션 윗면
+  cube_storage:   { file: 'furniture/cube_storage.glb',   yaw: 0, lazy: true },
+  /* 겹단 — 단마다 제 판에 맞춘다(tierFracs) */
+  shelf_cart_3tier:   { file: 'furniture/shelf_cart_3tier.glb',   yaw: 0, lazy: true, tiers: true },
+  shelf:              { file: 'furniture/bookshelf.glb',          yaw: 0, lazy: true, tiers: true },
+  shelf_corner_3tier: { file: 'furniture/shelf_corner_3tier.glb', yaw: 90, lazy: true, tiers: true }   // 직각 꼭짓점이 뒤-왼(판 무게중심으로 맞춤)
 };
 /* 옷을 안 입히고 색만 바꾸는 것 — 단·자리 계약이 걸려 있다(3단 선반·창턱 받침) */
 const RESTYLE = {
@@ -145,7 +159,6 @@ export function createFurnitureDress(opt = {}) {
     loading.set(file, p);
     return p;
   }
-  const furnFiles = () => [...new Set(Object.values(FURN).map(s => s.file))];
   const propFiles = id => [...new Set((PROPS[id] || []).filter(p => p.file).map(p => p.file))];
   const bootFiles = () => [...new Set(Object.values(FURN).filter(s => !s.lazy).map(s => s.file))];
   const furnReady = () => bootFiles().every(f => tpl.has(f));
@@ -183,6 +196,102 @@ export function createFurnitureDress(opt = {}) {
     const f = hit ? (hit.point.y - box.min.y) / Math.max(1e-6, box.max.y - box.min.y) : null;
     measure.set(key, f);
     return f;
+  }
+
+  /* ── 겹단 맞추기 (2026-10-09 · [house]) ──
+     topFrac 은 (u,v) 에서 «맨 위 면» 하나만 잰다. 선반처럼 단이 위아래로 겹치면 아래 단 자리도 맨 위 판에 맞춰져
+     배율이 틀어진다 — 그래서 v2 shelf.glb(에타제르)를 못 쓰고 RESTYLE 로 색만 바꿨다.
+     또 Meshy 판 높이는 코드 단 높이와 비율이 다르다(책장: 받침대가 있어 판이 5.7/29.9/53.2/77.1% · 코드 1.2/26.2/51.1/76.2%)
+     — 배율 하나로는 네 단을 다 못 맞춘다(가장 나은 배율로도 밑단 6.5cm).
+     ⇒ ① (u,v) 를 지나는 «위를 보는 면» 높이를 다 모으고(upFracs)
+       ② 단(낮은 것부터)과 면을 차례로 짝짓되 «바닥~첫 단 · 단~단 · 끝 단~꼭대기» 구간마다 늘임 비가 가장 고른 짝을 고르고(tierFracs)
+       ③ GLB 세로를 그 구간대로 «꺾은 선»으로 늘인다(remapTiers) — 판은 단 높이에 정확히 앉고, 사이 기둥·옆판이 늘거나 준다.
+     판 수가 단 수보다 많아도 된다(책장 윗판 · 온실장 밑판 같은 자리 없는 판). g.userData 는 안 건드린다 — 그림만. */
+  function upFracs(file, t, yaw, u, v) {
+    const key = `up|${file}|${yaw}|${u.toFixed(3)}|${v.toFixed(3)}`;
+    if (measure.has(key)) return measure.get(key);
+    const { box, holder } = yawBox(t, yaw);
+    const x = box.min.x + u * (box.max.x - box.min.x), z = box.min.z + v * (box.max.z - box.min.z);
+    const rc = _rc(); rc.set(new T.Vector3(x, box.max.y + 1, z), new T.Vector3(0, -1, 0));
+    const H = Math.max(1e-6, box.max.y - box.min.y), nrm = new T.Vector3(), out = [];
+    for (const h of rc.intersectObject(holder, true)) {
+      if (!h.face) continue;
+      nrm.copy(h.face.normal).transformDirection(h.object.matrixWorld);
+      if (nrm.y < 0.6) continue;                         // 위를 보는 면만 — 판 밑면(아래를 봄)을 넣으면 짝이 밑면으로 샌다(책장 10-09)
+      const f = (h.point.y - box.min.y) / H;
+      if (!out.some(q => Math.abs(q - f) < 0.02)) out.push(f);   // 판 두께(윗면·밑면)는 2% 안이면 한 판
+    }
+    out.sort((a, b) => a - b);
+    measure.set(key, out);
+    return out;
+  }
+  function tierFracs(file, t, yaw, pts, topY) {
+    const cl = q => Math.min(0.98, Math.max(0.02, q));
+    const { box } = yawBox(t, yaw); const H = box.max.y - box.min.y;
+    const tierY = [...new Set(pts.map(p => +p.y.toFixed(3)))].sort((a, b) => a - b);
+    const cand = tierY.map(y => { const p = pts.find(q => +q.y.toFixed(3) === y); return upFracs(file, t, yaw, cl(p.u), cl(p.v)); });
+    let best = null;
+    const walk = (i, lo, pick) => {
+      if (i === tierY.length) {
+        /* 구간 늘임 비 — 바닥~첫 단 · 단~단 · 끝 단~꼭대기(대리 상자 윗면) */
+        const gy = [0, ...pick.map(f => f * H)], ty = [0, ...tierY];
+        if (H - gy[gy.length - 1] > 1e-3 * H) { gy.push(H); ty.push(Math.max(topY, tierY[tierY.length - 1] + 0.01)); }   // 끝 단이 곧 꼭대기면(코너 선반) 꼭대기 구간이 없다
+        let sc = 0, ok = true;
+        for (let k = 1; k < gy.length; k++) { const a = gy[k] - gy[k - 1], b = ty[k] - ty[k - 1];
+          if (!(a > 1e-4 && b > 1e-4)) { ok = false; break; } const l = Math.log(b / a); sc += l * l; }
+        if (ok && (!best || sc < best.sc)) best = { sc, pick: [...pick] };
+        return;
+      }
+      for (const f of cand[i]) if (f > lo && f > 0.001) { pick.push(f); walk(i + 1, f, pick); pick.pop(); }
+    };
+    walk(0, -1, []);
+    if (!best) return null;
+    return { tierY, pick: best.pick, fs: pts.map(p => best.pick[tierY.indexOf(+p.y.toFixed(3))]) };
+  }
+  /* 옷(dress) 안에서 (lx,lz) 를 지나는 위를 보는 면 중 y 에 가장 가까운 것(g 로컬 m) — 겹단 맞춤 확인용 */
+  function surfaceNear(dress, lx, lz, y) {
+    const g = dress.parent; g.updateWorldMatrix(true, true);
+    const rc = _rc(); rc.set(g.localToWorld(new T.Vector3(lx, 9, lz)), new T.Vector3(0, -1, 0));
+    const nrm = new T.Vector3(); let best = null;
+    for (const h of rc.intersectObject(dress, true)) {
+      if (!h.face) continue;
+      nrm.copy(h.face.normal).transformDirection(h.object.matrixWorld); if (nrm.y < 0.6) continue;
+      const ly = g.worldToLocal(h.point.clone()).y;
+      if (best == null || Math.abs(ly - y) < Math.abs(best - y)) best = ly;
+    }
+    return best;
+  }
+  /* 구간대로 세로를 꺾어 늘인 판(틀) — 파일·yaw·마디가 같으면 한 번만 짓고 나눠 쓴다 */
+  const remapCache = new Map();
+  function remapTiers(file, t, yaw, knots) {
+    const key = `${file}|${yaw}|${knots.map(k => k[0].toFixed(4) + ':' + k[1].toFixed(4)).join(',')}`;
+    if (remapCache.has(key)) return remapCache.get(key);
+    const { box } = yawBox(t, yaw);
+    const root = t.scene.clone(true); root.rotation.y = deg(yaw);
+    const holder = new T.Group(); holder.add(root); holder.updateMatrixWorld(true);
+    const map = y => {                                   // GLB 높이(바닥 기준 m) → 방 높이(m)
+      for (let k = 1; k < knots.length; k++) if (y <= knots[k][0] || k === knots.length - 1) {
+        const [a0, b0] = knots[k - 1], [a1, b1] = knots[k];
+        return b0 + (y - a0) * (b1 - b0) / Math.max(1e-6, a1 - a0);
+      }
+      return y;
+    };
+    const v = new T.Vector3(), inv = new T.Matrix4();
+    root.traverse(o => {
+      if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;
+      o.geometry = o.geometry.clone();
+      inv.copy(o.matrixWorld).invert();
+      const pos = o.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+        v.y = map(v.y - box.min.y) + box.min.y;
+        v.applyMatrix4(inv); pos.setXYZ(i, v.x, v.y, v.z);
+      }
+      pos.needsUpdate = true; o.geometry.computeBoundingBox(); o.geometry.computeBoundingSphere();
+    });
+    holder.remove(root);
+    remapCache.set(key, root);
+    return root;
   }
 
   /* 대리 메시(옷이 아닌 것) 모두 */
@@ -236,21 +345,26 @@ export function createFurnitureDress(opt = {}) {
       pts.push({ u, v, y: proxyTop(g, proxies, -w / 2 + u * w, -d / 2 + v * d) });
     const { box } = yawBox(t, spec.yaw);
     const H = box.max.y - box.min.y;
-    const ks = pts.map(p => {
-      const f = topFrac(spec.file, t, spec.yaw, Math.min(0.98, Math.max(0.02, p.u)), Math.min(0.98, Math.max(0.02, p.v)));
-      return (f && p.y > 0) ? p.y / (f * H) : NaN;
-    });
+    const cl = q => Math.min(0.98, Math.max(0.02, q));
+    /* 자리마다 맞출 GLB 면의 높이 비율 f — 보통은 맨 위 면 · 겹단(spec.tiers)이면 단마다 제 면에 «꺾은 선»으로 */
+    const pb = new T.Box3(); for (const m of proxies) pb.expandByObject(m);
+    g.updateWorldMatrix(true, true);
+    const proxyTopY = pb.max.y - g.position.y;
+    const tf = spec.tiers && slots.length ? tierFracs(spec.file, t, spec.yaw, pts, proxyTopY) : null;
+    const fs = tf ? tf.fs : pts.map(p => topFrac(spec.file, t, spec.yaw, cl(p.u), cl(p.v)));
+    const ks = pts.map((p, i) => (fs[i] && p.y > 0) ? p.y / (fs[i] * H) : NaN);
     let sy = median(ks);
-    if (!Number.isFinite(sy)) {                      // 못 쟀다 — 대리 상자 높이로
-      const pb = new T.Box3(); for (const m of proxies) pb.expandByObject(m);
-      g.updateWorldMatrix(true, true);
-      sy = (pb.max.y - g.position.y) / H;
-    }
+    if (!Number.isFinite(sy)) sy = proxyTopY / H;    // 못 쟀다 — 대리 상자 높이로
     const sx = w / (box.max.x - box.min.x), sz = d / (box.max.z - box.min.z);
     if (spec.uniform) sy = (sx + sz) / 2;           // 비율 그대로(발자국이 GLB 비율에서 나왔다)
+    /* 겹단: 바닥 0 · 단마다 (GLB 판 높이 → 자리 높이) · 꼭대기(GLB 윗면 → 대리 윗면) 마디로 세로를 꺾는다 → 세로 배율 1 */
+    const knots = tf ? [[0, 0], ...tf.pick.map((f, k) => [f * H, tf.tierY[k]])] : null;
+    if (knots && H - knots[knots.length - 1][0] > 1e-3 * H) knots.push([H, Math.max(proxyTopY, tf.tierY[tf.tierY.length - 1] + 0.01)]);
+    if (knots) sy = 1;
 
-    const glb = t.scene.clone(true);
-    glb.rotation.y = deg(spec.yaw);
+    let glb;
+    if (knots) glb = remapTiers(spec.file, t, spec.yaw, knots).clone(true);   // 기하는 틀과 나눠 쓴다(sharedGeometry)
+    else { glb = t.scene.clone(true); glb.rotation.y = deg(spec.yaw); }
     const mid = new T.Group();
     mid.add(glb);
     mid.position.set(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2);
@@ -268,13 +382,16 @@ export function createFurnitureDress(opt = {}) {
 
     /* 진단 — 자리마다 GLB 윗면이 얼마나 어긋나나(m) */
     dress.updateMatrixWorld(true);
-    const errs = pts.map(p => {
-      const f = topFrac(spec.file, t, spec.yaw, Math.min(0.98, Math.max(0.02, p.u)), Math.min(0.98, Math.max(0.02, p.v)));
-      return f && Number.isFinite(p.y) ? +(f * H * sy - p.y).toFixed(4) : null;
+    /* 겹단은 같은 자로 «옷 입힌 뒤» 다시 잰다 — 꺾은 판이 정말 자리 높이에 앉았나(셈을 믿지 않는다) */
+    const errs = pts.map((p, i) => {
+      if (!fs[i] || !Number.isFinite(p.y)) return null;
+      if (!knots) return +(fs[i] * H * sy - p.y).toFixed(4);
+      const hy = surfaceNear(dress, -w / 2 + cl(p.u) * w, -d / 2 + cl(p.v) * d, p.y);
+      return hy == null ? null : +(hy - p.y).toFixed(4);
     });
-    report.set(g.userData.uid, { preset, file: spec.file, yaw: spec.yaw,
-      scale: [+sx.toFixed(4), +sy.toFixed(4), +sz.toFixed(4)],
-      height: +(H * sy).toFixed(3), targets: pts.map(p => p.y == null ? null : +p.y.toFixed(3)), topErr: errs });
+    report.set(g.userData.uid, { preset, file: spec.file, yaw: spec.yaw, uniform: !!spec.uniform,
+      scale: [+sx.toFixed(4), +sy.toFixed(4), +sz.toFixed(4)], tiers: knots ? knots.map(k => k.map(v => +v.toFixed(3))) : undefined,
+      height: +(knots ? knots[knots.length - 1][1] : H * sy).toFixed(3), targets: pts.map(p => p.y == null ? null : +p.y.toFixed(3)), topErr: errs });
     return true;
   }
 
@@ -325,6 +442,7 @@ export function createFurnitureDress(opt = {}) {
     report.clear();
     if (!on || held || !built || !built.furniture) return 0;
     let n = 0, missing = false;
+    const need = new Set();
     for (const g of built.furniture.children) {
       if (!g.userData || !g.userData.uid) continue;
       try {
@@ -332,14 +450,15 @@ export function createFurnitureDress(opt = {}) {
         const preset = presetOf(g, roomDef);
         if (!preset || !FURN[preset]) continue;
         if (dressOne(g, preset)) n++;
-        else if (!tpl.has(FURN[preset].file)) missing = true;
+        else if (!tpl.has(FURN[preset].file)) { missing = true; need.add(FURN[preset].file); }
       } catch (e) {
         console.warn('[v2 가구] 옷을 못 입혔습니다 —', g.userData.uid, e && e.message);
       }
     }
-    /* 아직 못 받은 옷이 있으면 받는 대로 입히고 알린다(옛 방이면 안 입힌다) */
+    /* 아직 못 받은 옷이 있으면 받는 대로 입히고 알린다(옛 방이면 안 입힌다)
+       ★ 2026-10-09 — 방에 놓인 것만 받는다. 가구점 옷이 13벌 늘어, 전부 받으면 소파 하나 사도 5MB 를 받는다([house]). */
     if (missing) {
-      const go = () => Promise.all(furnFiles().map(load)).then(() => {
+      const go = () => Promise.all([...need].map(load)).then(() => {
         if (disposed || !on || held || cur.built !== built) return;
         dress(built, roomDef);
         onChange('furniture');
