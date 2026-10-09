@@ -523,7 +523,24 @@ export function createLightEngine(data) {
          C·D(여름 등 없이 못 넘음) → 집게를 물려 여름에 넘으면 · Bp(겨울엔 등을 켜도 모자람) → 집게로 겨울까지 넘을 때만 · A·B 는 이미 넘는다 */
     let clipTop = (key === 'C' || key === 'D' || key === 'Bp') ? clipTopOf() : null;
     if (clipTop && key === 'Bp' && !clipTop.winterToo) clipTop = null;
-    return { key, wnShort: key === 'C' && wN < th, higher, clipTop, variegated: !!variegated, kind, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
+    /* ★ 총괄 D58 — 삽수는 «그날 값»으로 자란다(core §cuttingLightOf). 갈래는 기댓값(덜 말하는 쪽)대로 두되,
+         그 갈래가 «못 넘는다»고 한 조건이 **맑은 날 값으로는 넘으면** 한 줄 꼬리(«맑은 날에만 조금씩 자라요» 결 · 글은 plan).
+         화분 그루는 7일 평균으로 갈리니 안 낸다. 차례: 갈래 첫 줄이 말한 «못 넘음» 순서대로 첫 것 하나 */
+    let clearDayOnly = null;
+    if (kind === 'cutting') {
+      const bestClear = (season, n) => Math.max(...pts.map(p => {
+        const o = dliAt(p, { weather: 'clear', season, litHours: 12, lampCount: n, occIdx: p.occIdx ?? null });
+        return (o.dli_daylight ?? 0) + (o.dli_lamp ?? 0);
+      }));
+      const tries = key === 'C' ? [['summer', 0, s0]] : key === 'D' ? [['summer', 0, s0], ['summer', nAll, sN]]
+        : key === 'B' ? [['winter', 0, w0]] : key === 'Bp' ? [['winter', nAll, wN]] : [];
+      for (const [season, n, exp] of tries) {
+        if (exp >= th) continue;
+        const c = bestClear(season, n);
+        if (c >= th) { clearDayOnly = { season, lamps: n, clear: r2(c), expected: r2(exp) }; break; }
+      }
+    }
+    return { key, wnShort: key === 'C' && wN < th, higher, clipTop, clearDayOnly, variegated: !!variegated, kind, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
   }
 
   /* 이 좌표에서 제일 가까운 추천 자리. UI 의 원형 가이딩이 쓴다. */

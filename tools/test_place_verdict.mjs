@@ -50,6 +50,14 @@ const engOf = id => { console.warn = () => {}; const e = createLightEngine({ hou
   ok('이미 아랫변 높이(0.80m) → higher 없음', h2.higher === null, JSON.stringify(h2.higher));
   const h3 = e.placeVerdict([{ x: -2.5, y: 0.5, z: 1.5 }]);
   ok('창 폭 밖 → higher 없음', h3.higher === null, JSON.stringify(h3.higher));
+  /* D58 — 삽수: 기댓값으로는 못 넘는데 맑은 날 값으로는 넘는 자리 → clearDayOnly(«맑은 날에만 조금씩 자라요» 결) · 화분 그루는 안 냄 */
+  const q = e.placeVerdict([{ x: 0.5, y: 0.62, z: -2.30 }], { variegated: true, kind: 'cutting' });
+  const qm = e.placeVerdict([{ x: 0.5, y: 0.62, z: -2.30 }], { variegated: true });
+  ok(`무늬 삽수 창 앞 0.62m → ${q.key}(여름 기댓값 ${q.values.s0} < ${q.th}) · 맑은 날 ${q.clearDayOnly && q.clearDayOnly.clear} 이면 넘음 → clearDayOnly`,
+    q.key === 'C' && !!q.clearDayOnly && q.clearDayOnly.season === 'summer' && q.clearDayOnly.lamps === 0 && q.clearDayOnly.clear >= q.th && q.clearDayOnly.expected < q.th, JSON.stringify(q));
+  ok(`같은 자리 무늬 모주(화분) → ${qm.key} · clearDayOnly 없음(그루는 7일 평균)`, qm.clearDayOnly === null, JSON.stringify(qm.clearDayOnly));
+  const q0 = e.placeVerdict([{ x: -1.5, y: 0.10, z: 1.0 }], { variegated: true, kind: 'cutting' });
+  ok('무늬 삽수 원룸 바닥 → 맑은 날에도 못 넘음 → clearDayOnly 없음', q0.key === 'D' && q0.clearDayOnly === null, JSON.stringify(q0.clearDayOnly));
 }
 /* 무늬(×1.4) — 원룸 + 기준 배치 D(에타제르 0.5,−1.55) · 총괄 10-09 (leaf D41: 가운데단 무늬 삽수 120일 정체) */
 { const H = dataOf('house_rooms.json'); const R = H.rooms.oneroom; R.furniture = [...R.furniture, ...R.reference_layout.furniture];
@@ -81,6 +89,7 @@ const engOf = id => { console.warn = () => {}; const e = createLightEngine({ hou
   ok(`원룸 갈래(기댓값 ${t2.values.sN}) · 무늬 삽수 · 등 2 → D · clipTop(맨 윗단 집게 여름 ${t2.clipTop && t2.clipTop.s} ≥ ${t2.th})`,
     t2.key === 'D' && !!t2.clipTop && t2.clipTop.s >= t2.th && t2.clipTop.atTop === true && t2m.key === 'D',
     JSON.stringify({ cutting: { key: t2.key, values: t2.values, clipTop: t2.clipTop }, mother: { key: t2m.key, values: t2m.values } }));
+  ok('leaf 자리(윗단 · 등 2)는 맑은 날 값으로도 삽수 문턱 아래 → clearDayOnly 없음(정체 그대로)', t2.clearDayOnly === null && t2m.clearDayOnly === null, JSON.stringify([t2.clearDayOnly, t2m.clearDayOnly]));
   let threw = false; try { e.placeVerdict(topPts, { kind: 'leaf' }); } catch { threw = true; }
   ok('kind 는 mother·cutting 둘만(모르는 낱말은 던진다)', threw);
 }
