@@ -1841,6 +1841,24 @@ export function placeBoughtFurniture(S, itemId, pos, opt = {}) {
   return { ...row, ko: q.ko, itemId };
 }
 
+/* ★ 2026-10-10 D59 — **재고 없이 주는 가구**(가게 첫날의 주문판처럼 이야기가 건네는 것). placeBoughtFurniture 와 같은 한 줄을 적되
+     재고를 안 쓰고 상점 값표(furnitureQuoteOf · 가게에 안 파는 것도)를 안 본다. 같은 프리셋이 방에 이미 있으면 다시 안 준다(opt.once 기본 true ·
+     세이브 꼴을 안 늘리려고 «받았다» 칸 대신 프리셋으로 본다 — 주는 것은 가게에 안 파는 것이라 같은 뜻이다).
+     ⚠ 자리가 되는 자리인지는 부르는 쪽이 3D 에 물어 온다(벽 걸이면 room_view.hangPose) */
+export function giveFurniture(S, preset, pos, opt = {}) {
+  if (!preset || typeof preset !== 'string') throw new Error(`[가구] 프리셋이 없습니다: ${preset}`);
+  assertFurnitureAt(pos, opt);
+  const list = addedFurniture(S);
+  if (opt.once !== false && list.some(f => f.preset === preset)) return null;
+  const uid = opt.uid || `add-${preset}-${list.length + 1}`;
+  if (list.some(f => f.uid === uid) || uid in furnitureOverrides(S))
+    throw new Error(`[가구] 이미 쓰는 자리 이름입니다: ${uid}`);
+  const row = { uid, preset, x: pos.x, z: pos.z, rot: pos.rot == null ? 0 : pos.rot,
+                ...(pos.y == null ? {} : { y: pos.y }) };
+  list.push(row);
+  return { ...row };
+}
+
 /* 이 가구 위에 얹힌 **내 물건**(화분·빈 그릇·삽수·작물 자리). 이름만 낸다.
    ⚠ 자리 이름 두 벌을 다 본다 — 추천 자리는 `slotId = "<uid>:<번호>"` 이고
      자유 좌표는 `at.onUid` 다. 하나만 보면 절반이 안 걸린다(2026-08-11 에 갈렸던 자리다). */

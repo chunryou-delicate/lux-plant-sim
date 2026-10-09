@@ -3235,7 +3235,8 @@ import { varieLightStepOfBand } from './src/game/shop.js';
 import { potLeafGradesOf, potLeafGradesSeenOf } from './src/game/shop.js';
 /* ★ 2026-10-09 D47(총괄) — 가구점을 화면에 잇는다(줄 · 주문 · 가방 · 놓기). 셈·값·해금은 전부 코어(shop §furnitureCatalogList · state §placeBoughtFurniture) */
 import { furnitureCatalogList, isFurnitureItemId } from './src/game/shop.js';
-import { placeBoughtFurniture } from './src/game/state.js';   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
+import { placeBoughtFurniture, giveFurniture } from './src/game/state.js';
+import { hangSpotsOf, hangPoseOf } from './src/game/hang_spots.js';   /* ★ 10-10 D59 가게 첫날 주문판 자리(방뷰를 다시 짓기 전에 셈한다) */   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
 import { weatherE } from './src/engine/weather.js';
 import * as save from './src/game/save.js';
 import {
@@ -10192,6 +10193,7 @@ function deliverNow(orderId, ref) {
   pushLog(S, '🤝 ' + done.ko);
   banner('🤝 납품했습니다', `${r.won.toLocaleString()}원${r.newRegular ? ' · 단골이 하나 늘었습니다' : ''}`);
   try { dlgOpen(story.events(r.events, S)); } catch (e) { console.warn('[납품]', e && e.message); }
+  if ((r.events || []).some(e => e && e.id === 'shop_sign')) { try { roomView && roomView.setShopSign && roomView.setShopSign(true); } catch { } }   /* ★ 10-10 단골 10 — 문 옆 입간판 */
   try { sfx.thud(); } catch { }
   try { syncRoom(); } catch { }
   try { checkQuests(lastTurn); } catch { }
@@ -10231,6 +10233,16 @@ function startShopNow() {
   evs.push(...JOB.startShopJob(S).events);
   const r = moveIntoOwnedHome(S, io, { carry: carryFurnitureListNow() });
   evs.push(...r.events);
+  /* ★ 2026-10-10 D59(house d46f4d91) — «문 앞에 작은 주문판을 걸었다»(shopOpen 대사)가 방에도 선다: 주문판 자리(only order_board)에 재고 없이 */
+  try {
+    const def = houseRooms.rooms && houseRooms.rooms[S.home.room];
+    const sp = hangSpotsOf(def).find(x => x.only === 'order_board');
+    if (sp) {
+      const pose = hangPoseOf(sp, (def && def.size) || houseRooms.size, (furnPresets.order_board || {}).size_m || {});
+      const row = giveFurniture(S, 'order_board', pose, { size: io.light.room.size });
+      if (row) { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); pushLog(S, '🪧 문 옆 벽에 주문판을 걸었습니다'); }
+    }
+  } catch (e) { console.warn('[주문판]', e && e.message); }
   const o = JOB.openShop(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0 });
   for (const e of o.events) if (e.ko) pushLog(S, (e.id === 'order_new' ? '📋 ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
   evs.push(...o.events);
@@ -13621,6 +13633,7 @@ async function bootRoomView() {
       })();
     }
     syncRoom();
+    syncShopRoomView();                 /* ★ 10-10 가게 진로 — 첫 화면 = 가게 방 · 간판 단 판이면 입간판 */
     bindPicked();                       /* onclick 대입이라 다시 불러도 안 겹친다 */
     /* ★ addEventListener 쪽은 **한 번만** 건다. 이사로 방을 다시 지을 때 또 걸면
        드래그 한 번에 핸들러가 두 번 돈다 — 조용히 두 배로 움직인다. */
@@ -13652,6 +13665,24 @@ async function bootRoomView() {
    ⚠ setRoom 을 room_view 에 새로 뚫지 않은 이유: 그 파일은 다른 창 소유고, 방을 갈아 끼우는 일은
      이사 때 딱 한 번이라 재생성 비용(수 초)이 새 API 의 위험보다 싸다.
    ★ S.home.room 은 부르기 **전에** 이미 바뀌어 있어야 한다(moveIntoOneroom 이 바꾼다). */
+/* ★ 2026-10-10 총괄 ①(house d46f4d91) — 가게 진로의 산 집(투룸): «집 보기»를 가게 방(진열대 · 다단 선반 · 주문판)에 겨눈다.
+     기본 시점에서 가게 방이 화면 밖·칸막이 뒤였다(칸막이는 house e67fa495 가 밑동만 남긴다). 사람이 돌린 방위·줌은 그대로 얹힌다.
+     간판을 단 판(단골 10 · signOnDay)이면 입간판도 세운다(깃발이 세이브에 없어 방을 세울 때마다 다시 부른다).
+     ⚠ 가게가 아닌 판은 아무것도 안 부른다 — 예전 화면 그대로 */
+const SHOP_FRAME_UIDS = Object.freeze(['tworoom-shop-display', 'tworoom-shelf-etagere-3tier']);
+function syncShopRoomView() {
+  if (!roomView) return;
+  let shop = false; try { shop = JOB.isShopJob(S) && JOB.movedHome(S); } catch { shop = false; }
+  if (!shop) return;
+  try { if (roomView.setShopSign) roomView.setShopSign(JOB.jobShopOf(S).signOnDay != null); } catch (e) { console.warn('[입간판]', e && e.message); }
+  try {
+    if (roomView.setHomeFrame) {
+      const board = addedFurniture(S).filter(f => f.preset === 'order_board').map(f => f.uid);
+      roomView.setHomeFrame({ uids: [...SHOP_FRAME_UIDS, ...board], pad: 0.7 }, true);   /* pad — 가게 방 바닥 둘레까지(0.25 면 진열대 모서리가 잘렸다 · 사진으로 잼) */
+    }
+  } catch (e) { console.warn('[가게 카메라]', e && e.message); }
+}
+window.__byeotShopView = () => syncShopRoomView();   /* 재는 손잡이 */
 /* 주인공 모습을 성별에 맞춘다 — 3D 몸·옷(v2_hero 한 곳) · 위 칸 «나» 얼굴. 방뷰를 세우기 «전»에 부른다(몸은 처음 받을 때 고른다) */
 function syncHeroGender() {
   const g = heroGenderNow();

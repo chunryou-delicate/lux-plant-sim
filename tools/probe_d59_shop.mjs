@@ -84,6 +84,18 @@ try {
   ok(st2.room === 'tworoom' && st2.rv && st2.rvRoom === 'tworoom' && !st2.failed, '다시 켜지 않고 투룸 방이 선다');
   ok(st2.job && st2.job.id === 'shop', '진로 = 식물 가게');
   ok(st2.orders.length === 1 && st2.orders[0].c === 'banchan_owner' && st2.logs.length === 1, `첫 주문 · 첫 손님 반찬가게 사장님(${JSON.stringify(st2.orders[0] || null)})`);
+  /* ⑧ 총괄 ①(house d46f4d91) — 가게 첫 화면 = 가게 방: 주문판이 주문판 자리에 · 진열대·다단 선반·주문판이 화면 안 · 같은 판 같은 카메라로 전(기본 시점)/후 */
+  const viewOf = `(()=>{ const r=document.getElementById('roomCanvas').getBoundingClientRect(); const inC = p => !!p && p.x >= 0 && p.y >= 0 && p.x <= r.width && p.y <= r.height;
+    const board=(window.__S().home.furnitureAdded||[]).find(f=>f.preset==='order_board'); const at = u => window.__rv.screenPosOf(u);
+    return { hf: window.__rv.camera().homeFrame, display: inC(at('tworoom-shop-display')), shelf: inC(at('tworoom-shelf-etagere-3tier')), board: board ? board.uid : null,
+             boardIn: board ? inC(at(board.uid)) : false, boardSpot: board ? ((window.__rv.hangSpots().find(s=>s.only==='order_board')||{}).uid === board.uid) : false }; })()`;
+  await J(`(()=>{ window.__rv.setHomeFrame(null, true); return 1; })()`); await sleep(900);
+  const vBefore = await J(viewOf); await shot('8a_shop_before_default_cam');
+  await J(`(()=>{ window.__byeotShopView(); return 1; })()`); await sleep(900);
+  const vAfter = await J(viewOf); await shot('8b_shop_after_shop_cam');
+  console.log('⑧ 가게 첫 화면 — 전', JSON.stringify(vBefore), '· 후', JSON.stringify(vAfter));
+  ok(vAfter.board && vAfter.boardSpot, `⑧ 가게 첫날 주문판이 주문판 자리에 걸렸다(${vAfter.board})`);
+  ok(vAfter.hf && vAfter.display && vAfter.shelf && vAfter.boardIn, '⑧ 가게 방 보기 — 진열대 · 다단 선반 · 주문판이 화면 안');
   /* ③ 주문판 · 납품 */
   await page.eval(`(()=>{ window.__byeotSheet.open('shop'); })()`, false); await sleep(1000);
   const ob = await J(`(()=>{ const b=document.getElementById('orderBoard'); return { shown: b && b.style.display !== 'none', rows: [...b.querySelectorAll('.orow .otxt')].map(x=>x.textContent), btn: [...b.querySelectorAll('[data-deliver]')].map(x=>({ t:x.textContent, off:x.disabled })) }; })()`);

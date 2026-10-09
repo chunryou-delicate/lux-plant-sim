@@ -1500,9 +1500,13 @@ export async function createRoomView(canvas, opts = {}) {
      그래서 실제로 투영해 보고 이분법으로 최소 거리를 찾는다. 프레이밍이 바뀔 때만 돈다. */
   const _probe = new THREE.PerspectiveCamera();
   const _pv = new THREE.Vector3();
-  function fitDistance(target, az, el) {
+  function fitDistance(target, az, el, area) {
     const b = roomBox();
     const corners = [];
+    if (area) {   /* ★ 10-10 집 보기를 한 곳에 겨눌 때(§homeFrame) — 그 곳의 상자 꼭짓점만 담는다 */
+      for (const x of [area.min.x, area.max.x]) for (const y of [area.min.y, area.max.y]) for (const z of [area.min.z, area.max.z])
+        corners.push(new THREE.Vector3(x, y, z));
+    } else
     for (const sx of [-1, 1]) for (const sy of [0, 1]) for (const sz of [-1, 1])
       corners.push(new THREE.Vector3(sx * b.w / 2, sy * b.h, sz * b.d / 2));
     const dir = new THREE.Vector3(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az));
@@ -1537,13 +1541,29 @@ export async function createRoomView(canvas, opts = {}) {
 
   /* 방 전체 보기. userYaw·userEl·zoomK 는 플레이어가 만져 놓은 시점이다 — 화면이
      돌아가거나 방이 바뀌어도 유지한다(다시 볼 때마다 시점이 리셋되면 화난다). */
+  /* ★ 2026-10-10 총괄 ①(house d46f4d91) — «집 보기»를 방의 한 곳에 겨눈다. 가게 진로: 투룸 가게 방(진열대·다단 선반·주문판)이
+       기본 시점에서 화면 밖·뒤에 있었다. homeFrame = { uids, yaw(라디안 · 기본 0), pad(m) } · null 이면 예전 그대로 방 전체.
+       그 가구들이 아직 없으면(방을 짓는 중) 방 전체로 떨어진다. 사람이 돌린 방위·턱·줌(userYaw·userEl·zoomK)은 그대로 얹는다 */
+  let homeFrame = null;
+  const homeYaw = () => (homeFrame && Number.isFinite(homeFrame.yaw) ? homeFrame.yaw : 0);
+  function homeArea() {
+    if (!homeFrame || !built || !built.furniture) return null;
+    const box = new THREE.Box3();
+    for (const n of built.furniture.children) if (n.userData && homeFrame.uids.includes(n.userData.uid)) box.expandByObject(n);
+    if (box.isEmpty()) return null;
+    const pad = Number.isFinite(homeFrame.pad) ? homeFrame.pad : 0.25;
+    box.min.y = 0; box.expandByVector(new THREE.Vector3(pad, 0, pad));
+    return box;
+  }
   function frameRoom(snap) {
     const b = roomBox();
-    const az = windowAzimuth() + YAW_OFFSET + userYaw;
+    const az = windowAzimuth() + YAW_OFFSET + homeYaw() + userYaw;
     // 눈높이를 방 한가운데보다 조금 위로 — 선반 위 화분이 바닥에 묻히지 않는다
-    const target = new THREE.Vector3(0, b.h * 0.42, 0);
+    const area = homeArea();
+    const target = area ? new THREE.Vector3((area.min.x + area.max.x) / 2, b.h * 0.42, (area.min.z + area.max.z) / 2)
+                        : new THREE.Vector3(0, b.h * 0.42, 0);
     const el = clamp(userEl == null ? defaultEl() : userEl, EL_MIN, EL_MAX);
-    fitDist = fitDistance(target, az, el);
+    fitDist = fitDistance(target, az, el, area);
     const dist = clamp(fitDist * zoomK, fitDist * ZOOM_IN, fitDist * zoomOutK());
     focused = null;
     setCam({ az, el, dist, target }, snap);
@@ -1584,7 +1604,7 @@ export async function createRoomView(canvas, opts = {}) {
        ★ `SNAP` 상수는 남겨 둔다 — `YAW_OFFSET`(시작 각도)이 그 격자 위의 한 칸이라
          지우면 시작 시점이 바뀐다. */
     const snapped = cam.az;
-    const base = windowAzimuth() + YAW_OFFSET;
+    const base = windowAzimuth() + YAW_OFFSET + homeYaw();
     const el = clamp(cam.el, EL_MIN, EL_MAX);
     const [lo, hi] = zoomRange();
     const dist = clamp(dEff, lo, hi);
@@ -9726,7 +9746,7 @@ export async function createRoomView(canvas, opts = {}) {
     const tanV = Math.tan(THREE.MathUtils.degToRad(ctx.cam.fov) / 2);
     const tanH = tanV * Math.max(0.2, ctx.cam.aspect);
     // 자리에서는 지금 보고 있던 방위를 유지한다(갑자기 방이 돌면 어디인지 못 찾는다)
-    const az = windowAzimuth() + YAW_OFFSET + userYaw;
+    const az = windowAzimuth() + YAW_OFFSET + homeYaw() + userYaw;
     const target = new THREE.Vector3(s.x, cy, s.z);
     /* ★ 너무 확대되지 않게, 그리고 방 밖으로 나가지 않게.
        화분에 코를 박으면 어디에 있는 자리인지 알 수 없고, 멀어지면 벽·천장 속으로 들어간다. */
@@ -9760,7 +9780,7 @@ export async function createRoomView(canvas, opts = {}) {
     const tops = [...slotById.values()].filter(sl => String(sl.slotId).startsWith(uid + ':')).map(sl => sl.y);
     let top = Math.max(baseY + h, tops.length ? Math.max(...tops) + 0.35 : baseY + h);
     const rot = g.rotation.y || 0;
-    const az = windowAzimuth() + YAW_OFFSET + userYaw;
+    const az = windowAzimuth() + YAW_OFFSET + homeYaw() + userYaw;
     let visW = w * Math.abs(Math.cos(az - rot)) + d * Math.abs(Math.sin(az - rot));
     let minY = baseY;
     /* 그 가구 자리에 선 그루 — 높이·폭에 합친다(큰 몬스테라가 잘리지 않게 · focusSlot 이 그루 bbox 를 담는 것과 같다) */
@@ -10157,6 +10177,12 @@ export async function createRoomView(canvas, opts = {}) {
     focusSlot(id, snap) { try { focusSlot(id, !!snap); } catch (e) { throw fail(e); } },
     /* ★ 2026-10-09 D46 덤 — 화분을 받는 가구로 다가간다(house §D46 셈). 돌아오기는 focusSlot(null) */
     focusFurniture(uid, snap) { try { return focusFurniture(uid, !!snap); } catch (e) { throw fail(e); } },
+    /* ★ 10-10 집 보기를 한 곳에 — spec = { uids:[…], yaw?, pad? } · null 이면 방 전체(예전). 바꾸면 그 자리로 다시 겨눈다 */
+    setHomeFrame(spec, snap) {
+      homeFrame = spec && Array.isArray(spec.uids) && spec.uids.length ? { uids: spec.uids.map(String), yaw: +spec.yaw || 0, pad: spec.pad } : null;
+      if (!focused) frameRoom(snap !== false);
+      return homeFrame ? { ...homeFrame, found: !!homeArea() } : null;
+    },
     /* v2: 카메라 연출 창구(src/game/camera_moves.js). 목표로 부드럽게 간다(setCam 트윈).
        focused·userYaw·userEl·zoomK 는 안 건드린다. 빠진 값은 지금 값, dist 는 줌 한계 안으로.
        사람이 끌거나 굴리면 늘 하던 대로 tween=null 로 끊긴다. 돌려주는 것은 실제로 건 목표다 */
@@ -10376,7 +10402,7 @@ export async function createRoomView(canvas, opts = {}) {
     /* 지금 시점 — 저장했다 복원하거나 검증할 때 쓴다 */
     camera() {
       return { az: cam.az, el: cam.el, dist: cam.dist, fit: fitDist,
-               baseAz: windowAzimuth() + YAW_OFFSET,
+               baseAz: windowAzimuth() + YAW_OFFSET + homeYaw(), homeFrame: homeFrame ? { ...homeFrame } : null,
                target: { x: cam.target.x, y: cam.target.y, z: cam.target.z } };
     },
     /* 측정용 — fps · 무엇을 줄였는지 */
