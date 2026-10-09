@@ -1080,6 +1080,9 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   /* ★ 천장에 매단 등을 천장 껍데기에 «딸린 것»으로 적는다 — 천장이 숨을 때 같이 옅어진다(updateShellVisibility) */
   if (shells.ceiling)
     shells.ceiling.userData.hangers = furnGroup.children.filter(g => g.userData && g.userData.hangFromCeiling);
+  /* ★ 2026-10-10 — 벽 걸이(mount wall-hang)도 그 벽을 따라 숨는다(updateShellVisibility · syncWallHang). 걸이는 가구라 벽 그룹 밖에 있어
+     벽이 밑동으로 내려가도 허공에 떠 있었다(투룸 오른벽 걸이 자리는 기본 카메라에서 깎인다). 어느 벽인지는 그때그때 자리로 가른다(옮겨 걸어도 맞게) */
+  for (const k of ['back','front','left','right']) if (shells[k]) shells[k].userData.furnRoot = furnGroup;
 
   return { room, shells, trims, windows:winWorld, glassMeshes, winPos, size:{ w:CW, d:CD, h:CH },
            furniture:furnGroup, lightRigs, plantSlots, occluders, colliders, doorways, luxWins, glazedPanes, facing,
@@ -1264,6 +1267,34 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
     if(sh.userData.stub) sh.userData.stub.visible = stub;
     const t = trims && trims[key];
     if(t){ t.scale.y = 1; t.visible = !stub; }   // 창틀은 감추면 어차피 안 보이니 같이 감춘다
+  }
+  syncWallHang(shells);
+}
+
+/* ★ 2026-10-10 [house] 벽 걸이가 제 벽을 따라 숨는다 — 벽이 밑동이면 그림도 안 보인다.
+   · 가구 노드(g)는 안 건드리고 그 «자식»만 숨긴다 — g.visible 은 room_view setFurnitureVisible 몫이다(두 손이 한 값을 다투지 않게).
+     숨긴 자식에는 표지(_cutHide)를 달아 그것만 되살린다(원래 안 보이던 자식은 그대로).
+   · 고르기(room_view hiddenInScene)는 조상이 숨으면 건너뛴다 — 깎인 벽 자리의 그림이 눌리지 않는다.
+   · 어느 벽인가: 바깥 벽 넷 중 그 벽 면(가운데·법선)까지 거리가 가장 짧은 것(0.5m 안). 부를 때마다 다시 가른다.
+   · 그림만이다 — 걸이는 처음부터 부딪힘·빛 가림에 안 든다(위 colliders·occluders). 자: tools/test_cutaway_shared_mat.mjs E */
+function syncWallHang(shells){
+  let root = null;
+  for (const k of ['back','front','left','right']) if (shells[k] && shells[k].userData.furnRoot) { root = shells[k].userData.furnRoot; break; }
+  if (!root) return;
+  const walls = ['back','front','left','right'].map(k => shells[k]).filter(sh => sh && sh.userData.normal && sh.userData.center);
+  for (const g of root.children) {
+    if (!g.userData || g.userData.mount !== 'wall-hang') continue;
+    let best = null, bd = Infinity;
+    for (const sh of walls) {
+      const { normal: n, center: c } = sh.userData;
+      const d = Math.abs((c[0] - g.position.x) * n[0] + (c[2] - g.position.z) * n[2]);
+      if (d < bd) { bd = d; best = sh; }
+    }
+    const cut = !!(best && bd < 0.5 && best.userData._stub);
+    for (const ch of g.children) {
+      if (cut) { if (ch.visible) { ch.visible = false; ch.userData._cutHide = true; } }
+      else if (ch.userData._cutHide) { ch.visible = true; delete ch.userData._cutHide; }
+    }
   }
 }
 

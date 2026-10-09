@@ -11,6 +11,7 @@
      B 벽 옷(문 GLB) — 벽마다 재질이 따로다(다른 벽 옷과 재질 하나도 안 나눔 · 창 옷은 trims 라 컷어웨이가 재질을 안 만진다)
      C 벽 옷 재질의 colorWrite = 그 벽이 서 있나(_stub 아님) — 기본 카메라 · 다시 지은 뒤 · 반대쪽으로 돈 카메라 세 번
      D 숨김 재질은 컷어웨이가 안 바꾼다 — 문·창 대리의 숨김 재질도 colorWrite 켜짐
+     E 벽 걸이는 제 벽을 따라 숨는다 — 왼벽(hang-3 · 기본 카메라에서 섬)·오른벽(hang-5 · 기본에서 깎임)에 하나씩 걸고 돌기 전후(house.js syncWallHang)
    대조: 고치기 전 판(b5d1885d)에서 «다시 지은 뒤» A·D 가 빨갛다(10-10 house 가 먼저 돌려 봄 · 첫 빌드는 초록 — 위 다시 짓기 주석).
 ============================================================ */
 import fs from 'node:fs';
@@ -63,7 +64,8 @@ try {
     }
     const wrong = [];
     for (const k of ks) { if (stubOf[k] == null) continue; for (const m of dressMats[k]) if (m.colorWrite !== !stubOf[k]) { wrong.push(k + ' cw ' + m.colorWrite + ' stub ' + stubOf[k]); break; } }
-    return { furnHidden: furnHidden.length, furnOff: furnHidden.filter(x => !x.cw || !x.dw).map(x => x.uid),
+    const hang = {}; for (const g of b.furniture.children) if (g.userData && g.userData.mount === 'wall-hang') hang[g.userData.uid] = g.visible && g.children.some(c => c.visible);
+    return { hang, furnHidden: furnHidden.length, furnOff: furnHidden.filter(x => !x.cw || !x.dw).map(x => x.uid),
              dressShells: ks.map(k => k + ':' + dressMats[k].size), stubOf, shared, wrong,
              shellHidden: shellHidden.length, shellHiddenOff: shellHidden.filter(x => !x.cw).map(x => x.k) };
   })())`).then(JSON.parse);
@@ -81,12 +83,14 @@ try {
      GLB 를 이미 받은 뒤 방을 다시 지으면(벽 걸이 하나 → 다음 날 · core b5d1885d) 옷이 곧바로 붙고 «그 뒤» 컷어웨이가
      새 벽을 처음 깎으며 문 대리의 숨김 재질을 끈다 — 가구 대리가 같은 한 벌이면 같이 꺼진다 */
   await page.eval(`(async () => { const v = window.view, e = window.engine;
-    e.setFurnitureEdits([], [{ uid: 'add-poster_seaside-cut', preset: 'poster_seaside', ...v.hangPose('tworoom-hang-3', 'poster_seaside') }]);
+    e.setFurnitureEdits([], [{ uid: 'add-poster_seaside-cut', preset: 'poster_seaside', ...v.hangPose('tworoom-hang-3', 'poster_seaside') },
+                             { uid: 'add-poster_moon-cut', preset: 'poster_moon', ...v.hangPose('tworoom-hang-5', 'poster_moon') }]);
     await v.refreshFurniture(); return 1; })()`, true, 120000);
   await sleep(2500);
   const r1b = await measure();
   console.log('  벽 상태(다시 지은 뒤)', JSON.stringify(r1b.stubOf));
   check('다시 지은 뒤 ·', r1b);
+  ok('다시 지은 뒤 · E 서 있는 왼벽 그림은 보이고 깎인 오른벽 그림은 숨는다', r1b.hang['add-poster_seaside-cut'] === true && r1b.hang['add-poster_moon-cut'] === false, JSON.stringify(r1b.hang));
   if (SHOT) { await page.shot(SHOT); console.log('  사진', SHOT); }
 
   /* 반대쪽으로 돈다 — 앞벽은 서고 뒤벽이 깎인다 · 칸막이는 늘 밑동 */
@@ -96,6 +100,7 @@ try {
   console.log('  벽 상태(돈 뒤)', JSON.stringify(r2.stubOf));
   ok('돈 뒤 벽 상태가 바뀌었다(자가 정말 두 경우를 봤나)', JSON.stringify(r2.stubOf) !== JSON.stringify(r1.stubOf));
   check('돈 카메라 ·', r2);
+  ok('돈 카메라 · E 깎인 왼벽 그림은 숨고 선 오른벽 그림은 보인다', r2.hang['add-poster_seaside-cut'] === false && r2.hang['add-poster_moon-cut'] === true, JSON.stringify(r2.hang));
   if (SHOT) { const s2 = SHOT.replace(/\.png$/i, '_turned.png'); await page.shot(s2); console.log('  사진', s2); }
 } finally { await page.close(); }
 console.log(`\n${fail ? '❌' : '✅'} 통과 ${pass} · 실패 ${fail}`);
