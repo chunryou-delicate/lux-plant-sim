@@ -234,8 +234,7 @@ def main():
     tmp = dst + '.emote.glb'
     r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fix_hair_weights.py'),
                         dst, tmp, '--as-emote', '--near=0.08,0.20'], capture_output=True, text=True, encoding='utf-8')
-    print('
-'.join(l for l in r.stdout.splitlines() if '--as-emote' in l or '⛔' in l))
+    print('\n'.join(l for l in r.stdout.splitlines() if '--as-emote' in l or '⛔' in l))
     if r.returncode != 0 or not os.path.exists(tmp):
         print('⛔ 몸짓 무게를 못 실었다 — 몸짓 무게 없이 둔다'); return 0
     os.replace(tmp, dst)

@@ -100,7 +100,7 @@ function prepare(g) {
   return { scene: g.scene, clips, fileH: h, act: new Map(), hairFixed: moved,
            hand: Array.isArray(X.crouchHand) ? X.crouchHand : null,
            walkMps: Number.isFinite(X.walkMps) ? X.walkMps : null,
-           emoteWin: X.emoteWin || {}, breakWin: X.breakWin || {} };
+           emoteWin: X.emoteWin || {}, breakWin: X.breakWin || {}, kind: X.hero || 'hero' };
 }
 
 /* ⛔ 뒷머리가 «팔»에 묶여 있다 — 잰 것(바인드 · 파일 단위 1.10m):
@@ -216,6 +216,10 @@ function cloneSkinned(src) {
 function warm(m) {
   if (!m || !m.isMeshStandardMaterial) return m;
   if (m.map) m.map.encoding = THREE.sRGBEncoding;
+  /* 10-09 (char): hero2(Meshy 새 몸)는 재질에 자체발광 그림이 «없다» — 옛 hero 는 emissive = 그림이었고 위 LOOK(×0.30)이 그 위에서 맞춰졌다.
+     ⛔ 그대로 두니 폰 새벽 화면에서 머리 밝기가 초상화의 0.28(옛 hero D24 판 0.67) — 다시 «검정 쪽»이었다(probe_hair_onscreen).
+     ⇒ 같은 그림을 자체발광으로 걸어 옛 hero 와 같은 빛 받음으로 맞춘다. */
+  if (!m.emissiveMap && m.map) m.emissiveMap = m.map;
   if (m.emissiveMap) {
     m.emissiveMap.encoding = THREE.sRGBEncoding;
     m.emissive = new THREE.Color(LOOK.tint).multiplyScalar(LOOK.emissive);
@@ -315,10 +319,32 @@ function breakClipFrom(src, name) {
   return c;
 }
 
+/* ── 옷 — 몸은 하나, 그림만 바꿔 끼운다 (10-09 char · 주문표 ③ · hero2 만) ──
+   그림은 tools/char/apply_outfit_tex.py 가 만든다: Meshy retexture 의 «옷 자리»만 쓰고 얼굴·눈·머리카락·맨살은 hero2 그대로(정본 · D24).
+   UV 가 리그 전 3D 와 같아(차 0) 그림을 그대로 입힌다. 'summer' 는 파일에 든 원래 그림(크림 티).
+   어떤 옷을 언제 입힐지(계절 · 잘 때 · 비 오는 날)는 core 가 정해 setOutfit 을 부른다. */
+const OUTFIT_FILES = { spring: 'spring.jpg', autumn: 'autumn.jpg', winter: 'winter.jpg', pajama: 'pajama.jpg', rain: 'rain.jpg' };
+const _outfitTex = new Map();
+function outfitTexture(name) {
+  if (_outfitTex.has(name)) return _outfitTex.get(name);
+  const url = new URL('../../assets/v2/char/outfit/' + OUTFIT_FILES[name], import.meta.url).href;
+  const p = new Promise((res, rej) => new THREE.TextureLoader().load(url, t => {
+    t.flipY = false;                     // glTF 그림과 같게
+    t.encoding = THREE.sRGBEncoding;
+    res(t);
+  }, undefined, () => rej(new Error('옷 그림을 못 받았습니다: ' + name))));
+  p.catch(() => _outfitTex.delete(name));
+  _outfitTex.set(name, p);
+  return p;
+}
+
 /* ── 사람 하나 ── makePerson 이 GLB 대신 받는다. 모양은 gltf 와 같게(scene · animations[0]=idle) */
 export async function makeHero() {
   const src = await loadSource();
   const body = cloneSkinned(src.scene);
+  const baseMaps = [];   // 'summer' 로 되돌릴 원래 그림
+  body.traverse(o => { if (o.isSkinnedMesh) for (const m of [].concat(o.material)) baseMaps.push([m, m.map, m.emissiveMap]); });
+  let outfit = 'summer';
   let emoteSkin = 0;
   body.traverse(o => { if (o.isSkinnedMesh && installEmoteSkin(o)) emoteSkin++; });   // 10-08 char — 위 installEmoteSkin
   /* 옛 GLB 의 '__scale_root' 와 같은 자리 — 1.40m 로 감싼다. 발은 y=0 그대로(바인드 최저 0.0004) */
@@ -340,6 +366,26 @@ export async function makeHero() {
     breakClips: ['scratch', 'nod', 'listen'].filter(n => src.clips[n]),
     /* 10-09 (char): 파일이 적어 온 구간(breakWin — 많이 움직이되 시작·끝이 쉬는 자세에 가까운 3~6초)만 잘라 준다 — core 는 받은 클립을 그대로 튼다 */
     breakClip: name => breakClipFrom(src, name),
+    /* 10-09 (char): 옷 — 'summer'(기본) · 'spring' · 'autumn' · 'winter' · 'pajama' · 'rain'. 그림이 없는 옷이면 그대로 두고 false.
+       돌려주는 값: 입혔나(true/false). 같은 옷이면 아무것도 안 한다. */
+    get outfit() { return outfit; },
+    outfits: ['summer', ...Object.keys(OUTFIT_FILES)],
+    setOutfit: async name => {
+      const k = String(name || 'summer');
+      if (k === outfit) return true;
+      if (k === 'summer') {
+        for (const [m, map, em] of baseMaps) { m.map = map; m.emissiveMap = em; m.needsUpdate = true; }
+        outfit = k; return true;
+      }
+      if (!OUTFIT_FILES[k] || src.kind !== 'hero2') return false;   // 옷 그림은 hero2 UV 로 만들었다 — 옛 몸(hero.glb)은 못 입는다
+      let t;
+      try { t = await outfitTexture(k); } catch (e) { console.warn('[주인공] ' + e.message); return false; }
+      for (const [m, map, em] of baseMaps) {
+        if (map) { t.wrapS = map.wrapS; t.wrapT = map.wrapT; }
+        m.map = t; if (em) m.emissiveMap = t; m.needsUpdate = true;
+      }
+      outfit = k; return true;
+    },
     emoteSkin   // 몸짓 무게를 건 메시 수(0 이면 hero.glb 에 _WEIGHTS_EMOTE 가 없다)
   };
 }

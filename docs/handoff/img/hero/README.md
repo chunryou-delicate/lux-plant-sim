@@ -210,3 +210,10 @@ hero2 / 지금 hero: 받은 파일 hero2.glb / hero.glb · 걷기 1.70m·1.74초
   - 전부 옮긴 판은 가닥이 곧았으나 팔·머리 맞닿은 자리에 흰 바늘 ⇒ 팔 뼈 거리로 서서히 옮긴 판: 가닥 곧고 바늘 없음(`hero2_cheer_locks.png` 왼→오: 지금 · 전부 · 서서히)
   - 걷기·서기 16장씩 화소 0 차이(팔이 문턱까지 안 올라간다) · 게임 길에서 환호 25/32 · 손인사 29/55 프레임 켬 · 끝난 뒤 0
 - ⛔ `fix_hair_weights --as-emote` 가 hero2(관절·무게가 다른 구역)에서 «원래 무게가 안 돌아왔다»로 멈췄다 — 무게 구역만 되돌리던 탓. 두 구역 다 되돌리게 고쳤다(hero 로도 다시 «같다» 확인)
+
+## 10-09 · 계절 옷 (주문표 ③) · hero2 자체발광
+- 옷은 «몸 하나 + 그림 바꿔 끼우기»: `assets/v2/char/outfit/<이름>.jpg` · `v2_hero` `setOutfit('summer'|'spring'|'autumn'|'winter'|'pajama'|'rain')`(hero2 만 · 옛 몸은 거절) · 언제 입힐지는 core
+- 그림 만들기: `tools/char/apply_outfit_tex.py <hero2.glb> <retex.glb> <원래 리그.glb> <시험.glb> --tex-out=assets/v2/char/outfit/<이름>.jpg`
+  - retexture 는 텍스처 «전부»를 새로 칠한다(봄 판: 머리 → 거의 검정 [23,9,8] · 살 주황 · 눈동자 짙게) ⇒ 목 위·머리카락·맨살은 지금 hero2 그림(정본·D24), 옷 자리만 옷 그림
+  - UV 차 0 (리그 전 3D 와 같다) — 봄: `hero2_spring_g5.png`(위 지금 · 아래 봄)
+- ⛔ hero2 재질엔 자체발광 그림이 없었다 — 폰 새벽 머리가 초상화의 **0.28**(옛 hero D24 판 0.67). warm() 에서 같은 그림을 자체발광으로 걸어 **0.57/0.74(새벽) · 0.86(한낮) · 0.68(해질녘)** — 옛 hero D24 판(0.56/0.75/0.91/0.70)과 같은 자리. 지도는 `assets/derived/hero_test/hero2_mask.png`(probe_hair_onscreen `--mask=`)

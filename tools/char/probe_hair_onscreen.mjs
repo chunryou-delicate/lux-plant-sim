@@ -27,6 +27,8 @@ const TEX = (process.argv.find(a => a.startsWith('--tex=')) || '').slice(6);
 const TAG = (process.argv.find(a => a.startsWith('--tag=')) || '').slice(6);
 /* --zoom : 사람을 눌렀을 때처럼 selectCharacter('jachwi') 로 카메라를 다가가게 한 뒤 찍는다(카메라가 멎을 때까지 기다린다) */
 const ZOOM = process.argv.includes('--zoom');
+/* --mask=<경로> : 머리·티 지도(빨강·초록). 기본은 옛 hero UV 의 지도 — hero2 는 assets/derived/hero_test/hero2_mask.png (10-09) */
+const MASK = (process.argv.find(a => a.startsWith('--mask=')) || '').slice(7) || 'assets/derived/hero_test/hero_recolor_test_mask.png';
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
@@ -44,7 +46,7 @@ async function main() {
     }
     await page.eval(`(async()=>{
       const tl = new THREE.TextureLoader();
-      const tex = await new Promise((res, rej) => tl.load('/assets/derived/hero_test/hero_recolor_test_mask.png', res, undefined, rej));
+      const tex = await new Promise((res, rej) => tl.load('/' + ${JSON.stringify(MASK)}, res, undefined, rej));
       tex.flipY = false; tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
       window.__maskTex = tex;
       const swap = ${JSON.stringify(TEX)};
