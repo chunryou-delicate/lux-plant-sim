@@ -1537,6 +1537,11 @@ export const SCRIPTS = {
   lampUnderEmpty: [
     { who: 'moni', face: 'teach', text: '등 밑에 아무것도 없어. 몬스테라나 삽수를 그 밑으로 옮겨 봐.' }
   ],
+  /* ★ 2026-10-09 [plan] D29(총괄) — 가방 속 삽수는 «놓인 것만 하루가 간다»(박사님 08-17 «안 놓인 그루는 안 자란다»와 같은 결 · 규칙은 [core]).
+     가방에 든 삽수가 있는 날 상태 줄 하나(이레에 한 번). 칸은 [core] turn.bagCuttings(가방에 든 안 죽은 삽수 수) — 없으면 null 이라 안 뜬다. */
+  statusBagCuttings: [
+    { who: 'moni', face: 'teach', text: '가방에 든 삽수는 하루가 안 가. 방에 놓아 줘.' }
+  ],
   /* ★ 2026-10-08 [plan] 갈래 지도 10 — 목표에 닿았다가 생활비로 모자라진 뒤 «다시» 닿은 날 한 번([core] db17470a `ending_ready_again`).
      첫 닿음(endingReady)의 「너무 미루면 생활비에 다시 모자라.」가 실제로 일어난 뒤라, 그 말을 이어 받는다. */
   endingReadyAgain: [
@@ -2001,7 +2006,7 @@ export const REPEATABLE = new Set(
              'cuttingNode', 'cuttingWarn', 'cuttingWarnLast', 'cuttingDied',
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
-             'lampUnderEmpty',
+             'lampUnderEmpty', 'statusBagCuttings',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
@@ -2528,6 +2533,8 @@ export const CHATTER = [
   /* ★ 2026-10-08 [plan] 갈래 지도 7 — 원룸 첫 이레 · 무늬 원천 0 이면 「늘릴 게 없어」, 무늬 삽수를 들고 왔으면 «창턱 · 등» */
   { id: 'statusOneroomNoVarie', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && c.varieSources === 0 },
+  /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
+  { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0 },
   { id: 'statusOneroomCutSill', status: true, gap: 60, when: c => c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && fin(c.varieCuttings) && c.varieCuttings > 0 },
 ];
@@ -2648,6 +2655,8 @@ export function chatterContext(turn = {}, S = null) {
     varieSources: (() => { try { return S ? varieSourceCount(S) : null; } catch { return null; } })(),
     varieCuttings: (() => { try { return S && Array.isArray(S.cuttings)
       ? S.cuttings.filter(c => c && c.status !== 'dead' && c.varieFromCut).length : null; } catch { return null; } })(),
+    /* ★ 2026-10-09 [plan] D29 — 가방에 든 안 죽은 삽수 수([core] turn.bagCuttings). 모르면 null */
+    bagCuttings: (turn && Number.isFinite(turn.bagCuttings)) ? turn.bagCuttings : null,
     /* ★ 2026-10-08 [plan] 갈래 지도 13 — 씨앗 재고·빈 시루([core] turn.cropNow). 모르면 null */
     ...(() => {
       const cn = (turn && turn.cropNow) || {};
