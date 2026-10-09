@@ -52,8 +52,14 @@ def main():
     base, im = tex_of(js, bn)
     rj, rb = read_glb(retex_p); outfit, _ = tex_of(rj, rb)
     fj, fb = read_glb(ref_p); ref, _ = tex_of(fj, fb)
+    # 10-09: 다이어트 뒤 hero2 그림은 1024 · Meshy retexture·원본 리그는 2048 ⇒ hero2 크기로 맞춰 합친다(UV 는 같다)
+    def fit(a):
+        if a.shape == base.shape:
+            return a
+        return np.asarray(Image.fromarray(a.round().astype(np.uint8)).resize(base.shape[1::-1], Image.LANCZOS)).astype(float)
     if not (base.shape == outfit.shape == ref.shape):
-        print('⛔ 그림 크기가 다르다', base.shape, outfit.shape, ref.shape); return 2
+        print('■ 그림 크기 맞춤 — hero2 %s 에 옷 %s · 원본 %s 을 맞춘다' % (base.shape[:2], outfit.shape[:2], ref.shape[:2]))
+        outfit, ref = fit(outfit), fit(ref)
     H = base.shape[0]
     hgt, _, _ = texel_height(js, bn, H)
     Lr = lum(ref); satr = ref.max(-1) - ref.min(-1)

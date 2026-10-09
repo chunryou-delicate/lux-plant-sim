@@ -348,7 +348,8 @@ function breakClipFrom(src, name) {
    그림은 tools/char/apply_outfit_tex.py 가 만든다: Meshy retexture 의 «옷 자리»만 쓰고 얼굴·눈·머리카락·맨살은 hero2 그대로(정본 · D24).
    UV 가 리그 전 3D 와 같아(차 0) 그림을 그대로 입힌다. 'summer' 는 파일에 든 원래 그림(크림 티).
    어떤 옷을 언제 입힐지(계절 · 잘 때 · 비 오는 날)는 core 가 정해 setOutfit 을 부른다. */
-const OUTFIT_FILES = { spring: 'spring.jpg', autumn: 'autumn.jpg', winter: 'winter.jpg', pajama: 'pajama.jpg', rain: 'rain.jpg' };
+const OUTFIT_FILES = { spring: 'spring.jpg', autumn: 'autumn.jpg', winter: 'winter.jpg', pajama: 'pajama.jpg', rain: 'rain.jpg',
+  apron: 'apron.jpg' };   // 10-09 식물 가게(D59) 앞치마 — 가게에 있을 때 입히기는 core
 const _outfitTex = new Map();
 function outfitTexture(name) {
   if (_outfitTex.has(name)) return _outfitTex.get(name);
