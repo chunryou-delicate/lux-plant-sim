@@ -711,6 +711,8 @@ window.setPotAsset = function (path) {
           ASSETS.pot = normalizeAsset(g.scene, !!LONGY.pot, !!ANCHORB.pot);
           POT_ASSET_NOW = want;
           if (typeof buildPlant === 'function') buildPlant();
+          /* ★ 2026-10-09 — 새 종 보기(§setSpeciesView) 중이면 그 그룹도 새 화분으로 다시 짓는다(안 그러면 옛 화분이 남는다) */
+          if (SPECIES_VIEW) _drawSpeciesView();
         } catch (e) { console.warn('[확대] 화분 정규화 실패', e && e.message); }
       },
       undefined,

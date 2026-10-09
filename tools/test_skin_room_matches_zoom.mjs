@@ -122,8 +122,8 @@ else {
   console.log(`\n⇒ 갈린 잎 ${fail}/${keys.length}` + (fail ? '' : '   ★ 방과 확대가 «같은 그림»을 그린다'));
 
   /* ══ ★ 새 두 종(D45 · 2026-10-09 [growth]) — 게임 판 그대로: S.species.pots → 방(core cutpot spec → youngPlantOf) · 확대(setSpeciesView) ══
-     ⚠ 확대를 «게임이» 여는 한 줄(setSpeciesView)은 core 차례다(da423fb6 때 «다음 차례»). 그때까지는 이 검사가 확대 창구를 직접 부른다 —
-       core 가 부르는 꼴({ species, plant, potD } · seed·lightAz 안 줌)을 그대로 따른다. core 가 이으면 «게임이 연 확대»를 읽게 바꾼다.
+     ★ 확대는 «게임이 연 것»을 읽는다(core 13b606f2) — 카드 [🔍 확대 보기]와 같은 손잡이 window.__byeotSpeciesZoom(id) 로 열고,
+       확대 창의 speciesViewInfo() 를 읽고, window.__byeotZoom.close() 로 닫는다 → core 의 여는 줄·닫는 줄까지 지킨다.
      ★ 잎마다 자리·눕힘까지의 견줌은 tools/test_species_room_zoom(같은 그리개 · 그리는 층)이 한다. 여기는 «게임 판이 같은 그루를 두 곳에
        같은 잎으로 세우나»를 본다 — 잎 수 · 무늬 판 · 판 목록(정본 leafRows) · AL 구근은 둘 다 «화분만».
      울타리: 방에 «실제로 그려졌나»(drawn · 잎 수 > 0) · 판이 다 온 뒤 견줌 · 확대를 끄면 몬스테라 창구가 돌아오나 */
@@ -151,17 +151,23 @@ else {
       if (i % 10 === 9) await page.eval(`(()=>{ try { window.__redraw(); } catch(e) {} })()`, false);
       await sleep(500);
     }
-    /* 확대 — core 가 부를 꼴 그대로(seed·lightAz 안 줌) · 받는 중 0 까지 */
+    /* 확대 — «게임이 연» 확대(core 13b606f2 · window.__byeotSpeciesZoom) · 그 종이 서고 받는 중 0 까지 기다린 뒤 읽는다 · 닫기도 게임 손으로 */
     const zooms = await J(`(async()=>{ const sp=await import('/src/game/species.js'); const S=window.__S(); const R=sp.speciesRules();
       const w=document.getElementById('growth').contentWindow; const o={};
+      if (typeof window.__byeotSpeciesZoom !== 'function') return { 탈:'게임에 새 종 확대 손잡이(__byeotSpeciesZoom)가 없다' };
       for (const [k,id] of Object.entries(${JSON.stringify(spIds)})) { const q=sp.speciesPotOf(S, id);
-        const call=()=>w.setSpeciesView({ species:q.species, plant:q.plant, potD:0.18 });
-        let r=await call(); for (let i=0; i<60 && r && r.skinsPending; i++) { await new Promise(z=>setTimeout(z,250)); r=await call(); }
-        o[k]={ drawn:r.drawn, leafCount:r.leafCount, want:r.leafCountWanted, varie:(r.varieLeafKeys||[]).slice().sort(),
-               assets:(r.leaves||[]).map(l=>l.asset), rule:(R.leafRows(q.plant)||[]).map(x=>x.asset) }; }
-      const off=await w.setSpeciesView(null);
+        window.__byeotSpeciesZoom(id);
+        let r=null;
+        for (let i=0; i<120; i++) { await new Promise(z=>setTimeout(z,250)); r=w.speciesViewInfo();
+          if (r && r.on && r.species===q.species && !r.skinsPending && (r.drawn===false || r.leafCount===r.leafCountWanted)) break; }
+        o[k]={ on:r.on, drawn:r.drawn, leafCount:r.leafCount, want:r.leafCountWanted, varie:(r.varieLeafKeys||[]).slice().sort(),
+               assets:(r.leaves||[]).map(l=>l.asset), rule:(R.leafRows(q.plant)||[]).map(x=>x.asset) };
+        try { window.__byeotZoom && window.__byeotZoom.close(); } catch(e) {}
+        await new Promise(z=>setTimeout(z,300)); }
+      const off=w.speciesViewInfo();
       o.__back={ on:off.on, skins:Array.isArray(w.leafSkinUsedAll && w.leafSkinUsedAll()) };
-      return o; })()`, 120000);
+      return o; })()`, 180000);
+    if (zooms && zooms.탈) spBad(zooms.탈);
     for (const k of ['pp', 'al']) {
       const m = rooms[k], z = zooms[k];
       if (!m || m === '없음' || !m.drawn || !(m.leafCount > 0)) { spBad(`${k}: 방에 «안 그려졌다»(${JSON.stringify(m)}) — 재는 것이 아니다`); continue; }
@@ -174,8 +180,8 @@ else {
     { const m = rooms.corm, z = zooms.corm;
       if (!(m && m !== '없음' && m.drawn === false && z && z.drawn === false)) spBad(`AL 구근(잎 0): 방 ${JSON.stringify(m)} · 확대 ${JSON.stringify(z)} — 둘 다 «화분만»이어야 한다`);
       else console.log('✅ AL 구근(잎 0) — 방도 확대도 화분만'); }
-    if (!(zooms.__back && zooms.__back.on === false && zooms.__back.skins)) spBad(`확대를 끄면 몬스테라 창구가 돌아와야 한다 — ${JSON.stringify(zooms.__back)}`);
-    else console.log('✅ 확대를 끄면 몬스테라로 돌아온다(leafSkinUsedAll 그대로)');
+    if (!(zooms.__back && zooms.__back.on === false && zooms.__back.skins)) spBad(`게임이 확대를 닫으면 새 종 보기가 꺼지고 몬스테라 창구가 돌아와야 한다 — ${JSON.stringify(zooms.__back)}`);
+    else console.log('✅ 게임이 확대를 닫으면 새 종 보기가 꺼진다(core 닫는 줄) · 몬스테라 창구 그대로');
   }
 
   /* ══ ★ 조립 차례 (2026-10-09 · 총괄 🔴 · leaf 82239a5e 잡음) — «어린 그루를 늙은 그루 뒤에» 지어도 무늬가 산다 ══
