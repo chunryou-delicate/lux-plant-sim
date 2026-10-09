@@ -4900,6 +4900,7 @@ const detail = {
     if (!SPC.speciesPlaced(q)) btns.push({ ko: '🪴 방에 놓기', primary: true, go: () => startPhonePlaceSpecies(q.id) });
     else btns.push({ ko: '📦 가방에 넣기', go: () => { SPC.bagSpecies(S, q.id); pushLog(S, `📦 ${ko}을 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`); syncRoom(); fillSlots(); draw(); } });
     if (q.species === 'pink_princess' && SPC.ppCuttableNodes(q).length) btns.push({ ko: '✂ 자르기', go: () => detail.open('ppCut', { id: q.id }) });
+    btns.push({ ko: '🔍 확대 보기', go: () => openSpeciesZoom(q.id) });   /* growth setSpeciesView */
     btns.push({ ko: why ? '💰 팔기' : `💰 팔기 · ${price.won.toLocaleString()}원`, off: !!why, why: why || '', go: () => sellSpeciesNow(q.id) });
     let brief = ''; try { brief = SPC.speciesBriefKo(q); } catch { }
     const teach = q.species === 'pink_princess'
@@ -5145,8 +5146,29 @@ function openZoomFor(pot) {
      ⚠ 이름은 상태가 들고 있는 그대로 넘긴다 — 화면이 품목→그림 표를 또 만들지 않는다. */
   try { io.growth.setPotAsset && io.growth.setPotAsset((pot && pot.potAsset) || null); }
   catch (e) { console.warn('[확대] 화분', e && e.message); }
+  speciesZoomOff();          /* ★ D45 — 몬스테라 확대면 새 종 보기를 꼭 끈다(growth 청 · 안 끄면 새 종 그림이 남는다) */
   g.open();
 }
+/* ══ ★★ 2026-10-09 D45 — 새 식물 확대(growth plant_grow §setSpeciesView · 방과 «같은 그리개»라 방 = 확대) ══════════ */
+let zoomSpeciesOn = false;
+function growthWinOf() { try { return document.getElementById('growth').contentWindow; } catch { return null; } }
+function speciesZoomOff() {
+  if (!zoomSpeciesOn) return;
+  zoomSpeciesOn = false;
+  try { setTimeout(() => { try { drawGrowGauge(); } catch { } }, 0); } catch { }
+  try { const w = growthWinOf(); if (w && typeof w.setSpeciesView === 'function') w.setSpeciesView(null); } catch (e) { console.warn('[확대] 새 종 끄기', e && e.message); }
+}
+function openSpeciesZoom(id) {
+  const q = SPC.speciesPotOf(S, id), g = window.__byeotZoom;
+  if (!q || !g) return;
+  const w = growthWinOf();
+  if (!w || typeof w.setSpeciesView !== 'function') { banner('확대창이 아직 준비 중입니다', '조금 뒤에 다시 눌러 주세요'); return; }
+  try { w.setSpeciesView({ species: q.species, plant: q.plant, potD: SPC.SPECIES_GAME.potD }); zoomSpeciesOn = true; }
+  catch (e) { banner('확대창에 못 올렸습니다', (e && e.message) || ''); return; }
+  try { drawGrowGauge(); } catch { }
+  g.open();
+}
+window.__byeotSpeciesZoom = (id) => openSpeciesZoom(id);   /* 재는 손잡이 */
 /* 닫힐 때 되돌린다 — 확대창 자체는 머리 스크립트 소유라 **감싸기만** 한다 */
 (() => {
   const g = window.__byeotZoom;
@@ -5154,6 +5176,7 @@ function openZoomFor(pot) {
   const raw = g.close;
   g.close = function () {
     try { raw.call(g); } finally {
+      speciesZoomOff();       /* ★ D45 — 새 종 보기는 닫을 때 걷는다(다음 확대가 몬스테라로 서게) */
       if (zoomPrevGrowthId != null) {
         const back = zoomPrevGrowthId; zoomPrevGrowthId = null;
         try { io.growth.select(back); } catch (e) { console.warn('[확대] 되돌리기', e && e.message); }
@@ -8995,7 +9018,8 @@ function drawGrowGauge() {
   if (!box) return;
   const novice = !!(S.firstPlay && S.firstPlay.enabled);
   const p = pot0(S);
-  if (!novice || !p) { box.style.display = 'none'; return; }
+  /* ★ D45 — 확대에 새 종을 띄운 동안은 몬스테라 게이지를 감춘다(그 그루의 단계가 아니다) */
+  if (!novice || !p || zoomSpeciesOn) { box.style.display = 'none'; return; }
   box.style.display = '';                 /* CSS 가 .zoom 일 때만 실제로 보여 준다 */
   const t = lastTurn;
   /* ★ 단계는 **살아 있는 값**에서 읽는다 — `lastTurn` 은 하루를 돌려야 생기므로,

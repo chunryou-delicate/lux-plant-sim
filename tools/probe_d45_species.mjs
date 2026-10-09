@@ -133,6 +133,20 @@ try {
   console.log('④ 카드 —', JSON.stringify(c4));
   ok(sel.kind === 'species:' + ppId, '고른 열쇠가 새 식물로 읽힌다(몬스테라로 안 떨어진다)');
   ok(c4.on && /핑크프린세스/.test(c4.title), 'PP 카드가 뜬다');
+  /* ④' 확대 — growth setSpeciesView(방과 같은 그리개) · 닫으면 걷힌다 */
+  await page.eval(`(()=>{ const b=[...document.querySelectorAll('#dBtns button')].find(x=>/확대/.test(x.textContent)); if(b) b.click(); })()`, false);
+  await sleep(6000);
+  const zi = await J(`(()=>{ const w=document.getElementById('growth').contentWindow; const i=w && w.speciesViewInfo ? w.speciesViewInfo() : null;
+    return { open: window.__byeotZoom.isOpen(), info: i ? { on:i.on, species:i.species, drawn:i.drawn, leafCount:i.leafCount } : null }; })()`);
+  await page.shot(`${OUTDIR}/6b_pp_zoom.png`);
+  console.log('④ 확대 —', JSON.stringify(zi));
+  ok(zi.open && zi.info && zi.info.on && zi.info.species === 'pink_princess' && zi.info.leafCount === ppLeaves, `확대가 PP 를 그린다(잎 ${zi.info && zi.info.leafCount} = ${ppLeaves})`);
+  await page.eval(`(()=>{ window.__byeotZoom.close(); })()`, false); await sleep(1500);
+  const zo = await J(`(()=>{ const w=document.getElementById('growth').contentWindow; const i=w && w.speciesViewInfo ? w.speciesViewInfo() : null; return { open: window.__byeotZoom.isOpen(), on: i ? i.on : null }; })()`);
+  ok(!zo.open && zo.on === false, '닫으면 새 종 보기가 걷힌다(다음 확대는 몬스테라)');
+  await J(`(()=>{ const S=window.__S(); const q=S.species.pots.find(x=>x.id===${JSON.stringify(ppId)}); window.__picked.select(q.slotId||('free:'+q.id)); return 1; })()`);
+  await sleep(700);
+  await J(`(()=>{ const z=document.getElementById('pickZoom'); if (z) z.click(); return 1; })()`); await sleep(800);
   if (ppLeaves >= 2 && c4.btns.some(b => /자르기/.test(b))) {
     await page.eval(`(()=>{ const b=[...document.querySelectorAll('#dBtns button')].find(x=>/자르기/.test(x.textContent)); if(b) b.click(); })()`, false); await sleep(800);
     await page.eval(`(()=>{ const b=[...document.querySelectorAll('#dBtns button')].find(x=>/마디/.test(x.textContent)); if(b) b.click(); })()`, false); await sleep(1500);
