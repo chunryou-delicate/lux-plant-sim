@@ -72,6 +72,9 @@ house 의 `docs/handoff/meshy-plan-20261008.md` 에 붙일 char 절이다(그 �
   "prompt": "Full-body FRONT view of the same chibi 3D character as image 2: same head-to-body ratio, same soft 3D toy style, same outfit. Standing straight in A-pose: arms straight down, 40 degrees away from the body, palms in, feet slightly apart. Face and hair exactly like image 1: LONG straight very dark brown hair (not black), blunt straight bangs, front locks fall onto the chest, the rest down the back; clear gap between hair and arms. Big warm-brown eyes, pink blush. Cream round-neck short-sleeve t-shirt, light grey jogger pants, grey-white shoes. Plain white background, even light." }
 ```
 받기: `meshy_download_model { task_id, task_type: "image-to-image", save_to: "ROOT/assets/v2/char/_src/hero2/img_<task_id>.png" }`
+**1-1b (G1 다시일 때)** — 같은 인자, 글만 아래로(593자 · 머리를 어깨 «뒤»로 · 앞머리 두 가닥만 어깨선 «안»으로 · 팔 45°):
+`Full-body FRONT view of the same chibi 3D character as image 2: same head-to-body ratio, same soft 3D toy style, same outfit. A-pose: arms straight down, 45 degrees away from the body, palms in, feet apart. Face and hair like image 1: LONG straight very dark brown hair (not black), blunt straight bangs. Hair falls BEHIND the shoulders down the back; only two thin front locks hang inside the shoulder line onto the chest. Shoulders and sleeves fully visible, empty space between hair and arms. Big warm-brown eyes, pink blush. Cream short-sleeve t-shirt, grey jogger pants. White background.`
+
 **G1 (char · 0)** — 고르는 자: ①긴 생머리·일자 앞머리·아주 짙은 갈색(검정 아님) ②팔이 몸에서 30~45° · 머리와 팔 사이 틈 ③크림 티(흰 티 아님) ④지금 3D 와 같은 머리:몸 비율 ⑤손가락·옷 깨짐 없음. 하나라도 어긋나면 같은 주문으로 한 번 더(9).
 
 ### 1-2 3D 뜨기 — `meshy_image_to_3d` · **30**
@@ -152,7 +155,8 @@ house 의 `docs/handoff/meshy-plan-20261008.md` 에 붙일 char 절이다(그 �
 ## 장부 (task_id — 받는 대로 적는다)
 | 단계 | task_id | 받은 파일 | 관문 |
 |---|---|---|---|
-| 1-1 그림 | | | G1 |
+| 1-1 그림 | `01a11e70-223b-705a-b82f-1a80de034747` | `_src/hero2/img_01a11e70-….png` | ⛔ G1 다시 — 긴 생머리·앞머리·짙은 갈색 ✓ · 팔 41.7°/40.7° ✓ · 크림 티 ✓ · ⛔ 옆머리 덩어리가 어깨를 덮고 소매 위까지 내려와 위팔에 닿음(틈 0px · `docs/handoff/img/hero/hero2_g1_hair_arm_mask.png` 빨강=머리·초록=팔) ⇒ 이대로 뜨면 리그가 머리를 팔에 다시 묶는다 |
+| 1-1b 그림 | | | G1 |
 | 1-2 3D | | | G2 |
 | 1-3 리그 ★ | | | G3 |
 | 1-4 클립 6 | | | G4 |
