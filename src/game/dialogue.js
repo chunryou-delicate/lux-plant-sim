@@ -1511,6 +1511,14 @@ export const SCRIPTS = {
   moveNoCutting: [
     { who: 'moni', face: 'teach', text: '무늬 삽수 하나는 잘라 들고 가자. 원룸에선 모주가 잎을 천천히 내.' }
   ],
+  /* ★ 2026-10-10 [plan] D27 갈래 셋 — **이사 «전» 마지막 무늬 삽수를 팔려 할 때** 한 줄(사건 `sell_keep_one` · [core] 팔기 확인 · D22 결 · 막지 않음).
+     까닭([core] guide g·1-9): 이사 날 9/10 판이 «무늬 삽수 0 · 자를 무늬 마디 0 · 무늬 모주 있음» — 이사 둘째 축(무늬를 판 적)을 채우느라 다 팔았고,
+       이사 날엔 모주가 잎 예산 문에 막혀 move_no_cutting 이 «할 수 없는 일»이 되어 안 섰다. 말은 «팔 때» 서야 닿는다.
+     때([core]): 반지하(!movedOut) · 이미 무늬를 판 적 있음(이사 둘째 축이 섰다 — 첫 판매는 sell_varie 가 가르치는 일이라 안 말린다) ·
+       이 판매로 «안 죽은 무늬 삽수»가 0 이 됨. D22 sellLastVarie(마지막 무늬 «원천»)와 같은 날 겹치면 D22 가 말한다(더 센 말). 수는 안 말한다. */
+  sellKeepOne: [
+    { who: 'moni', face: 'teach', text: '이건 남겨 두자. 이사할 때 들고 가면 원룸에서 바로 늘릴 수 있어.' }
+  ],
   /* ★★ 2026-10-09 [plan] D31(총괄 · 박사님 «재미있게») — **이사비를 내면 첫 달 월세가 모자란 이사 «전»의 한 줄.** D27 과 같은 결: 막지 않고 말린다.
      지금은 거의 모든 판이 이사 다음 날 0원 밑 → 구호금 50만으로 원룸을 시작한다 — 이사의 «해냈다»가 «구호금»으로 시작했다.
      ⚠ 수는 안 말한다(이사비·월세는 되묻기 창이 말한다). 사건 `move_low_cash` — [core] 가 이사 되묻기 창을 열 때
@@ -2305,7 +2313,7 @@ export const REPEATABLE = new Set(
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
-             'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'moveNoCutting', 'hungryTalk', 'hungryTalk2',
+             'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'moveNoCutting', 'sellKeepOne', 'hungryTalk', 'hungryTalk2',
              'nudgeRadishOffer', 'nudgeRadishPush', 'statusHarvest10', 'statusHarvest30',
              'nudgeSettleOffer', 'nudgeSettlePush', 'nudgeRecutOffer', 'nudgeRecutPush',
              'statusNeighborAsk', 'statusLandlordPlant',
@@ -2383,6 +2391,8 @@ export const EVENT_SCRIPT = Object.freeze({
   furniture_shop_open: 'furnitureShopOpen',
   /* ★ 2026-10-10 [plan] D27 갈래 둘 — 무늬 모주만 있고 무늬 삽수 0 으로 이사하려 할 때(§moveNoCutting) */
   move_no_cutting:     'moveNoCutting',
+  /* ★ 2026-10-10 [plan] D27 갈래 셋 — 이사 전 마지막 무늬 삽수 팔기(§sellKeepOne) */
+  sell_keep_one:       'sellKeepOne',
   /* ★ 2026-10-10 [plan] D55 — 키운 그루가 칸보다 크게 자람(§cutTooWide) */
   cut_too_wide:        'cutTooWide',
   /* ★ 2026-10-10 [plan] D59 — 식물 가게(§jobStart). 손님 이름이 드는 줄은 기록 줄(core) */
@@ -2720,6 +2730,8 @@ export function scriptsForEvents(events = [], S = null) {
   if (out.includes('endingReady') || out.includes('endingReadyAgain')) { const q = out.indexOf('questDoneOneroomHomeFund'); if (q >= 0) out.splice(q, 1); }
   /* ★ 2026-10-08 [plan] 혹 난 날은 경고(w_node)도 같이 난다 — 같은 순간이라 «혹이 났어» 한 벌만 */
   if (out.includes('cuttingNode')) { const w = out.indexOf('cuttingWarn'); if (w >= 0) out.splice(w, 1); }
+  /* ★ 2026-10-10 [plan] — 마지막 무늬 «원천»(D22)과 마지막 무늬 «삽수»(D27 갈래 셋)가 한 손에 서면 D22 가 말한다(더 센 말) */
+  if (out.includes('sellLastVarie') && out.includes('sellKeepOne')) out.splice(out.indexOf('sellKeepOne'), 1);
   /* ★ 2026-10-10 [plan] D59 — 이정표와 그 퀘스트 끝이 같은 턴이면 퀘스트 끝 대사만(같은 말 두 번 · «단골이 셋이야»). 퀘스트를 이미 끝낸 판(두 번째 서른 등)은 이정표가 말한다 */
   for (const [ms, qd] of [['shopRegulars3', 'questDoneShopRegulars3'], ['shopSign', 'questDoneShopSign'], ['shopTown', 'questDoneShopTown']])
     if (out.includes(ms) && out.includes(qd)) out.splice(out.indexOf(ms), 1);
