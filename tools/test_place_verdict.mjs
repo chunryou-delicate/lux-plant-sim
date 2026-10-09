@@ -57,7 +57,7 @@ const engOf = id => { console.warn = () => {}; const e = createLightEngine({ hou
   const vN = e.placeVerdict(eta), vV = e.placeVerdict(eta, { variegated: true });
   ok(`무늬면 문턱이 1.4배(${vN.th} → ${vV.th})`, Math.abs(vV.th - vN.th * 1.4) < 0.01, JSON.stringify([vN.th, vV.th]));
   ok('무늬 에타제르 → 맨 윗단에 집게등을 물리면 넘는다(clipTop · 여름 ≥ 무늬 문턱)', !!vV.clipTop && vV.clipTop.s >= vV.th, JSON.stringify(vV.clipTop));
-  ok('무늬 아니면 clipTop 을 안 낸다', vN.clipTop === null, JSON.stringify(vN.clipTop));
+  ok('원룸은 무늬 아니어도 못 넘는 자리면 clipTop(D53 · 에타제르 C)', vN.key === 'C' && !!vN.clipTop && vN.clipTop.s >= vN.th, JSON.stringify({ key: vN.key, clipTop: vN.clipTop }));
   console.log('    무늬 에타제르:', JSON.stringify({ key: vV.key, values: vV.values, clipTop: vV.clipTop }));
   /* 화분 한 점(가운데단)을 가르되 집게등 꼬리는 그 가구 맨 윗단으로(topOf) */
   const ys = [...new Set(eta.map(p => +p.y.toFixed(3)))].sort((a, b) => a - b), mid = eta.filter(p => +p.y.toFixed(3) === ys[1]);
@@ -73,6 +73,8 @@ const engOf = id => { console.warn = () => {}; const e = createLightEngine({ hou
   const etaB = r.slots.filter(s => /etagere/.test(s.slotId)).map(s => ({ x: s.x, y: s.y, z: s.z, occIdx: s.occIdx }));
   const vb = e.placeVerdict(etaB, { novice: true, variegated: true });
   ok('반지하 무늬 에타제르 — clipTop 은 넘을 때만 낸다(초보 판 · 겨울 말 없음)', vb.clipTop === null || (vb.clipTop.s >= vb.th && vb.clipTop.winterToo === false), JSON.stringify(vb));
+  const vb0 = e.placeVerdict(etaB, { novice: true });
+  ok('반지하 무늬 아닌 몬스테라 — 집게 꼬리를 안 낸다(D53 · 첫 방은 «창턱 + 등» 한 길)', vb0.key === 'none' && vb0.clipTop === null, JSON.stringify(vb0));
   console.log('    반지하 무늬 에타제르:', JSON.stringify({ key: vb.key, values: vb.values, clipTop: vb.clipTop }));
 }
 console.log(`\nplace_verdict: ${fail ? 'FAIL' : 'PASS'} (${pass}/${pass + fail})`);

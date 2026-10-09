@@ -486,6 +486,7 @@ export function createLightEngine(data) {
     if (novice) {
       const v0 = best('summer', 0), vN = best('summer', nAll);
       const key = v0 >= th ? 'grow' : vN >= th ? 'lamp' : 'none';
+      /* ★ 총괄 D53 — 반지하(첫 방 · «창턱 + 등» 한 길로 배우는 곳)에서는 무늬일 때만 집게 꼬리 */
       return { key, clipTop: variegated && key !== 'grow' ? clipTopOf() : null, variegated: !!variegated, th, lamps: nAll, values: { v0: r2(v0), vN: r2(vN) } };
     }
     const s0 = best('summer', 0), sN = best('summer', nAll), w0 = best('winter', 0), wN = best('winter', nAll);
@@ -512,7 +513,10 @@ export function createLightEngine(data) {
         break;
       }
     }
-    const clipTop = variegated && key !== 'A' ? clipTopOf() : null;   // 무늬인데 겨울 등 없이까지는 못 넘으면
+    /* ★ 총괄 D53 — 원룸(«자리 고르기»를 배우는 방)은 무늬든 아니든 «못 넘는 자리»면 집게 꼬리:
+         C·D(여름 등 없이 못 넘음) → 집게를 물려 여름에 넘으면 · Bp(겨울엔 등을 켜도 모자람) → 집게로 겨울까지 넘을 때만 · A·B 는 이미 넘는다 */
+    let clipTop = (key === 'C' || key === 'D' || key === 'Bp') ? clipTopOf() : null;
+    if (clipTop && key === 'Bp' && !clipTop.winterToo) clipTop = null;
     return { key, wnShort: key === 'C' && wN < th, higher, clipTop, variegated: !!variegated, th, lamps: nAll, values: { s0: r2(s0), sN: r2(sN), w0: r2(w0), wN: r2(wN) } };
   }
 
