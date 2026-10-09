@@ -8,6 +8,7 @@
      node tools/probe_branches.mjs --persona guide,lazy --seeds 1-10 --jobs 6
      node tools/probe_branches.mjs --targets 5000000,10000000 --days 660
      node tools/probe_branches.mjs --noprologue           (잎 2·3 무늬 보장 끔 — 게임은 켠다 · 견주기용)
+     node tools/probe_branches.mjs --rent 275000          (D8 — 이사하는 순간 원룸 월세 R 을 «짝»으로 꽂는다 · 없으면 게임 그대로(원룸 월세 미정 = 반지하 월세))
 
    ══ 무엇을 하나 ═══════════════════════════════════════════════════════════
    브라우저 없이(tools/lib/byeot_harness · 진짜 생장 수) 반지하 → 이사 → 원룸 → 엔딩을 «사람 성격 손잡이»대로 하루씩 굴린다.
@@ -100,7 +101,8 @@ export async function play(name, seed, opt = {}) {
                 reach: Object.fromEntries(targets.map(t => [t, null])), reachNet: Object.fromEntries(targets.map(t => [t, null])),
                 cuts: { banjiha: 0, oneroom: 0, fromCutting: 0 }, cutWhy: { banjiha: {}, oneroom: {} }, recut: { tried: 0, ok: 0, why: {} },
                 stuck: [], questDone: {}, questOpen: {}, sold: { varie: 0, plain: 0, pot: 0 }, cashAt: {},
-                varieDay: null, moneyDay: null, leafAt: {}, cashDaily: [], rootBands: {} };
+                varieDay: null, moneyDay: null, leafAt: {}, cashDaily: [], rootBands: {},
+                rentWon: null, minCashAfterMove: null, firstBrokeAfterMove: null };   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
   /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
   const qOpen = new Map();          // id → { since, run }
   const seenRoot = new Set();       // 뿌리내림을 이미 센 삽수 id
@@ -246,6 +248,13 @@ export async function play(name, seed, opt = {}) {
           try {
             moveIntoOneroom(S, io);
             out.moveDay = S.day;
+            /* ★ 2026-10-09 D8 — 원룸 월세 후보를 «짝»으로 꽂는다(probe_oneroom_econ §pairRules 그대로 · 월세 밖 하루치는 그대로):
+                 oneroomRentWon = R · dailySpendWon = 반지하 dailySpend + (R − 반지하 월세)/주기 */
+            if (Number.isFinite(opt.rent)) {
+              const base = ts.rules, per = base.rentPeriodDays || 30;
+              ts.rules = Object.freeze({ ...base, oneroomRentWon: opt.rent, dailySpendWon: Math.round(base.dailySpendWon + (opt.rent - base.rentWon) / per) });
+            }
+            out.rentWon = Number.isFinite(opt.rent) ? opt.rent : null;
             if (pot0(S)) { try { setPotSlot(S, pot0(S), ONE_SILL, light.room.slots); } catch { } }
             S.lamps.count = ts.lamp.owned || 0; if (ts.lamp) ts.lamp.placed = S.lamps.count; light.clearCache();
           } catch (e) { out.moveErr = (e && e.message) || String(e); }
@@ -275,6 +284,10 @@ export async function play(name, seed, opt = {}) {
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
     out.cashDaily.push(cash);
+    if (ts.movedOut) {
+      if (out.minCashAfterMove == null || cash < out.minCashAfterMove) out.minCashAfterMove = cash;
+      if (out.firstBrokeAfterMove == null && (ts.bankrupt || cash <= 0)) out.firstBrokeAfterMove = S.day;
+    }
     for (const c of cuttingsOf(S)) {
       if (!c || !c.varieFromCut || !Number.isFinite(c.rootedOnDay) || seenRoot.has(c.id)) continue;
       seenRoot.add(c.id); const k = `${ts.movedOut ? 'oneroom' : 'banjiha'}:${c.varieLightBand || '?'}`; out.rootBands[k] = (out.rootBands[k] || 0) + 1;
@@ -306,7 +319,9 @@ const TARGETS = list(arg('targets', '5000000,10000000')).map(Number);
 const DAYS = Number(arg('days', 660));
 const JOBS = Number(arg('jobs', 4));
 const SELF = fileURLToPath(import.meta.url);
-const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false) })));
+const RENT = arg('rent', null) == null ? null : Number(arg('rent'));
+const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false),
+                                                         ...(Number.isFinite(RENT) ? { rent: RENT } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {
@@ -351,6 +366,11 @@ for (const name of NAMES) {
     console.log(`  ◇ ${won(t)} 현금 — ${hit.length}/${N} · 날 중앙 ${med(d) ?? '—'} · 90% ${p90(d) ?? '—'} · 이사 뒤 중앙 ${med(after) ?? '—'} · 90% ${p90(after) ?? '—'}`);
   }
   console.log('  엔딩 닿은 날(현금 · 다 팔면) — ' + TARGETS.map(t => `${won(t)}: ${rs.filter(r => (r.reach || {})[t] != null).length}/${N} 중앙 ${med(rs.map(r => (r.reach || {})[t]))} · 다팔면 ${rs.filter(r => (r.reachNet || {})[t] != null).length}/${N} 중앙 ${med(rs.map(r => (r.reachNet || {})[t]))}`).join(' | '));
+  /* D8 — 이사 뒤 살림(월세 후보 판정용): 이사 뒤 첫 0원 · 굶음 · 이사 뒤 최저 지갑 중앙 */
+  { const mv = rs.filter(r => r.moveDay != null);
+    if (mv.length) console.log(`  ▣ 이사 뒤 — 월세 ${won(mv[0].rentWon ?? null)} · 첫 0원 ${mv.filter(r => r.firstBrokeAfterMove != null).length}/${mv.length}` +
+                               ` · 굶음 ${mv.filter(r => r.starvedDay != null).length}/${mv.length} · 최저 지갑 중앙 ${won(med(mv.map(r => r.minCashAfterMove)))}` +
+                               ` · 제일 낮은 판 ${won(Math.min(...mv.map(r => r.minCashAfterMove ?? Infinity)))}`); }
   const stay = rs.filter(r => r.moveDay == null && r.starvedDay == null);
   if (stay.length) console.log(`  이사 못 한 판 ${stay.length} — 무늬 잎을 낸 적 없음 ${stay.filter(r => r.varieDay == null).length} · 이사 자금 모자람 ${stay.filter(r => r.moneyDay == null).length}` +
                                ` · (이사한 판의 무늬 첫날 중앙 ${med(rs.filter(r => r.moveDay != null).map(r => r.varieDay))}일)`);
