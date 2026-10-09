@@ -1668,6 +1668,15 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'apron',    text: '문 앞에 작은 주문판을 걸었다.' },
     { who: 'moni',   face: 'teach',    text: '손님이 원하는 걸 적어 두고 가. 기한 안에 맞추면 돼.' }
   ],
+  /* ★ 2026-10-10 [plan] 총괄 (가) «가게는 새 두 종과 함께» — 가게 첫날, 가진 새 종(PP · AL)이 0 이면(사건 `shop_no_species` · [core]).
+     까닭([core] 판): 몬스테라만 가진 가게는 한 해 안에 0원(9/10) — 한 해 공급이 삽수 3~4개라 팔 게 모자라다. 값은 안 바꾸고 말로 권한다.
+     거짓 없는 말만: 알로카시아 구근은 원룸 이사 60일 뒤부터 상점에 늘 있다(species §speciesShopOpen) — 그래서 PP(교환을 거절한 판만 상점) 말고 구근을 권한다.
+     «손님이 와»는 안 쓴다 — 종이 늘면 손님이 느는 규칙은 없다(주문이 고루 붙고 팔 것이 는다). 수는 안 말한다. */
+  shopNoSpecies: [
+    { who: 'moni',   face: 'teach', text: '몬스테라만으론 팔 게 모자라. 가게엔 여러 종이 있어야 해.' },
+    { who: 'moni',   face: 'bulb',  text: '알로카시아 구근 하나 들여 놓자. 상점에 있어.' },
+    { who: 'jachwi', face: 'think', text: '무늬일지는 싹이 나야 알지.' }
+  ],
   shopNewRegular: [
     { who: 'moni',   face: 'proud',    text: '단골이 하나 늘었어.' }
   ],
@@ -2423,6 +2432,7 @@ export const EVENT_SCRIPT = Object.freeze({
   /* ★ 2026-10-10 [plan] D59 — 식물 가게(§jobStart). 손님 이름이 드는 줄은 기록 줄(core) */
   job_start:           'jobStart',
   shop_open:           'shopOpen',
+  shop_no_species:     'shopNoSpecies',
   pp_trade_done:       'ppTradeDone',
   pp_trade_declined:   'ppTradeDeclined',
   pp_pink_warn:        'ppPinkWarn',
@@ -2624,7 +2634,7 @@ const EVENT_ORDER = [
   'pp_trade_offer', 'pp_trade_declined', 'pp_trade_done',
   'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake', 'cut_too_wide',
   /* ★ 2026-10-10 [plan] D59 — 진로 첫날은 «이제부턴 진짜야» → 주문판 → (퀘스트 열림). 납품 «단골 하나 늘었어»는 퀘스트 끝(«단골 셋» 등)보다 앞 */
-  'job_start', 'shop_open', 'order_done', 'regulars_milestone',
+  'job_start', 'shop_open', 'shop_no_species', 'order_done', 'regulars_milestone',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
      한 판에서 「①을 끝냈다 → 그래서 ②가 열린다」가 같은 날 난다(`siru5_cycle5` 의 여는
      조건이 `crop_mix` 완료라서). 순서가 뒤집히면 **열리고 나서 끝난 것을 축하한다.**
