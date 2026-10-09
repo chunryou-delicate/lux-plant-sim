@@ -37,7 +37,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf } from './lib/byeot_harness.mjs';
+import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf, setGrowthTuningPatch } from './lib/byeot_harness.mjs';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote } from '../src/game/first_play.js';
@@ -45,7 +45,7 @@ import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, mark
          SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
 import { canMoveOut, varieView, buyLamp } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow, cuttingsOf, cutBlockedReason,
-         cuttingStatsNow, cuttableNodesOfCutting, installVarieBoost } from '../src/game/propagation.js';
+         cuttingStatsNow, cuttableNodesOfCutting, installVarieBoost, setCuttingAt } from '../src/game/propagation.js';
 import { lightOptsOf } from '../src/game/loop.js';
 import { moveIntoOneroom } from '../src/game/oneroom.js';
 import { endingRulesFrom, endingProgress } from '../src/game/ending.js';
@@ -74,7 +74,10 @@ export const PERSONAS = {
   nocut:   { ko: '안 자름',            lamps: 1, siruCap: 5,  cut: 'none',  sellMother: 'never', move: 'asap',         lazy: 0, follow: true },
   big:     { ko: '크게(시루 16 · 등 2)', lamps: 2, siruCap: 16, cut: 'asap',  sellMother: 'never', move: 'asap',         lazy: 0, follow: true },
   /* ★ 2026-10-09 (총괄 11:12 ①) — 원룸에서 처음 뿌리낸 무늬 삽수 하나는 «안 팔고» 키워(혹 → 흙) 거기서 다시 자른다 · 등 1 · 오늘 가장 밝은 빈 창턱 */
-  grower:  { ko: '늘리는 사람(삽수 하나 남겨 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, grow: true }
+  grower:  { ko: '늘리는 사람(삽수 하나 남겨 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, grow: true },
+  /* ★ 2026-10-09 (총괄 D40 표) — «D41 안내대로»: 이사 때 무늬 삽수 하나를 들고 가고(D27 말림을 따름 · 삽수 들고 이사와 같은 손) ·
+       원룸에서 그 그루(들고 간 것 · 없으면 처음 뿌리낸 무늬 삽수)를 팔지 않고 키워 거기서 다시 자른다 · 나머지는 안내대로 */
+  guide41: { ko: 'D41 안내대로(하나 들고 가 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true }
 };
 const DARK = 'banjiha-dresser:1', SILL = 'banjiha-sill:0', ONE_SILL = 'oneroom-sill:0', ONE_BRIGHT = ['oneroom-sill:1', 'oneroom-sill:2', 'oneroom-sill:3'];
 const STUCK_DAYS = 14;
@@ -96,7 +99,8 @@ export async function play(name, seed, opt = {}) {
   if (!P) throw new Error('모르는 사람: ' + name);
   /* ★ 2026-10-09 D30 전/후 — 이 판(자식 프로세스)에서만 등급 표를 바꿔 끼운다 */
   if (opt.grades) installVarieGrades(JSON.parse(fs.readFileSync(opt.grades, 'utf8')));
-  if (Number.isFinite(opt.boost)) installVarieBoost({ pre_mature_mult: opt.boost, cap: 0.9 });   /* D40 전/후(삽수 쪽만 · 모주는 plant_grow 가 growth_tuning 을 읽는다) */
+  /* D40 전/후 — 삽수(코어 propagation)와 모주(plant_grow · 하네스가 생장 정본 칸을 덮어씀) 둘 다 같은 배율 */
+  if (Number.isFinite(opt.boost)) { const vb = { pre_mature_mult: opt.boost, cap: 0.9 }; installVarieBoost(vb); setGrowthTuningPatch({ varie_boost: vb }); }
   const targets = opt.targets || [5_000_000, 10_000_000];
   const maxDays = opt.days || 660;
   const light = makeSwitchingLight('banjiha');
@@ -245,6 +249,17 @@ export async function play(name, seed, opt = {}) {
         }
       }
     }
+    if (!rest && ts.movedOut) {
+      /* ★ 2026-10-09 — **가방 삽수(그릇에 담겼는데 자리가 없는 것)를 놓는다.** 이사가 물건 자리를 다 비우고(oneroom §clearPlacements)
+           삽수는 회수 대상이 아니라(자리 없는 것은 건너뜀) 들고 간 삽수가 가방에 남는다 — 가방 속 삽수는 하루가 안 간다(D29).
+           게임은 «가방에 든 삽수는 하루가 안 가. 방에 놓아 줘.»로 알린다 ⇒ 사람은 놓는다(가장 밝은 빈 창턱).
+           ⚠ 예전 갈래 판엔 이 손이 없어 들고 간 삽수가 이사 뒤 영영 멈췄다(«D41 안내대로» 7/10 이 원룸 ② 에 못 감) */
+      for (const c of [...cuttingsOf(S)]) {
+        if (!c || c.status === 'dead' || c.status === 'bag' || !c.method || c.at || c.slotId) continue;
+        const slot = brightestFree(cuttingsOf(S).filter(x => x && x.status !== 'dead'));
+        try { setCuttingAt(S, c, atOf(light, slot), { slots: light.room.slots, size: light.room.size }); out.placedFromBag = (out.placedFromBag || 0) + 1; } catch { }
+      }
+    }
     if (!rest) {
       /* ── 원룸: 흙에 자리 잡은 삽수에서 다시 자르기(cutBlockedReason 주석: «삽수에서 다시 자르기는 이 문을 안 탄다») ── */
       if (ts.movedOut && P.cut !== 'none') {
@@ -272,7 +287,8 @@ export async function play(name, seed, opt = {}) {
       if (growNow && ts.movedOut) {
         const k = out.keeperId && cuttingsOf(S).find(c => c && c.id === out.keeperId);
         if (!k || k.status === 'dead') {
-          const nk = cuttingsOf(S).find(c => c && c.varieFromCut && c.status !== 'dead' && c.status !== 'rooting' && Number.isFinite(c.rootedOnDay) && c.rootedOnDay >= (out.moveDay || 0) && !listingFor(S, c));
+          const nk = cuttingsOf(S).find(c => c && c.varieFromCut && c.status !== 'dead' && c.status !== 'rooting' && Number.isFinite(c.rootedOnDay) &&
+                                             (P.carryKeep || c.rootedOnDay >= (out.moveDay || 0)) && !listingFor(S, c));   /* D41 안내대로는 들고 간 것도 */
           out.keeperId = nk ? nk.id : null;
           if (nk) out.keepers = (out.keepers || 0) + 1;
         }
@@ -359,8 +375,9 @@ export async function play(name, seed, opt = {}) {
       if (ts.movedOut && out.moveDay != null) {
         const i = Math.max(0, Math.floor((S.day - out.moveDay - 1) / 30));
         out.leafMonths = out.leafMonths || [];
-        while (out.leafMonths.length <= i) out.leafMonths.push({ mLeaves: 0, mVarie: 0, cLeaves: 0, cVarie: 0 });
+        while (out.leafMonths.length <= i) out.leafMonths.push({ mLeaves: 0, mVarie: 0, cLeaves: 0, cVarie: 0, grown: 0 });
         const b = out.leafMonths[i];
+        b.grown = cuttingsOf(S).filter(c => c && c.status === 'established' && c.varieFromCut && !listingFor(S, c)).length;   /* 달말 키운 무늬 그루 수 */
         for (const r of fresh) { b.mLeaves++; if (r.varie) b.mVarie++; }
         for (const e of ((turn && turn.cuttings && turn.cuttings.events) || [])) if (e && e.id === 'cutting_leaf') { b.cLeaves++; if (e.variegated) b.cVarie++; }
       } }

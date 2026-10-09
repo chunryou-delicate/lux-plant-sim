@@ -47,6 +47,9 @@ function makeThree() {
   return new Proxy({ Vector3: V3, Vector2: V3 }, handler);
 }
 let G = null;
+/* ★ 2026-10-09 D40 — 재는 판만 생장 정본의 칸을 덮어쓴다(예: { varie_boost: {...} } · 모주 plant_grow 쪽 배율). 첫 makeGrowth 전에 불러야 먹는다(G 는 프로세스에 한 벌) */
+let TUNING_PATCH = null;
+export function setGrowthTuningPatch(p) { if (G) throw new Error('setGrowthTuningPatch — 생장 창이 이미 섰다(첫 makeGrowth 전에 부를 것)'); TUNING_PATCH = p || null; }
 async function growthCtx() {
   if (G) return G;
   const html = fs.readFileSync(path.join(ROOT, 'plant_grow.html'), 'utf8');
@@ -54,7 +57,8 @@ async function growthCtx() {
   const main = blocks[blocks.length - 1];
   const src = main.replace(/\n\s*init\(\);\s*updateCam\(\);\s*$/, '\n/* init() 제거(헤드리스) */\n');
   if (src === main) throw new Error('plant_grow.html 의 init() 호출부를 못 찾았습니다');
-  const tuning = fs.readFileSync(path.join(ROOT, 'data', 'growth_tuning.json'), 'utf8');
+  const tuningRaw = fs.readFileSync(path.join(ROOT, 'data', 'growth_tuning.json'), 'utf8');
+  const tuning = TUNING_PATCH ? JSON.stringify({ ...JSON.parse(tuningRaw), ...TUNING_PATCH }) : tuningRaw;
   const el = () => ({ value: '', textContent: '', checked: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {} },
     appendChild() {}, addEventListener() {}, removeEventListener() {}, setAttribute() {}, getAttribute() { return null; },
     querySelector() { return null; }, querySelectorAll() { return []; }, insertAdjacentHTML() {}, focus() {}, remove() {} });
