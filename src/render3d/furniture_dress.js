@@ -98,6 +98,7 @@ const FURN = {
   /* 10-10 Higgsfield 3D(Tripo standard · 가장 긴 변을 1.0 으로 낸다 — yaw·축척은 GLB 마다 잼) */
   bench:               { file: 'furniture/bench.glb',               yaw: 0, lazy: true },
   shop_display:        { file: 'furniture/shop_display.glb',        yaw: -90, lazy: true, tiers: true },  // GLB 가 Z 로 길다(0.62 × 1.0) · +90 이면 앞뒤가 뒤집힌다(앞단 +0.49m)
+  order_board:         { file: 'furniture/order_board.glb',         yaw: -90, lazy: true, box: true },    // 가게 주문판(벽 걸이 · 걸이 자리 only) — GLB 가 X 로 얇다(0.16 × 1.0) · +90 이면 뒷면이 방을 본다
   /* 식물등 — 몸통만 옷(LED 는 코드 것 · dressLamp). lazy — 부팅 미리 받기를 안 늘린다(방이 뜬 뒤 입는다) */
   /* 러그 — GLB 가 아니라 «윗면 그림»(topTex · 10-10 · Higgsfield 위에서 본 그림 · 둘레 흰 바탕은 투명으로 · tools/tex_rug_cutout.py).
        1.2cm 깔개라 3D 를 뽑으면 눌려 무늬만 남는다 — 처음부터 무늬만. 코드 러그(대리)는 숨기고 발자국 크기 판 하나를 윗면에 깐다 */
@@ -182,6 +183,11 @@ const PROPS = {
     { id: 'trash',   file: 'props/trash.glb',       x: -2.21, z: 1.53,  yaw: 0,   h: 0.40, preset: 'trash' },
     { id: 'backpack',file: 'props/backpack.glb',    x: -0.72, z: 1.64,  yaw: 90,  h: 0.36, preset: 'backpack' },
     { id: 'rack',    file: 'props/drying_rack.glb', x: -1.10, z: -1.42, yaw: 90,  h: 0.72, preset: 'drying_rack' }
+  ],
+  /* ★ 2026-10-10 [house] 가게 입간판(plan D59 단골 10명 보상) — flag 가 켜질 때만(view.setShopSign). 투룸은 5층이라 창밖이 아니라
+       가게 방 안 문(앞벽 x −2.4) 오른쪽 옆 바닥 — 앞벽은 기본 카메라에서 깎여 그 자리가 보인다 · 문 앞 길(몸 반지름 0.38)은 비켰다 */
+  tworoom: [
+    { id: 'shop_sign', file: 'furniture/shop_sign_aframe.glb', x: -1.62, z: 1.98, yaw: 0, h: 0.85, flag: 'shopSign' }
   ]
 };
 
@@ -472,6 +478,8 @@ export function createFurnitureDress(opt = {}) {
     dress.add(mid);
     dress.scale.set(sx, sy, sz);
     dress.position.set(F.x0 + F.w / 2, 0, F.z0 + F.d / 2);   // 발자국이면 0,0
+    /* 벽 걸이(10-10)는 빌더 원점이 물건 가운데다 — 옷 밑을 대리 상자 밑(−h/2)에 맞춘다(바닥 가구는 0 그대로) */
+    if (g.userData.mount === 'wall-hang') { g.updateWorldMatrix(true, false); dress.position.y = pb.min.y - g.getWorldPosition(new T.Vector3()).y; }
     markVisual(dress);
     g.add(dress);
 
@@ -546,6 +554,13 @@ export function createFurnitureDress(opt = {}) {
      빌더가 artFace 로 표시한 면의 재질만 바꾼다(그림을 받은 뒤 · 러그와 같은 받기 규약). 옛 재질은 origMat 에 —
      벗기면(undress) 돌아온다. 입었다는 표지는 빈 v2dress 묶음 하나(다시 입히지 않게 · 벗길 때 같이 걷힌다) */
   let season = 'spring';
+  const flags = new Set();                 // 깃발 소품(가게 입간판 shopSign · 10-10)
+  function setFlag(name, on1) {
+    const had = flags.has(name); if (on1) flags.add(name); else flags.delete(name);
+    if (had === !!on1) return false;
+    if (cur.parent && cur.built) { props(cur.parent, cur.built, cur.roomId); onChange('props'); }
+    return true;
+  }
   const faceFileOf = spec => spec.faceTexSeason ? (spec.faceTexSeason[season] || spec.faceTexSeason.spring) : spec.faceTex;
   function dressFaceTex(g, preset, spec) {
     const file = faceFileOf(spec);
@@ -992,6 +1007,7 @@ export function createFurnitureDress(opt = {}) {
     const realPresets = new Set(((cur.roomDef && cur.roomDef.furniture) || []).map(f => f && f.preset));
     for (const p of PROPS[roomId]) {
       if (p.preset && realPresets.has(p.preset)) continue;    // 진짜 가구가 있다 — 그 가구가 옷을 입는다
+      if (p.flag && !flags.has(p.flag)) continue;               // 깃발 소품(가게 입간판) — 켜질 때만
       let made = null;
       if (p.rug) made = makeRug(p);
       else if (tpl.has(p.file)) made = makeProp(p);
@@ -1090,7 +1106,7 @@ export function createFurnitureDress(opt = {}) {
 
   const api = {
     get enabled() { return on; },
-    furnReady, preload, dress, props, yieldTo, blobRects, setEnabled, setSeason,   // setSeason: 달력 쪽(10-10)
+    furnReady, preload, dress, props, yieldTo, blobRects, setEnabled, setSeason, setFlag,   // setSeason: 달력 쪽 · setFlag: 깃발 소품(10-10)
     hasDress: preset => !!specOf(preset) || !!DECOR['preset:' + preset],   // 이 프리셋에 v2 그림(옷·색 변형·위 소품)이 있나 — 가구점 그림 자(tools/shot_furn_thumbs)가 묻는다
     set: setEnabled,
     hold: setHeld,

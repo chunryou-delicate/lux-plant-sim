@@ -10070,6 +10070,8 @@ export async function createRoomView(canvas, opts = {}) {
     hangSpots() { return hangSpotList(); },
     hangPose(spotId, preset) { try { return hangPoseFor(spotId, preset); } catch (e) { throw fail(e); } },
     setSeason(s) { const ch = furnDress.setSeason(s); if (ch) needsRender = true; return ch; },
+    /* 가게 입간판(plan D59 단골 10명) — 켜면 투룸 문 옆에 선다(그림뿐 · 부딪힘·빛 없음) */
+    setShopSign(on) { const ch = furnDress.setFlag('shopSign', !!on); if (ch) needsRender = true; return ch; },
     previewFurnitureAt(uid, pos) { try { return previewFurnitureAt(uid, pos); } catch (e) { throw fail(e); } },
     clearFurniturePreview() { disposeFurnGhost(); },
     /* 실제로 옮긴다 — 방을 다시 조립하고 화분을 규칙대로 되돌린다(위 ⑧-b 주석).
