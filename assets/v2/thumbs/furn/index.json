@@ -12,10 +12,6 @@
   "file": "assets/v2/thumbs/furn/desk.webp",
   "v2": true
  },
- "desk_wide": {
-  "file": "assets/v2/thumbs/furn/desk_wide.webp",
-  "v2": false
- },
  "chair": {
   "file": "assets/v2/thumbs/furn/chair.webp",
   "v2": true
@@ -72,42 +68,6 @@
   "file": "assets/v2/thumbs/furn/rug_mint.webp",
   "v2": false
  },
- "lamp_floor": {
-  "file": "assets/v2/thumbs/furn/lamp_floor.webp",
-  "v2": false
- },
- "lamp_ceiling": {
-  "file": "assets/v2/thumbs/furn/lamp_ceiling.webp",
-  "v2": false
- },
- "fridge": {
-  "file": "assets/v2/thumbs/furn/fridge.webp",
-  "v2": false
- },
- "kitchen": {
-  "file": "assets/v2/thumbs/furn/kitchen.webp",
-  "v2": true
- },
- "tv": {
-  "file": "assets/v2/thumbs/furn/tv.webp",
-  "v2": false
- },
- "shelf_windowsill": {
-  "file": "assets/v2/thumbs/furn/shelf_windowsill.webp",
-  "v2": false
- },
- "shelf_sill_pot1": {
-  "file": "assets/v2/thumbs/furn/shelf_sill_pot1.webp",
-  "v2": false
- },
- "shelf_sill_pot4": {
-  "file": "assets/v2/thumbs/furn/shelf_sill_pot4.webp",
-  "v2": false
- },
- "shelf_wall_1tier": {
-  "file": "assets/v2/thumbs/furn/shelf_wall_1tier.webp",
-  "v2": false
- },
  "shelf_stool_1": {
   "file": "assets/v2/thumbs/furn/shelf_stool_1.webp",
   "v2": false
@@ -123,10 +83,6 @@
  "shelf_cart_3tier": {
   "file": "assets/v2/thumbs/furn/shelf_cart_3tier.webp",
   "v2": true
- },
- "shelf_growrack_2tier": {
-  "file": "assets/v2/thumbs/furn/shelf_growrack_2tier.webp",
-  "v2": false
  },
  "bed_single_maple": {
   "file": "assets/v2/thumbs/furn/bed_single_maple.webp",
@@ -222,10 +178,6 @@
   "file": "assets/v2/thumbs/furn/chair_arm_blush.webp",
   "v2": false
  },
- "chair_office": {
-  "file": "assets/v2/thumbs/furn/chair_office.webp",
-  "v2": false
- },
  "stool": {
   "file": "assets/v2/thumbs/furn/stool.webp",
   "v2": false
@@ -266,14 +218,6 @@
   "file": "assets/v2/thumbs/furn/mirror.webp",
   "v2": false
  },
- "desk_lamp": {
-  "file": "assets/v2/thumbs/furn/desk_lamp.webp",
-  "v2": false
- },
- "plant_tray_window": {
-  "file": "assets/v2/thumbs/furn/plant_tray_window.webp",
-  "v2": false
- },
  "shelf_corner_3tier": {
   "file": "assets/v2/thumbs/furn/shelf_corner_3tier.webp",
   "v2": true
@@ -286,44 +230,8 @@
   "file": "assets/v2/thumbs/furn/plant_pedestal.webp",
   "v2": true
  },
- "plant_grid_wall": {
-  "file": "assets/v2/thumbs/furn/plant_grid_wall.webp",
-  "v2": false
- },
- "plant_hanger": {
-  "file": "assets/v2/thumbs/furn/plant_hanger.webp",
-  "v2": false
- },
  "greenhouse_cabinet": {
   "file": "assets/v2/thumbs/furn/greenhouse_cabinet.webp",
-  "v2": true
- },
- "lamp_pendant": {
-  "file": "assets/v2/thumbs/furn/lamp_pendant.webp",
-  "v2": false
- },
- "lamp_pendant_cone": {
-  "file": "assets/v2/thumbs/furn/lamp_pendant_cone.webp",
-  "v2": false
- },
- "lamp_wall": {
-  "file": "assets/v2/thumbs/furn/lamp_wall.webp",
-  "v2": false
- },
- "string_light": {
-  "file": "assets/v2/thumbs/furn/string_light.webp",
-  "v2": false
- },
- "growlight_clip": {
-  "file": "assets/v2/thumbs/furn/growlight_clip.webp",
-  "v2": true
- },
- "growlight_bar": {
-  "file": "assets/v2/thumbs/furn/growlight_bar.webp",
-  "v2": false
- },
- "growlight_stand": {
-  "file": "assets/v2/thumbs/furn/growlight_stand.webp",
   "v2": true
  },
  "shoe_cabinet": {
@@ -357,14 +265,6 @@
  "laundry_basket": {
   "file": "assets/v2/thumbs/furn/laundry_basket.webp",
   "v2": true
- },
- "picture_frame": {
-  "file": "assets/v2/thumbs/furn/picture_frame.webp",
-  "v2": false
- },
- "wall_clock": {
-  "file": "assets/v2/thumbs/furn/wall_clock.webp",
-  "v2": false
  },
  "floor_cushion": {
   "file": "assets/v2/thumbs/furn/floor_cushion.webp",
@@ -483,51 +383,5 @@
  "stool_charcoal": {
   "file": "assets/v2/thumbs/furn/stool_charcoal.webp",
   "v2": false
- },
- "blackboard": {
-  "file": "assets/v2/thumbs/furn/blackboard.webp",
-  "v2": false
- },
- "blackboard_small": {
-  "file": "assets/v2/thumbs/furn/blackboard_small.webp",
-  "v2": false
- },
- "whiteboard": {
-  "file": "assets/v2/thumbs/furn/whiteboard.webp",
-  "v2": false
- },
- "bulletin_board": {
-  "file": "assets/v2/thumbs/furn/bulletin_board.webp",
-  "v2": false
- },
- "lectern": {
-  "file": "assets/v2/thumbs/furn/lectern.webp",
-  "v2": false
- },
- "desk_student_2": {
-  "file": "assets/v2/thumbs/furn/desk_student_2.webp",
-  "v2": false
- },
- "desk_student_1": {
-  "file": "assets/v2/thumbs/furn/desk_student_1.webp",
-  "v2": false
- },
- "desk_student_mint": {
-  "file": "assets/v2/thumbs/furn/desk_student_mint.webp",
-  "v2": false
- },
- "locker_6": {
-  "file": "assets/v2/thumbs/furn/locker_6.webp",
-  "v2": false
- },
- "locker_12": {
-  "file": "assets/v2/thumbs/furn/locker_12.webp",
-  "v2": false
- },
- "chair_student": {
-  "file": "assets/v2/thumbs/furn/chair_student.webp",
-  "v2": true,
-  "tint": "#c9d6da",
-  "base": "chair"
  }
 }

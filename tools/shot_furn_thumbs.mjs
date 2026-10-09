@@ -1,7 +1,7 @@
 /* ============================================================
    tools/shot_furn_thumbs.mjs — 가구점 줄 그림 ([house] · 2026-10-09 · 총괄 D39 B)
    ------------------------------------------------------------
-     BYEOT_URL=http://127.0.0.1:9330 node tools/shot_furn_thumbs.mjs [프리셋…]   (안 주면 가구점에 나오는 것 전부)
+     BYEOT_URL=http://127.0.0.1:9330 node tools/shot_furn_thumbs.mjs [프리셋…]   (안 주면 가구점 줄 전부 — furnitureCatalogList)
    왜: 가구점 줄이 글뿐이라 사기 전에 무엇이 오는지 안 보인다. 방에 놓였을 때와 **같은 모습**으로 찍는다 —
        v2 옷이 있으면 옷(색 변형은 몸 색까지), 없으면 코드 가구 그대로(게임이 그렇게 그린다).
    판: furniture_pastel buildFurniture → furniture_dress dress()(게임과 같은 판) · 평행 투영 · 앞-오른쪽 위(앞이 왼쪽 아래) · 투명 바탕
@@ -17,8 +17,10 @@ const SIZE = 192;
 const shop = await import(pathToFileURL(path.join(ROOT, 'src/game/shop.js')).href);
 const P = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/furniture_presets.json'), 'utf8')).presets;
 const arr = Array.isArray(P) ? P : Object.entries(P).map(([id, v]) => ({ id, ...v }));
-const IDS = process.argv.slice(2).length ? process.argv.slice(2)
-  : arr.filter(p => { const o = shop.furnitureShopOptsOf(p.id, p); return o && o.listed; }).map(p => p.id);
+/* ★ 가구점 줄 = shop.furnitureCatalogList(해금 뒤) 그대로 — «가구» 갈래만(가전·조명·붙박이·교실은 안 판다).
+     ⚠ 10-09 처음엔 listed 표지만 봐서 119점(가전 TV·주방 카운터까지)을 찍고 «가구점 전부»라 적었다 — 틀렸다(83줄). */
+const CATALOG = shop.furnitureCatalogList({ tutorial: { enabled: true, lamp: { unlocked: true } } }).map(it => it.preset);
+const IDS = process.argv.slice(2).length ? process.argv.slice(2) : CATALOG;
 fs.mkdirSync(OUT, { recursive: true });
 
 const page = await launch({ width: SIZE, height: SIZE, dpr: 1 });
@@ -84,7 +86,10 @@ try {
     index[id] = { file: `assets/v2/thumbs/furn/${id}.webp`, v2: r.v2, ...(r.tint ? { tint: r.tint, base: r.base } : {}) };
   }
 } finally { await page.close(); }
-const prev = fs.existsSync(path.join(OUT, 'index.json')) ? JSON.parse(fs.readFileSync(path.join(OUT, 'index.json'), 'utf8')) : {};
+const prev0 = fs.existsSync(path.join(OUT, 'index.json')) ? JSON.parse(fs.readFileSync(path.join(OUT, 'index.json'), 'utf8')) : {};
+/* 가구점에 없는 것은 목록·파일에서 걷는다(옛 판에 찍힌 가전·조명 등) */
+const prev = Object.fromEntries(Object.entries(prev0).filter(([k]) => k.startsWith('_') || CATALOG.includes(k)));
+for (const f of fs.readdirSync(OUT)) { const id = f.replace(/\.webp$/, ''); if (f.endsWith('.webp') && !CATALOG.includes(id) && !IDS.includes(id)) fs.unlinkSync(path.join(OUT, f)); }
 fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify({ _what: '가구점 줄 그림([house] tools/shot_furn_thumbs.mjs) · v2=옷 입은 모습 · 아니면 코드 가구', ...prev, ...index }, null, 1) + '\n');
 const n = Object.keys(index).length, nv = Object.values(index).filter(x => x.v2).length;
 console.log(`찍음 ${n} · v2 옷 ${nv} · 코드 ${n - nv} → ${path.relative(ROOT, OUT).replace(/\\/g, '/')}`);
