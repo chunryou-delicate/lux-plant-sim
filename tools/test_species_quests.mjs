@@ -7,7 +7,7 @@
    ⑥ 대사: 열림·끝 대사가 다 있고, 사건 갈림(교환 두 번째 · 구근 싹 무늬/민무늬)이 맞게 갈린다
    실행: node tools/test_species_quests.mjs */
 import assert from 'node:assert/strict';
-import { QUESTS, SPECIES_QUEST_IDS, emptySnapshot, stepQuests, questView } from '../src/game/quest.js';
+import { QUESTS, SPECIES_QUEST_IDS, SPECIES2_QUEST_IDS, emptySnapshot, stepQuests, questView } from '../src/game/quest.js';
 import { scriptsForEvents, SCRIPTS } from '../src/game/dialogue.js';
 
 let fails = 0;
@@ -72,8 +72,10 @@ check('⑤ 원룸 사슬이 열려 있는 동안 새 종 줄은 「지금 할 �
   const snap = { ...ONE, day: 200, ppPlants: 1, ppPinkHoldCuts: 0, alDormantNow: true, alWokeCount: 0 };
   walk(S, snap);
   const v = questView(S, snap);
-  const firstSpecies = QUESTS.findIndex(q => SPECIES_QUEST_IDS.includes(q.id));
-  const lastOther = QUESTS.length - 1 - [...QUESTS].reverse().findIndex(q => !SPECIES_QUEST_IDS.includes(q.id));
+  /* ★ 2026-10-23 D71 — 새 두 종 곁줄(SPECIES2)도 같은 «곁줄 끝 묶음»이다 */
+  const SIDE = [...SPECIES_QUEST_IDS, ...SPECIES2_QUEST_IDS];
+  const firstSpecies = QUESTS.findIndex(q => SIDE.includes(q.id));
+  const lastOther = QUESTS.length - 1 - [...QUESTS].reverse().findIndex(q => !SIDE.includes(q.id));
   assert.ok(firstSpecies > lastOther, '새 종 줄이 배열 끝 묶음이 아닙니다');
   if (v.current && SPECIES_QUEST_IDS.includes(v.current.id))
     assert.ok(v.open.every(id => SPECIES_QUEST_IDS.includes(id)), `다른 줄이 열려 있는데 ${v.current.id} 가 할 일입니다`);

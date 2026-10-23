@@ -235,6 +235,10 @@ export function emptySnapshot() {
            /* ★ 2026-10-10 D59 식물 가게([core] · null = 모른다) — movedHome 산 투룸으로 옮김 · job 진로 id · shopDone 맞춘 주문 수 ·
               shopRegulars 단골 수(맞춘 서로 다른 손님) · shopOpenOrders 열린 주문 수 · shopDueSoonest 가장 급한 주문의 남은 날 */
            movedHome: null, job: null, shopDone: null, shopRegulars: null, shopOpenOrders: null, shopDueSoonest: null,
+           /* ★ 2026-10-23 D71(박사님 «추천대로») 새 두 종([core] · null = 모른다) — scPlants 놓인 스킨답서스 그루 수 ·
+              scLongVine «높은 자리에서만 닿는 길이»에 닿은 줄기 수(문턱은 growth 줄기 상한 규칙에서 core 가 센다 — plan 은 수를 안 박는다) ·
+              caCareOpen 맡은 칼라테아가 있고 아직 안 펴짐 · caSaved 맡은 칼라테아 잎이 다 펴졌다 */
+           scPlants: null, scLongVine: null, caCareOpen: null, caSaved: null,
            alDormantNow: null, alWokeCount: null, alCormsFound: null, alFoundCormsPlanted: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
@@ -1083,6 +1087,34 @@ const SHOP_QUESTS = Object.freeze([
    「지금 할 일」 칩을 안 잡는다(questView 는 정의 순서에서 첫째를 뽑는다 · 이 묶음은 맨 끝).
    ⚠ 칸이 null 이면(배선 전) 안 열린다. 여는 때(PP ③ 끝 + 원룸 30일 · AL 원룸 60일)는 «종이 들어오는 때»라 [core] 사건·상점이 맡고,
      이 줄들은 «그루가 있으면» 연다. 겨울잠과 깸은 사건 대신 al_keep_winter 의 열림·끝 대사가 싣는다(core 사건 수를 줄임). */
+/* ══ ★★ 2026-10-23 [plan] D71(박사님 «추천대로» · 명세 docs/handoff/plan-species2-shop-spec-20261010.md §5) — 새 두 종 곁줄 둘 ══
+   스킨답서스 «높이»(늘어지는 덩굴 — 높이 둘수록 길게) · 칼라테아 «가운데»(너무 밝아도 탈). 곁줄이다(가게 사슬 뒤 · 칩을 안 쥔다).
+   ⚠ 칸이 null 이면(배선 전) 안 열린다. 들이는 때(단골 5 · 8)는 [core] 사건(sc_ask · ca_care)이 맡고, 이 줄들은 «그루가 있으면» 연다. */
+const SPECIES2_QUESTS = Object.freeze([
+  Object.freeze({
+    id: 'sc_hang',
+    room: 'tworoom',
+    ko: '늘어뜨려 키운다',
+    reward: '줄기가 길수록 자를 마디가 늡니다',
+    teaches: ['덩굴은 높이 둘수록 길게 자란다'],
+    why: '스킨답서스는 아래로 늘어지며 자랍니다. 낮은 데선 바닥에 닿아 멈추고, 선반 윗단이나 벽에 걸면 길게 자랍니다.',
+    todo: () => '선반 윗단이나 벽에 걸어 늘어뜨려 보세요',
+    opens: s => Number.isFinite(s.scPlants) && s.scPlants >= 1,
+    done:  s => Number.isFinite(s.scLongVine) && s.scLongVine >= 1
+  }),
+  Object.freeze({
+    id: 'ca_unfurl',
+    room: 'tworoom',
+    ko: '말린 잎을 편다',
+    reward: '칼라테아가 가게에 남습니다',
+    teaches: ['너무 밝아도 탈이다'],
+    why: '칼라테아는 해를 조금 덜 좋아합니다. 너무 밝으면 잎을 말고, 너무 어두우면 느립니다. 가운데를 찾아 주면 잎이 펴집니다.',
+    todo: () => '칼라테아를 너무 밝지 않은 데 두세요',
+    opens: s => s.caCareOpen === true || s.caSaved === true,
+    done:  s => s.caSaved === true
+  })
+]);
+
 const SPECIES_QUESTS = Object.freeze([
   Object.freeze({
     id: 'pp_hold_pink',
@@ -1134,7 +1166,9 @@ const SPECIES_QUESTS = Object.freeze([
      ①②의 어떤 줄도 「지금 할 일」이 못 된다 — 박사님이 짚으신 그 구멍이 거기서 났다. */
 /* ★ 2026-10-07 — 원룸 다섯 줄은 «느린 줄 앞»이다. 맨 뒤면 잎 줄이 영영 안 끝나는 판(그루째 판 판)에서
      원룸 줄이 「지금 할 일」이 못 된다 — 위 ③ 을 맨 뒤로 옮긴 것과 같은 까닭이다. 반지하에서는 방이 걸러 안 보인다. */
-export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SHOP_QUESTS, ...SPECIES_QUESTS]);
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SHOP_QUESTS, ...SPECIES_QUESTS, ...SPECIES2_QUESTS]);
+/* ★ 2026-10-23 D71 — 새 두 종 곁줄(§SPECIES2_QUESTS) */
+export const SPECIES2_QUEST_IDS = Object.freeze(SPECIES2_QUESTS.map(q => q.id));
 /* ★ 2026-10-10 D59 — 식물 가게 사슬(§SHOP_QUESTS) */
 export const SHOP_QUEST_IDS = Object.freeze(SHOP_QUESTS.map(q => q.id));
 /* ★ 2026-10-09 D45 — 새 종 곁줄(§SPECIES_QUESTS) */

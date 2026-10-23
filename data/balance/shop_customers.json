@@ -15,6 +15,7 @@
     "office":  "회사·일터"
   },
   "first": "banchan_owner",
+  "_doc_special": "★ 2026-10-23 D71 — special 손님은 손님 고르기(주문)에서 빼고 그 사건 때만 쓴다(sc_ask 단골 5 · ca_care 단골 8). 초상 결은 char 권함(office · plant).",
   "customers": [
     { "id": "banchan_owner",   "group": "shop",    "ko": "반찬가게 사장님",       "ask": "가게 계산대 옆에 하나 두고 싶대.",       "thanks": "콩나물 값은 이걸로 갚은 거래." },
     { "id": "cafe_owner",      "group": "shop",    "ko": "2층 카페 주인",         "ask": "창가 자리가 허전하대.",                 "thanks": "손님들이 사진을 찍는대." },
@@ -56,6 +57,8 @@
     { "id": "nurse",           "group": "office",  "ko": "병원 간호사",           "ask": "대기실 창가에 둘 거래.",               "thanks": "환자분들이 좋아한대." },
     { "id": "architect",       "group": "office",  "ko": "건축사무소 대표",        "ask": "모형 옆에 진짜 초록이 필요하대.",       "thanks": "다음 집엔 창을 더 낸대." },
     { "id": "bank_teller",     "group": "office",  "ko": "은행 창구 직원",         "ask": "창구 옆 자리가 휑하대.",               "thanks": "줄 선 사람들이 덜 지루하대." },
-    { "id": "night_guard",     "group": "office",  "ko": "밤 경비 아저씨",         "ask": "밤에 혼자 보는 초록이래.",             "thanks": "말동무가 생겼대." }
+    { "id": "night_guard",     "group": "office",  "ko": "밤 경비 아저씨",         "ask": "밤에 혼자 보는 초록이래.",             "thanks": "말동무가 생겼대." },
+    { "id": "sc_seeker",       "group": "office",  "ko": "사무실 첫 화분 찾는 손님", "special": "sc_ask",  "ask": "스킨답서스 있어요? 하고 묻고 갔다.",     "thanks": "줄기가 길게 늘어진 걸 보고 좋아했다." },
+    { "id": "ca_owner",        "group": "plant",   "ko": "칼라테아 맡긴 손님",      "special": "ca_care", "ask": "한동안 자리를 비운다며 칼라테아를 맡겼다.", "thanks": "여기서 더 잘 크네 — 가게에 두라고 했다." }
   ]
 }

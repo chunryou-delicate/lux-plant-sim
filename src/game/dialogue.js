@@ -1673,6 +1673,46 @@ export const SCRIPTS = {
      거짓 없는 말만: 알로카시아 구근은 원룸 이사 60일 뒤부터 상점에 늘 있다(species §speciesShopOpen) — 그래서 PP(교환을 거절한 판만 상점) 말고 구근을 권한다.
      «손님이 와»는 안 쓴다 — 종이 늘면 손님이 느는 규칙은 없다(주문이 고루 붙고 팔 것이 는다). 수는 안 말한다. */
   /* ★ 상점에 핑크프린세스 어린 그루도 있는 판(교환을 두 번 거절한 판 · species §speciesShopOpen 'pp_young') — 사건 shop_no_species{ppInShop:true} */
+  /* ═══ ★★ 2026-10-23 [plan] D71(박사님 «추천대로») — 새 두 종: 스킨답서스 «높이» · 칼라테아 «가운데» (명세 §6) ═══
+     사건([core]): sc_ask(단골 5 · 상점 진열) · sc_rooted(스킨답서스 첫 뿌리 · 한 번) · ca_care(단골 8 · 맡은 칼라테아) · ca_saved(잎이 다 펴짐).
+     손님 이름이 드는 줄(«스킨답서스 있어요?» · «가게에 둬요»)은 기록 줄 — [core] 가 shop_customers.json 의 special 손님 ko·ask·thanks 로.
+     수는 안 말한다. 아직 안 일어난 일을 미리 약속하지 않는다(«펴진다»는 알맞은 자리에 두면 — 판정은 growth). */
+  scAsk: [
+    { who: 'moni',   face: 'teach', text: '늘어지는 아이야. 높은 데서 키워야 길게 자라.' },
+    { who: 'moni',   face: 'calm',  text: '상점에 줄기가 들어왔대.' }
+  ],
+  scRooted: [
+    { who: 'jachwi', face: 'surprise', text: '줄기 마디마다 뿌리가 났다.' },
+    { who: 'moni',   face: 'teach',    text: '마디가 곧 늘리는 자리야.' }
+  ],
+  caCare: [
+    { who: 'jachwi', face: 'worry', text: '잎이 다 말린 칼라테아를 맡았다. 창가에 뒀더니 이렇게 됐대.' },
+    { who: 'moni',   face: 'teach', text: '너무 밝았던 거야. 얘는 해를 조금 덜 좋아해.' }
+  ],
+  caSaved: [
+    { who: 'jachwi', face: 'beam',  text: '손님이 여기서 더 잘 큰다며 가게에 두라고 했다.' }
+  ],
+  statusCaTooBright: [
+    { who: 'moni',   face: 'worry', text: '여기도 너무 밝아. 한 칸 안쪽으로.' }
+  ],
+  chatCaNight: [
+    { who: 'jachwi', face: 'curious', text: '칼라테아는 밤마다 잎을 세운다.' },
+    { who: 'moni',   face: 'calm',    text: '기도하는 식물이라고도 해.' }
+  ],
+  questScHang: [
+    { who: 'moni',   face: 'teach', text: '선반 윗단이나 벽에 걸어 늘어뜨려 봐. 높을수록 길게 자라.' }
+  ],
+  questDoneScHang: [
+    { who: 'jachwi', face: 'happy', text: '선반 아래로 초록 커튼이 내려왔다.' },
+    { who: 'moni',   face: 'proud', text: '높이 두니까 길게 자랐지.' }
+  ],
+  questCaUnfurl: [
+    { who: 'moni',   face: 'teach', text: '너무 밝지도 어둡지도 않은 데를 찾아 줘.' }
+  ],
+  questDoneCaUnfurl: [
+    { who: 'jachwi', face: 'happy', text: '잎이 다 펴졌다.' },
+    { who: 'moni',   face: 'proud', text: '가운데를 찾았네. 밝다고 다 좋은 건 아니야.' }
+  ],
   shopNoSpeciesPP: [
     { who: 'moni',   face: 'teach', text: '몬스테라만으론 팔 게 모자라. 가게엔 여러 종이 있어야 해.' },
     { who: 'moni',   face: 'bulb',  text: '알로카시아 구근이나 핑크프린세스 어린 그루를 들여 놓자. 둘 다 상점에 있어.' },
@@ -2373,6 +2413,8 @@ export const REPEATABLE = new Set(
              'cutTooWide',
              /* ★ D59 — 새 단골은 여러 번 */
              'shopNewRegular',
+             /* ★ D71 — 너무 밝은 자리 상태 줄은 여러 번(gap 이 거른다) */
+             'statusCaTooBright',
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear', 'statusHomeQuarter', 'statusHomeThreeQuarter',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
@@ -2445,6 +2487,11 @@ export const EVENT_SCRIPT = Object.freeze({
   job_start:           'jobStart',
   shop_open:           'shopOpen',
   shop_no_species:     'shopNoSpecies',
+  /* ★ 2026-10-23 [plan] D71 — 새 두 종 */
+  sc_ask:              'scAsk',
+  sc_rooted:           'scRooted',
+  ca_care:             'caCare',
+  ca_saved:            'caSaved',
   pp_trade_done:       'ppTradeDone',
   pp_trade_declined:   'ppTradeDeclined',
   pp_pink_warn:        'ppPinkWarn',
@@ -2552,6 +2599,9 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   shop_regulars3:         'questShopRegulars3',
   shop_sign:              'questShopSign',
   shop_town:              'questShopTown',
+  /* ★ 2026-10-23 [plan] D71 — 새 두 종 곁줄 */
+  sc_hang:                'questScHang',
+  ca_unfurl:              'questCaUnfurl',
   al_keep_winter:         'questAlKeepWinter',
   al_plant_corm:          'questAlPlantCorm',
   oneroom_home_fund:      'questOneroomHomeFund',
@@ -2593,6 +2643,8 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   shop_regulars3:         'questDoneShopRegulars3',
   shop_sign:              'questDoneShopSign',
   shop_town:              'questDoneShopTown',
+  sc_hang:                'questDoneScHang',
+  ca_unfurl:              'questDoneCaUnfurl',
   al_keep_winter:         'questDoneAlKeepWinter',
   al_plant_corm:          'questDoneAlPlantCorm',
   oneroom_home_fund:      'questDoneOneroomHomeFund',
@@ -2647,6 +2699,8 @@ const EVENT_ORDER = [
   'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake', 'cut_too_wide',
   /* ★ 2026-10-10 [plan] D59 — 진로 첫날은 «이제부턴 진짜야» → 주문판 → (퀘스트 열림). 납품 «단골 하나 늘었어»는 퀘스트 끝(«단골 셋» 등)보다 앞 */
   'job_start', 'shop_open', 'shop_no_species', 'order_done', 'regulars_milestone',
+  /* ★ 2026-10-23 [plan] D71 — 들어오는 날 말이 곁줄 열림보다 앞(맡았다 → 가운데를 찾아 줘) */
+  'sc_ask', 'sc_rooted', 'ca_care',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
      한 판에서 「①을 끝냈다 → 그래서 ②가 열린다」가 같은 날 난다(`siru5_cycle5` 의 여는
      조건이 `crop_mix` 완료라서). 순서가 뒤집히면 **열리고 나서 끝난 것을 축하한다.**
@@ -2655,6 +2709,8 @@ const EVENT_ORDER = [
   'quest_done', 'quest_opened',
   /* ★ 2026-10-09 [plan] D52 — 잠드는 날 «겨울잠을 지킨다» 열림(잎이 다 졌다 · 자는 거야) «뒤»에 «흙 속에 구근» */
   'al_asleep',
+  /* ★ 2026-10-23 [plan] D71 — «잎이 다 펴졌다»(곁줄 끝) «뒤»에 «가게에 두라고 했다» */
+  'ca_saved',
   /* ★ 2026-10-08 — 「됐다! 가자.」(quest_done oneroom_home_fund) **뒤**에 「집 계약은 네가 해…」가 선다([plan] plan-ending-home ③-1).
      `ending_home` 은 [계약한다] 를 누른 그 손에서만 난다(같은 턴에 다른 사건이 없다) — 자리는 맨 끝 어디든 같다 */
   'ending_ready',
@@ -2827,6 +2883,9 @@ export const CHATTER = [
        **원룸의 첫 며칠이 원룸 얘기로 시작한다.** 뒤에 두면 첫 아침이 열흘 뒤에 온다.
      ★ 조건은 전부 `c.movedOut` 하나로 갈린다 — 새 신호를 만들지 않았다. */
   /* ★ 2026-10-10 [plan] D59 — 가게 판 잡담(산 집 · 진로 가게) */
+  /* ★ 2026-10-23 [plan] D71 — 칼라테아 잡담 · 너무 밝은 자리 상태 줄 */
+  { id: 'chatCaNight',      gap: 28, when: c => fin(c.caPlants) && c.caPlants >= 1 },
+  { id: 'statusCaTooBright', status: true, gap: 3, when: c => c.caTooBright === true },
   { id: 'chatShopMorning',  gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
   { id: 'chatShopWindow',   gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
   { id: 'chatShopRegular',  gap: 21, when: c => c.movedHome && c.jobId === 'shop' && fin(c.shopRegulars) && c.shopRegulars >= 1 },
@@ -3180,6 +3239,9 @@ export function chatterContext(turn = {}, S = null) {
     jobId: (S && S.story && S.story.job && S.story.job.id) || null,
     shopRegulars: (S && S.jobShop && Array.isArray(S.jobShop.regulars)) ? S.jobShop.regulars.length : null,
     shopOpenOrders: (S && S.jobShop && Array.isArray(S.jobShop.orders)) ? S.jobShop.orders.length : null,
+    /* ★ 2026-10-23 [plan] D71 — 칼라테아([core] turn.caPlants · turn.caTooBright · 모르면 null) */
+    caPlants: (turn && Number.isFinite(turn.caPlants)) ? turn.caPlants : null,
+    caTooBright: (turn && typeof turn.caTooBright === 'boolean') ? turn.caTooBright : null,
     /* ★ 2026-10-09 [plan] D45 — 알로카시아 한 그루라도 자고 있나([core] turn.alDormantNow · 모르면 null) */
     alDormantNow: (turn && typeof turn.alDormantNow === 'boolean') ? turn.alDormantNow : null,
     /* ★ 2026-10-09 [plan] 원룸 후반 — 엔딩 목표 금액([core] turn.homeTarget · homes.json ending.targetWon). 모르면 null */

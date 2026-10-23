@@ -93,3 +93,16 @@
 2. 칼라테아를 «맡김을 살리면 가게 것»으로 줄지(⚖ 그루 한 값) · 아니면 맡김은 수고비만 받고 칼라테아는 상점 진열.
 3. ⚖ 값 후보: SC 마디값 «낮음» · CA 잎값 «중간» · SC 삽수 상점 값 · 잎 간격(SC 10~14일 · CA 30~40일) · CA 빛 대역 lo 3 / hi 8.
 4. 벽 화분걸이(새 가구 · house) — 이 판에 넣을지.
+
+---
+
+## ★ 2026-10-23 D71 — 박사님 «추천대로» · 짓기 시작 · plan 이 넣은 것 · [core] 키
+- 정함(박사님 · 총괄 추천): 들이는 때 단골 5·8 · 칼라테아 «살리면 가게 것» · 값은 차례만(SC 마디 낮음 · CA 잎 중간 · 수는 core 하네스 뒤 총괄) · 벽 화분걸이 이 판에.
+- **사건**: `sc_ask`(단골 5 · 상점 «스킨답서스 줄기 삽수» 진열) · `sc_rooted`(SC 첫 뿌리 · 한 번) · `ca_care`(단골 8 · 맡은 칼라테아 가방에 · 잎 말림) · `ca_saved`(잎이 다 펴짐 · 가게 것).
+- **스냅샷 칸**(questSnapshotNow · null = 모른다): `scPlants` · `scLongVine`(«높은 자리에서만 닿는 길이»에 닿은 줄기 수 — 문턱은 growth 줄기 상한 규칙에서 core 가 셈 · plan 은 수를 안 박음) · `caCareOpen`(bool) · `caSaved`(bool).
+- **대사 맥락 칸**(turn): `caPlants` · `caTooBright`(bool — 놓인 칼라테아가 지금 «너무 밝은» 대역).
+- **퀘스트**: `sc_hang`(늘어뜨려 키운다 · 열림 scPlants ≥ 1 · 끝 scLongVine ≥ 1) · `ca_unfurl`(말린 잎을 편다 · 열림 caCareOpen ∨ caSaved · 끝 caSaved) — `SPECIES2_QUESTS`(곁줄 끝 묶음 · room 'tworoom').
+- **대사 키**: scAsk · scRooted · caCare · caSaved · statusCaTooBright(상태 · gap 3) · chatCaNight(잡담 · gap 28) · questScHang/questDoneScHang · questCaUnfurl/questDoneCaUnfurl. 차례: ca_care → 곁줄 열림 · 곁줄 끝 → ca_saved.
+- **손님 표** special 둘(초상 결은 char 권함): `sc_seeker`(office · «스킨답서스 있어요? 하고 묻고 갔다.» / «줄기가 길게 늘어진 걸 보고 좋아했다.») · `ca_owner`(plant · «한동안 자리를 비운다며 칼라테아를 맡겼다.» / «여기서 더 잘 크네 — 가게에 두라고 했다.»). ⚠ [core] 주문 손님 고르기에서 special 손님은 뺀다(그 사건 때만).
+- **실측(leaf 물음 · plan 정함)**: SC 세 단계 = 어린 **.08** · 중간 **.10** · 성숙 **.12**(명세 두 값을 양 끝으로 · 잎몸 4.7 → 6.1 → 8.0cm 고르게 · 원예 마블퀸 실내 잎몸 4~10cm 안) · CA .12 / .22 / .30 그대로.
+- 검사: test_quest(32줄 다 열고 닫음) · dialogue_coverage · species_quests(곁줄 끝 묶음을 SPECIES ∪ SPECIES2 로) · quest_chip · oneroom · ending_flow PASS.

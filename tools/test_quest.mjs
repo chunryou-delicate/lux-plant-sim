@@ -315,7 +315,13 @@ const steps = [
   HM(471, { shopDone: 3, shopRegulars: 3 }),
   HM(560, { shopDone: 10, shopRegulars: 10 }),
   HM(561, { shopDone: 10, shopRegulars: 10 }),
-  HM(800, { shopDone: 30, shopRegulars: 30 })
+  HM(800, { shopDone: 30, shopRegulars: 30 }),
+
+  /* ─ 새 두 종 곁줄 둘(D71 · 10-23) — 스킨답서스 «높이» · 칼라테아 «가운데» ─────────── */
+  HM(820, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 0 }),
+  HM(850, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 1 }),
+  HM(860, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 1, caCareOpen: true, caSaved: false }),
+  HM(880, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 1, caCareOpen: false, caSaved: true })
 ];
 steps.forEach((s, i) => step(i + 1, s));
 
