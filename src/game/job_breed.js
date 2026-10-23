@@ -13,7 +13,7 @@
    ★ 재현(§2-3 · 칸은 data/balance/breed_slots.json — plan 이 쓰고 여기는 읽기만):
        rootBand        몬스테라 — 같은 뿌리 밝기에서 «서로 다른 삽수»가 그 등급 잎을 낸 수(D74 ② 삽수는 서로 다른 표본)
        varieMotherKind AL — 무늬 어미 구근에서 싹튼 그 갈래 그루 수(같은 어미 갈래)
-       ppLineRun       PP — 한 줄에서 분홍 많음 잎이 잇단 수(분홍 잎·초록이 끊는다 · 마블은 안 끊고 안 센다)
+       ppLineRun       PP — 한 줄에서 분홍 많음 잎이 잇단 수(분홍 많음이 아닌 잎이면 다 끊는다 — 마블·분홍 잎·초록 · 총괄 D86 ③ · growth runPP 와 같은 자)
    상태: story.job = { id:'breed', since } · story.jobs.breed = { since, endedOn } ·
          S.jobBreed = { samples(최근 60), tally, sampleCount, varieties:[{ slot, day, name, cond }], pending:[{ slot, cond, day, auto }],
                         repro:{ [slot]:{ [cond]:{ n, refs } } }, candidates:{ [slot]: day }, milestones, seq, openedOn, ppLineSeq, lines:{ [potId]: line },
@@ -155,8 +155,7 @@ function noteRepro(S, J, s, events) {
     const r = (box[key] = box[key] || { n: 0, refs: [] });
     if (slot.cond === 'ppLineRun') {
       if (s.out === slot.outcome) r.n += 1;
-      else if (s.out === 'pink' || s.out === 'green') r.n = 0;   /* 분홍 잎·초록이 끊는다 · 마블은 안 끊고 안 센다(plan §2-3) */
-      else continue;
+      else { r.n = 0; continue; }   /* 분홍 많음이 아니면 다 끊는다(총괄 D86 ③ · plan · growth runPP) */
     } else {
       if (r.refs.includes(s.plantRef)) continue;                 /* 서로 다른 삽수 · 서로 다른 그루 */
       r.refs.push(s.plantRef); r.n = r.refs.length;

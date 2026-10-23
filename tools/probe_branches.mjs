@@ -139,6 +139,12 @@ export const PERSONAS = {
              breed: true, breedCare: true, shopDays: 730, species: true },
   breedB:  { ko: '육종 — 아무렇게나 사람', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
              breed: true, breedCare: false, shopDays: 730, species: true },
+  /* ★ 총괄 D86 ① — «다리»를 잰다: breedB 에 몬이 귀띔을 더한다. 귀띔이 실제로 뜬 날(게임 대사 고르기 story.turn 이 낸 id · 하네스가 날을 정하지 않음) 다음 날부터 그 말대로:
+       hintBreedAlSleep «어두운 데 오래 두면 잠들어 · 잎이 다 질 때까지» → 구근을 찾을 수 있는 무늬 AL 을 그 그루 min 아래 가장 어두운 빈 자리에 · 잠들면 다시 밝은 데(깨움)
+       hintBreedFullmoon «뿌리 낼 삽수를 제일 밝은 데 · 모자라면 등» → 뿌리낼 삽수는 가장 밝은 빈 자리 · 등을 셋까지(돈이 되는 대로 · 10만 남김)
+       ⚖ 기준(D86): 2년 안 품종 3 이 5/10 이상이면 귀띔 그대로 */
+  breedH:  { ko: '육종 — 귀띔을 듣는 사람', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
+             breed: true, breedCare: false, breedHint: true, shopDays: 730, species: true },
   /* 대조 — 높이 먼저인데 가게를 연 뒤 시루를 «안» 잇는 사람(D79 전 하네스 손버릇 · 굶음이 밥값인지 가른 판) */
   shop71n: { ko: '가게 사람 + 둘째 두 종 · 높이 먼저 · 가게에선 시루 안 함(D79 전 손버릇 대조)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
              shop: true, shopDays: 730, species: true, sp2: true, sp2Hold: true, shopCrops: false },
@@ -239,7 +245,8 @@ export async function play(name, seed, opt = {}) {
     const h = Math.abs(Math.sin((String(seed).split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) + S.day * 97 + (rootPick++) * 13) * 12.9898) * 43758.5453) % 1;
     return free[Math.floor(h * free.length)].slotId;
   };
-  const rootFree = live => (out.breed && !P.breedCare ? (anyFree() || brightestFree(live)) : brightestFree(live));
+  const rootFree = live => (out.breed && !P.breedCare && !(P.breedHint && out.breed.knowBright != null && S.day >= out.breed.knowBright)
+    ? (anyFree() || brightestFree(live)) : brightestFree(live));   /* D86 — 귀띔을 들은 사람은 그 뒤로 가장 밝은 데 */
   const brightestFree = live => {
     /* ★ D59 — 산 집(투룸)은 자리 이름이 원룸과 다르다 — 방 전체 빈 자리 중 오늘 가장 밝은 데 */
     if (S.home && S.home.room !== 'oneroom' && S.home.room !== 'banjiha') {
@@ -814,6 +821,34 @@ export async function play(name, seed, opt = {}) {
               if (opt.dump && Jb.varieties.length === 3) dump('breed3'); }
         catch (e) { B.regErr = String(e && e.message).slice(0, 80); break; }
       }
+      if (P.breedHint) {
+        /* D86 ① — 귀띔이 뜬 날(그날 대사 id) → 다음 날부터 그 말대로 */
+        if (B.knowSleep == null && saidIds.includes('hintBreedAlSleep')) { B.knowSleep = S.day + 1; B.hintSleepAt = S.day - B.openDay; }
+        if (B.knowBright == null && saidIds.includes('hintBreedFullmoon')) { B.knowBright = S.day + 1; B.hintBrightAt = S.day - B.openDay; }
+        if (B.knowBright != null && S.day >= B.knowBright) {
+          const lampWon = (ts.rules && ts.rules.lampPriceWon) || 0;
+          while ((ts.lamp.owned || 0) < 3 && ts.cashWon >= lampWon + 100_000) { try { led('buy', () => buyLamp(ts)); B.lampsBought = (B.lampsBought || 0) + 1; } catch (e) { B.lampErr = String(e && e.message).slice(0, 80); break; } }
+          let rigs = null; try { rigs = light.growLampCount(); } catch (e) { rigs = null; }
+          const want = Math.min(ts.lamp.owned || 0, Number.isFinite(rigs) ? rigs : 0);
+          if (S.lamps.count !== want) { S.lamps.count = want; ts.lamp.placed = want; light.clearCache(); }
+        }
+        if (B.knowSleep != null && S.day >= B.knowSleep) {
+          const R0 = SPM.speciesRules(), maxF = BREED_SPEC.alProp.max_finds_lifetime, minS = BREED_SPEC.alProp.min_leaves_since_find;
+          let fw = null; try { fw = careSpotsOf(S, io); } catch (e) { fw = null; }
+          const avg = new Map((fw || []).filter(x => Number.isFinite(x.dli)).map(x => [x.slotId, x.dli]));
+          const thMin = q => { try { return R0.thresholdsOf(q.plant).min; } catch (e) { return 0; } };
+          const occ = new Set([...placedItems(S).map(x => x.slotId), ...SPM.speciesPotsOf(S).filter(q => SPM.speciesPlaced(q)).map(q => q.slotId)].filter(Boolean));
+          const freeIds = (light.room.slots || []).map(x => x.slotId).filter(id => !occ.has(id) && avg.has(id));
+          for (const q of SPM.speciesPotsOf(S).filter(q => q.species === 'alocasia_frydek' && !q.care && q.plant && SPM.speciesPlaced(q))) {
+            const p = q.plant, here = avg.get(q.slotId);
+            const canFind = (p.varie === 'marble' || p.varie === 'sector') && p.finds < maxF && (p.sinceFind ?? 0) >= minS && (p.phase === 'growing' || p.phase === 'dropping');
+            let to = null;
+            if (canFind && !(Number.isFinite(here) && here < thMin(q))) to = freeIds.filter(id => avg.get(id) < thMin(q)).sort((a, b) => avg.get(a) - avg.get(b))[0];
+            else if (p.phase === 'asleep' && Number.isFinite(here) && here < thMin(q) + 0.3) to = freeIds.filter(id => avg.get(id) >= thMin(q) + 0.3).sort((a, b) => avg.get(a) - avg.get(b))[0];
+            if (to) { occ.delete(q.slotId); SPM.setSpeciesAt(S, q.id, { slotId: to, at: atOf(light, to) }); freeIds.splice(freeIds.indexOf(to), 1); if (q.slotId) freeIds.push(q.slotId); B.alForce = (B.alForce || 0) + 1; }
+          }
+        }
+      }
       if (P.breedCare) {
         /* ★ 관리하는 사람 — growth c5639fd6(docs/handoff/growth-breed-tworoom.json · probe_breed_tworoom runMonstera · runAL · runPP)의 손 그대로(총괄 D84)
              ① 등을 셋까지(밝은 뿌리 자리 · 돈이 되는 대로 · 10만 남김)
@@ -1240,6 +1275,8 @@ for (const name of NAMES) {
                   `판마다 세운 칸 수 ${br.map(r => Object.keys(r.breed.slotDay || {}).length).join(' ')} · 칸 셈 상한 중앙 ${med(br.map(r => r.breed.cap).filter(x => x != null)) ?? '—'} · 자리 옮김 판당 ${(br.reduce((a, r) => a + (r.breed.moves || 0), 0) / Math.max(1, br.length)).toFixed(0)} · AL 판 것/산 구근/판 구근 판당 ` +
                   `${['alSold', 'cormsBought', 'cormSold'].map(k => (br.reduce((a, r) => a + (r.breed[k] || 0), 0) / Math.max(1, br.length)).toFixed(1)).join('/')}` +
                   ` · 재우기 그루-날 판당 ${(br.reduce((a, r) => a + (r.breed.alForce || 0), 0) / Math.max(1, br.length)).toFixed(0)}(어두운 데 섬 ${br.reduce((a, r) => a + (r.breed.alDarkOk || 0), 0)} · 못 섬 ${br.reduce((a, r) => a + (r.breed.alDarkMiss || 0), 0)}) · 방 가장 어두운 7일 평균 중앙 ${med(br.map(r => r.breed.darkMin).filter(Number.isFinite))}`);
+      if (br.some(r => r.persona && r.persona.breedHint)) console.log(`    D86 귀띔 — 재우기 귀띔 뜬 판 ${br.filter(r => r.breed.hintSleepAt != null).length}/${br.length}(연 뒤 날 중앙 ${med(br.map(r => r.breed.hintSleepAt).filter(x => x != null)) ?? '—'}) · ` +
+                  `풀문 귀띔 뜬 판 ${br.filter(r => r.breed.hintBrightAt != null).length}/${br.length}(중앙 ${med(br.map(r => r.breed.hintBrightAt).filter(x => x != null)) ?? '—'}) · 2년 안 품종 3 ${br.filter(r => (r.breed.varieties || 0) >= 3).length}/${br.length}`);
       if (arg('breedlook', false)) for (const r of br) console.log(`      ${r.seed} AL 마지막 — ${r.breed.alLook || '—'}`);
       if (arg('breedtrace', false)) for (const r of br) for (const line of (r.breed.trace || [])) console.log(`      ${r.seed} ${line}`);
       console.log('    칸마다(한 해 안 등록 판 · 2년 안 등록 판 · 등록 날 중앙 · 후보 날 중앙) — ' + slots.map(id => {

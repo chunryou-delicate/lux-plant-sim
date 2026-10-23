@@ -5,7 +5,7 @@
    B 연 날 — breed_open · 들고 온 그루의 이미 난 잎은 안 적는다(커서만)
    C 몬스테라 — 같은 뿌리 밝기 · 서로 다른 삽수 셋 하프문 = 등록 대기 · 둘 = 후보(한 번) · 같은 삽수 두 번은 하나 · 다른 밝기는 따로 · 셈(tally)
    D 등록 — 이름(빈 이름은 자동 «볕 하프문 1호») · 상금 = 하프문 잎 값 · 이정표 1 · 다음 자동 이름 차례
-   E PP 줄 — 분홍 많음 잇달아 셋 · 분홍 잎/초록은 끊고 마블은 안 끊음 · 잘라 낸 끝은 어미 줄
+   E PP 줄 — 분홍 많음 잇달아 셋 · 분홍 많음이 아닌 잎(마블·분홍 잎·초록)은 다 끊음(D86 ③) · 잘라 낸 끝은 어미 줄
    F AL — 무늬 어미(마블) 셋 = 등록 대기 · 무지 어미·상점은 안 셈 · 출처 낱말(from_ 뗌)
    G 끝맺음 — 품종 셋 다음 날 아침 한 번 · 칭호 · 머리 글
    H 스냅샷 · 세이브 왕복 · 옛 세이브(칸 없음) · 낱줄 60 · 상점 PP 진열(육종 판 · PP 없음) */
@@ -93,7 +93,7 @@ T('D 등록 — 이름 · 자동 이름 · 상금(잎 한 장 값) · 이정표 
   assert.deepStrictEqual(JB.breedBoardRows(S).filter(x => x.registered).map(x => x.head), ['하프문 몬스테라 — 등록 · «창가의 반달»', '풀문 몬스테라 — 등록 · «볕 풀문 2호»']);
 });
 
-T('E PP 줄 — 분홍 많음 잇달아 셋 · 분홍 잎·초록이 끊음 · 마블은 안 끊음 · 잘라 낸 끝은 어미 줄', () => {
+T('E PP 줄 — 분홍 많음 잇달아 셋 · 마블·분홍 잎·초록이 다 끊음(D86 ③) · 잘라 낸 끝은 어미 줄', () => {
   const S = breedS(); const q = ppPot(S, [0.3, 0.4]); JB.openBreed(S);
   const J = JB.jobBreedOf(S);
   ppLeaf(q, 0.7); ppLeaf(q, 0.7); day(S);
@@ -101,7 +101,7 @@ T('E PP 줄 — 분홍 많음 잇달아 셋 · 분홍 잎·초록이 끊음 · �
   assert.strictEqual(J.repro.pp_heavy[line].n, 2);
   ppLeaf(q, 0.95); day(S); assert.strictEqual(J.repro.pp_heavy[line].n, 0, '분홍 잎이 줄을 안 끊었다');
   ppLeaf(q, 0.7); ppLeaf(q, 0.4); ppLeaf(q, 0.7); day(S);
-  assert.strictEqual(J.repro.pp_heavy[line].n, 2, '마블이 줄을 끊었거나 셌다');
+  assert.strictEqual(J.repro.pp_heavy[line].n, 1, '마블이 줄을 안 끊었다(D86 ③ — 분홍 많음 아닌 잎이면 다 끊음)');
   ppLeaf(q, 0.02); day(S); assert.strictEqual(J.repro.pp_heavy[line].n, 0, '초록이 줄을 안 끊었다');
   /* 잘라 낸 끝(어미 q)은 같은 줄 · 교환 그루는 새 줄 */
   const top = ppPot(S, [0.7], { origin: 'cut', motherId: q.id }), other = ppPot(S, [0.3]);
