@@ -902,6 +902,8 @@ check('데이터 — career_switch.json 화면 글이 다 있고 칭호·이음 
   assert.ok(T.customerLink.toShop);
   assert.equal(T.endCard.stay, T.finalCover.stay);
   assert.ok(T.endCard.switch && T.todoHead.switch && T.cards.title && T.cards.sub && T.cards.note && T.cards.back && T.cards.close);
+  /* ✎ 총괄 — 진로 바꾸기 화면 닫기 단추는 «아무것도 안 바뀐다»가 보이는 말(«그만두기»는 «진로를 그만둔다»로 읽힘) */
+  assert.ok(!/그만/.test(T.cards.close) && /그대로|닫기/.test(T.cards.close), `닫기 단추 글: ${T.cards.close}`);
   /* ★ 10-24 core 청 — 쉬는 진로 판 밑 줄(새 일 안 받음 · 걸린 것은 기한까지) */
   assert.ok(/새 주문은 안 받/.test(T.resting.shop) && /기한까지/.test(T.resting.shop), `쉬는 가게 줄: ${T.resting.shop}`);
   assert.ok(/새 맡김은 안 받/.test(T.resting.care) && /기한 날/.test(T.resting.care), `쉬는 돌봄 줄: ${T.resting.care}`);
