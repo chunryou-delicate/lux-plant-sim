@@ -15,14 +15,15 @@
 | # | 자리 | 무엇 | 임자 | 값이 바뀌나 | 나온 곳 |
 |---|---|---|---|---|---|
 | 1-1 | src/game/propagation.js:377 «천장이 80% 다» | D40 어린 그루 ×2(상한 .9)로 삽수 새 잎 무늬율이 **중간·밝음 둘 다 90%** — 주석의 천장을 넘는다 · 밝음의 이득은 등급(풀문 .05 → .15)에만 | core(QUESTION · 총괄이 C 짓기 전에 가름) → **✔ D82: 값은 그대로 · 박사님 첫 플레이 뒤 다시 봄**(C① «밝은 자리의 이득은 등급뿐») | ✕ 지금은 안 바꿈 | C §12 · 총괄 10-24 |
-| 1-2 | src/game/state.js:404 · 726 `variegated: false` | 화분의 `variegated` 가 늘 false → 화분 어미 무지 마디 삽수는 영영 0% · `VARIE.variegatedMother 0.195` 안 쓰임 · job_shop `ctx.motherVarie` 넘기는 곳 없음 | core(QUESTION) | ? | C §12 |
-| 1-3 | game.html(등급 장부 `pots[0]` 만) → shop.js:1953 · 1671 | 무늬 등급 장부는 첫 화분만 — 씨앗 그루 무늬 잎은 값 매길 때 산반으로 떨어진다 | core(QUESTION) | ? | C §12 |
+| 1-2 | src/game/state.js:404 · 726 `variegated: false` | 화분의 `variegated` 가 늘 false → 화분 어미 무지 마디 삽수는 영영 0% · `VARIE.variegatedMother 0.195` 안 쓰임 · job_shop `ctx.motherVarie` 넘기는 곳 없음 | core(QUESTION) → **✔ D83 ①: `variegated` 는 false 그대로** — 그 칸은 «무늬종 광량 문턱 ×1.4» 스위치(light_thresholds `variegated`)라 켜면 모주 최적 5~11 → 7~15.4 로 판 전체 자람이 바뀐다. 무늬 잎이 있는지는 core 가 따로 잰다(74719b0f growth_adapter §varieChanceNow · loop §motherVarieOf → 가게 `ctx.motherVarie`) · 화분 어미 무지 마디 삽수 = 0 은 core 가 정함(같은 커밋 · 실제 알보 결 — `variegatedMother` .195 → 0) | ✕ 지금은 안 바꿈 | C §12 · 총괄 D83 |
+| 1-3 | game.html(등급 장부 `pots[0]` 만) → shop.js:1953 · 1671 | 무늬 등급 장부는 첫 화분만 — 씨앗 그루 무늬 잎은 값 매길 때 산반으로 떨어진다 | core(QUESTION) → **✔ 고침(core 74719b0f)**: 장부를 화분마다(씨앗 그루까지) — 씨앗 그루 무늬 잎이 제 등급 값을 받는다 · probe_seed_ledger PASS | ○(씨앗 그루 무늬 잎 값) | C §12 · 총괄 D82 ④ |
 | 1-4 | plant_grow.html:1859 «갈래 비율에는 빛 배율을 태우지 않는다(MAT_TREE)» | 게임은 등급(빛 밴드로 굴림)에서 뽑은 스킨으로 그림을 덮는다(shop.js `leafSkinsFor` → `setLeafSkins`) — 문서의 «빛은 나나 마나만»과 다름 | growth · core | ✕(글) · 판단 따라 ○ | C 지도 |
 | 1-5 | src/game/loop.js:1327 «표시만. 차감 없음» · game.html 이 electricity.json 을 안 읽음 | 전기 요금이 실제로 안 빠진다 → characters.json 연구자 `electricityWaived` 가 차이를 안 냄 · `electricityRulesFrom` 은 검사만 부름 | core | ○(차감을 켜면 판 돈이 바뀜) | E §10 |
 | 1-6 | data/balance/characters.json 칸 다섯(`household` · `monthlyIncome` · `electricityWaived` · `goalType` · `systems`) | 읽는 코드 0(E 를 지을 때 섬) | core | ○(E) | E §0 |
 | 1-7 | game.html `hardReset` · `gameOverAgain` `localStorage.clear()` | 다시 시작이 세이브 밖 열쇠까지 지움 → E 의 «집 엔딩 본 적» 메타 열쇠와 부딪힘 | core | ○(E) | D §9 · E §0 |
 | 1-8 | story_arc.md §5 «달력이 둘»(화면 `tutorial.seasonAt` 여름 45일차 · 빛 `weather.seasonOf(S.day)` 0 = 봄) | 지금도 오프셋이 남았는지 확인 안 함 — 새 판은 둘을 같게(E §1-3) | core | ? | E §1-3 |
 | 1-9 | tools/test_balance_routes.mjs ③ «튜토 완주 30~50분(배속 10초/일)» | **50.9분 — 0.9분 넘침**(게임 258일 · 누름 157회 · 누름당 3초 가정). 바닥 사람(시루 1 고정 · 등 없이) 판이라 «안내대로»보다 길다 · D81 대로 붉게 둠(core 1533f7e7) | **총괄**(임자 판단 — 자를 고칠지 · 판을 고칠지) | ? | core 10-24 · 총괄 D81 ⑧ |
+| 1-10 | 씨앗 그루 무늬(plant_grow §calcVarieProb — 모주와 같은 한 줄로 잎마다 굴림 · 프롤로그 축복 없음) | 박사님 캐논 «잎마다 따로 · 기본 20%» 그대로 — core tools/probe_seed_varie.mjs: 투룸 진짜 날씨 120일에 무늬 낸 그루 **3~4/10 · 잎 중 13~14%**(DLI 못 박음 7 이상이면 60일 안에 10/10 · 잎 중 48~81% — 윗값). 장부를 넓힌 뒤(1-3) 그 잎이 제 등급 값을 받는다(전엔 산반). ⚠ 실제 알보는 씨앗으로 이어지지 않는다(키메라) — 게임은 씨앗 그루도 무늬를 낸다 | 총괄 → **✔ D83 ②: 캐논대로 그대로 · 박사님 첫 플레이 뒤 다시 봄** | ✕ 지금은 안 바꿈 | core 74719b0f · 총괄 D83 |
 
 ## 2. 낡은 글 — 코드는 맞고 글이 옛 값 (✕ 글만)
 
