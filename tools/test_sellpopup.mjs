@@ -57,14 +57,16 @@ await page.waitFor('window.__byeotBooted === true', 180000, 300);
 await sleep(7000);
 
 async function walk() {
+  /* ⚠ 2026-10-24 [core] 총괄 D83 ③ — 08-16(ff448563)부터 1일차 «첫 달 가계부»가 떠 있어 준비 내내 덮였다 → 대사·안내처럼 닫는다 */
   for (let i = 0; i < 80; i++) {
     const busy = await page.eval(`(()=>{const s=document.getElementById('stage'),
-      g=document.getElementById('guide');
-      return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'));})()`);
+      g=document.getElementById('guide'), m=document.getElementById('monthPanel');
+      return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'))||!!(m&&m.classList.contains('on'));})()`);
     if (!busy) return;
     await page.eval(`(()=>{const s=document.getElementById('dlgSkip'); if(s) s.click();
       const b=document.getElementById('dlgBox'); if(b) b.click();
-      const g=document.getElementById('guideClose'); if(g) g.click();})()`, false);
+      const g=document.getElementById('guideClose'); if(g) g.click();
+      const m=document.getElementById('monthPanel'); if(m&&m.classList.contains('on')){const c=document.getElementById('monthClose'); if(c) c.click();}})()`, false);
     await sleep(280);
   }
 }
@@ -110,16 +112,31 @@ for (const s of ['banjiha-dresser:1', 'banjiha-dresser:0']) {
   await place(s); await sleep(900); await walk();
 }
 await freeHands();
-for (let i = 0; i < 3; i++) { await siruBtn('plant', 0); await sleep(500); await freeHands(); }
-await redraw();
-for (let i = 0; i < 3; i++) { await siruBtn('water', 0); await sleep(600); await freeHands(); }
+/* ⚠ 2026-10-24 [core] 총괄 D83 ③ — 08-16(a60495bf «동작 막대 · 연타 막음»)부터 0.5초 간격 연타가 씹혀(걸어가서 하는 동안 다음 누름은 안 받는다)
+     물을 못 줘 곳간이 0판이었다(낡은 자). ⇒ 시루마다 id 로 누르고 «그 단추가 사라질 때까지»(걸어가서 한 동작이 끝날 때까지 · 15초 안) 기다린다.
+     정해 둔 초로 기다리면 걷는 길이에 따라 또 씹힌다(1.2초로는 둘째 시루 심기가 씹혔다) — 못 끝나면 그 자리에서 떨어진다 */
+const siruIds = await page.eval(`(()=>(window.__S().firstPlay.beansprout.pots||[]).map(p=>p.id))()`);
+await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(600);
+const btnOf = (id, a) => `document.querySelector('#siruList button[data-siru="${id}"][data-act="${a}"]')`;
+const actOn = async (id, a) => {
+  const clicked = await page.eval(`(()=>{const b=${btnOf(id, a)}; if(!b) return false; b.click(); return true;})()`);
+  if (!clicked) return false;
+  for (let i = 0; i < 60; i++) { await sleep(250); await walk(); if (!(await page.eval(`!!${btnOf(id, a)}`))) return true; }
+  return false;
+};
+const actAll = async (a) => { for (const id of siruIds) { await freeHands(); const r = await actOn(id, a); if (!r) console.log(`      (준비) ${id} ${a} — 단추가 없거나 15초 안에 안 끝남`); await redraw(); } };
+await actAll('plant');
+await actAll('water');
+await page.eval(`window.__byeotSheet.close()`, false); await sleep(400);
 await redraw();
 for (let d = 0; d < 7; d++) {                     /* 밥상 창이 뜨면 한 번 더 눌러 넘긴다 */
   await freeHands(); await click('next'); await sleep(1400); await walk();
   await freeHands(); await click('next'); await sleep(1400); await walk();
 }
 await freeHands();
-for (let i = 0; i < 3; i++) { await siruBtn('harvest', 0); await sleep(900); await freeHands(); }
+await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(600);
+await actAll('harvest');
+await page.eval(`window.__byeotSheet.close()`, false); await sleep(400);
 await redraw(); await sleep(800); await redraw();
 const m0 = await money();
 console.log(`\n(판) 곳간 ${m0.pantry}원 · ${m0.lots}판 · Day ${m0.day}`);
@@ -295,7 +312,10 @@ const refill = async () => {
     f.pantryWon = 6000;
     f.pantryLots = [{kind:'beansprout', day:S.day, won:4000, meals:3},
                     {kind:'beansprout', day:S.day, won:2000, meals:3}];
-    f.mealPlanWon = null;})()`, false);
+    f.mealPlanWon = null;
+    /* ⚠ 2026-10-24 [core] 총괄 D83 ③ — 10-08 D13(b9817f04) «어제와 같고 모자라지 않으면 밥상 팝업 없이 한 줄로 넘긴다» 뒤로, 준비가 날을 넘기며 «그대로»를
+         골라 두면 [다음 날]이 팝업 없이 지나갔다. 이 단락이 재는 것은 팝업 단추 크기라 «어제 밥상» 기억을 지워 팝업을 띄운다 */
+    try { localStorage.removeItem('byeot.mealLast'); } catch (e) { console.warn('[검사] 밥상 기억', e && e.message); }})()`, false);
   await redraw();
 };
 console.log('\n== G. ★ 폰 셋 다 — 단추 44px (곳간은 지름길로 채웠다) ==');

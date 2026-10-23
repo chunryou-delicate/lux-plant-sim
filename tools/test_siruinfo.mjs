@@ -64,15 +64,17 @@ for (const W of WIDTHS) {
   await page.waitFor('window.__byeotBooted === true', 180000, 300);
   await sleep(7000);
 
+  /* ⚠ 2026-10-24 [core] 총괄 D83 ③ — 08-16(ff448563 살림 시계 첫날부터)부터 1일차에 «첫 달 가계부»가 떠 준비 내내 화면을 덮었다 → 대사·안내처럼 닫는다 */
   async function walk() {
     for (let i = 0; i < 80; i++) {
       const busy = await page.eval(`(()=>{const s=document.getElementById('stage'),
-        g=document.getElementById('guide');
-        return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'));})()`);
+        g=document.getElementById('guide'), m=document.getElementById('monthPanel');
+        return !!(s&&s.classList.contains('talking'))||!!(g&&g.classList.contains('on'))||!!(m&&m.classList.contains('on'));})()`);
       if (!busy) return;
       await page.eval(`(()=>{const s=document.getElementById('dlgSkip'); if(s) s.click();
         const b=document.getElementById('dlgBox'); if(b) b.click();
-        const g=document.getElementById('guideClose'); if(g) g.click();})()`, false);
+        const g=document.getElementById('guideClose'); if(g) g.click();
+        const m=document.getElementById('monthPanel'); if(m&&m.classList.contains('on')){const c=document.getElementById('monthClose'); if(c) c.click();}})()`, false);
       await sleep(280);
     }
   }
@@ -142,23 +144,30 @@ for (const W of WIDTHS) {
     await page.eval(`window.__picked.clear()`, false);
     await page.eval(`window.__picked.select('${key}')`, false);
     await sleep(400);
+    /* ⚠ 2026-10-24 [core] 총괄 D83 ③ — 08-16(eac9f60a)부터 띠는 «물건 옆 세로 팝오버» + 보이지 않는 누름 자리(::before inset −12px)라 scrollWidth 가
+         늘 12px 넘쳤고(낡은 자), 08-17 빈 화분 [🌱 심기] 단추(시루에선 display:none · 높이 0)를 «가장 작은 단추»로 셌다(낡은 자).
+         ⇒ D-1 은 «보이는 단추·글이 띠(카드) 밖으로 안 나간다» · D-1b 는 «문서가 가로로 안 넘친다»(누름 자리가 화면을 옆으로 밀지 않는다) · D-3 은 보이는 단추만 */
     const bar = await page.eval(`(()=>{const pa=document.getElementById('plantActions'),
       who=document.getElementById('pickedName');
       const r=pa.getBoundingClientRect();
+      const vis=[...pa.querySelectorAll('button')].filter(b=>getComputedStyle(b).display!=='none' && b.getBoundingClientRect().height>0);
+      const outOf = el => { const q=el.getBoundingClientRect(); return Math.max(0, r.left - q.left, q.right - r.right); };
       return { who:(who.textContent||'').replace(/\\s+/g,' ').trim(),
         whoLines: Math.round(who.getBoundingClientRect().height / 18),
-        overflowX: pa.scrollWidth - pa.clientWidth,
+        overflowX: Math.round(Math.max(0, ...vis.map(outOf), outOf(who))),
+        docOverflow: (document.scrollingElement || document.documentElement).scrollWidth - innerWidth,
         inX: r.x >= 0 && r.x + r.width <= innerWidth,
         inY: r.y >= 0 && r.y + r.height <= innerHeight,
-        btnMin: Math.min(...[...pa.querySelectorAll('button')]
-                  .map(b=>Math.round(b.getBoundingClientRect().height))) };})()`);
+        nVis: vis.length,
+        btnMin: vis.length ? Math.min(...vis.map(b=>Math.round(b.getBoundingClientRect().height))) : 0 };})()`);
     console.log(`\n  ${t.name} — 아래 한 줄: ${JSON.stringify(bar.who)}`);
     briefs.add(bar.who);
     ok(`C-1 ${t.name} · 아래 한 줄이 **그 시루 번호**를 말한다`,
        bar.who.startsWith(t.name), bar.who);
-    ok(`D-1 ${t.name} · 띠가 가로로 안 넘친다`, bar.overflowX <= 0, bar.overflowX + 'px');
+    ok(`D-1 ${t.name} · 띠의 보이는 단추·글이 띠 밖으로 안 나간다`, bar.overflowX <= 0, bar.overflowX + 'px');
+    ok(`D-1b ${t.name} · 문서가 가로로 안 넘친다(누름 자리가 화면을 옆으로 밀지 않는다)`, bar.docOverflow <= 0, bar.docOverflow + 'px');
     ok(`D-2 ${t.name} · 띠가 화면 안이다`, bar.inX && bar.inY);
-    ok(`D-3 ${t.name} · 띠 단추가 44px 이상`, bar.btnMin >= 44, bar.btnMin + 'px');
+    ok(`D-3 ${t.name} · 띠의 보이는 단추 ${bar.nVis}개가 다 44px 이상`, bar.nVis > 0 && bar.btnMin >= 44, bar.btnMin + 'px');
 
     await click('pickZoom'); await sleep(700);
     const det = await page.eval(`(()=>{const d=document.getElementById('detail');
