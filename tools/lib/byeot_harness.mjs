@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';   /* D71 — 자리 높이 표(tools/lib/drop_table) */
 import { ARRIVAL, pot0, hasPlant } from '../../src/game/state.js';
 import { firstPlayRulesFromBalance, cropSites, cropPotList } from '../../src/game/first_play.js';
 import { createProfileLight } from '../../src/game/room_profile.js';
@@ -124,11 +125,42 @@ export function profileOf(id) {
   }
   return PROFILES[id];
 }
+/* ★ 2026-10-23 D71 — 자리마다 «늘어지는 줄기가 떨어질 높이»(house dropM · high). 프로필 표엔 없어 같은 house 코드로 그 방을 한 번 지어 뽑는다
+     (자식 프로세스 tools/lib/drop_table.mjs — THREE·document 흉내를 이 프로세스에 안 남긴다). 게임은 io.light.room.slots 가 같은 칸을 든다.
+     스킨답서스는 가게(투룸)에서만 만나므로 투룸만 붙인다 */
+const DROPS = {};
+export function dropTableOf(roomId) {
+  if (!(roomId in DROPS)) {
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'lib', 'drop_table.mjs'), roomId], { encoding: 'utf8', timeout: 180000 });
+    let t = null;
+    try { t = JSON.parse(String(r.stdout || '').trim().split('\n').pop()).slots; } catch { t = null; }
+    if (!t) throw new Error(`[하네스] ${roomId} 자리 높이(dropM)를 못 뽑았다 — ${String(r.stderr || r.error || '').slice(0, 200)}`);
+    DROPS[roomId] = t;
+  }
+  return DROPS[roomId];
+}
+const DROP_ROOMS = new Set(['tworoom']);
+/* ★ D71(총괄 «② 화분걸이 + 등 3 길도 걸어라») — 가구를 더해 생긴 자리 하나를 그 방 프로필 표에 붙인다.
+     줄(row)은 진짜 엔진이 잰 프로필 줄 꼴 그대로(growth probe_tworoom_shop · docs/handoff/growth-tworoom-shop.json d71.planter.row — ratio · ppfd[등 수]).
+     ⚠ 하네스 몫 — 게임은 가구를 놓으면 조도 엔진이 자리를 스스로 낸다(house built.plantSlots). 부른 뒤 light.build(roomId) 로 다시 잡을 것 */
+export function addProfileSlot(roomId, row, drop) {
+  const base = readJSON(`data/profiles/room_profile.${roomId}.json`);
+  const p = { ...base, slots: [...base.slots.filter(s => s.slotId !== row.slotId), row] };
+  const warn = console.warn; console.warn = () => { };
+  try { PROFILES[roomId] = { p, light: createProfileLight(p.uidStable === true ? p : { ...p, uidStable: true }, LIGHT_DATA) }; }
+  finally { console.warn = warn; }
+  if (drop) { dropTableOf(roomId)[row.slotId] = { dropM: drop.dropM, high: drop.high === true, y: row.point && row.point.y }; }
+  return PROFILES[roomId];
+}
 export function makeSwitchingLight(start = 'banjiha') {
   let cur = profileOf(start).light;
   /* ★ 2026-10-08 — 정적 표는 자유 좌표(at)를 «모른다고 던진다»(계약 D · room_profile §dliOfSlot). 게임의 삽수는 언제나 at 을 들고 있어
        loop.cuttingLightOf 가 늘 null 이 됐다(빛 띠 미정 · 새 잎 0). ⇒ **그 at 이 바로 그 자리의 좌표일 때만**(1 mm 안) 자리 표를 읽는다.
        자리를 벗어난 좌표는 그대로 던진다 — 모르는 것을 지어내지 않는다. 이 자의 사람은 삽수를 자리 좌표(atOf)에만 놓는다 */
+  const withDrop = (r) => {
+    if (r && DROP_ROOMS.has(r.id)) { const t = dropTableOf(r.id); for (const s of r.slots || []) { const d = t[s.slotId]; if (d) { s.dropM = d.dropM; s.high = d.high; } } }
+    return r;
+  };
   const dliOfSlot = (ref, o) => {
     try { return cur.dliOfSlot(ref, o); }
     catch (e) {
@@ -140,7 +172,7 @@ export function makeSwitchingLight(start = 'banjiha') {
   };
   return { daily: (day, S) => cur.daily(day, S), skyFor: (day, sim) => cur.skyFor(day, sim), dliOfSlot,
            clearCache: () => cur.clearCache(), thresholdsOf: (p, v) => cur.thresholdsOf(p, v), growLampCount: () => cur.growLampCount(),
-           get room() { return cur.room; }, build(roomId) { cur = profileOf(roomId).light; return cur.room; } };
+           get room() { return withDrop(cur.room); }, build(roomId) { cur = profileOf(roomId).light; return withDrop(cur.room); } };
 }
 export const atOf = (light, id) => { const s = (light.room.slots || []).find(x => x.slotId === id); return s ? { x: s.x, y: s.y, z: s.z } : null; };
 

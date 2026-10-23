@@ -2732,6 +2732,11 @@ export async function createRoomView(canvas, opts = {}) {
      plant_grow 가 그대로 그리고 화분만 걷어 준다(밑동 y=0 · 흙·화분 없음 — 그릇은 여기서 그린다).
      ⚠ null 이면(잎 0 · 모르는 종 · 그 씨앗이 못 내는 장수 · 조립 실패) 예전 길(자른 가지 · 원기둥)로 내려앉는다.
      ⚠ 무늬 그림이 늦게 오면(userData.skinsPending) 모주처럼 도착 뒤 다시 짓는다(§rebuildVariePlants). */
+  /* ★ D71 — 늘어진 줄기는 판 끝(월드 방향)을 본다: 그루 그룹이 돌면(놓기 · 돌리기) 줄기 몫만 거꾸로 돌려 맞춘다 */
+  function keepHangWorld(g) {
+    const c = g && g.userData && g.userData.hangChild;
+    if (c) c.rotation.y = (g.userData.hangBaseYaw || 0) - (g.rotation.y || 0);
+  }
   async function addYoungPlant(g, spec, baseY, potD) {
     /* ★ 2026-10-09 D45 — 새 두 종(PP · AL)은 그루 상태(species/1)를 그대로 넘긴다(growth 5a70b9c2 · 몬스테라 칸은 안 읽음).
          null(AL 잎 0장 · 구근·잠)이면 화분만 — 자른 가지 길로 안 내려앉는다(몬스테라 가지가 아니다) */
@@ -2741,12 +2746,20 @@ export async function createRoomView(canvas, opts = {}) {
       try {
         asm = await assembler();
         if (!asm || typeof asm.youngPlantOf !== 'function') return true;
-        plant = asm.youngPlantOf({ species: sp, plant: spec.speciesPlant, seed: spec.youngSeed, potD });
+        /* ★ 2026-10-23 D71 — 스킨답서스는 늘어지는 덩굴: 받침 높이(dropM · 줄기 상한)와 흙 → 놓인 면(potH = baseY)을 넘긴다(growth 그리개 hang 칸) */
+        const hang = sp === 'scindapsus' && Number.isFinite(spec.hangDropM)
+          ? { dropM: spec.hangDropM, potH: baseY,
+              /* 늘어지는 쪽(월드) — 그루 그룹이 돌면 §keepHangWorld 가 줄기만 되돌려 판 끝 쪽을 지킨다 */
+              ...(Array.isArray(spec.hangDir) ? { az: Math.atan2(spec.hangDir[0], spec.hangDir[1]) } : {}),
+              ...(Number.isFinite(spec.hangEdgeM) ? { edgeM: spec.hangEdgeM } : {}) }
+          : undefined;
+        plant = asm.youngPlantOf({ species: sp, plant: spec.speciesPlant, seed: spec.youngSeed, potD, ...(hang ? { hang } : {}) });
       } catch (e) { warnOnce('young-sp', '[방뷰] 새 식물 그루를 못 지었습니다 — 화분만 그립니다:', e); return true; }
       g.userData.leaves = [];
       if (!plant) { g.userData.young = { species: sp, leafCount: 0, drawn: false }; return true; }
       plant.position.y = baseY;
       g.add(plant);
+      if (sp === 'scindapsus' && spec.hangDir) { g.userData.hangChild = plant; g.userData.hangBaseYaw = plant.rotation.y || 0; }   /* D71 §keepHangWorld */
       const u = plant.userData || {};
       g.userData.young = { species: sp, leafCount: u.leafCount, leafCountWanted: u.leafCountWanted, h: u.sizeM && u.sizeM.h,
                            d: u.sizeM && Number.isFinite(u.sizeM.d) ? u.sizeM.d : null,   /* D55 */
@@ -3388,6 +3401,7 @@ export async function createRoomView(canvas, opts = {}) {
        (Y 회전만 쓴다 — 눕히거나 기울이면 화분이 넘어진다) */
     if (!hadPlant && !plantYaw.has(slotId)) plantYaw.set(slotId, 0);
     g.rotation.y = plantYaw.get(slotId) || 0;
+    keepHangWorld(g);
     seatPlantY(g, s.y, s);               // ★ 상판에 앉힌다 (§seatPlantY) — 받침은 빛 자리에서 잰다(D23)
     syncPlantBlob(slotId, g, d);         // ★ 접지 그림자 (그루 밖에 달린다)
     tagPlant(g, slotId, spec.potId || null);
@@ -3469,7 +3483,7 @@ export async function createRoomView(canvas, opts = {}) {
       prev.potId = id;
       prev.group.position.set(drawAt.x, drawAt.y, drawAt.z);
       seatPlantY(prev.group, A.y, A);    // ★ 옮겨도 그 면에 앉는다 (§seatPlantY) — 받침은 빛 자리에서(D23)
-      if (gaveRot) prev.group.rotation.y = A.rotY;
+      if (gaveRot) { prev.group.rotation.y = A.rotY; keepHangWorld(prev.group); }
       A.rotY = prev.group.rotation.y || 0;
       prev.at = A;
       if (old !== key) {
@@ -3501,6 +3515,7 @@ export async function createRoomView(canvas, opts = {}) {
     removePlantOf(id);                      // ★ 옛 자리는 반드시 지운다
     g.position.set(drawAt.x, drawAt.y, drawAt.z);
     g.rotation.y = yaw;
+    keepHangWorld(g);
     seatPlantY(g, A.y, A);                  // ★ 그 면에 앉힌다 (§seatPlantY) — 받침은 빛 자리에서(D23)
     syncPlantBlob(key, g, Math.min(d, limit === Infinity ? d : limit));   // ★ 접지 그림자
     A.rotY = yaw;
@@ -10191,7 +10206,7 @@ export async function createRoomView(canvas, opts = {}) {
       const y = Number.isFinite(+rad) ? +rad : 0;
       plantYaw.set(t.key, y);
       if (t.plant) {
-        t.plant.group.rotation.y = y;
+        t.plant.group.rotation.y = y; keepHangWorld(t.plant.group);
         /* 자리(at)에도 적어 둔다 — 방을 다시 조립해도(가구 이동) 각도가 살아남는 길이다 */
         if (t.plant.at) t.plant.at = { ...t.plant.at, rotY: y };
       }

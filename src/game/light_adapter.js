@@ -12,7 +12,7 @@
 
    ★ 이 파일에 밸런싱 숫자를 두지 않는다. 확률·임계값·요금은 전부 JSON에서 온다.
 ============================================================ */
-import { buildHouse } from '../render3d/house.js';
+import { buildHouse, dropBelow } from '../render3d/house.js';
 import { faintGrainTexture } from '../render3d/textures.js';
 import { winFromHouse } from '../engine/daylight_lux.js';
 import { buildDailyLight, thresholdsFor, daylightRatio, lampDLI } from '../engine/daily_light.js';
@@ -675,6 +675,8 @@ export function createLightEngine(data) {
     rooms: () => Object.entries(data.houseRooms.rooms || {})
                    .map(([id, r]) => ({ id, label: r.label || id, light: r.light || '' })),
     growLampCount: () => (room ? room.growRigs.length : 0),
+    /* ★ 2026-10-23 D71 — 자유 좌표의 «늘어지는 줄기가 떨어질 높이»(house dropBelow · 자리 칸 dropM 과 같은 자) — loop §speciesDropOf */
+    dropAt: (at) => (room && room.built && at ? dropBelow(room.built, at) : null),
     /* 그 식물의 임계값 (갈라짐 문턱 등). 값은 plan 소유 JSON에서만 온다. */
     thresholdsOf: (plantId, varie) => thresholdsFor(data.lightTh, plantId, varie)
   };

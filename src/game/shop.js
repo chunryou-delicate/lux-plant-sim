@@ -164,6 +164,13 @@ export const CATALOG = Object.freeze({
     listWon: 107_100, leadDays: 2,
     note: 'D45 ⚖ core 첫 판 — 정가 107,100원 → 실구매 150,000원. 교환을 두 번 거절한 판에만 진열(plan ①㉡)'
   }),
+  /* ★ 2026-10-23 D71 — 스킨답서스 «줄기 삽수»(마디 둘 · 물꽂이 전). 가게 판 sc_ask(단골 5) 날부터 진열(species §speciesShopOpen).
+     ⚖ 값 후보(총괄이 정함) — 실구매 25,000원: 마디 둘 시세(마디 8,000 × 2 = 16,000 · 쉬움 웃돈 ×1.3 = 20,800)보다 위라 «사서 바로 되파는» 길이 없다 */
+  sc_cutting: Object.freeze({
+    id: 'sc_cutting', ko: '스킨답서스 줄기 삽수 (마디 둘)', kind: 'plant', species: 'scindapsus',
+    listWon: 17_800, leadDays: 2,
+    note: 'D71 ⚖ 후보 — 정가 17,800원 → 실구매 25,000원. 단골 5 «찾는 손님»(sc_ask) 날부터 진열 · 물꽂이 12일 뒤 뿌리(몬스테라 물꽂이와 같은 날 수)'
+  }),
   pot_concrete_square: Object.freeze({
     id: 'pot_concrete_square', ko: '콘크리트 사각 화분', kind: 'container',
     listWon: 5_000, leadDays: 2, potKind: 'concrete_square',
@@ -355,8 +362,21 @@ export function furnitureShopOptsOf(presetId, p) {
       throw new Error(`[가구] ${presetId}.resale_won 은 0 이상의 정수(원)여야 합니다: ${JSON.stringify(v)}`);
     resaleWon = v;
   }
-  return { listed, resaleWon };
+  /* ★ 2026-10-23 D71 — `unlock: '<때>'` 그 때가 온 판에만 가구점에 뜨고 주문된다(§FURNITURE_UNLOCKS · 칸 임자는 [House] · 모르는 때면 던진다) */
+  let unlock = null;
+  if (has('unlock')) {
+    if (!Object.prototype.hasOwnProperty.call(FURNITURE_UNLOCKS, p.unlock))
+      throw new Error(`[가구] ${presetId}.unlock 은 ${Object.keys(FURNITURE_UNLOCKS).join('·')} 중 하나여야 합니다: ${JSON.stringify(p.unlock)}`);
+    unlock = p.unlock;
+  }
+  return { listed, resaleWon, unlock };
 }
+/* ★ D71 — 가구 해금 때(프리셋 unlock 칸이 고르는 이름 → 그 판에서 열렸나). 벽 화분걸이(wall_planter) = 가게 판 sc_ask(단골 5 «찾는 손님») 날부터(plan 권함)
+     ⚠ 첫 플레이가 꺼진 판(검수)에서도 «그 때»를 본다 — 상점 «줄기 삽수»(species §speciesShopOpen)와 같은 자 */
+export const FURNITURE_UNLOCKS = Object.freeze({
+  sc_ask: S => !!(S && S.jobShop && S.jobShop.scAskOn != null)
+});
+const furnitureUnlocked = (S, it) => !it || !it.unlock || FURNITURE_UNLOCKS[it.unlock](S);
 
 /* 부피[㎥]. **`size_m` 하나만 본다** — `w`·`d`·`h` 는 빌더 밑값이라 뜻이 다르다(위 ⚠⚠). */
 export function furnitureVolumeOf(sizeM) {
@@ -405,6 +425,7 @@ export function installFurniturePresets(json) {
       intro,                                                   // 한 줄 소개(없으면 null)
       shopKind: kind, why,                                     // 가구인가 · 아니면 왜 아닌가
       listed: kind === 'furniture' && o.listed,                // 가구점에 뜨나(2026-10-04)
+      unlock: o.unlock,                                        // D71 — 그 때가 와야 뜬다(없으면 null)
       resaleWon: kind === 'furniture' ? (o.resaleWon ?? furnitureResaleWonOf(listWon)) : null,
       sizeM, volumeM3,
       listWon, leadDays: FURNITURE_RULES.leadDays,
@@ -460,7 +481,7 @@ export function furnitureShopOpen(S) {
 /* 상점에 낼 가구 목록. **문이 닫혀 있으면 빈 목록**이다(위 ⚠). */
 export function furnitureCatalogList(S) {
   if (!furnitureShopOpen(S).open) return [];
-  return [..._FURN.items.values()].map(it => ({
+  return [..._FURN.items.values()].filter(it => furnitureUnlocked(S, it)).map(it => ({
     id: it.id, ko: it.ko, kind: it.kind, preset: it.preset, type: it.type,
     sizeM: it.sizeM, volumeM3: it.volumeM3,
     listWon: it.listWon, buyWon: buyPriceOf(it.id),
@@ -923,6 +944,7 @@ export function orderItem(S, itemId, qty = 1, opt = {}) {
   if (isFurnitureItemId(itemId)) {
     const gate = furnitureShopOpen(S);
     if (!gate.open) { const e = new Error('[상점] ' + gate.reason); e.tutorialInput = true; throw e; }
+    if (!furnitureUnlocked(S, _FURN.items.get(itemId))) { const e = new Error('[상점] 아직 가구점에 없는 가구입니다'); e.tutorialInput = true; throw e; }
   }
 
   const shop = shopOf(S);

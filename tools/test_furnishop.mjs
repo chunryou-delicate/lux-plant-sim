@@ -101,8 +101,9 @@ console.log('\nB. 거르기 — 가구가 아닌 것이 안 들어왔나');
      2026-10-10 [house] 가게 진열대(shop_display · plan D59 · 투룸 가게 방에 처음부터) — 가구점에 안 낸다: 121 → 122 · 안 내는 가구 1 → 2 · 가구점 84 그대로 
      2026-10-10 [house] 새 러그 셋(체크 · 잎무늬 · 러너 · 총괄 «B 넣습니다» · 값은 크기 규칙): 122 → 125 · 가구점 84 → 87 
      2026-10-10 [house] 벽 걸이 v1 열다섯(포스터·액자·엽서·달력 · mount wall-hang · 총괄) + 가게 주문판(안 냄): 125 → 141 · 가구점 87 → 102(core 2ca46715 가 걸이 자리 고르기를 붙인 뒤 켬) · 안 내는 가구 2 → 3
-     2026-10-23 [house] D71 벽 화분걸이(wall_planter · unlock 'sc_ask' · core 가 해금 거르기를 넣는 날 켠다): 141 → 142 · 안 내는 가구 3 → 4 · 가구점 102 그대로 */
-  ok('가구 102 · 안 내는 가구 4 · 전체 142', listedN === 102 && unlistedN === 4 && all.length === 142,
+     2026-10-23 [house] D71 벽 화분걸이(wall_planter · unlock 'sc_ask' · core 가 해금 거르기를 넣는 날 켠다): 141 → 142 · 안 내는 가구 3 → 4 · 가구점 102 그대로
+     2026-10-23 [core] 해금 거르기(shop §FURNITURE_UNLOCKS · 가게 sc_ask 날부터)를 넣고 켬: 가구 102 → 103 · 안 내는 가구 4 → 3 · 가구점 «열리면» 줄은 sc_ask 전엔 102 그대로 */
+  ok('가구 103 · 안 내는 가구 3 · 전체 142', listedN === 103 && unlistedN === 3 && all.length === 142,
      `가구 ${listedN} · 안 내는 가구 ${unlistedN} / 전체 ${all.length}`);
 
   /* ★ 조명은 **`lighting_presets.fixtures` 로 되짚어 확인한다** — 규칙이 코드에 있으므로
@@ -139,6 +140,12 @@ console.log('\nC. 값');
   const open = { tutorial: { enabled: true, lamp: { unlocked: true } } };
   const list = shop.furnitureCatalogList(open);
   ok('열리면 102줄', list.length === 102, String(list.length));
+  /* ★ D71 — 벽 화분걸이는 가게 sc_ask(단골 5) 날부터(unlock) · 그 전엔 주문도 안 된다 */
+  { const after = shop.furnitureCatalogList({ ...open, jobShop: { scAskOn: 400 } });
+    ok('sc_ask 뒤 103줄 · 벽 화분걸이가 뜬다', after.length === 103 && after.some(r => r.preset === 'wall_planter') && !list.some(r => r.preset === 'wall_planter'), `${after.length}줄`);
+    const wp = after.find(r => r.preset === 'wall_planter');
+    let threw = null; try { shop.orderItem({ ...open, day: 1, shop: { stock: {}, orders: [] } }, wp.id, 1); } catch (e) { threw = e.message; }
+    ok('sc_ask 전엔 벽 화분걸이 주문이 막힌다', /아직 가구점에 없는/.test(String(threw)), String(threw)); }
   /* 2026-10-09 [plan] 한 줄 소개(intro_ko) — 칸이 있는 가구만 실린다 */
   { const crt = list.find(r => r.preset === 'tv_crt');
     ok('브라운관 TV 한 줄 소개가 목록에 실린다 · 칸 없는 가구는 null', !!crt && crt.intro === '안 켜지는 옛 TV — 화면에 작은 집 하나'

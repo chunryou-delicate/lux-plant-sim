@@ -10,7 +10,8 @@
    사건(turn.events · 대사는 plan dialogue): job_start · shop_open · order_new · order_done{newRegular} · order_expired · regulars_milestone{n} · shop_sign
    ⚠ 손님 이름이 드는 줄은 대사가 아니라 기록 줄·주문판 글(plan — 대사는 틀 글자를 못 채움): 붙을 때 «{ko} — {ask}» · 받아 갈 때 «{ko} — {thanks}» */
 import { cuttingPriceOf, potPriceOf } from './shop.js';
-import { speciesPriceOf, speciesPotsOf, speciesPlaced, SPECIES_GAME, speciesRules, speciesReady, speciesShopOpen } from './species.js';
+import { speciesPriceOf, speciesPotsOf, speciesPlaced, SPECIES_GAME, speciesRules, speciesReady, speciesShopOpen,
+         SPECIES2, speciesKnown, scRooting, caInCare, addSpeciesPot, speciesPotOf, scCuttableNodes, scAtHighSpot } from './species.js';
 import { u01 } from '../growth/species_growth.js';
 import { seasonOf } from '../engine/weather.js';
 
@@ -33,13 +34,17 @@ export const SHOP_JOB = Object.freeze({
   newBias: 3,                  /* 아직 단골이 아닌 손님 쪽으로 3:1(⚖ D59) */
   milestones: Object.freeze([3, 10, 30]),
   signAt: 10,
+  /* ★ 2026-10-23 D71(박사님 «추천대로») — 새 두 종이 들어오는 때 = 단골 수(날짜가 아니라 — 가게를 잘하면 빨리 온다 · 명세 §0)
+       단골 5 → 스킨답서스 «찾는 손님»(sc_ask · 상점 진열) · 단골 8 → 칼라테아 «맡기는 손님»(ca_care · 가방에 맡은 그루) */
+  species2: Object.freeze({ scAt: 5, caAt: 8 }),
   /* 산 투룸 — 월세 0 · 관리비 한 달 8만(⚖ D59 · homes.json «산 집» 줄 대신 여기 한 곳 · core 판단) */
   ownedHome: Object.freeze({ roomId: 'tworoom', rentWon: 0, utilityWon: 80_000 })
 });
 const SJ = SHOP_JOB;
-const KINDS = Object.freeze(['monstera_cutting', 'monstera_pot', 'pp', 'al', 'al_corm']);
+const KINDS = Object.freeze(['monstera_cutting', 'monstera_pot', 'pp', 'al', 'al_corm', 'sc_cutting', 'sc_pot', 'ca_pot']);
 export const ORDER_KIND_KO = Object.freeze({
-  monstera_cutting: '몬스테라 삽수', monstera_pot: '몬스테라 그루', pp: '핑크프린세스', al: '알로카시아', al_corm: '알로카시아 구근'
+  monstera_cutting: '몬스테라 삽수', monstera_pot: '몬스테라 그루', pp: '핑크프린세스', al: '알로카시아', al_corm: '알로카시아 구근',
+  sc_cutting: '스킨답서스 줄기 삽수', sc_pot: '스킨답서스 그루', ca_pot: '칼라테아 그루'   /* D71 */
 });
 /* 등급 낱말 사다리(낮은 → 높은) — 몬스테라는 varie_grades id · PP 는 growth 등급(분홍 잎은 주문 안 함) · AL 은 무늬 갈래 */
 const RANK = Object.freeze({
@@ -53,7 +58,9 @@ const NEED_TO_RANK = Object.freeze({ sanban: 1, halfmoon: 2, fullmoon: 3 });
 
 /* ── 상태 ─────────────────────────────── */
 export function createJobShopState() {
-  return { orders: [], nextOrderDay: null, regulars: [], done: 0, expired: 0, milestones: {}, signOnDay: null, seq: 0, openedOn: null, lastExpireSaidDay: null };
+  return { orders: [], nextOrderDay: null, regulars: [], done: 0, expired: 0, milestones: {}, signOnDay: null, seq: 0, openedOn: null, lastExpireSaidDay: null,
+           /* D71 — 그날(sc_ask · ca_care · ca_saved) · 맡은 칼라테아 그루 id */
+           scAskOn: null, caCareOn: null, caPotId: null, caSavedOn: null };
 }
 /* ★ 2026-10-10 진로 열거(plan-branch-job-gender §3-2) — 엔딩 뒤 같은 판의 «식물로 무엇을 하며 사나». 지금 열린 것은 shop 하나 ·
      care(돌봄) · breed(무늬 육종)는 준비 중(진로 카드 game.html §JOB_KO 와 같은 id) · decor(꾸미기·수집)는 박사님 몫(§5-2)이라 자리만.
@@ -97,6 +104,64 @@ const gradeRankOfSpecies = q => {
   return r;
 };
 const alAwake = q => q && q.species === 'alocasia_frydek' && q.plant && q.plant.phase === 'growing' && (q.plant.leaves || []).length > 0;
+/* ★ 2026-10-23 D71 — 새 두 종의 원천(같은 자: 보낼 수 있는 수 − 걸린 주문 · 맡은 칼라테아는 손님 것이라 원천이 아니다)
+     ctx.spots = 오늘 방 자리 [{ dropM(받침 높이 m), dli }] (loop §shopSpotsOf) — «높은 자리» 가드 · «칼라테아 알맞은 자리» 가드 · 줄기 상한.
+     없으면(못 셈) 길이 주문 · 칼라테아 주문을 안 낸다(«할 수 있는 것만» — 모르면 안 낸다). 수는 growth 규칙에서(숫자 두 벌 없음) */
+function species2Sources(S, sp, ctx, openOf) {
+  const SCI = SPECIES2.sc, CAL = SPECIES2.ca;
+  const out = { sc_cutting: false, sc_pot: false, ca_pot: false, sc2: false, scGrownN: 0, scMaxLen: 0, scStep: null,
+                scReachN: null, scReachH: null, scHighN: 0, scLongM: null, caMaxLeaves: 0, caFit: 0 };
+  const spots = Array.isArray(ctx.spots) ? ctx.spots.filter(s => s && Number.isFinite(s.dropM)) : null;
+  if (speciesKnown(SCI)) {
+    const R = speciesRules(), sum = q => R.summary(q.plant);
+    const all = sp.filter(q => q.species === SCI && !q.listing);
+    const cuts = all.filter(scRooting), grown = all.filter(q => !scRooting(q));
+    const cutOpen = grown.some(q => scCuttableNodes(q).length > 0);
+    out.sc_cutting = cuts.length + (cutOpen ? 1 : 0) - openOf('sc_cutting') > 0;
+    out.sc2 = cuts.some(q => sum(q).nodes >= 2) || grown.some(q => scCuttableNodes(q).some(n => n.take >= 2));
+    /* 그루 주문은 «그루가 둘 이상»일 때만 — 몬스테라 그루 주문(monstera_pot · 화분 + 자리 잡은 삽수 ≥ 2)과 같은 자: 하나뿐인 줄기를 내주면 곁줄 sc_hang 이 끊긴다
+         (10-23 하네스 shop71 6판 — sc_pot 62 낸 것 0 맞춤 · 가게 사람이 하나뿐인 지킴이를 안 내줌) */
+    out.sc_pot = grown.length >= 2 && grown.length - openOf('sc_pot') > 0;
+    out.scGrownN = grown.length;
+    let top = null;
+    for (const q of grown) { const L = sum(q).lengthM; if (Number.isFinite(L) && (top == null || L > out.scMaxLen)) { out.scMaxLen = L; top = q; } }
+    out.scStep = typeof R.scInternodeM === 'function' ? R.scInternodeM(top ? top.plant : undefined) : null;
+    out.scLongM = typeof R.longVineM === 'function' ? R.longVineM() : null;
+    /* ★ 기한 안에 닿는 길이 — growth 규칙 그대로 가장 긴 그루의 복사본을 방 자리마다 기한 날 수만큼 걸린다(오늘 그 자리 빛 · 오늘 철 · 숫자 두 벌 없음).
+         보통 = 어느 자리든 30일 · 어려움 = 높은 자리(isHighSpot)에서 45일. 상한(받침 높이)도 걸음 안에서 걸린다.
+         (10-23 하네스 shop71 g — 상한만 보고 냈더니 sc_pot 8/8 기한 지남: 막 뿌리낸 0.1m 줄기에 «1m · 45일») */
+    if (spots && top && typeof R.isHighSpot === 'function') {
+      const season = seasonOf((S.day ?? 0) + ((S.sim && Number.isFinite(S.sim.yearDay0)) ? S.sim.yearDay0 : 0));
+      const seen = new Map();
+      const reach = (s, days) => {
+        const k = `${s.dropM.toFixed(2)}|${s.dli.toFixed(1)}|${days}`;
+        if (seen.has(k)) return seen.get(k);
+        const p = JSON.parse(JSON.stringify(top.plant));
+        let L = null;
+        try { for (let d = 0; d < days; d++) R.stepDay(p, { dli: s.dli, season, dropM: s.dropM }); L = R.summary(p).lengthM; } catch { L = null; }
+        seen.set(k, L);
+        return L;
+      };
+      for (const s of spots) {
+        if (!Number.isFinite(s.dli)) continue;
+        const hi = R.isHighSpot(s.dropM);
+        if (hi) out.scHighN += 1;
+        const n = reach(s, SJ.tiers.normal.days);
+        if (Number.isFinite(n) && (out.scReachN == null || n > out.scReachN)) out.scReachN = n;
+        if (hi) { const h = reach(s, SJ.tiers.hard.days); if (Number.isFinite(h) && (out.scReachH == null || h > out.scReachH)) out.scReachH = h; }
+      }
+    }
+  }
+  if (speciesKnown(CAL)) {
+    const R = speciesRules();
+    const flat = sp.filter(q => q.species === CAL && !caInCare(q) && !q.listing).filter(q => { const s = R.summary(q.plant); return s.leaves > 0 && s.curled === 0; });
+    out.caFit = spots && typeof R.spotFit === 'function' ? spots.filter(s => Number.isFinite(s.dli) && R.spotFit(CAL, s.dli) === 'fit').length : 0;
+    out.ca_pot = flat.length - openOf('ca_pot') > 0 && out.caFit > 0;
+    out.caMaxLeaves = Math.max(0, ...flat.map(q => R.summary(q.plant).leaves));
+  }
+  return out;
+}
+
 /* 그 판이 지금 낼 수 있는 kind 들 — ctx.cutOpen: 오늘 «문에 안 막힌» 모주 자를 마디 수(loop §cutOpenCountOf · S.cutOpenToday) */
 export function shopSources(S, ctx = {}) {
   const cuts = (S.cuttings || []).filter(c => c && c.status !== 'dead');
@@ -115,7 +180,9 @@ export function shopSources(S, ctx = {}) {
   const ppReady = sp.filter(q => q.species === 'pink_princess' && q.plant && q.plant.viable !== false && (q.plant.leaves || []).length > 0);
   const alReady = sp.filter(alAwake);
   const cormHeld = ((S.species && S.species.corms) || []).length + ((S.shop && S.shop.stock && S.shop.stock.al_corm) || 0);
+  const s2 = species2Sources(S, sp, ctx, openOf);
   return {
+    ...s2,
     monstera_cutting: cutCap > 0,
     monstera_pot: ((S.pots || []).length + est.length) >= 2 && potCap > 0,
     cut2: cutReady.some(c => leavesOfCutting(c) >= 2),
@@ -174,6 +241,32 @@ function needFor(kind, tier, src, u = 0) {
     return leaves && grade ? (u < 0.5 ? leaves : grade) : (leaves || grade);
   }
   if (kind === 'al_corm') return tier === 'easy' ? {} : null;
+  /* ★ D71 — 새 두 종(명세 §2). «자람이 드는» 조건(마디 둘로 키움 · 줄기 길이 · 잎 하나 더)은 겨울 가드를 그대로 받는다 */
+  if (kind === 'sc_cutting') {
+    if (tier === 'easy') return {};
+    if (tier === 'normal') return (src.sc2 || (src.scGrownN > 0 && growable(src, tier))) ? { nodes: 2 } : null;
+    return null;
+  }
+  if (kind === 'sc_pot') {
+    /* 보통 = 지금 가장 긴 줄기 + 한 칸 · 어려움 = «높은 자리에서만 닿는 길이»(높은 자리가 하나라도 있을 때만) — 둘 다 «기한 안에 닿는» 것만(scReachN · scReachH) */
+    if (!growable(src, tier) || !Number.isFinite(src.scStep)) return null;
+    if (tier === 'normal') {
+      if (!Number.isFinite(src.scReachN)) return null;
+      const L = src.scMaxLen + src.scStep; return L <= src.scReachN + 1e-9 ? { lengthM: Math.floor(L * 1000) / 1000 } : null;
+    }
+    /* ★ D76 — 어려움은 곁줄 sc_hang 과 같은 결: «높은 자리에 놓인» 줄기여야 맞는다(high) */
+    if (tier === 'hard') {
+      if (!Number.isFinite(src.scReachH) || !Number.isFinite(src.scLongM)) return null;
+      const L = Math.max(src.scLongM, src.scMaxLen + src.scStep);
+      return L <= src.scReachH + 1e-9 ? { lengthM: Math.floor(L * 1000) / 1000, high: true } : null;
+    }
+    return null;
+  }
+  if (kind === 'ca_pot') {
+    if (tier === 'normal') return { leaves: Math.max(1, src.caMaxLeaves) };
+    if (tier === 'hard') return growable(src, tier) ? { leaves: src.caMaxLeaves + 1, flatDays: SPECIES2.caFlatDays } : null;
+    return null;
+  }
   return null;
 }
 export { needFor as orderNeedFor };   /* 검사(test_job_shop §I 가드) */
@@ -200,8 +293,10 @@ function rollOrder(S, src, { first = false, day } = {}) {
   }
   return null;
 }
+/* ★ D71 — special 손님(sc_seeker · ca_owner)은 주문 손님 고르기에서 뺀다 — 그 사건(sc_ask · ca_care) 때만(plan shop_customers §_doc_special) */
+const specialCustomer = ev => shopCustomers().find(c => c && c.special === ev) || { id: ev, ko: '손님', ask: '', thanks: '' };
 function pickCustomer(S, { first = false } = {}) {
-  const list = shopCustomers();
+  const list = shopCustomers().filter(c => c && !c.special);
   if (!list.length) return null;
   const J = jobShopOf(S);
   if (first) return list.find(c => c.id === (CUSTOMERS && CUSTOMERS.first)) || list[0];
@@ -227,6 +322,10 @@ function pushOrder(S, spec, cust, day) {
 export function orderWantKo(o) {
   const k = ORDER_KIND_KO[o.kind] || o.kind;
   if (o.need && o.need.grade) return `${GRADE_KO[o.need.grade] || o.need.grade} 이상 무늬 잎이 있는 ${k}`;
+  if (o.need && o.need.nodes) return `마디 ${o.need.nodes}개 이상 ${k}`;
+  if (o.need && o.need.lengthM && o.need.high) return `높은 자리에 걸려 줄기 ${Math.round(o.need.lengthM * 100)}cm 이상 늘어진 ${k}`;
+  if (o.need && o.need.lengthM) return `줄기 ${Math.round(o.need.lengthM * 100)}cm 이상 ${k}`;
+  if (o.need && o.need.leaves && o.need.flatDays) return `잎 ${o.need.leaves}장 이상 · 한 달 내내 말린 잎이 없는 ${k}`;
   if (o.need && o.need.leaves) return `잎 ${o.need.leaves}장 이상 ${k}`;
   return k;
 }
@@ -268,6 +367,7 @@ export function stepShopJob(S, ctx = {}) {
   if (!isShopJob(S) || !movedHome(S)) return out;
   const J = jobShopOf(S), day = S.day ?? 0;
   if (J.openedOn == null) return { events: openShop(S, ctx).events };
+  out.events.push(...species2Step(S, J, day));
   /* 기한 지난 주문 — 조용히 사라진다(벌 없음 · 단골 안 셈) · 기록 줄 */
   for (const o of [...J.orders]) if (day > o.dueOn) {
     J.orders = J.orders.filter(x => x !== o); J.expired += 1;
@@ -285,6 +385,36 @@ export function stepShopJob(S, ctx = {}) {
     J.nextOrderDay = day + nextGap(S);
   }
   return out;
+}
+
+/* ── ★ 2026-10-23 D71 새 두 종이 들어오는 날 ─────────────────────────────── stepShopJob 이 날마다(새 종의 하루는 loop 가 이미 돌렸다)
+   sc_ask   단골 5 — «찾는 손님»이 묻고 간다 → 상점에 «스킨답서스 줄기 삽수» 진열(species §speciesShopOpen · shop CATALOG sc_cutting)
+   ca_care  단골 8 — «맡기는 손님»이 잎이 다 말린 칼라테아를 맡긴다 → 가방에(q.care · 못 판다 · 주문에 못 낸다)
+   ca_saved 맡은 그루의 말린 잎이 0 인 날 — 그 그루가 가게 것(q.care 를 걷는다)
+   ★ 하루 하나(옛 세이브가 단골 8 이상으로 열려도 sc_ask → 이튿날 ca_care) · 규칙에 그 종이 없으면 안 난다(기다린다)
+   ★ 이정표 보상이 아니다(명세 §7) — 단골 수는 «손님 사정»의 때일 뿐 · special 손님은 단골로 안 센다 */
+function species2Step(S, J, day) {
+  const ev = [], n = J.regulars.length, T = SJ.species2;
+  if (J.caPotId && J.caSavedOn == null && speciesKnown(SPECIES2.ca)) {
+    const q = speciesPotOf(S, J.caPotId);
+    const s = q && caInCare(q) ? speciesRules().summary(q.plant) : null;
+    if (s && s.leaves > 0 && s.curled === 0) {
+      q.care = null; J.caSavedOn = day;
+      const c = specialCustomer('ca_care');
+      ev.push({ id: 'ca_saved', ko: `${c.ko} — ${c.thanks}`, customerId: c.id, potId: q.id });
+    }
+  }
+  if (J.scAskOn == null && n >= T.scAt && speciesKnown(SPECIES2.sc)) {
+    J.scAskOn = day;
+    const c = specialCustomer('sc_ask');
+    ev.push({ id: 'sc_ask', ko: `${c.ko} — ${c.ask}`, customerId: c.id });
+  } else if (J.caCareOn == null && J.scAskOn != null && J.scAskOn < day && n >= T.caAt && speciesKnown(SPECIES2.ca)) {
+    const c = specialCustomer('ca_care');
+    const q = addSpeciesPot(S, SPECIES2.ca, { origin: 'care', newPlant: { curled: 'all' }, care: { customerId: c.id, since: day } });
+    J.caCareOn = day; J.caPotId = q.id;
+    ev.push({ id: 'ca_care', ko: `${c.ko} — ${c.ask}`, customerId: c.id, potId: q.id });
+  }
+  return ev;
 }
 
 /* ── 납품 후보 · 값 ─────────────────────────────── ref = { type:'cutting'|'species'|'corm'|'cormStock', id } */
@@ -313,6 +443,25 @@ export function candidatesFor(S, o) {
       if (need.leaves && lv < need.leaves) continue;
       if (rankNeed && gradeRankOfSpecies(q) < rankNeed) continue;
       out.push({ ref: { type: 'species', id: q.id }, ko: `${ORDER_KIND_KO[o.kind]} ${q.id} · 잎 ${lv}장${speciesPlaced(q) ? '' : '(가방)'}`, baseWon: speciesPriceOf(q).won });
+    }
+  } else if (o.kind === 'sc_cutting' || o.kind === 'sc_pot' || o.kind === 'ca_pot') {
+    /* ★ D71 — 줄기 삽수 = 물꽂이 중인 스킨답서스(뿌리 전) · 그루 = 뿌리낸 것 · 칼라테아 = 가게 것(맡은 그루 아님)이고 말린 잎 0 */
+    const want = o.kind === 'ca_pot' ? SPECIES2.ca : SPECIES2.sc;
+    const R = speciesKnown(want) ? speciesRules() : null, day = S.day ?? 0;
+    for (const q of R ? speciesPotsOf(S) : []) {
+      if (!q || q.species !== want || q.listing || caInCare(q)) continue;
+      if (o.kind === 'sc_cutting' ? !scRooting(q) : scRooting(q)) continue;
+      const s = R.summary(q.plant);
+      if (need.nodes && !(s.nodes >= need.nodes)) continue;
+      if (need.lengthM && !(s.lengthM >= need.lengthM - 1e-9)) continue;
+      if (need.high && !scAtHighSpot(q)) continue;   /* D76 — 높은 자리에 놓인 줄기만 */
+      if (o.kind === 'ca_pot') {
+        if (!(s.leaves > 0) || s.curled > 0) continue;
+        if (need.leaves && s.leaves < need.leaves) continue;
+        if (need.flatDays && !(Number.isFinite(q.flatSince) && day - q.flatSince >= need.flatDays)) continue;
+      }
+      const ko = o.kind === 'ca_pot' ? `칼라테아 ${q.id} · 잎 ${s.leaves}장` : o.kind === 'sc_pot' ? `스킨답서스 ${q.id} · 줄기 ${Math.round(s.lengthM * 100)}cm` : `줄기 삽수 ${q.id} · 마디 ${s.nodes}개`;
+      out.push({ ref: { type: 'species', id: q.id }, ko: ko + (speciesPlaced(q) ? '' : '(가방)'), baseWon: speciesPriceOf(q).won });
     }
   } else if (o.kind === 'al_corm') {
     for (const c of ((S.species && S.species.corms) || [])) out.push({ ref: { type: 'corm', id: c.id }, ko: '찾은 구근', baseWon: SPECIES_GAME.cormSellWon });
@@ -360,7 +509,10 @@ export function jobShopSnapshot(S) {
     shopDone: J ? J.done : null,
     shopRegulars: J ? J.regulars.length : null,
     shopOpenOrders: J ? open.length : null,
-    shopDueSoonest: open.length ? Math.min(...open.map(o => o.dueOn - day)) : null
+    shopDueSoonest: open.length ? Math.min(...open.map(o => o.dueOn - day)) : null,
+    /* ★ D71 곁줄 ca_unfurl 칸(plan) — 맡은 칼라테아가 있고 아직 안 펴짐 · 잎이 다 펴져 가게 것이 됐다(가게 판이 아니면 null) */
+    caCareOpen: J ? (J.caPotId != null && J.caSavedOn == null) : null,
+    caSaved: J ? J.caSavedOn != null : null
   };
 }
 

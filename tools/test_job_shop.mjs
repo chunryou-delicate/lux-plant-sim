@@ -117,7 +117,8 @@ T('E 납품 — 값 · 단골 · 이정표 · 간판 · 다시 온 손님', () =
 T('F 스냅샷 · G 세이브', () => {
   const S = openS({ cuttings: [cut('c1')] });
   const s = JS.jobShopSnapshot(S);
-  assert.deepStrictEqual(Object.keys(s).sort(), ['job', 'movedHome', 'shopDone', 'shopDueSoonest', 'shopOpenOrders', 'shopRegulars']);
+  assert.deepStrictEqual(Object.keys(s).sort(), ['caCareOpen', 'caSaved', 'job', 'movedHome', 'shopDone', 'shopDueSoonest', 'shopOpenOrders', 'shopRegulars']);   /* D71 — 곁줄 ca_unfurl 칸 둘 */
+  assert.strictEqual(s.caCareOpen, false); assert.strictEqual(s.caSaved, false);
   assert.strictEqual(s.job, 'shop'); assert.strictEqual(s.movedHome, true); assert.strictEqual(s.shopOpenOrders, 1);
   assert.strictEqual(s.shopDueSoonest, JS.SHOP_JOB.tiers.easy.days);
   const back = JS.unpackJobShop(JSON.parse(JSON.stringify(JS.packJobShop(S.jobShop))));

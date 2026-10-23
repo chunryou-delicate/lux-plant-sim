@@ -371,15 +371,52 @@ function stepSpeciesOfTurn(S, io, report) {
         } catch { dli = null; }
         if (!(typeof dli === 'number' && isFinite(dli) && dli >= 0)) { missed += 1; return null; }
         return dli;
-      }
+      },
+      /* ★ 2026-10-23 D71 — 자라는 스킨답서스의 받침 높이(growth dropM · 줄기 상한) */
+      dropOf: (q) => speciesDropOf(io, q)
     });
     if (missed) pushLog(S, `⚠ 새 식물 ${missed}그루의 자리 빛을 못 쟀습니다 — 오늘은 건너뜁니다`);
+    if (r.missedDrop) pushLog(S, `⚠ 스킨답서스 ${r.missedDrop}그루의 받침 높이를 못 쟀습니다 — 오늘은 건너뜁니다`);
     for (const e of r.events) if (e && e.ko && e.id !== 'pp_trade_offer') pushLog(S, '🌿 ' + e.ko);
     return r;
   } catch (e) {
     pushLog(S, '⚠ 새 식물 진행 실패 — ' + e.message);
     return { error: e.message, events: [], alDormantNow: false, stepped: 0 };
   }
+}
+
+/* ★ 2026-10-23 D71 — 그 자리에서 «늘어지는 줄기가 떨어질 높이»(m · growth dropM) = house 가 자리마다 낸 dropM
+     (화분 자리에서 판 끝까지 나가 아래 첫 면 — 없으면 바닥 — 까지 · house.js dropBelow · 2b6cfc5a).
+     ⚠ 받침 높이(y)가 아니다 — 투룸 진열대 윗단은 y 0.815 인데 바로 아랫단에 닿아 0.25 만 늘어진다(house 짚음).
+     추천 자리면 그 자리 칸(io.light.room.slots[].dropM) · 자유 좌표면 io.light.dropAt(at). 못 찾으면 null(조용히 y 나 0 으로 안 메꾼다) */
+export function speciesDropOf(io, q) {
+  const d = speciesDropInfoOf(io, q);
+  return d ? d.dropM : null;
+}
+/* 같은 자의 세 칸 — { dropM, edgeM(화분 가운데 → 판 끝 m), dir([dx, dz] · 늘어지는 쪽 월드 방향) } · 그림(growth hang)이 쓴다 */
+export function speciesDropInfoOf(io, q) {
+  const L = io && io.light;
+  const slots = (q && q.slotId && L && L.room && L.room.slots) || [];
+  const sl = slots.find(x => x && x.slotId === q.slotId);
+  if (sl && Number.isFinite(sl.dropM)) return { dropM: sl.dropM, edgeM: Number.isFinite(sl.dropEdgeM) ? sl.dropEdgeM : null, dir: Array.isArray(sl.dropDir) ? sl.dropDir : null };
+  if (q && q.at && L && typeof L.dropAt === 'function') {
+    const d = L.dropAt(q.at);
+    if (d && Number.isFinite(d.dropM)) return { dropM: d.dropM, edgeM: Number.isFinite(d.edgeM) ? d.edgeM : null, dir: Array.isArray(d.dir) ? d.dir : null };
+  }
+  return null;
+}
+/* ★ D71 — 오늘 방 자리 [{ slotId, dropM, dli }] — 가게 주문 가드(«높은 자리» · «칼라테아 알맞은 자리» · 줄기 상한 · job_shop §species2Sources).
+     빛은 그루와 같은 자(lightOptsOf · 오늘 하늘). 못 세면 null — 그러면 길이·칼라테아 주문을 안 낸다 */
+function shopSpotsOf(S, io, sky) {
+  const L = io && io.light;
+  const slots = (L && L.room && L.room.slots) || [];
+  if (!sky || !slots.length || !L || typeof L.dliOfSlot !== 'function') return null;
+  const o = lightOptsOf(S, sky);
+  return slots.filter(x => x && Number.isFinite(x.dropM)).map(x => {   /* dropM 이 없는 자리는 «모른다» — 셈에 안 넣는다 */
+    let dli = null;
+    try { dli = L.dliOfSlot(x.slotId, o); } catch { dli = null; }
+    return { slotId: x.slotId, dropM: x.dropM, dli: Number.isFinite(dli) ? dli : null };
+  });
 }
 
 function stepCuttingsOfTurn(S, io, report) {
@@ -762,6 +799,10 @@ function attachEvents(S, turn, fpBefore) {
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
+  /* ★ 2026-10-23 D71 [plan] 대사 맥락 칸 — 방에 놓인 칼라테아 수 · 그중 «너무 밝은»(avg7 > hi) 것이 있나. 새 종 하루가 안 돈 날은 null(모른다) */
+  { const sp = turn.species && !turn.species.error ? turn.species : null;
+    turn.caPlants = sp && Number.isFinite(sp.caPlants) ? sp.caPlants : null;
+    turn.caTooBright = sp && typeof sp.caTooBright === 'boolean' ? sp.caTooBright : null; }
   /* ★ 2026-10-08 [plan] 지도 13 — 오늘의 작물 손 상태 두 칸. order_seed 독촉이 재고가 있는 날 «씨앗이 떨어졌어» 대신
        «씨앗이 있는데 빈 시루가 있어. 심어 줘.»를 고르는 근거다. 이른 턴(몬스테라 전)도 이 함수를 지나므로 여기서 채운다.
        emptySiru — 방에 놓였는데 콩이 안 들었거나(안 심음) 거둔 뒤 빈 콩나물 시루가 있나. 못 세면 null(대사가 예전 그대로) */
@@ -1202,7 +1243,10 @@ function nextDayBody(S, io) {
     /* plan §11 «등 n개» = 등 자리에 «켜진» 식물등 — 빛 계산(light_adapter §rigsOn)과 같은 자: 세운 수를 방 등 자리 수에서 자른다 */
     let lampsOn = (S.lamps && S.lamps.count) || 0;
     try { const rigs = io.light && typeof io.light.growLampCount === 'function' ? io.light.growLampCount() : null; if (Number.isFinite(rigs)) lampsOn = Math.min(lampsOn, rigs); } catch { }
-    jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn });
+    /* ★ D71 — 방 자리는 주문을 굴리는 날에만 센다(getter · 하루 한 번) */
+    let spotsMemo;
+    jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn,
+                               get spots() { if (spotsMemo === undefined) spotsMemo = shopSpotsOf(S, io, report && report.sky); return spotsMemo; } });
     for (const e of (jobShop && jobShop.events) || []) if (e && e.ko && (e.id === 'order_new' || e.id === 'order_expired' || e.id === 'shop_open'))
       pushLog(S, (e.id === 'order_new' ? '📋 ' : e.id === 'order_expired' ? '⌛ ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
   } catch (e) { pushLog(S, '⚠ 가게 하루 실패 — ' + e.message); jobShop = { error: e.message, events: [] }; }

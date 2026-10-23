@@ -33,8 +33,28 @@ export function speciesRules() {
 export const speciesReady = () => !!RULES;
 export function installSpeciesRules(R) { RULES = R || null; }   /* 검사가 규칙을 갈아 끼울 때 */
 
-export const SPECIES_IDS = Object.freeze(['pink_princess', 'alocasia_frydek']);
-export const SPECIES_KO = Object.freeze({ pink_princess: '핑크프린세스', alocasia_frydek: '알로카시아' });
+export const SPECIES_IDS = Object.freeze(['pink_princess', 'alocasia_frydek', 'scindapsus', 'calathea']);
+export const SPECIES_KO = Object.freeze({ pink_princess: '핑크프린세스', alocasia_frydek: '알로카시아', scindapsus: '스킨답서스', calathea: '칼라테아' });
+
+/* ★ 2026-10-23 D71(박사님 «추천대로» · plan-species2-shop-spec §D71) — 둘째 묶음 두 종. 가게 판에서만 만난다(job_shop §sc_ask · §ca_care).
+     스킨답서스(SC · «높이»): 늘어지는 덩굴 — 줄기 상한 = 놓인 자리 받침 높이(growth scStemCapM). 상점 «줄기 삽수»는 물꽂이(cutting) → 뿌리(rooted) → 자람
+     칼라테아(CA · «가운데»): 너무 밝으면(avg7 > hi) 잎을 만다 — 맡은 그루(q.care)는 잎이 다 펴진 날 가게 것이 된다
+   ★ 규칙은 growth(species_growth · 같은 그루 상태 schema species/1 · S.species.pots 에 같이 산다). 규칙에 그 종이 없으면 «아직 없는 판» — 사건이 안 난다(speciesKnown).
+   growth 에서 읽는 것(10-23 맞춤): summary SC { phase, nodes, leaves, lengthM, capM, atFloor } · CA { leaves, curled, tooBright, tooDark }
+     · scStemCapM(dropM) · scInternodeM(p) · isHighSpot(dropM) · longVineM() · spotFit(species, dli) · cutAbove(SC 도)
+   ⚖ 값은 후보(총괄이 정함 — 박사님 «차례만»: SC 마디 «낮음» < 몬스테라 무지 잎 2만 · 2만 < CA 잎 «중간» < PP 산반 25만) */
+export const SPECIES2 = Object.freeze({
+  sc: 'scindapsus', ca: 'calathea',
+  scNodeWon: 8_000,        /* ⚖ 후보 — 마디 하나(잎 한 장) 시세 */
+  caLeafWon: 60_000,       /* ⚖ 후보 — 펴진 잎 한 장 시세(말린 잎은 0) */
+  scShopNodes: 2,          /* 상점 «줄기 삽수» 마디 수(growth newPlant 기본과 같다) */
+  caFlatDays: 30           /* ca_pot 어려움 «말린 잎 없음 한 달»(명세 §2) — 잎이 다 펴진 날부터 센다(q.flatSince) */
+});
+const SC = SPECIES2.sc, CA = SPECIES2.ca;
+export const speciesKnown = id => !!(RULES && typeof RULES.species === 'function' && RULES.species().includes(id));
+const sumOf = q => RULES.summary(q.plant);
+export const scRooting = q => !!(q && q.species === SC && q.plant && q.plant.phase === 'cutting');   /* 물꽂이 중 «줄기 삽수» */
+export const caInCare = q => !!(q && q.species === CA && q.care);                                     /* 아직 손님 것 */
 
 export const SPECIES_GAME = Object.freeze({
   /* PP 교환(plan ①㉡ · §④): ③ «한 그루가 둘이 된다»(oneroom_settle_cutting) 끝 + 원룸 30일 뒤.
@@ -70,7 +90,7 @@ const isSp = id => SPECIES_IDS.includes(id);
 export function createSpeciesState() {
   return { pots: [], corms: [],
            trade: { asks: 0, declined: 0, done: false, pendingDay: null, lastAskDay: null, doneDay: null },
-           n: { ppPinkHoldCuts: 0, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0, cormsSold: 0 },
+           n: { ppPinkHoldCuts: 0, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0, cormsSold: 0, scRooted: 0 },
            seq: 0 };
 }
 /* 없으면 만든다(옛 세이브가 이 칸 없이 열린다) */
@@ -104,6 +124,7 @@ export function addSpeciesPot(S, species, opt = {}) {
   const id = opt.id || nextId(S, 'sp');
   const plant = opt.plant || R.newPlant(species, { seed: seedFor(S, id), ...(opt.newPlant || {}) });
   const q = { id, species, plant, slotId: null, at: null, placedOnce: false, gotDay: S.day ?? 0, origin: opt.origin || 'shop' };
+  if (opt.care) q.care = { ...opt.care };       /* D71 — 맡은 그루(손님 것 · 못 판다 · 주문에 못 낸다) */
   speciesOf(S).pots.push(q);
   return q;
 }
@@ -115,7 +136,13 @@ export function setSpeciesAt(S, id, spot) {
   q.slotId = spot ? (spot.slotId || null) : null;
   q.at = spot ? (spot.at || null) : null;
   if (spot) q.placedOnce = true;
+  /* ★ D76 — 그 자리 «늘어지는 높이»(house dropM). 부르는 쪽이 알면 같이 넘긴다(game §placeSpecies) · 모르면 비우고 그날 하루(stepSpecies)가 채운다 */
+  q.dropM = spot && Number.isFinite(spot.dropM) ? spot.dropM : null;
   return q;
+}
+/* ★ D76(총괄) — «높은 자리에 놓인» 스킨답서스인가: 놓였고 · 그 자리 dropM 이 growth 정본 문턱(high_spot_min_m) 이상(R.isHighSpot) */
+export function scAtHighSpot(q) {
+  return !!(q && q.species === SC && speciesPlaced(q) && Number.isFinite(q.dropM) && RULES && typeof RULES.isHighSpot === 'function' && RULES.isHighSpot(q.dropM));
 }
 /* 가방으로(회수) — 자라기가 멎는다 */
 export function bagSpecies(S, id) { return setSpeciesAt(S, id, null); }
@@ -133,11 +160,29 @@ export function stepSpecies(S, opt = {}) {
     let dli = null;
     try { dli = typeof opt.lightOf === 'function' ? opt.lightOf(q) : null; } catch { dli = null; }
     if (!Number.isFinite(dli)) continue;
+    /* ★ D71 — 자라는 스킨답서스는 받침 높이(dropM)가 꼭 든다(growth 가 없으면 던진다 · 조용히 안 메꿈). 못 재면 빛 못 잰 날처럼 건너뛴다 */
+    let dropM;
+    if (q.species === SC) {
+      let d = null;
+      try { d = typeof opt.dropOf === 'function' ? opt.dropOf(q) : null; } catch { d = null; }
+      q.dropM = Number.isFinite(d) ? d : null;                     /* D76 — 스냅샷 scLongVine · 어려움 주문 후보가 읽는다 */
+      if (!scRooting(q)) {
+        if (!Number.isFinite(d)) { out.missedDrop = (out.missedDrop || 0) + 1; continue; }
+        dropM = d;
+      }
+    }
     let ev = [];
-    try { ev = R.stepDay(q.plant, { dli, season: opt.season }); } catch (e) { out.events.push({ id: 'species_error', ko: e.message, potId: q.id }); continue; }
+    try { ev = R.stepDay(q.plant, dropM === undefined ? { dli, season: opt.season } : { dli, season: opt.season, dropM }); }
+    catch (e) { out.events.push({ id: 'species_error', ko: e.message, potId: q.id }); continue; }
     out.stepped += 1;
     for (const e of ev) mapEvent(S, q, e, out.events, day);
+    /* CA — 잎이 다 펴진 날부터 센다(ca_pot 어려움 «말린 잎 없음 한 달») · 다시 말리면 처음부터 */
+    if (q.species === CA) { const s = sumOf(q); if (s.curled > 0) q.flatSince = null; else if (q.flatSince == null) q.flatSince = day; }
   }
+  /* ★ D71 대사 맥락 칸(plan dialogue · turn.caPlants · turn.caTooBright) — 방에 놓인 칼라테아 수 · 그중 «너무 밝은»(avg7 > hi) 것이 있나 */
+  const caHere = sp.pots.filter(q => q && q.species === CA && speciesPlaced(q));
+  out.caPlants = caHere.length;
+  out.caTooBright = caHere.some(q => { try { return sumOf(q).tooBright === true; } catch { return false; } });
   out.alDormantNow = sp.pots.some(q => q && q.species === 'alocasia_frydek' && speciesPlaced(q) && q.plant && q.plant.phase === 'asleep');
   /* PP 교환 — 물음은 하루 결산에서 «난다»(대답은 화면 · answerPPTrade) */
   const t = ppTradeStep(S, { day, doneIds: opt.doneIds });
@@ -147,6 +192,19 @@ export function stepSpecies(S, opt = {}) {
 
 function mapEvent(S, q, e, list, day) {
   const sp = speciesOf(S), ko = SPECIES_KO[q.species];
+  /* ★ D71 — SC 뿌리(그루마다 한 번 · 판에서 첫 번만 sc_rooted — plan scRooted) · CA 잎이 다 펴짐(기록만 · ca_saved 는 job_shop 이 «말린 잎 0»으로 낸다) */
+  if (q.species === SC) {
+    if (e.type === 'rooted') {
+      sp.n.scRooted = (sp.n.scRooted || 0) + 1;
+      list.push({ id: sp.n.scRooted === 1 ? 'sc_rooted' : 'sc_rooted_again', ko: `${ko} 줄기 마디에서 뿌리가 났습니다 — 이제 놓인 자리에서 자랍니다`, potId: q.id });
+    }
+    return;
+  }
+  /* 말림(curl)은 사건으로 안 싣는다 — 잎마다 나 기록이 넘친다. «너무 밝다»는 상태 줄(turn.caTooBright)이 말한다 */
+  if (q.species === CA) {
+    if (e.type === 'unfurled_all') list.push({ id: 'ca_unfurled', ko: `${ko} 잎이 다 펴졌습니다`, potId: q.id });
+    return;
+  }
   if (q.species === 'pink_princess') {
     if (e.type === 'leaf') {
       const R = RULES, streak = R.pinkStreak(q.plant);
@@ -210,7 +268,14 @@ export function takeCormForSale(S, cormId) {
    잘린 윗부분은 새 그루(가방 · origin 'cut'). 산반·하프문 잎이 난 마디에서 자르면 곁줄 «분홍을 붙잡는다»를 센다(분홍 잎 마디는 안 침) */
 export function cutSpecies(S, potId, nodeNo) {
   const q = speciesPotOf(S, potId);
-  if (!q || q.species !== 'pink_princess') throw new Error('[종] 핑크프린세스만 자릅니다');
+  /* ★ D71 — 스킨답서스도 같은 손(growth cutAbove) · 잘린 끝은 물꽂이 «줄기 삽수»(phase cutting · origin 'cut') */
+  if (q && q.species === SC) {
+    if (scRooting(q)) { const e = new Error('아직 뿌리가 안 난 줄기는 못 자릅니다'); e.tutorialInput = true; throw e; }
+    const r = speciesRules().cutAbove(q.plant, nodeNo);
+    const top = addSpeciesPot(S, SC, { plant: r.cutting, origin: 'cut' });
+    return { cutting: top, saved: !!r.saved, grade: null };
+  }
+  if (!q || q.species !== 'pink_princess') throw new Error('[종] 핑크프린세스 · 스킨답서스만 자릅니다');
   const R = speciesRules();
   const leaf = q.plant.leaves.find(l => l && l.no === nodeNo) || null;
   const grade = leaf ? R.leafRows(q.plant).find(r => r.no === nodeNo).grade : null;
@@ -221,16 +286,35 @@ export function cutSpecies(S, potId, nodeNo) {
 }
 /* 자를 수 있는 마디(잎이 난 마디 · 모주에 잎이 남고 윗부분에 잎이 한 장은 간다) — 화면 목록용 */
 export function ppCuttableNodes(q) {
+  if (q && q.species === SC) return scCuttableNodes(q);
   if (!q || q.species !== 'pink_princess' || !RULES) return [];
   const rows = RULES.leafRows(q.plant);
   return rows.slice(0, -1).map((r, i) => ({ no: r.no, grade: r.grade, gradeKo: SG.gradeKo.pink_princess[r.grade] || r.grade,
                                            keep: i + 1, take: rows.length - i - 1 })).filter(n => n.keep >= 1 && n.take >= 1);
 }
 
+/* ★ D71 — 스킨답서스 자를 마디(잎이 난 마디 · 모주에 한 장은 남고 끝에 한 장은 간다 — PP 와 같은 꼴) · 물꽂이 중엔 없음 */
+export function scCuttableNodes(q) {
+  if (!q || q.species !== SC || !RULES || scRooting(q)) return [];
+  const rows = RULES.leafRows(q.plant);
+  return rows.slice(0, -1).map((r, i) => ({ no: r.no, grade: r.grade, gradeKo: `${r.no}번`, keep: i + 1, take: rows.length - i - 1 }))
+             .filter(n => n.keep >= 1 && n.take >= 1);
+}
+
 /* ── 값 ─────────────────────────────── 잎 한 장 값의 합 × 갈래(그루째 1.4 · 막 자른 윗부분 1.0)
-   잎이 없으면(구근 · 잠) 0 — 팔 수 없다(«자는 거야» · 버리게 두지 않는다 · ⚖ core) */
+   잎이 없으면(구근 · 잠) 0 — 팔 수 없다(«자는 거야» · 버리게 두지 않는다 · ⚖ core)
+   ★ D71 — 등급 없는 두 종(«무늬 = 변이 = 값» 한 낱말 한 뜻): SC = 마디 수 × 마디값 · CA = 펴진 잎 수 × 잎값(말린 잎 0).
+     갈래는 같은 결 — 그루째 ×1.4 · 물꽂이 «줄기 삽수»(뿌리 전)는 ×1.0 */
 export function speciesPriceOf(q) {
   if (!q || !RULES) return { won: 0, leaves: 0, byGrade: {}, form: null };
+  if (q.species === SC || q.species === CA) {
+    const s = sumOf(q);
+    const form = scRooting(q) ? 'cutting' : 'pot';
+    const mult = form === 'pot' ? SG.potMult : SG.cuttingMult;
+    if (q.species === SC) return { won: Math.round(s.nodes * SPECIES2.scNodeWon * mult), leaves: s.leaves, byGrade: { node: s.nodes }, form };
+    const open = Math.max(0, s.leaves - s.curled);
+    return { won: Math.round(open * SPECIES2.caLeafWon * mult), leaves: s.leaves, byGrade: { open, curled: s.curled }, form };
+  }
   const rows = RULES.leafRows(q.plant);
   const table = SG.leafWon[q.species] || {};
   const byGrade = {};
@@ -242,6 +326,8 @@ export function speciesPriceOf(q) {
 }
 export function speciesSellBlockedReason(q) {
   if (!q) return '모르는 그루입니다';
+  if (caInCare(q)) return '맡은 칼라테아입니다 — 잎이 다 펴지면 가게 것이 됩니다';
+  if (q.species === CA && RULES) { const s = sumOf(q); if (s.leaves > 0 && s.curled >= s.leaves) return '잎이 다 말려 값을 못 받습니다 — 너무 밝지 않은 데 두면 펴집니다'; }
   const n = q.plant && Array.isArray(q.plant.leaves) ? q.plant.leaves.length : 0;
   if (!n && q.species === 'alocasia_frydek')
     return q.plant && q.plant.phase === 'corm' ? '아직 싹이 안 났습니다 — 싹이 나면 팔 수 있습니다'
@@ -301,6 +387,8 @@ export function answerPPTrade(S, yes, opt = {}) {
 
 /* ── 상점 진열 ─────────────────────────────── shop CATALOG 의 두 품목(al_corm · pp_young)을 «지금 보이나» */
 export function speciesShopOpen(S, itemId) {
+  /* ★ D71 — «스킨답서스 줄기 삽수»는 가게 판 sc_ask(단골 5) 날부터 · 규칙에 그 종이 없으면 첫 플레이가 꺼진 판에서도 안 띄운다(사면 그 자리에서 던진다) */
+  if (itemId === 'sc_cutting') return speciesKnown(SC) && !!(S && S.jobShop && S.jobShop.scAskOn != null);
   const ts = S && S.tutorial;
   if (!ts || !ts.enabled) return true;                   /* 첫 플레이가 꺼진 판(검수)은 안 감춘다 — 다른 갈래와 같은 규약 */
   if (itemId === 'al_corm') {
@@ -318,17 +406,33 @@ export function unpackSpeciesStock(S, itemId, stockOf, takeStock) {
     const R = speciesRules(), id = nextId(S, 'sp');
     q = addSpeciesPot(S, 'alocasia_frydek', { id, origin: 'shop', plant: R.newPlant('alocasia_frydek', { seed: seedFor(S, id), origin: 'shop' }) });
   } else if (itemId === 'pp_young') q = addSpeciesPot(S, 'pink_princess', { origin: 'shop' });
+  else if (itemId === 'sc_cutting') q = addSpeciesPot(S, SC, { origin: 'shop', newPlant: { form: 'cutting', nodes: SPECIES2.scShopNodes } });
   else throw new Error(`[종] 새 식물 품목이 아닙니다: ${itemId}`);
   takeStock(S, itemId, 1);
   return q;
 }
 
 /* ── 스냅샷(퀘스트 곁줄 셋 · plan quest.js SPECIES_QUESTS) ─────────────────────────────── */
+/* ★ D71 곁줄 sc_hang 칸(plan · null = 모른다) — scPlants 방에 놓인 스킨답서스 그루 수(물꽂이 삽수도 «놓임») ·
+     scLongVine ★ D76(총괄 10-23) «높은 자리(dropM ≥ growth high_spot_min_m)에 놓인» 줄기 가운데 longVineM(0.5) 이상인 수 — 규칙이 그 종을 모르면 null
+     (longVineM 이 1.0 일 땐 «높은 자리에서만 닿는 길이» 하나로 셌다 — 0.5 는 낮은 자리에서도 닿을 수 있어 «높은 자리에 놓임»을 같이 본다 · 높이 배움은 그대로) */
+export function species2Snapshot(S) {
+  const pots = speciesPotsOf(S);
+  const sc = pots.filter(q => q && q.species === SC);
+  let long = null;
+  if (!sc.length) long = 0;
+  else if (speciesKnown(SC) && typeof RULES.longVineM === 'function') {
+    const L = RULES.longVineM();
+    long = Number.isFinite(L) ? sc.filter(q => !scRooting(q) && scAtHighSpot(q) && sumOf(q).lengthM >= L - 1e-9).length : null;
+  }
+  return { scPlants: sc.filter(speciesPlaced).length, scLongVine: long };
+}
 export function speciesSnapshot(S) {
   const sp = S && S.species;
-  if (!sp) return { ppPlants: 0, ppPinkHoldCuts: 0, alDormantNow: false, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0 };
+  if (!sp) return { ppPlants: 0, ppPinkHoldCuts: 0, alDormantNow: false, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0, scPlants: 0, scLongVine: 0 };
   const pots = Array.isArray(sp.pots) ? sp.pots : [];
   return {
+    ...species2Snapshot(S),
     ppPlants: pots.filter(q => q && q.species === 'pink_princess').length,
     ppPinkHoldCuts: (sp.n && sp.n.ppPinkHoldCuts) || 0,
     alDormantNow: pots.some(q => q && q.species === 'alocasia_frydek' && speciesPlaced(q) && q.plant && q.plant.phase === 'asleep'),
@@ -343,6 +447,15 @@ export function speciesBriefKo(q) {
   if (!q || !RULES) return '';
   const ko = SPECIES_KO[q.species] || q.species;
   const s = RULES.summary(q.plant);
+  if (q.species === SC) {
+    if (s.phase === 'cutting') return `${ko} 줄기 삽수 — 마디 ${s.nodes}개 · 물꽂이(뿌리를 기다립니다)`;
+    return `${ko} — 마디 ${s.nodes}개 · 줄기 ${Math.round(s.lengthM * 100)}cm${s.atFloor ? ' · 바닥에 닿음(더 높은 데서 길게 자랍니다)' : ''}`;
+  }
+  if (q.species === CA) {
+    const care = q.care ? ' · 맡은 그루' : '';
+    if (s.curled > 0) return `${ko} — 잎 ${s.leaves}장 중 ${s.curled}장 말림${s.tooBright ? ' · 너무 밝음' : ''}${care}`;
+    return `${ko} — 잎 ${s.leaves}장 · 다 펴짐${s.tooDark ? ' · 조금 어두움' : ''}${care}`;
+  }
   if (q.species === 'alocasia_frydek') {
     if (s.phase === 'corm') return `${ko} 구근 — 싹을 기다립니다`;
     if (s.asleep) return `${ko} — 자는 중(잎 0장)`;
@@ -358,7 +471,9 @@ export function packSpecies(sp) {
   if (!sp) return null;
   return JSON.parse(JSON.stringify({
     pots: (sp.pots || []).map(q => ({ id: q.id, species: q.species, plant: q.plant, slotId: q.slotId || null, at: q.at || null,
-                                      placedOnce: !!q.placedOnce, gotDay: q.gotDay ?? null, origin: q.origin || null })),
+                                      placedOnce: !!q.placedOnce, gotDay: q.gotDay ?? null, origin: q.origin || null,
+                                      ...(q.care ? { care: q.care } : {}), ...(q.flatSince != null ? { flatSince: q.flatSince } : {}),
+                                      ...(Number.isFinite(q.dropM) ? { dropM: q.dropM } : {}) })),   /* D71 · D76 */
     corms: sp.corms || [], trade: sp.trade || null, n: sp.n || null, seq: sp.seq || 0
   }));
 }
@@ -369,7 +484,9 @@ export function unpackSpecies(raw) {
     if (!q || !isSp(q.species) || !q.plant) continue;
     if (RULES) { try { RULES.assertPlant(q.plant); } catch { continue; } }   /* 깨진 그루는 싣지 않는다(지어내지 않는다) */
     sp.pots.push({ id: String(q.id), species: q.species, plant: q.plant, slotId: q.slotId || null, at: q.at || null,
-                   placedOnce: !!q.placedOnce, gotDay: q.gotDay ?? null, origin: q.origin || null });
+                   placedOnce: !!q.placedOnce, gotDay: q.gotDay ?? null, origin: q.origin || null,
+                   ...(q.care && typeof q.care === 'object' ? { care: { ...q.care } } : {}), ...(Number.isFinite(q.flatSince) ? { flatSince: q.flatSince } : {}),
+                   ...(Number.isFinite(q.dropM) ? { dropM: q.dropM } : {}) });
   }
   for (const c of Array.isArray(raw.corms) ? raw.corms : [])
     if (c && c.id) sp.corms.push({ id: String(c.id), seed: c.seed >>> 0, origin: c.origin || 'from_plain_mother', motherKind: c.motherKind ?? null, foundDay: c.foundDay ?? null });
