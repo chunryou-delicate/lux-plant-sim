@@ -21,6 +21,7 @@
        **「한 칸이 두 가지를 말하면 안 된다」 · 「빈칸과 조용함이 같아 보이면 안 된다」**
 
    ★ 2026-10-09 — 끝에 «새 두 종(PP · AL)» 단계를 더했다(게임 판 S.species.pots · core da423fb6). 아래 §새 두 종.
+   ★ 2026-10-23 — 새 종 단계에 D71 두 종(스킨답서스 늘어진 줄기 · 칼라테아 말린 잎)을 더했다(core 090bc888 이 방·확대에 hang 을 넘김).
    ★ 2026-10-09 — 끝에 «조립 차례» 단계(어린 그루를 늙은 그루 뒤에 지어도 무늬가 사나 · 총괄 🔴 · leaf 82239a5e). 아래 §조립 차례.
 
    ⚠ 서버가 떠 있어야 한다:  python tools/serve.py 8971
@@ -136,7 +137,10 @@ else {
     const pp=R.newPlant('pink_princess', { seed:4242, pinks:[0,0.3,0.7,0.95], nodes:8 });
     const al=R.newPlant('alocasia_frydek', { seed:77, origin:'from_varie_mother', motherKind:'sector' }); for (let d=0; d<160; d++) R.stepDay(al, { dli:6, season:'summer' });
     const corm=R.newPlant('alocasia_frydek', { seed:5, origin:'shop' });
-    const out={ pp:put('pink_princess', pp), al:put('alocasia_frydek', al), corm:put('alocasia_frydek', corm) };
+    /* D71 — 스킨답서스(높은 데서 120일 · 늘어진 줄기) · 칼라테아(잎 5 · 3장 말림) */
+    const sc=R.newPlant('scindapsus', { seed:51, form:'rooted' }); for (let d=0; d<120; d++) R.stepDay(sc, { dli:6, season:'spring', dropM:1.4 });
+    const ca=R.newPlant('calathea', { seed:61, leaves:5, curled:3 });
+    const out={ pp:put('pink_princess', pp), al:put('alocasia_frydek', al), corm:put('alocasia_frydek', corm), sc:put('scindapsus', sc), ca:put('calathea', ca) };
     try { window.__redraw(); } catch(e) {}
     return out; })()`, 60000);
   if (!spIds || spIds.탈) spBad(`새 두 종을 판에 못 세웠다 — ${JSON.stringify(spIds)}`);
@@ -160,15 +164,18 @@ else {
         let r=null;
         for (let i=0; i<120; i++) { await new Promise(z=>setTimeout(z,250)); r=w.speciesViewInfo();
           if (r && r.on && r.species===q.species && !r.skinsPending && (r.drawn===false || r.leafCount===r.leafCountWanted)) break; }
+        const slot=(window.__io.light.room.slots||[]).find(s=>s.slotId===q.slotId)||{};
         o[k]={ on:r.on, drawn:r.drawn, leafCount:r.leafCount, want:r.leafCountWanted, varie:(r.varieLeafKeys||[]).slice().sort(),
-               assets:(r.leaves||[]).map(l=>l.asset), rule:(R.leafRows(q.plant)||[]).map(x=>x.asset) };
+               assets:(r.leaves||[]).map(l=>l.asset), rule:(R.leafRows(q.plant)||[]).map(x=>x.asset),
+               hang:r.hang||null, slotDrop:Number.isFinite(slot.dropM)?slot.dropM:null,
+               curls:(r.leaves||[]).map(l=>l.curl), ruleCurls:q.species==='calathea'?(R.leafRows(q.plant)||[]).map(x=>x.curl):null };
         try { window.__byeotZoom && window.__byeotZoom.close(); } catch(e) {}
         await new Promise(z=>setTimeout(z,300)); }
       const off=w.speciesViewInfo();
       o.__back={ on:off.on, skins:Array.isArray(w.leafSkinUsedAll && w.leafSkinUsedAll()) };
       return o; })()`, 180000);
     if (zooms && zooms.탈) spBad(zooms.탈);
-    for (const k of ['pp', 'al']) {
+    for (const k of ['pp', 'al', 'sc', 'ca']) {
       const m = rooms[k], z = zooms[k];
       if (!m || m === '없음' || !m.drawn || !(m.leafCount > 0)) { spBad(`${k}: 방에 «안 그려졌다»(${JSON.stringify(m)}) — 재는 것이 아니다`); continue; }
       const rv = (m.varieLeafKeys || []).slice().sort();
@@ -176,6 +183,15 @@ else {
                    JSON.stringify(z.varie) === JSON.stringify(rv) && JSON.stringify(z.assets) === JSON.stringify(z.rule);
       if (!same) spBad(`${k}: 방 잎 ${m.leafCount}/${m.leafCountWanted} · 무늬 ${JSON.stringify(rv)} ≠ 확대 잎 ${z && z.leafCount}/${z && z.want} · 무늬 ${JSON.stringify(z && z.varie)} (판 = 정본 ${z && JSON.stringify(z.assets) === JSON.stringify(z.rule)})`);
       else console.log(`✅ ${k}: 방 = 확대 — 잎 ${m.leafCount} · 무늬 판 ${rv.length}가지 · 판 목록 = 정본 leafRows`);
+      /* D71 — 게임이 연 확대가 그 자리의 «떨어지는 높이»로 늘어뜨렸나(house dropM) · 칼라테아 말림이 규칙 그대로인가 */
+      if (k === 'sc') { const h = z && z.hang;
+        if (!(h && h.given && Number.isFinite(z.slotDrop) && Math.abs(h.dropM - z.slotDrop) < 1e-9 && h.lengthM > h.rimLenM))
+          spBad(`sc: 게임이 연 확대의 늘어뜨림 ${JSON.stringify(h && { given: h.given, dropM: h.dropM, lengthM: h.lengthM })} · 자리 dropM ${z && z.slotDrop} — 자리 값으로 늘어뜨려야 한다`);
+        else console.log(`✅ sc: 게임이 연 확대가 자리 dropM ${z.slotDrop} 로 늘어뜨림 · 줄기 ${h.lengthM.toFixed(3)}m(테두리 넘음)`); }
+      if (k === 'ca') {
+        if (!(z && JSON.stringify(z.curls) === JSON.stringify(z.ruleCurls) && z.curls.filter(c => c > 0).length === 3))
+          spBad(`ca: 확대 말림 ${JSON.stringify(z && z.curls)} ≠ 규칙 ${JSON.stringify(z && z.ruleCurls)}`);
+        else console.log(`✅ ca: 말린 잎 ${z.curls.filter(c => c > 0).length}장 — 확대 = 규칙 leafRows`); }
     }
     { const m = rooms.corm, z = zooms.corm;
       if (!(m && m !== '없음' && m.drawn === false && z && z.drawn === false)) spBad(`AL 구근(잎 0): 방 ${JSON.stringify(m)} · 확대 ${JSON.stringify(z)} — 둘 다 «화분만»이어야 한다`);

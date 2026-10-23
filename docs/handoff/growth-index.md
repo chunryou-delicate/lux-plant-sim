@@ -690,7 +690,8 @@ novice 은 등 0·1·2 모두 bright 100%
 ## ⑤ ⏸ 대기
 
 ```
-스킨답서스·칼라테아   ✅ D71(10-23) 규칙·그림·표 섰음 — 위 §D71. 남은 것: core 가 방·확대에 hang · night 를 넘기는 줄(core 차례) ·
+스킨답서스·칼라테아   ✅ D71(10-23) 규칙·그림·표 섰음 — 위 §D71 · core 090bc888 이 방·확대에 hang 을 넘김 → test_skin_room_matches_zoom 게임 판 단계에 sc · ca 더함.
+                    남은 것: 칼라테아 night 를 core 가 넘기는 줄(밤 잡담 때 · core 차례) ·
                     ✅ 벽 화분걸이 어두움 — 총괄 (ㄱ)+(ㄴ) · 창가 자리 tworoom-hang-sun (가) 이대로(등 3 이면 231~336일 · §D71 ④) · 기준 배치·걸이 자리가 바뀌면 probe_tworoom_shop 다시
 새 종 확대 «게임이 여는» 한 줄   core 차례(setSpeciesView) — 이으면 test_skin_room_matches_zoom 새 두 종 단계를 «게임이 연 확대»를 읽게 바꾼다
 원룸 이사 계절(YD0)     총괄 봇 판(cut1008c)이 정하면 probe_seedplant_oneroom ①· probe_cutting_firstleaf_oneroom ③ · probe_species_oneroom 다시
