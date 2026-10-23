@@ -1672,7 +1672,7 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'cheer',    text: '대신 이제 네 가게야.' }
   ],
   shopOpen: [
-    { who: 'jachwi', face: 'apron',    text: '문 옆에 작은 주문판을 걸었다.' },
+    { who: 'jachwi', face: 'apron',    text: '창 옆에 작은 주문판을 걸었다.' },   /* ★ 10-24 house — 판 자리 tworoom-hang-order 는 뒷벽 창 옆(앞벽 문은 카메라에서 깎임) */
     { who: 'moni',   face: 'teach',    text: '손님이 원하는 걸 적어 두고 가. 기한 안에 맞추면 돼.' }
   ],
   /* ★ 2026-10-10 [plan] 총괄 (가) «가게는 새 두 종과 함께» — 가게 첫날, 가진 새 종(PP · AL)이 0 이면(사건 `shop_no_species` · [core]).
@@ -1808,7 +1808,7 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'cheer',    text: '대신 네가 배운 걸 다 쓸 수 있어.' }
   ],
   careOpen: [
-    { who: 'jachwi', face: 'think',    text: '문 옆에 맡김판을 걸었다.' },
+    { who: 'jachwi', face: 'think',    text: '창 옆에 맡김판을 걸었다.' },
     { who: 'moni',   face: 'teach',    text: '아픈 화분이 오면 어디 있었는지부터 들어.' }
   ],
   careNewCaBright: [
