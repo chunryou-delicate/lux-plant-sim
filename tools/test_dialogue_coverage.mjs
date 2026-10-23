@@ -901,7 +901,10 @@ check('데이터 — career_switch.json 화면 글이 다 있고 칭호·이음 
   assert.equal(T.customerLink.toCare, care._lines.regularAsk, '손님 이음 줄이 돌봄 표(_lines.regularAsk)와 다릅니다');
   assert.ok(T.customerLink.toShop);
   assert.equal(T.endCard.stay, T.finalCover.stay);
-  assert.ok(T.endCard.switch && T.todoHead.switch && T.cards.title && T.cards.sub && T.cards.note && T.cards.back);
+  assert.ok(T.endCard.switch && T.todoHead.switch && T.cards.title && T.cards.sub && T.cards.note && T.cards.back && T.cards.close);
+  /* ★ 10-24 core 청 — 쉬는 진로 판 밑 줄(새 일 안 받음 · 걸린 것은 기한까지) */
+  assert.ok(/새 주문은 안 받/.test(T.resting.shop) && /기한까지/.test(T.resting.shop), `쉬는 가게 줄: ${T.resting.shop}`);
+  assert.ok(/새 맡김은 안 받/.test(T.resting.care) && /기한 날/.test(T.resting.care), `쉬는 돌봄 줄: ${T.resting.care}`);
   for (const k of ['ended', 'fresh', 'current']) assert.ok(T.cards.mark[k], `카드 표 '${k}' 가 없습니다`);
   assert.ok(/\{title\}/.test(T.cards.mark.ended) && /\{title\}/.test(T.cards.mark.current), '카드 표에 {title} 이 없습니다');
   for (const k of ['switched', 'back']) assert.ok(/\{ro\}/.test(T.banner[k].title) && /\{ro\}/.test(T.log[k]), `알림·기록 '${k}' 에 {ro} 가 없습니다`);
