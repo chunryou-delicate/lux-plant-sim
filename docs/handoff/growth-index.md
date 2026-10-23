@@ -291,6 +291,27 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-10-23 · B 판 «식물 돌봄» growth 몫 — 고장 난 채로 오는 그루 · 나음 판정 칸 · 투룸 «고칠 자리» 표 (총괄 D73 · plan-care-career-spec §8)
+
+```
+규칙(species_growth · 이름은 core 에 먼저 줌)
+  R.newPlant('alocasia_frydek', { seed, origin, form:'asleep', varie?, finds? })   잠든 채(잎 0 · 다 큰 그루 · finds 상한이면 맡은 동안 다시 잠들어도 구근 0)
+  R.newPlant('scindapsus', { seed, form:'atFloor', dropM })                        손님 자리 상한까지 마디 · 막힌 채 → 더 높고 밝은 자리 첫날 새 마디
+  R.newPlant('scindapsus', { seed, form:'rooted', nodes, plainTop:k })             위 k 장 마블 없음 → 밝은 데(≥ best_lo) 새 잎이 마블
+  summary.births(모든 종 · 받은 잎 안 셈 — CA 는 births0 를 뺌) · SC topMarble · R.spotFitOf(p, dli)(그 그루 문턱 · AL 무늬 ×1.4)
+나음 판정(core · 맡은 날 births0 · lengthM0 적어 둠)
+  ca_* curled 0 · pp_tip cutAbove saved · pp_green births>b0 ∧ topGrade≠green · al_* phase growing · sc_floor births>b0 · sc_plain births>b0 ∧ topMarble
+가드(그 자리에서 고칠 수 있나 · 자는 spotFitOf · scStemCapM 만)
+  CA {fit, slow} · PP green · SC plain {fit, over}(+ SC 는 상한 > 지금 길이) · AL dark 겨울 밖 ∧ ≠ dark · sc_floor 상한 > lengthM0 ∧ ≠ dark · pp_tip · al_winter 늘
+  ★ 빛은 «그 자리 7일 평균»으로 본다(규칙 avg7 과 같은 자) — 그날 DLI 하나로 보면 날씨에 흔들린다(아래 g1 · g7)
+```
+
+**잰 것 — `tools/probe_care_tworoom.mjs` → `docs/handoff/growth-care-tworoom.json`**(투룸 배치 B 29자리 + 창가 화분걸이 · real · 판 씨앗 12 · 철 첫날 맡음 · 그 자리에 두고 읽는 손으로 기한까지):
+- 기한 안에 고친 자리 수(등 0/1/2/3) — 봄: ca_bright 6/6/12/14 · ca_dark 6/9/12/15 · pp_tip 29(첫날 가위) · pp_green 3/6/6/13 · al_dark 4/6/8/13 · sc_floor(손님 자리 0.02) 15/15/15/18 · (0.45) 3/3/3/4 · sc_plain 4/6/6/11 · al_winter(겨울 맡음 → 봄+21) 4/6/8/13.
+- 기준 배치에 고칠 자리가 **하나도 없는 판 5** — 겨울 등 0: ca_bright · ca_dark · pp_green · sc_plain / 겨울 등 1: pp_green. 가드가 막아야 한다.
+- 고친 날: CA 8~23일 · PP 분홍 빠짐 15~29일(새 잎을 기다림) · AL 깸 7~14일 · SC 바닥 1~9일(옮긴 첫 자라는 날) · SC 무늬 10~19일.
+- 가드 셋 견줌(방 단위 · 판 씨앗 × 고장 · 철 · 등 = 1584판): **g1 그날 DLI 헛열림 20 · 놓침 174 / g7 7일 평균 헛열림 6 · 놓침 66** / g7s(CA fit 만) 헛열림 4 · 놓침 114 → **g7 권함**(헛열림 = 못 고칠 맡김을 냄 · 놓침 = 고칠 수 있는데 안 냄 — 앞의 것이 해롭다).
+
 ### 2026-10-23 · D71 새 두 종 — 스킨답서스(SC · 늘어지는 덩굴 · 배움 «높이») · 칼라테아(CA · 잎 말림 · 배움 «가운데») (총괄 · 박사님 «추천대로»)
 
 명세 `plan-species2-shop-spec-20261010.md` §3 · §D71. 함수 이름은 core 제안 꼴로 맞췄다(10-23 · core 가 그 이름으로 뼈대를 지음).

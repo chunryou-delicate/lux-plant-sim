@@ -32,6 +32,11 @@
                                             dropM = 그 자리에서 «떨어지는 높이»(m · house.js dropBelow · 자리 plantSlots[].dropM — 받침 높이 아님)
      R.cutAbove(p, nodeNo)                  SC 도 PP 와 같은 손 — 잘린 끝 = phase 'cutting' 그루
      R.scStemCapM(dropM) · R.scInternodeM(p) · R.isHighSpot(dropM) · R.longVineM() · R.bandOf(species) · R.spotFit(species, dli)
+   ★ 2026-10-23 B 판 «식물 돌봄»(총괄 D73 · plan-care-career-spec §8) — 고장 난 채로 오는 그루 · 나음 판정 칸 · 가드
+     R.newPlant('alocasia_frydek', { seed, origin, form:'asleep', varie?, finds? })   잠든 채(잎 0)
+     R.newPlant('scindapsus', { seed, form:'atFloor', dropM })                        손님 자리 상한에 닿아 멈춘 채
+     R.newPlant('scindapsus', { seed, form:'rooted', nodes, plainTop })               위 plainTop 장 마블 없음
+     summary.births(모든 종) · SC topMarble · R.spotFitOf(p, dli)(그 그루 문턱 — AL 무늬 ×1.4 까지)
    사건
      SC  rooted · node { no, lengthM, marble } · reached_floor { lengthM }
      CA  leaf { no, stage } · leaf_drop { no } · curl { curled } · unfurl { no, curled } · unfurled_all
@@ -119,21 +124,55 @@ export function createSpeciesRules(SPEC, TH) {
     if (species === 'alocasia_frydek') {
       const origin = opt.origin || 'shop';
       if (!(origin in S.corm.varie_chance)) throw new Error(`[종 생장] AL: 구근 출처 «${origin}» 를 모른다`);
+      const form = opt.form ?? 'corm';
+      if (form === 'asleep') {
+        /* ★ B 판 돌봄(총괄 D73 · plan-care-career-spec §2-2 al_dark · al_winter) — «잎이 다 져서 죽은 것 같다»며 맡긴 그루.
+             잎 0 · 잠(phase asleep) · 다 큰 그루(사다리 끝 — 깨면 wake_ladder_drop 칸 내려 잎을 낸다) · 무늬는 맡길 때 정해져 온다(varie).
+             깨는 길은 그대로: 잠 철 밖 · avg7 ≥ min 인 날 wake_days 일. finds 를 주면(평생 상한) 맡은 동안 다시 잠들어도 구근을 안 찾는다 */
+        const varie = opt.varie ?? null;
+        if (varie != null && !kindsOf(S).includes(varie)) throw new Error(`[종 생장] AL: 무늬 갈래 «${varie}» 를 모른다`);
+        const finds = opt.finds ?? 0;
+        if (!(Number.isInteger(finds) && finds >= 0)) throw new Error('[종 생장] AL: finds 는 0 이상 정수');
+        return { ...base, phase: 'asleep', origin, motherKind: opt.motherKind ?? null, varie, lad: S.leaf_ladder.length - 1, cormSlept: false,
+          lowRun: 0, wakeRun: 0, dropRun: 0, sleptDays: 0, wakes: 0, finds, sinceFind: 0, cormsMade: 0 };
+      }
+      if (form !== 'corm') throw new Error(`[종 생장] AL: form «${form}» 를 모른다(corm | asleep)`);
       return { ...base, phase: 'corm', origin, motherKind: opt.motherKind ?? null, varie: null, lad: 0, cormSlept: false,
         lowRun: 0, wakeRun: 0, dropRun: 0, sleptDays: 0, wakes: 0, finds: 0, sinceFind: 0, cormsMade: 0 };
     }
     if (species === 'scindapsus') {
       /* 상점 «줄기 삽수» — 마디 nodes 개(마디마다 잎 한 장 · 다 마블). 잎 at = 줄기 밑에서 그 마디까지 길이(m) */
       const form = opt.form ?? 'cutting';
-      if (form !== 'cutting' && form !== 'rooted') throw new Error(`[종 생장] SC: form «${form}» 를 모른다(cutting | rooted)`);
-      const n = opt.nodes ?? S.propagation.start_nodes;
-      if (!(Number.isInteger(n) && n >= 1)) throw new Error('[종 생장] SC: 마디가 1개 이상이어야 한다');
-      let at = 0;
-      for (let no = 1; no <= n; no++) {
-        const stage = stageOf(S, no - 1);
-        at += S.vine.internode_m[stage];
-        base.leaves.push({ no, born: 0, stage, marble: true, at: r4(at) });
+      if (!['cutting', 'rooted', 'atFloor'].includes(form)) throw new Error(`[종 생장] SC: form «${form}» 를 모른다(cutting | rooted | atFloor)`);
+      let at = 0, n, cap = null;
+      if (form === 'atFloor') {
+        /* ★ B 판 돌봄(sc_floor) — «줄기가 바닥에 닿더니 더 안 자란다»며 맡긴 그루. 손님 집 자리의 떨어지는 높이(dropM)로
+             상한까지 마디를 채운다(다음 마디가 상한을 넘을 때까지 · 적어도 하나) → lengthM = 상한 · atFloor · 다음 마디가 막힌 채(step = 간격).
+             더 높은 자리에 놓으면 첫 «자라는 날»에 막혀 있던 마디가 바로 난다(stepSC 그대로) */
+        if (opt.nodes != null) throw new Error('[종 생장] SC atFloor: 마디 수는 dropM 이 정한다(nodes 를 주지 않는다)');
+        if (!(Number.isFinite(opt.dropM) && opt.dropM >= 0)) throw new Error(`[종 생장] SC atFloor: 손님 자리 dropM 이 없다(${opt.dropM})`);
+        cap = capOf(S, opt.dropM);
+        for (let no = 1; no <= 500; no++) {
+          const nx = at + S.vine.internode_m[stageOf(S, no - 1)];
+          if (no > 1 && nx > cap + FLOOR_TOL) break;
+          at = nx; base.leaves.push({ no, born: 0, stage: stageOf(S, no - 1), marble: true, at: r4(at) });
+        }
+        n = base.leaves.length;
+      } else {
+        n = opt.nodes ?? S.propagation.start_nodes;
+        if (!(Number.isInteger(n) && n >= 1)) throw new Error('[종 생장] SC: 마디가 1개 이상이어야 한다');
+        for (let no = 1; no <= n; no++) {
+          const stage = stageOf(S, no - 1);
+          at += S.vine.internode_m[stage];
+          base.leaves.push({ no, born: 0, stage, marble: true, at: r4(at) });
+        }
       }
+      /* ★ B 판 돌봄(sc_plain) — «새 잎에 무늬가 없다»: 위에서 plainTop 장이 마블 없음(어두운 데서 난 잎 · 그림만) */
+      const k = opt.plainTop ?? 0;
+      if (!(Number.isInteger(k) && k >= 0 && k <= n)) throw new Error(`[종 생장] SC: plainTop 은 0 ~ 마디 수(${n})`);
+      for (let i = n - k; i < n; i++) base.leaves[i].marble = false;
+      if (form === 'atFloor') return { ...base, nodes: n, phase: 'growing', rootDays: 0, step: S.interval_days,
+        lengthM: cap, atFloor: true, dropM: r4(opt.dropM) };
       return { ...base, nodes: n, phase: form === 'cutting' ? 'cutting' : 'growing', rootDays: 0,
         lengthM: r4(at), atFloor: false, dropM: null };
     }
@@ -146,7 +185,8 @@ export function createSpeciesRules(SPEC, TH) {
       const stage = opt.stage ?? 'mature';
       if (!S.leaf_size_m[stage]) throw new Error(`[종 생장] CA: 단계 «${stage}» 를 모른다`);
       for (let i = 0; i < n; i++) base.leaves.push({ no: i + 1, born: 0, stage, curl: i < k ? 1 : 0 });
-      return { ...base, births: n, lad: stage === 'mature' ? S.leaf_ladder.length - 1 : S.leaf_ladder.indexOf(stage) + 1 };
+      /* births 는 잎 번호 셈도 겸해 받은 잎 수에서 시작한다 — births0 에 적어 summary.births(«이 그루가 낸 잎»)에서 뺀다 */
+      return { ...base, births: n, births0: n, lad: stage === 'mature' ? S.leaf_ladder.length - 1 : S.leaf_ladder.indexOf(stage) + 1 };
     }
     throw new Error(`[종 생장] 규칙이 없는 종 «${species}»`);
   }
@@ -457,7 +497,8 @@ export function createSpeciesRules(SPEC, TH) {
   }
   function summary(p) {
     assertPlant(p);
-    const out = { species: p.species, day: p.day, leaves: p.leaves.length };
+    /* births = 이 그루가 newPlant 뒤 낸 잎 수(B 판 돌봄 · core 가 맡은 날 값을 적어 두고 «맡은 뒤 난 잎»을 가른다) */
+    const out = { species: p.species, day: p.day, leaves: p.leaves.length, births: p.births - (p.births0 || 0) };
     if (p.species === 'pink_princess') {
       const top = p.leaves[p.leaves.length - 1];
       Object.assign(out, { topPink: top ? top.pink : null, topGrade: top ? gradeOfPink(specOf(p.species), top.pink) : null,
@@ -465,8 +506,9 @@ export function createSpeciesRules(SPEC, TH) {
     } else if (p.species === 'scindapsus') {
       /* nodes = 이 줄기(조각)에 붙은 마디 수(= 잎 수) · capM = 마지막으로 놓인 자리의 상한(모르면 null) */
       const S = specOf(p.species);
+      const top = p.leaves[p.leaves.length - 1];
       Object.assign(out, { phase: p.phase, nodes: p.leaves.length, lengthM: p.lengthM,
-        capM: Number.isFinite(p.dropM) ? capOf(S, p.dropM) : null, atFloor: !!p.atFloor,
+        capM: Number.isFinite(p.dropM) ? capOf(S, p.dropM) : null, atFloor: !!p.atFloor, topMarble: top ? !!top.marble : null,
         rootDaysLeft: p.phase === 'cutting' ? Math.max(0, S.propagation.root_days - p.rootDays) : 0 });
     } else if (p.species === 'calathea') {
       /* tooBright · tooDark = avg7 결(말림 규칙과 같은 자) · 빛을 하루도 못 봤으면 null(모른다) */
@@ -497,9 +539,16 @@ export function createSpeciesRules(SPEC, TH) {
     const band = judgeDLI(dli, thresholdsFor(TH, specOf(species).light_id)).band;
     return band === 'over' ? 'over' : (band === 'best' || band === 'good') ? 'fit' : band === 'slow' ? 'slow' : 'dark';
   }
+  /* 그 그루의 문턱으로(B 판 돌봄 가드) — AL 무늬 그루는 ×need_mult 까지 · 나머지는 spotFit(종)과 같다 */
+  function spotFitOf(p, dli) {
+    assertPlant(p);
+    if (!Number.isFinite(dli)) throw new Error(`[종 생장] spotFitOf: DLI 가 없다(${dli})`);
+    const band = judgeDLI(dli, thOf(p)).band;
+    return band === 'over' ? 'over' : (band === 'best' || band === 'good') ? 'fit' : band === 'slow' ? 'slow' : 'dark';
+  }
 
   return { newPlant, stepDay, cutAbove, leafRows, summary, assertPlant, thresholdsOf: thOf, avg7, pinkStreak,
-    scStemCapM, scInternodeM, isHighSpot, longVineM, bandOf, spotFit,
+    scStemCapM, scInternodeM, isHighSpot, longVineM, bandOf, spotFit, spotFitOf,
     species: () => Object.keys(SPEC.species) };
 }
 

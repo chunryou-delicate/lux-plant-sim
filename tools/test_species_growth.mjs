@@ -22,6 +22,10 @@
        높은 데 → 낮은 데로 옮겨도 안 줆 · 다시 높이면 이어 자람 · 어두울 때 난 잎은 초록(그림만) · 마디 자르기 · 세이브 왕복
      Q CA 칼라테아: 맡은 그루(다 말림) · 너무 밝으면(avg7 > hi) 말리고 멎음 · 대역 안이면 새 잎부터 며칠에 걸쳐 펴짐 ·
        어둠(min 밑)에선 안 펴짐 · 느림(lo 밑)은 더 느림 · 말린 잎이 있으면 새 잎 없음 · 잎 간격 · 최대 장수 · tooBright/tooDark · bandOf · spotFit
+     ★ B 판 «식물 돌봄»(2026-10-23 · 총괄 D73)
+     R 고장 난 채로 오는 그루 — AL 잠든 채(겨울 그대로 · 봄 밝으면 깸 · 어두우면 그대로 · 무늬 ×1.4 · finds 상한이면 구근 0) ·
+       SC 바닥에 닿은 채(상한까지 마디 · 더 높은 자리 첫날 새 마디 · 어두우면 안 큼) · SC 위 잎 무늬 없음(밝은 데 새 잎 마블) ·
+       PP 끝 시듦 · 분홍 빠짐(있는 칸 · 가위로 나음) · summary.births(받은 잎 안 셈)
      node tools/test_species_growth.mjs
 ============================================================ */
 import fs from 'node:fs'; import path from 'node:path';
@@ -434,6 +438,73 @@ ok(firstLeafDay(thPP.min - 0.1, 'summer') === null, `C PP 문턱(min ${thPP.min}
     ok(run(R.newPlant('calathea', { seed: 37, curled: 'all' })) === run(JSON.parse(JSON.stringify(R.newPlant('calathea', { seed: 37, curled: 'all' })))), 'Q7 같은 그루 · 같은 빛 · JSON 왕복도 같은 길(말림·펴짐 오가는 빛 240일)'); }
   ok(throws(() => R.cutAbove(R.newPlant('calathea'), 1)) && throws(() => R.newPlant('calathea', { leaves: CA.max_leaves + 1 })) && throws(() => R.newPlant('calathea', { leaves: 3, curled: 4 })),
     'Q CA 는 자르지 않는다 · 잎 수·말린 잎 수가 틀리면 던진다');
+}
+
+/* ══ R — B 판 «식물 돌봄»(총괄 D73 · plan-care-career-spec §8) — 고장 난 채로 오는 그루 · 나음 판정 칸 · 가드 ══════════ */
+{ const thAL = R.thresholdsOf(R.newPlant('alocasia_frydek')), D = AL.dormancy, SC_TH = () => R.thresholdsOf(R.newPlant('scindapsus'));
+  /* R1 AL 잠든 채 — 잎 0 · 겨울엔 그대로 · 겨울 밖 밝으면 wake_days 에 깸 → 사다리 한 칸 내린 잎 · 어두우면 그대로 */
+  const a = R.newPlant('alocasia_frydek', { seed: 71, origin: 'shop', form: 'asleep' }), sa = R.summary(a);
+  ok(a.phase === 'asleep' && a.leaves.length === 0 && sa.asleep && sa.births === 0, `R1 AL 잠든 채 — 잎 ${a.leaves.length} · asleep ${sa.asleep} · births ${sa.births}`);
+  { const w = R.newPlant('alocasia_frydek', { seed: 71, origin: 'shop', form: 'asleep' });
+    const e1 = walk(w, 60, k(thAL.best_lo + 1), k('winter'));
+    const e2 = walk(w, 45, k(thAL.best_lo + 1), k('spring'));
+    const wk = e2.find(e => e.type === 'wake'), lf = e2.find(e => e.type === 'leaf');
+    ok(!e1.some(e => e.type === 'wake') && wk && wk.d === D.wake_days && lf && lf.stage === AL.leaf_ladder[AL.leaf_ladder.length - 1 - D.wake_ladder_drop] && R.summary(w).phase === 'growing' && R.summary(w).births >= 1,
+      `R1 겨울 60일 잠 그대로 → 봄 밝음(${thAL.best_lo + 1}) ${wk && wk.d}일째 깸(wake_days ${D.wake_days}) · 첫 잎 ${lf && lf.stage}(다 큰 그루 −${D.wake_ladder_drop}칸) · ${lf && lf.d}일째`); }
+  { const d = R.newPlant('alocasia_frydek', { seed: 71, origin: 'shop', form: 'asleep' });
+    const e = walk(d, 60, k(thAL.min - 0.5), k('summer'));
+    ok(!e.some(x => x.type === 'wake') && d.phase === 'asleep', `R1 여름 어둠(${thAL.min - 0.5}) 60일 — 안 깸(al_dark 는 밝은 데로 옮겨야 고침)`); }
+  { const v = R.newPlant('alocasia_frydek', { seed: 72, origin: 'shop', form: 'asleep', varie: 'marble' }), pl = R.newPlant('alocasia_frydek', { seed: 72, origin: 'shop', form: 'asleep' });
+    const mid = (thAL.min + thAL.min * TH.variegated.need_mult) / 2;
+    walk(v, 30, k(mid), k('spring')); walk(pl, 30, k(mid), k('spring'));
+    ok(v.varie === 'marble' && v.phase === 'asleep' && pl.phase === 'growing' && R.spotFitOf(v, mid) === 'dark' && R.spotFitOf(pl, mid) !== 'dark',
+      `R1 무늬 그루는 문턱 ×${TH.variegated.need_mult} — DLI ${mid.toFixed(2)} 에서 민무늬는 깨고 무늬는 잠(spotFitOf ${R.spotFitOf(pl, mid)} / ${R.spotFitOf(v, mid)})`); }
+  { const run = (finds) => { const p = R.newPlant('alocasia_frydek', { seed: 73, origin: 'shop', form: 'asleep', finds });
+      const ev = walk(p, 400, k(6), d => seasonOf(d)); return ev.filter(e => e.type === 'asleep').map(e => e.corms.length); };
+    const capd = run(AL.propagation.max_finds_lifetime), free = run(0);
+    ok(capd.length >= 1 && capd.every(n => n === 0) && free.some(n => n > 0), `R1 finds 를 평생 상한(${AL.propagation.max_finds_lifetime})으로 주면 다시 잠들어도 구근 0(${capd.join('·')}) · 대조 finds 0 이면 ${free.join('·')}`); }
+  ok(throws(() => R.newPlant('alocasia_frydek', { form: 'asleep', varie: 'gold' })) && throws(() => R.newPlant('alocasia_frydek', { form: 'awake' })), 'R1 모르는 무늬 갈래 · 모르는 form 은 던진다');
+
+  /* R2 SC 바닥에 닿은 채 — 상한까지 마디 · 그 자리에선 안 큼 · 더 높은 자리 첫 «자라는 날»에 새 마디 */
+  { const V = SC.vine, inter = no => V.internode_m[SC.leaf_ladder[Math.min(SC.leaf_ladder.length - 1, no - 1)]];
+    const drop0 = 0.25, cap0 = R.scStemCapM(drop0);
+    const f = R.newPlant('scindapsus', { seed: 81, form: 'atFloor', dropM: drop0 }), sf = R.summary(f);
+    let at = 0, n = 0; while (true) { const nx = at + inter(n + 1); if (n >= 1 && nx > cap0 + 1e-4) break; at = nx; n++; }
+    ok(sf.atFloor && sf.lengthM === cap0 && sf.nodes === n && sf.phase === 'growing' && sf.births === 0 && f.leaves[f.leaves.length - 1].at <= cap0 + 1e-9,
+      `R2 SC 바닥에 닿은 채(손님 자리 dropM ${drop0}) — 줄기 ${sf.lengthM}m = 상한 · 마디 ${sf.nodes}(다음 마디가 상한을 넘음) · atFloor`);
+    const same = JSON.parse(JSON.stringify(f));
+    const e0 = []; for (let d = 1; d <= 60; d++) for (const e of R.stepDay(same, { dli: 6, season: 'spring', dropM: drop0 })) e0.push(e);
+    ok(!e0.some(e => e.type === 'node') && same.lengthM === cap0, `R2 같은 높이에 두면 60일 그대로(마디 0 · 줄기 ${same.lengthM})`);
+    const e1 = []; for (let d = 1; d <= 3; d++) for (const e of R.stepDay(f, { dli: 6, season: 'spring', dropM: 0.794 })) e1.push({ d, ...e });
+    const nd = e1.find(e => e.type === 'node');
+    ok(nd && nd.d === 1 && R.summary(f).births === 1 && f.lengthM > cap0, `R2 선반 윗단(0.794)으로 옮긴 첫날 새 마디(${nd && nd.d}일째 · births ${R.summary(f).births}) · 줄기 ${f.lengthM} > ${cap0} — sc_floor 나음`);
+    const dk = R.newPlant('scindapsus', { seed: 81, form: 'atFloor', dropM: drop0 });
+    const e2 = []; for (let d = 1; d <= 60; d++) for (const e of R.stepDay(dk, { dli: SC_TH().min - 0.5, season: 'spring', dropM: 0.794 })) e2.push(e);
+    ok(!e2.some(e => e.type === 'node'), `R2 높아도 어두우면(${SC_TH().min - 0.5}) 60일 안 큼 — 높이와 빛 둘 다`);
+    ok(throws(() => R.newPlant('scindapsus', { form: 'atFloor' })) && throws(() => R.newPlant('scindapsus', { form: 'atFloor', dropM: 0.3, nodes: 4 })), 'R2 atFloor 에 dropM 이 없거나 nodes 를 주면 던진다'); }
+
+  /* R3 SC 새 잎 무늬 없음 — 위 plainTop 장 마블 없음 · 밝은 데서 난 새 잎은 마블 → topMarble */
+  { const pn = R.newPlant('scindapsus', { seed: 82, form: 'rooted', nodes: 6, plainTop: 2 }), sp = R.summary(pn);
+    ok(pn.leaves.map(l => l.marble ? 1 : 0).join('') === '111100' && sp.topMarble === false && R.leafRows(pn).slice(-2).every(r => r.grade === 'green'),
+      `R3 SC 위 2장 마블 없음 — ${pn.leaves.map(l => l.marble ? 'M' : 'g').join('')} · topMarble ${sp.topMarble}`);
+    const b0 = sp.births; let healed = null;
+    for (let d = 1; d <= 30 && healed == null; d++) { R.stepDay(pn, { dli: 6, season: 'spring', dropM: 0.794 }); const s = R.summary(pn); if (s.births > b0 && s.topMarble) healed = d; }
+    ok(healed != null && healed <= 30, `R3 밝은 데(6 · 높이 0.794)로 — ${healed}일째 마블 새 잎(births > ${b0} · topMarble) — sc_plain 나음`);
+    ok(throws(() => R.newPlant('scindapsus', { form: 'rooted', nodes: 3, plainTop: 4 })), 'R3 plainTop 이 마디 수보다 많으면 던진다'); }
+
+  /* R4 PP 두 고장은 있는 칸으로 — 끝 시듦(분홍 셋 → 그날부터 시듦) · 분홍 빠짐(초록 둘) */
+  { const t = R.newPlant('pink_princess', { seed: 83, pinks: [0.4, 0.6, 0.95, 0.95, 0.95] });
+    const st = R.summary(t), r = R.cutAbove(t, t.leaves[1].no);
+    ok(st.withering && r.saved === true && R.summary(t).withering === false, `R4 PP 끝 시듦으로 옴(withering ${st.withering}) → 분홍 줄 아래 자르기 saved ${r.saved} — pp_tip 나음`);
+    const g = R.newPlant('pink_princess', { seed: 84, pinks: [0.4, 0.3, 0, 0] }), sg = R.summary(g);
+    R.cutAbove(g, g.leaves[1].no);
+    const b0 = R.summary(g).births; let healed = null;
+    for (let d = 1; d <= 45 && healed == null; d++) { R.stepDay(g, { dli: 6, season: 'spring' }); const s = R.summary(g); if (s.births > b0 && s.topGrade !== 'green') healed = d; }
+    ok(sg.topGrade === 'green' && healed != null, `R4 PP 분홍 빠짐(맨 위 ${sg.topGrade}) → 분홍 남은 마디 위 자르고 밝은 데 — ${healed}일째 새 잎 ${R.summary(g).topGrade} — pp_green 나음`); }
+
+  /* R5 summary.births — 모든 종 · newPlant 로 준 잎은 안 셈 */
+  { const xs = [R.newPlant('pink_princess', { pinks: [0.3, 0.3] }), R.newPlant('alocasia_frydek'), R.newPlant('scindapsus', { form: 'rooted', nodes: 4 }), R.newPlant('calathea', { leaves: 4 })];
+    ok(xs.every(p => R.summary(p).births === 0), `R5 summary.births — 네 종 다 있고 받은 잎은 0 (${xs.map(p => R.summary(p).births).join('·')})`); }
 }
 
 /* L — 잘못 부르면 던진다 */
