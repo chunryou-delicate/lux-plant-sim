@@ -1579,6 +1579,13 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'tired', text: '…배가 고프다.' },
     { who: 'moni',   face: 'worry', text: '오늘 팔 수 있는 걸 찾아보자. 이대로면 쓰러져.' }
   ],
+  /* ★ 2026-10-23 [plan] D79 ㉡(core 가게 2년 판 — 시루를 안 이은 가게 사람이 굶음 · 투룸엔 시루 말이 0 이었다) — 가게 판 굶음 갈래.
+       돈이 0 이라 씨앗을 바로 못 살 수 있다 → «팔고, 시루부터» 차례로 말한다(할 수 없는 일을 먼저 시키지 않는다). 수는 안 말한다.
+       홀/짝 번갈아는 그대로 — 가게 판은 홀수 날 이 줄 · 짝수 날 hungryTalk2(§scriptOf hungry). */
+  hungryShop: [
+    { who: 'moni',   face: 'worry', text: '돈이 바닥이야. 팔 수 있는 걸 팔고, 시루부터 다시 심자.' },
+    { who: 'moni',   face: 'teach', text: '시루가 밥이야. 밥값이 덜 나가.' }
+  ],
   /* ═══ ★★ 2026-10-08 [plan] 갈래 지도 5·6 — **삽수 사건에 말을 붙인다.** ═══
      [core] a8749420 전까지 삽수 사건은 turn.cuttings 에만 있어 로그 말고 아무 데도 안 갔다 — 물꽂이를 방치하면 «말 없이» 시들었다(초보도).
      ⚠ 수는 안 말한다(남은 날은 로그·삽수 줄이 말한다). ⚠ 경고는 혹 난 날·절반·마지막 사흘 매일 — 같은 말이 연달아 안 서게 §scriptOf 가 가른다.
@@ -1805,6 +1812,12 @@ export const SCRIPTS = {
   chatShopApron: [
     { who: 'jachwi', face: 'apron',    text: '앞치마 주머니에 가위가 늘 들어 있다.' },
     { who: 'moni',   face: 'scissors', text: '가게 사람 다 됐네.' }
+  ],
+  /* ★ 2026-10-23 [plan] D79 ㉠ — 가게 판 «시루가 밥 · 식물이 돈». 놓인 시루가 비어 있을 때([core] turn.cropNow.emptySiru · 새 칸 아님).
+       원룸 시루 잡담(chatOneroomSiru)은 산 집에서 쉬므로 그 빈자리. 씨앗이 없으면 «이어 심자»는 씨앗부터 — 상점에 늘 있다(order_seed). */
+  chatShopSiru: [
+    { who: 'jachwi', face: 'think',    text: '빈 시루가 놀고 있다.' },
+    { who: 'moni',   face: 'teach',    text: '시루는 밥, 식물은 돈이야. 시루부터 이어 심자.' }
   ],
   /* ★ 2026-10-10 [plan] D55(총괄) — 원룸에서 안 자르고 키운 그루가 칸 한도의 2배를 넘게 컸다(사건 `cut_too_wide` · [core] 75a785d6 · 그 그루·그 칸에서 한 번).
      결: 혼내지 않고 «많이 컸네»로 — 칸을 넓혀 주자. ⚠ «바닥»을 권하지 않는다: 원룸 바닥은 등을 다 켜도 안 자라는 자리(가구 빛 D · house-decor §C 잰 닻)라
@@ -2781,7 +2794,12 @@ function scriptOf(ev, S = null) {
   if (id === 'cutting_warn' && ev && Number.isFinite(ev.daysLeft) && ev.daysLeft <= 3 && ev.daysLeft % 2 === 1) return 'cuttingWarnLast';
   if (id === 'cutting_varie_light' && ev) return ev.step === 'bright' ? 'cuttingVarieBright'
                                               : ev.step === 'dark' ? 'cuttingVarieDark' : 'cuttingVarieMid';
-  if (id === 'hungry') return (ev && Number.isFinite(ev.left) && ev.left % 2 === 0) ? 'hungryTalk2' : 'hungryTalk';
+  if (id === 'hungry') {
+    const even = ev && Number.isFinite(ev.left) && ev.left % 2 === 0;
+    /* ★ 2026-10-23 [plan] D79 ㉡ — 가게 판(진로 shop · 산 투룸)은 홀수 날 «팔고, 시루부터»(hungryShop) */
+    const shop = !!(S && S.story && S.story.job && S.story.job.id === 'shop' && S.home && S.home.room === 'tworoom');
+    return even ? 'hungryTalk2' : (shop ? 'hungryShop' : 'hungryTalk');
+  }
   /* ★ 2026-10-09 [plan] D45 — 교환은 두 번째 물음·두 번째 거절이 따로 · 구근 싹은 무늬인가로 갈림(모르면 말 없음) */
   if (id === 'pp_trade_offer')    return ev && ev.again ? 'ppTradeOfferAgain' : 'ppTradeOffer';
   if (id === 'pp_trade_declined') return ev && ev.last ? 'ppTradeDeclinedLast' : 'ppTradeDeclined';
@@ -2908,6 +2926,8 @@ export const CHATTER = [
   { id: 'chatShopRegular',  gap: 21, when: c => c.movedHome && c.jobId === 'shop' && fin(c.shopRegulars) && c.shopRegulars >= 1 },
   { id: 'chatShopQuiet',    gap: 21, when: c => c.movedHome && c.jobId === 'shop' && fin(c.shopOpenOrders) && c.shopOpenOrders === 0 },
   { id: 'chatShopApron',    gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
+  /* ★ 2026-10-23 [plan] D79 ㉠ — 빈 시루가 있을 때만 */
+  { id: 'chatShopSiru',     gap: 21, when: c => c.movedHome && c.jobId === 'shop' && c.emptySiru === true },
   { id: 'chatOneroomMorning', when: c => c.movedOut && !c.movedHome && c.daysInOneroom != null && c.daysInOneroom <= 14 },
   /* ★ 원룸에서의 **첫** 수확. `cropHarvested` 는 거둔 날부터 다시 심기 전까지 참이라
      후보가 되는 날 자체가 드물다. 그래서 ① 목록에서 **거의 맨 앞**에 두고

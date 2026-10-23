@@ -635,7 +635,9 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     /* ★ 2026-10-09 [plan] D52 — 잠드는 날 구근(al_asleep corms > 0) · 두 번째 깸(al_wake first false) */
     'alAsleepCorms', 'alWakeAgain',
     /* ★ 2026-10-10 [plan] D59 — 식물 가게 사건 갈림(scriptOf): 납품 새 단골 · 단골 이정표 3/10/30 */
-    'shopNewRegular', 'shopRegulars3', 'shopSign', 'shopTown', 'shopNoSpeciesPP'
+    'shopNewRegular', 'shopRegulars3', 'shopSign', 'shopTown', 'shopNoSpeciesPP',
+    /* ★ 2026-10-23 [plan] D79 ㉡ — 가게 판 굶음 갈래(scriptOf hungry · 진로 shop · 산 투룸 · 홀수 날) */
+    'hungryShop'
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);
@@ -692,6 +694,30 @@ check('잡담 — hintShopDry 는 가게 판 + 열린 주문 0건 스무하루�
   assert.equal(at(null, shopS, { movedHome: true, jobId: 'shop' }), false, '모르는데(null) 섭니다');
   assert.equal(at(30, shopS, { movedHome: true, jobId: 'care' }), false, '가게 판이 아닌데 섭니다');
   assert.equal(at(30, shopS, { movedHome: false, jobId: 'shop' }), false, '산 집이 아닌데 섭니다');
+});
+
+/* ★ 2026-10-23 [plan] D79 ㉠㉡ — 투룸 «시루가 밥 · 식물이 돈» */
+check('대사 — 가게 판 굶음은 홀수 날 «팔고, 시루부터»(hungryShop) · 짝수 날·가게 밖은 예전 그대로(D79)', () => {
+  const shopS = { story: { job: { id: 'shop', since: 600 } }, home: { room: 'tworoom' }, tutorial: { movedOut: true, homeOwned: true } };
+  const oneS = { tutorial: { movedOut: true }, home: { room: 'oneroom' } };
+  assert.deepEqual(scriptsForEvents([{ id: 'hungry', left: 3 }], shopS), ['hungryShop']);
+  assert.deepEqual(scriptsForEvents([{ id: 'hungry', left: 2 }], shopS), ['hungryTalk2']);
+  assert.deepEqual(scriptsForEvents([{ id: 'hungry', left: 3 }], oneS), ['hungryTalk']);
+  assert.deepEqual(scriptsForEvents([{ id: 'hungry', left: 3 }]), ['hungryTalk']);   // 판을 모르면 예전 그대로
+});
+check('잡담 — chatShopSiru 는 가게 판 + 빈 시루일 때만(D79)', () => {
+  const row = CHATTER.find(r => r.id === 'chatShopSiru');
+  assert.ok(row && SCRIPTS.chatShopSiru, 'chatShopSiru 줄·대사가 없습니다');
+  const base = { movedHome: true, jobId: 'shop' };
+  assert.equal(row.when({ ...base, emptySiru: true }), true, '빈 시루가 있는데 안 섭니다');
+  assert.equal(row.when({ ...base, emptySiru: false }), false, '빈 시루가 없는데 섭니다');
+  assert.equal(row.when({ ...base, emptySiru: null }), false, '모르는데(null) 섭니다');
+  assert.equal(row.when({ movedHome: true, jobId: 'care', emptySiru: true }), false, '가게 판이 아닌데 섭니다');
+  assert.equal(row.when({ movedHome: false, jobId: 'shop', emptySiru: true }), false, '산 집이 아닌데 섭니다');
+  /* 맥락 칸이 cropNow 에서 오는지(새 칸 아님) */
+  const ctx = chatterContextOf({ day: 900, cropNow: { seedStock: 0, emptySiru: true, harvestTotal: 40 } }, { story: { job: { id: 'shop' } }, home: { room: 'tworoom' } });
+  assert.equal(ctx.emptySiru, true, 'cropNow.emptySiru 를 못 읽습니다');
+  assert.equal(row.when(ctx), true, '진짜 맥락으로 안 섭니다');
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
