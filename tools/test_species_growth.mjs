@@ -183,12 +183,15 @@ ok(firstLeafDay(thPP.min - 0.1, 'summer') === null, `C PP 문턱(min ${thPP.min}
   ok(even && !cnt[-1], `I 잠들 때 구근 ${lo}~${hi}알 고르게 — ${N}판 ${JSON.stringify(cnt)}`); }
 
 /* J — 무늬 몫 */
-{ const N = 800; const share = (origin, motherKind) => { let v = 0; const kinds = {};
+{ const N = 800; let tagBad = 0; const share = (origin, motherKind) => { let v = 0; const kinds = {};
     for (let s = 1; s <= N; s++) { const a = R.newPlant('alocasia_frydek', { seed: s * 7919 + 1, origin, motherKind });
-      const e = walk(a, 30, k(6), k('spring')).find(x => x.type === 'sprout'); if (e.varie) { v++; kinds[e.varie] = (kinds[e.varie] || 0) + 1; } }
+      const e = walk(a, 30, k(6), k('spring')).find(x => x.type === 'sprout'); if (e.varie) { v++; kinds[e.varie] = (kinds[e.varie] || 0) + 1; }
+      if (e.origin !== origin || e.motherKind !== (motherKind ?? null)) tagBad++; }
     return { p: v / N, kinds }; };
   const vm = share('from_varie_mother', 'sector'), pm = share('from_plain_mother', null), sh = share('shop', null);
   const C = AL.corm.varie_chance;
+  /* ★ C 판 «무늬 육종»(총괄 D83) — 싹틈 사건이 기록장 표본 조건(구근 출처 · 어미 갈래)을 싣는다 */
+  ok(tagBad === 0, `J 싹틈 사건에 출처·어미 갈래가 실린다(origin · motherKind · ${3 * N}판 · 어긋남 ${tagBad})`);
   ok(Math.abs(vm.p - C.from_varie_mother) < 0.04 && Object.keys(vm.kinds).join() === 'sector', `J 무늬 모주 구근 무늬 ${vm.p.toFixed(3)}(기대 ${C.from_varie_mother}) · 갈래는 모주 것 ${JSON.stringify(vm.kinds)}`);
   ok(pm.p === C.from_plain_mother, `J 민무늬 모주 구근 무늬 ${pm.p}(기대 ${C.from_plain_mother})`);
   ok(Math.abs(sh.p - C.shop) < 0.04 && Object.keys(sh.kinds).length === 2, `J 상점 구근 무늬 ${sh.p.toFixed(3)}(기대 ${C.shop}) · 갈래 고르게 ${JSON.stringify(sh.kinds)}`);

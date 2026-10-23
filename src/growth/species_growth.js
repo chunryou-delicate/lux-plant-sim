@@ -18,11 +18,13 @@
 
    사건(events) — 코어가 대사·스냅샷에 쓴다
      PP  leaf { no, pink, grade } · tip_withering { streak, at } · tip_withered { count }   (자르기로 살린 것은 cutAbove 의 saved)
-     AL  sprout { varie, slept, corms } · leaf { no } · leaf_drop { no } · dormancy_start { why } · asleep { corms } · wake
+     AL  sprout { varie, slept, corms, origin, motherKind } · leaf { no } · leaf_drop { no } · dormancy_start { why } · asleep { corms } · wake
          corms = [{ seed, origin, motherKind }] — 구근을 «찾는» 때는 둘뿐이다(한 번의 잠에 한 번):
            asleep  잎을 내며 자라던 그루가 잠에 들어 잎이 다 지는 날(D52)
            sprout  slept = 잠 철을 기다린 «잠든 구근»이 봄에 싹틀 때(D49)
          wake 는 «다시 깼다» 장면만 — 구근이 안 나온다(D52)
+         sprout.origin · motherKind = 이 그루가 나온 구근의 출처('from_varie_mother' | 'from_plain_mother' | 'shop') · 어미 갈래(무늬 어미면 'marble' | 'sector' · 아니면 null)
+           — C 판 «무늬 육종» 기록장 표본의 조건(총괄 D83 · plan-breed-career-spec §2-1). 그루 칸(p.origin · p.motherKind) 그대로다
 
    ★ 2026-10-23 D71(총괄 · plan-species2-shop-spec §3) — 두 종 더: 스킨답서스 마블퀸(SC · 'scindapsus') · 칼라테아 오비폴리아(CA · 'calathea')
      이름은 core 와 맞춘 것(core 제안 꼴 그대로 · 10-23):
@@ -278,7 +280,8 @@ export function createSpeciesRules(SPEC, TH) {
       p.varie = varie; p.phase = 'growing';
       const slept = !!(p.cormSlept && S.corm.sleeping_corm_makes_corms);
       const corms = slept && canFind(p, S) ? findCorms(p, S) : [];   // 잠든 구근의 싹틈 = 그 한 번의 잠에서 찾는 한 번(평생 횟수에 든다 · D56)
-      ev.push({ type: 'sprout', varie, slept, corms });
+      /* ★ C 판 «무늬 육종»(총괄 D83) — 기록장 표본 조건(구근 출처 · 어미 갈래)을 사건에 같이 싣는다. 그루 칸 그대로(굴림 없음) */
+      ev.push({ type: 'sprout', varie, slept, corms, origin: p.origin, motherKind: p.motherKind ?? null });
       addALLeaf(p, S, ev);
       return;
     }
