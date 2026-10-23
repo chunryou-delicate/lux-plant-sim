@@ -54,7 +54,7 @@
 ## 4. 규칙 (D59)
 
 - 집: **산 투룸** — 월세 0 · 관리비(utility) **한 달 8만**(⚖ D59). homes.json 에 «산 집» 줄(`tworoom_owned` 꼴 · 방은 tworoom) 하나 — 월세 줄의 투룸(60만 · 공과 9.5만)과 섞지 않는다.
-- 초보 보호 끝: 낙엽·고사 켜짐(growth `health.drop_enabled` · story_arc «스토리 뒤») · 굶음 그대로.
+- 초보 보호 끝: **몬스테라 낙엽만 켜짐**(growth `health.drop_enabled` · `setHealthDrop` · story_arc «스토리 뒤») — 마지막 한 장은 안 떨어진다 · 고사(그루가 죽음) 규칙은 없다 · 굶음 그대로. (✎ 10-23 총괄 D73 — 옛 낱말 «낙엽·고사 켜짐»을 코드대로 고침 · plant_grow.html:1757 · game.html:12152)
 - 세이브: `story.job = { id: 'shop', since }` · `S.shop = { orders, nextOrderDay, regulars: [customerId…], done, expired, milestones: {3,10,30: day}, signOnDay }`. 직업 상태를 `ending.js` 에 두지 않는다.
 
 ## 5. 퀘스트 (plan · quest.js — room 'tworoom' · 칸 `job === 'shop'`)
@@ -81,7 +81,7 @@
 
 | 창 | 몫 |
 |---|---|
-| **core** | D28 멈춤 → 진로 고르기 화면 · `story.job` · 투룸 이사(moveIntoOneroom 일반화) · `S.shop` 상태·세이브 · 주문 생성(§2-2·2-3 · 원천 판정 한 곳) · 주문판 탭·[납품]·고르는 목록 · 값 = 시세 × premium · 사건 `job_start` `shop_open` `order_new` `order_done` `order_expired` `regulars_milestone{n}` `shop_sign` · 스냅샷 칸 · 관리비 줄 · 낙엽·고사 켬 · **판**: 하네스 «가게 사람»으로 주문 맞춤 몫(⚖ 목표 7할 이상 · 못 맞추는 주문이 나면 §2-3 이 샌 것) · 단골 10명까지 날 수 |
+| **core** | D28 멈춤 → 진로 고르기 화면 · `story.job` · 투룸 이사(moveIntoOneroom 일반화) · `S.shop` 상태·세이브 · 주문 생성(§2-2·2-3 · 원천 판정 한 곳) · 주문판 탭·[납품]·고르는 목록 · 값 = 시세 × premium · 사건 `job_start` `shop_open` `order_new` `order_done` `order_expired` `regulars_milestone{n}` `shop_sign` · 스냅샷 칸 · 관리비 줄 · 몬스테라 낙엽 켬(고사 없음 · §4) · **판**: 하네스 «가게 사람»으로 주문 맞춤 몫(⚖ 목표 7할 이상 · 못 맞추는 주문이 나면 §2-3 이 샌 것) · 단골 10명까지 날 수 |
 | **plan** | 손님 표 36(`shop_customers.json`) · 진로 카드 글 · 가게 사슬 퀘스트(quest.js) · 대사(§6 · dialogue.js) · 주문 줄 글 꼴(«{손님} · {원하는 것} · {남은 날}») · 이 명세의 값 칸을 총괄 결과로 맞추기 |
 | **house** | 투룸 방 점검(창 · 등 자리 · 슬롯 · 원룸처럼 «등 자리 0»이 아닌지 · 바닥 빛) · **3D(Meshy)**: 주문판(코르크 판) · 진열대 · **간판**(10명 보상 · 창밖/문 옆) — image_to_3d 3 × 30 + 색 판 2 × 10 ≈ **110** |
 | **char** | **원화(Higgsfield)**: 손님 초상 6(손님 표를 여섯 결로 묶어 — 카페 · 학생 · 어르신 · 부부 · 꽃집 · 회사원) · 장면 2(가게 연 날 · 간판 단 날) · 자취생 앞치마 옷(옷은 통째로 · make_outfit) |
