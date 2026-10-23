@@ -2304,7 +2304,7 @@
       "room": "벽(걸이 자리)",
       "shop_listed": true,
       "unlock": "vine_hang",
-      "_shop": "★ plan 권함: 가구점에 sc_ask(단골 5) 날부터. core 가 furnitureCatalogList 에서 unlock 을 거르는 날 shop_listed 를 true 로 켠다(그전엔 안 뜬다 · test_furnishop 수 그대로)."
+      "_shop": "★ 가구점에 뜨는 때 = unlock vine_hang(덩굴을 걸 때 · core shop §FURNITURE_UNLOCKS 269077ed) — 가게 판은 sc_ask(단골 5) 날부터 · 돌봄 판은 첫날부터(plan-care-career-spec §4 · D73). 그 전엔 가구점에도 주문에도 안 뜬다."
     },
     "care_board": {
       "type": "bulletin_board",
