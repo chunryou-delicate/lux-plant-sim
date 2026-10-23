@@ -430,6 +430,25 @@ function shopSpotsOf(S, io, sky) {
   });
 }
 
+/* ★ 2026-10-24 D82 ③ — 모주(첫 화분 · 자르는 그루)에서 «오늘 자를 수 있는 무늬 마디»가 있나(가게 원천 varieSource · 어려움 무늬 삽수 주문).
+     예전 칸(화분 variegated)은 광량 문턱 스위치라 늘 거짓이었다. «무늬 잎이 있기만»으로 열면(10-24 하네스 shop71h 씨앗 10) 어려움 주문이
+     1 → 10 건으로 늘고 그중 8 건이 기한을 넘겼다 — 모주의 무늬 잎은 대개 프롤로그 잎(이미 잘렸거나 문에 막힘)이라 «지금 자를 수 있는가»로 잰다.
+     자는 cutOpenCountOf 와 같은 손(cuttableNow + cutBlockedReason) · 그중 무늬 잎이 딸린 마디. 첫 화분이 가방에 있거나 못 읽으면 false */
+function motherVarieOf(S, io) {
+  const p = pot0(S);
+  if (!p || (!p.slotId && !p.at) || !io || !io.growth || typeof io.growth.cuttableNodes !== 'function') return false;
+  try {
+    selectLeadPlant(S, io.growth);
+    const nodes = io.growth.cuttableNodes();
+    if (!Array.isArray(nodes)) return false;
+    let vm = null;
+    try { const ls = io.growth.leafState && io.growth.leafState(); if (Array.isArray(ls)) vm = ls.filter(r => r && r.varie && r.matured && !r.dropped).length; }
+    catch (e) { vm = null; pushLog(S, '⚠ 모주 잎 상태를 못 읽었습니다 — ' + ((e && e.message) || e)); }
+    const opt = { potId: p.id, ...(Number.isInteger(vm) ? { varieMaturedLeaves: vm } : {}) };
+    return cuttableNow(S, nodes, { potId: p.id }).some(n => (n.variegatedLeaves || 0) > 0 && !cutBlockedReason(S, nodes, n.nodeId, opt));
+  } catch (e) { pushLog(S, '⚠ 모주 무늬 마디를 못 셌습니다 — ' + ((e && e.message) || e)); return false; }
+}
+
 /* plan §11 «등 n개» = 등 자리에 «켜진» 식물등 — 빛 계산(light_adapter §rigsOn)과 같은 자: 세운 수를 방 등 자리 수에서 자른다(가게 · 돌봄 같은 자).
    못 세면 세운 수 그대로 + 기록 줄(삼키지 않는다 · 10-24) */
 function lampsOnOf(S, io) {
@@ -1054,7 +1073,7 @@ function potTag(S, p) {
      지나가기만 하고 예전 길 그대로 돈다(다개체 장치가 잠들어 있는 것과 같은 사정).
    ⚠ 옛 생장 창(selectPlant 이 없는 것)에 화분 둘을 물리면 **던진다.** 조용히 넘어가면
      두 화분이 같은 형태를 공유하는, 제일 늦게 발견되는 사고가 난다. */
-function selectPlantFor(S, io, p) {
+export function selectPlantFor(S, io, p) {   /* 10-24 D82 ④ — 화면(noteLeafGrades)이 화분마다 잎 장부를 적을 때도 같은 손 */
   const id = growthIdOf(p);
   if (S.pots.length <= 1 && id === MAIN_GROWTH_ID) return id;
   if (!io.growth || typeof io.growth.multi !== 'function' || !io.growth.multi())
@@ -1289,7 +1308,7 @@ function nextDayBody(S, io) {
     const lampsOn = lampsOnOf(S, io);
     /* ★ D71 — 방 자리는 주문을 굴리는 날에만 센다(getter · 하루 한 번) */
     let spotsMemo;
-    jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn,
+    jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn, motherVarie: motherVarieOf(S, io),
                                get spots() { if (spotsMemo === undefined) spotsMemo = shopSpotsOf(S, io, report && report.sky); return spotsMemo; } });
     for (const e of (jobShop && jobShop.events) || []) if (e && e.ko && (e.id === 'order_new' || e.id === 'order_expired' || e.id === 'shop_open' || e.id === 'shop_ending'))
       pushLog(S, (e.id === 'order_new' ? '📋 ' : e.id === 'order_expired' ? '⌛ ' : e.id === 'shop_ending' ? '🏅 ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));

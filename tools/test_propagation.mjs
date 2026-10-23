@@ -811,6 +811,20 @@ check('L ★옛 세이브(키메라·고스트)가 열린다 — 고스트가 �
        `갈래 기록은 남기고 · 200일 굴려도 안 죽는다`);
 });
 
+/* ★ 2026-10-24 [core] 총괄 D82 ③ — 화분 어미의 무지 마디 삽수는 0%(실제 알보 결) · 모주 무늬율(growth 정본 opt.varieChance)은
+     무늬 마디 삽수의 «뿌리내리기 전» 자리값으로만 · 삽수에서 다시 뜬 무지 마디는 예전대로 모주(삽수) 값 */
+check('D82 ③ 화분 어미 무지 마디 = 0% — 모주 무늬율을 줘도 · 무늬 마디는 그 값을 자리값으로', () => {
+  assert.equal(P.VARIE.variegatedMother, 0, `VARIE.variegatedMother 가 ${P.VARIE.variegatedMother} — D82 ③ 은 0`);
+  for (const varieFlag of [false, true]) {
+    /* 판을 자를 때마다 새로 — 한 모주에서 둘을 자르면 모주 잎이 모자라 막힌다(§motherLeafStats) */
+    const plain = P.takeCutting(newFree({ variegated: varieFlag }), { nodes: NODES(), nodeId: 'ax0#0', container: 'soil', at: FLOOR(0.5, 0.5), varieChance: 0.6, ...PLACE });
+    assert.equal(plain.varieChance, 0, `화분(variegated ${varieFlag}) 무지 마디 삽수 무늬율 ${plain.varieChance} — 0 이어야(모주 무늬율 0.6 을 받으면 안 됨)`);
+    const varie = P.takeCutting(newFree({ variegated: varieFlag }), { nodes: NODES(), nodeId: 'ax0#1', container: 'soil', at: FLOOR(-0.5, 0.5), varieChance: 0.6, ...PLACE });
+    assert.equal(varie.varieChance, 0.6, `무늬 마디 삽수의 뿌리내리기 전 자리값 ${varie.varieChance} — 모주 무늬율 0.6 이어야`);
+    assert.equal(varie.varieLightBand ?? null, null, '무늬 마디는 뿌리내릴 때 빛이 정한다(아직 미정이어야)');
+  }
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {

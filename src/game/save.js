@@ -257,7 +257,8 @@ function packPot(p, i) {
        `cuts`·`pendingCutLoss` 는 "이 모주에서 무엇을 잘라냈나"이고, growth 가 다개체 리팩터에서
        형태에 반영할 때까지 코어가 들고 있는 유일한 기록이다. 안 적으면 저장 한 번에
        잘라낸 사실이 통째로 사라진다 — 삽수는 남았는데 모주는 안 잘린 세이브가 된다.
-       `gen`·`varieChance` 는 계통 값이라 세대 감쇠(0.8ⁿ)가 세이브 왕복에서 초기화되면 안 된다. */
+       `gen`·`varieChance` 는 계통 값이라 세이브 왕복에서 초기화되면 안 된다(⚠ 10-24 D82 ⑤ — 옛 «세대 감쇠 0.8ⁿ»은 08-17 빛 규칙으로 대체 ·
+       지금 세대(gen)는 propagation §VARIE_RULES.genRise 손잡이(기본 0 · 안 오름)만 읽는다). */
     gen: needInt(p.gen ?? 0, `${path}.gen`, { min: 0 }),
     varieChance: p.varieChance == null ? null : needNum(p.varieChance, `${path}.varieChance`, { min: 0 }),
     motherEnded: !!p.motherEnded,

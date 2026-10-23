@@ -374,7 +374,10 @@ export function deadlineDayOf(c, novice) {
    ★ 대가는 이미 있다: **모주의 가지 하나를 잃는다**(등급이 내려갈 수 있다). 씨앗은 모주를 안 건드린다.
 ============================================================ */
 
-/* ★★ 빛 → 변이 확률. 박사님 확정 셋(20 / 50 / 80). 천장이 80% 다. */
+/* ★★ 빛 → 변이 «소질»(c.varieChance). 박사님 확정 셋(20 / 50 / 80) — 소질의 천장이 80% 다.
+   ⚠ 2026-10-24 총괄 D82 ② — 새 잎을 «굴리는» 값은 여기서 한 번 더 탄다: D40 어린 그루 ×2 · 상한 .9(§youngVarieChanceOf).
+     그래서 굴리는 값은 어두움 40% · 중간 90% · 밝음 90% 다(중간 = 밝음 — 밝은 자리의 이득은 등급뿐 · 값은 그대로 ·
+     박사님 첫 플레이 뒤 다시 봄 — plan 다듬기 목록 1-1). */
 export const VARIE_LIGHT = Object.freeze({ dark: 0.20, mid: 0.50, bright: 0.80 });
 export const VARIE_LIGHT_KO = Object.freeze({ dark: '어두움', mid: '중간', bright: '밝음' });
 
@@ -531,8 +534,11 @@ export function varieChanceFromLight(band, opt = {}) {
      ③ **민무늬 마디를 자르면 아무 위험이 없다**(w=0 → 고스트 0%). 꾸준수입 경로는
         위험을 전혀 안 진다. 위험은 **소질을 올리려 할 때만** 생긴다.
 ============================================================ */
+/* ★ 2026-10-24 총괄 D82 ③ — variegatedMother 0.195 → 0. 화분 어미의 무지 마디 삽수는 **0%** 다(실제 알보 결 — 초록 마디의 눈은
+     초록 조직만 물려받아 원복한다 · §⑤ «무지 삽수 — 개체만 는다»). 예전엔 화분 variegated 가 늘 false 라(광량 문턱 스위치 · normal 고정)
+     이 값이 한 번도 안 쓰였다 — 같은 결과를 이제 글로 못 박는다. 모주의 실제 새 잎 무늬율은 growth 정본(opt.varieChance)이 준다 */
 export const VARIE = Object.freeze({
-  variegatedMother: 0.195,   // 무늬 모주의 새 잎 무늬율(최적 관리 · normal 기준)
+  variegatedMother: 0,       // 화분 어미 무지 마디 삽수의 무늬율 — 0(위 까닭)
   plainMother: 0             // ★ plain 은 복제해도 영원히 0 이다
 });
 
@@ -1250,7 +1256,9 @@ export function takeCutting(S, opt = {}) {
   /* 미정일 때도 **숫자는 넣어 둔다**(모주 값). null 을 넣으면 세이브가 0 으로 메꾸고,
      그러면 「아직 안 정했다」와 「0 으로 정해졌다」가 구분이 안 된다.
      ⇒ 「아직 안 정했다」는 `varieLightBand === null` 한 칸이 말한다. */
-  const childChance = motherChance;
+  /* ★ 2026-10-24 D82 ③ — 화분 어미의 무지 마디는 0(VARIE.variegatedMother · 실제 알보 결). opt.varieChance(growth 정본 모주 무늬율)는
+       무늬 마디 삽수의 «뿌리내리기 전» 자리값으로만 남는다 — 뿌리를 내면 빛이 정한다(§③). 삽수에서 다시 뜬 무지 마디는 예전대로 모주 값(§⑤) */
+  const childChance = (!varieCut && pot && !momCut) ? VARIE.variegatedMother : motherChance;
 
   const c = {
     id,

@@ -3250,6 +3250,7 @@ import { CUTTING_LEAF_DAYS } from './src/game/propagation.js';   /* ★ 2026-10-
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
 /* 식물등 겨누기 — 물리는 io.light 가, 세이브는 이쪽이 맡는다(lampaim-to-plan §1) */
 import { setLampAim, clearLampAim } from './src/game/state.js';
+import { selectLeadPlant } from './src/game/state.js';   /* 10-24 D82 ④ — 화분마다 잎 장부를 적은 뒤 첫 화분을 다시 꽂는다 */
 /* ★ 2026-10-08 A·B 덧([plan]) — 놓는 순간 빛 경고의 자: real 판은 날씨 기댓값(weatherE) · 무늬 삽수는 뿌리낸 날 등급의 자(varieLightStepOfBand) */
 import { modeOf } from './src/game/state.js';
 import { varieLightStepOfBand } from './src/game/shop.js';
@@ -3354,7 +3355,7 @@ const endingOn = () => !!(ENDING_NOW && Number.isFinite(ENDING_NOW.targetWon));
    걷었다). loop.js 에는 그대로 있다 — 헤드리스 재현·밸런스 측정이 그 길로 돈다.
    ⚠ `runDays` 는 **빨리감기가 아니다.** 타이머 없이 `nextDay` 를 n번 도는 동기 함수이고,
      [검수]의 [30일 자동] 하나가 쓴다(플레이어 화면에 없다). 그래서 남긴다. */
-import { nextDay, runDays, avg, rollingAvg, harvestCrop, lightOptsOf, NO_GROW_BANDS, speciesDropInfoOf, careSpotsOf } from './src/game/loop.js';
+import { nextDay, runDays, avg, rollingAvg, harvestCrop, lightOptsOf, NO_GROW_BANDS, speciesDropInfoOf, careSpotsOf, selectPlantFor } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 /* 체력 — 값만 읽는다. 규칙도 문구도 여기서 짓지 않는다(docs/stamina.md) */
 import { staminaView, staminaRulesFrom, takeLevelUps, xpNeededAt,
@@ -3613,27 +3614,59 @@ let pendingLeafScene = null, leafBanners = [];
      다음 하루까지 확대창이 방과 다른 무늬를 그렸다(4판 중 2·3판). ⇒ 불러온 직후(§resumeSave 뒤)와 확대창을 여는 순간(§openZoomFor · 첫 그루)에도 넘긴다.
    ⚠ 창구가 없으면 조용히 지나간다 — 옛 생장 창에서도 게임은 돌아야 한다. 돌려주는 값: 넘겼나 */
 const SKIN_PUSH_ON = (() => { try { return !/[?&]skinpush=0(&|$)/.test(location.search); } catch { return true; } })();   /* ?skinpush=0 — 예전 그대로(하루 넘김에서만) · 같은 빌드 견주기 */
-function pushLeafSkins() {
+/* pot 을 주면 그 화분의 그림표를 «지금 꽂힌 그루»에 넘긴다(부르는 쪽이 그 그루를 꽂아 둔다 · §notePotLeafGrades) · 없으면 첫 화분 */
+function pushLeafSkins(pot = null) {
   try {
     const w = document.getElementById('growth').contentWindow;
     if (!w || typeof w.setLeafSkins !== 'function') return false;
-    const p0 = pot0(S);
+    const p0 = pot || pot0(S);
     if (!p0) return false;
     w.setLeafSkins(Object.entries(potLeafSkinsOf(S, p0) || {}).map(([lb, v]) => ({ leafBirth: +lb, ...v })));
     return true;
   } catch (e) { console.warn('[무늬 그림]', e && e.message); return false; }
 }
+/* 10-24 D82 ④ — 화분마다(씨앗 그루까지) 그림표를 넘긴다(불러온 직후 · 하루를 안 넘겼을 때) · 그루를 갈아 꽂고 끝에 첫 화분을 다시 꽂는다 */
+function pushLeafSkinsAll() {
+  const pots = (S.pots || []).filter(Boolean);
+  if (pots.length <= 1) return pushLeafSkins();
+  let ok = true;
+  try {
+    for (const p of pots) {
+      try { selectPlantFor(S, io, p); ok = pushLeafSkins(p) && ok; }
+      catch (e) { ok = false; console.warn('[무늬 그림]', p && p.id, e && e.message); }
+    }
+  } finally { try { selectLeadPlant(S, io.growth); } catch (e) { console.warn('[첫 그루 되꽂기]', e && e.message); } }
+  return ok;
+}
+/* ★★ 2026-10-24 총괄 D82 ④ — **화분마다(씨앗 그루까지) 잎 장부에 적는다.** 예전엔 «지금 꽂힌 그루»(첫 화분)만 적어 씨앗 그루의 무늬 잎이
+     장부 밖에 남았다 → 값·그림에서 산반(legacy)으로 떨어졌다(probe_seed_varie: 씨앗 그루는 자리 DLI 7 이상이면 60일 안에 10/10 이 무늬 잎).
+     그루를 갈아 꽂아 읽고(loop §selectPlantFor — 하루가 도는 그 손) 끝에 첫 화분을 다시 꽂는다(state §selectLeadPlant).
+     가방에 든 그루는 오늘 안 자랐다(loop §inBag) — 건너뛴다. 밴드는 그 화분이 이 턴에 받은 것(turn.plants[].growthSpeed) */
 function noteLeafGrades(t) {
   leafBanners = [];
   if (!hasPlant(S)) return;
+  const lead = pot0(S);
+  const placed = (S.pots || []).filter(p => p && (p === lead || p.slotId || p.at));
   try {
+    for (const pot of placed) {
+      try { notePotLeafGrades(t, pot, pot === lead); }
+      catch (e) { console.warn('[무늬 등급]', pot && pot.id, e && e.message); }
+    }
+  } finally {
+    if (placed.length > 1) { try { selectLeadPlant(S, io.growth); } catch (e) { console.warn('[첫 그루 되꽂기]', e && e.message); } }
+  }
+}
+function notePotLeafGrades(t, pot, isLead) {
+  {
+    if (!isLead) selectPlantFor(S, io, pot);
     /* 잎 상태의 정본은 growth 다 — 화면이 잎을 세지 않는다 */
     const ls = io.growth && io.growth.leafState && io.growth.leafState();
     if (!ls) return;
     /* ★ 밴드는 **이 턴 것**을 넘긴다. 코어가 그 값으로 자랐으니 등급도 같은 값을 봐야 한다 —
        지난 턴 것을 넘기면 「어제 자리」가 오늘 난 잎의 등급을 정하게 된다. */
-    const band = (t && t.growthSpeed && t.growthSpeed.band) || null;
-    const r = assignPotLeafGrades(S, { leafState: ls, band });
+    const row = !isLead && t && Array.isArray(t.plants) ? t.plants.find(x => x && x.potId === pot.id) : null;
+    const band = isLead ? ((t && t.growthSpeed && t.growthSpeed.band) || null) : ((row && row.growthSpeed && row.growthSpeed.band) || null);
+    const r = assignPotLeafGrades(S, { pot, leafState: ls, band });
     /* ⚠ 새로 정해진 잎이 없으면 **조용히 지나간다.** 매 턴 「아직 산반입니다」를 말하면
        그건 안내가 아니라 잔소리다(quest-to-plan 의 규율과 같은 결).
        ⚠ 대사가 아니라 **배너**다 — `dialogue.js` 는 `leaf_grade` 를 모르고, 알 필요도 없다.
@@ -3644,25 +3677,28 @@ function noteLeafGrades(t) {
          캐논이 *"성숙 특수무늬는 앞선 mid 의 특수 형태를 따라 그룹핑 — 미구현, 향후"* 라
          남겨 둔 그 자리다.
        ⚠ 창구가 없으면 조용히 지나간다 — 옛 생장 창에서도 게임은 돌아야 한다. */
-    pushLeafSkins();
+    pushLeafSkins(pot);
     /* ★ 2026-10-10 잎 카드(plan 6d7665e0 ①) — 그 등급을 «처음» 본 날(이 그루 장부에 오늘 것 말고 같은 등급이 없음) 배너 옆에 그 잎의 카드.
          카드는 그 잎이 실제로 그려지는 성숙잎 그림의 갈래(shop §leafCardOf) · 한 턴에 같은 등급이 둘이면 첫 잎만 · 무지는 안 띄운다 */
-    const p0c = pot0(S), todayB = new Set(((r && r.assigned) || []).map(a => String(a.leafBirth)));
-    let ledC = {}, skinsC = {}; try { ledC = potLeafGradesOf(p0c) || {}; skinsC = potLeafSkinsOf(S, p0c) || {}; } catch { }
+    const p0c = pot, todayB = new Set(((r && r.assigned) || []).map(a => String(a.leafBirth)));
+    let ledC = {}, skinsC = {};
+    try { ledC = potLeafGradesOf(p0c) || {}; skinsC = potLeafSkinsOf(S, p0c) || {}; } catch (e) { console.warn('[잎 카드 장부]', e && e.message); }
     const cardShown = new Set();
+    /* 첫 화분이 아니면 «몇째 몬스테라»를 앞에 단다(씨앗 그루 · 10-24) */
+    const potHead = isLead ? '' : `${(S.pots || []).indexOf(pot) + 1}째 몬스테라 · `;
     for (const a of (r && r.assigned) || []) {
-      const b = { title: `✨ ${a.leafNo}번째 잎 — ${a.gradeKo}`,
+      const b = { title: `✨ ${potHead}${a.leafNo}번째 잎 — ${a.gradeKo}`,
                   sub: (((r.events || []).find(e => e.leafBirth === a.leafBirth) || {}).ko || '').replace(/\*\*/g, '') };
       try {
         const first = !cardShown.has(a.grade) && !Object.entries(ledC).some(([lb, g]) => g === a.grade && !todayB.has(String(lb)));
         const mat = a.matSkin || ((skinsC[a.leafBirth] || skinsC[String(a.leafBirth)] || {}).matSkin) || null;   /* 알림 항목이 그 잎의 성숙잎 그림을 들고 온다(shop §assignPotLeafGrades) */
         if (first) { const c = leafCardOf({ grade: a.grade, matSkin: mat }); if (c && c !== 'card_mon_plain') { b.img = `./assets/illust/cards/${c}.png`; cardShown.add(a.grade); } }
-      } catch { }
+      } catch (e) { console.warn('[잎 카드]', e && e.message); }
       banners([b]); leafBanners.push(b);
-      if (a.why === 'prologue' && a.leafNo === 2) pendingLeafScene = pendingLeafScene || 'seen';
-      if (a.why === 'prologue' && a.grade === 'halfmoon') pendingLeafScene = 'half';
+      if (isLead && a.why === 'prologue' && a.leafNo === 2) pendingLeafScene = pendingLeafScene || 'seen';
+      if (isLead && a.why === 'prologue' && a.grade === 'halfmoon') pendingLeafScene = 'half';
     }
-  } catch (e) { console.warn('[무늬 등급]', e && e.message); }
+  }
 }
 /* ★ 표시 전용 — 몬스테라가 **도착한** 자리. first_play 는 옮기면 slotId 를 덮어써서
    "아직 그 자리인가"를 나중에 물어볼 수 없다. 상태를 고치지 않고 화면 쪽에서 기억한다.
@@ -5278,7 +5314,7 @@ function openZoomFor(pot) {
       const now = io.growth.current ? io.growth.current() : null;
       if (want && want !== now) { zoomPrevGrowthId = now; io.growth.select(want); }
       /* ★ 2026-10-08 — 첫 그루를 확대하면 그 순간 무늬 그림을 다시 넘긴다(불러온 판에서 생장 창이 늦게 섰을 때도 맞게 · §pushLeafSkins) */
-      if (SKIN_PUSH_ON && pot === pot0(S)) pushLeafSkins();
+      if (SKIN_PUSH_ON) pushLeafSkins(pot);   /* 10-24 D82 ④ — 씨앗 그루도(지금 꽂힌 그 그루 · 장부가 화분마다) */
     }
   } catch (e) {
     /* 못 골랐으면 **그대로 연다.** 다만 조용히 넘어가지 않는다 — 어느 그루가 떴는지
@@ -7556,9 +7592,16 @@ const reallyCut = guard((nodeId, container) => {
     const momSeed = (S.sim && Number.isFinite(S.sim.seed)) ? S.sim.seed : null;
     /* ★ 잎 등급을 딸려 보낸다(§cutLeafGradesOf) — 못 읽으면 안 넘기고, 코어가 확정문 §5 로 떨어뜨린다 */
     const grades = cutLeafGradesOf(pot0(S), nodes.find(x => x.nodeId === nodeId));
+    /* ★ 2026-10-24 D82 ③ — 모주의 «새 잎 무늬율»은 growth 정본(growth_adapter §varieChanceNow · 지금 꽂힌 첫 그루)에서 받아 넘긴다.
+         예전엔 안 넘겨 propagation 이 화분 variegated(광량 문턱 스위치 · 늘 false)로 읽었다. 무늬 마디 삽수의 뿌리내리기 전 자리값 ·
+         화분 어미 무지 마디는 그래도 0(propagation §VARIE.variegatedMother). 못 읽으면 안 넘긴다(예전 그대로) */
+    let momVarie = null;
+    try { const v = io.growth && typeof io.growth.varieChanceNow === 'function' ? io.growth.varieChanceNow() : null; if (Number.isFinite(v)) momVarie = v; }
+    catch (e) { console.warn('[모주 무늬율]', e && e.message); }
     c = takeCutting(S, { potId: pot0(S).id, nodes, nodeId, container,
                          at: pl.at, size: pl.size, slots: pl.slots, snapDist: pl.snapDist,
                          ...(grades ? { leafGrades: grades } : {}),
+                         ...(momVarie != null ? { varieChance: momVarie } : {}),
                          ...(momDays != null ? { motherGrowthDays: momDays } : {}),
                          ...(momSeed != null ? { motherSeed: momSeed } : {}),
                          log: m => pushLog(S, m) });
@@ -19091,7 +19134,7 @@ try {
   resumed = await resumeSave();
   if (resumed && endingLockedNow()) { try { openChapterEnd(); } catch { } }   /* ★ 2026-10-08 D28 — 엔딩을 낸 판이면 다시 켜도 그 덮개 */
   /* ★ 2026-10-08 — 불러온 판은 하루를 안 넘겼으니 무늬 그림을 여기서 한 번 넘긴다(§pushLeafSkins). 생장 창이 아직이면 조금 뒤 한 번 더 */
-  if (resumed && SKIN_PUSH_ON && !pushLeafSkins()) setTimeout(() => { try { pushLeafSkins(); } catch { } }, 1500);
+  if (resumed && SKIN_PUSH_ON && !pushLeafSkinsAll()) setTimeout(() => { try { pushLeafSkinsAll(); } catch (e) { console.warn('[무늬 그림]', e && e.message); } }, 1500);   /* 10-24 D82 ④ — 화분마다 */
   GATED.forEach(id => { $(id).disabled = false; });
   /* 첫 플레이는 고정 지역·novice·식물등 없음. 개발 검수 시나리오에서는 재설정할 수 있다. */
   $('room').disabled = true; $('mode').disabled = true; $('lamps').disabled = true; $('lit').disabled = true;

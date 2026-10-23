@@ -215,7 +215,9 @@ export function shopSources(S, ctx = {}) {
   const est = cuts.filter(c => c.status === 'established');
   const cutOpen = Number.isFinite(ctx.cutOpen) ? ctx.cutOpen : ((S.cutOpenToday && S.cutOpenToday.n) || 0);
   const sp = speciesPotsOf(S);
-  const varieSource = cuts.some(c => c.varieFromCut) || (S.pots || []).some(p => p && p.variegated) || !!ctx.motherVarie;
+  /* ★ 2026-10-24 D82 ③ — 화분 variegated 는 «무늬종 광량 문턱(×1.4) 스위치»라 늘 false 다(첫 몬스테라 normal 고정) → 이 칸으로 «무늬 잎이 있나»를
+       읽으면 늘 거짓이었다. 모주에 무늬 잎이 있나는 loop 가 생장 정본(leafStats)에서 읽어 ctx.motherVarie 로 넘긴다 */
+  const varieSource = cuts.some(c => c.varieFromCut) || !!ctx.motherVarie;
   /* ★ 2026-10-10 («가게 사람» 판 — 맞춤 몫 18% · 기한 지남이 전부 몬스테라 삽수) — **보낼 수 있는 수만큼만** 주문을 연다:
        삽수 = 지금 보낼 수 있는 뿌리낸 삽수(안 올린 것) + 오늘 자를 마디가 있으면 하나(기한 21~45일 안에 뿌리내림 12일) − 이미 걸린 삽수 주문.
        «잎 2장 이상»은 그런 삽수가 지금 있을 때만. 키운 그루 주문도 보낼 그루 수 − 걸린 그루 주문. (plan §2-3 «할 수 있는 것만»을 수로) */
