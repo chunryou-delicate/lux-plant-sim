@@ -1784,6 +1784,27 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'beam',     text: '동네에서 식물 하면 여기래.' },
     { who: 'moni',   face: 'proud',    text: '창턱 하나에서 여기까지 왔네.' }
   ],
+  /* ═══ ★★ 2026-10-23 [plan] D75 ⑤ — 가게 끝맺음(명세 plan-career-endings-spec §10-2) ═══
+     사건 shop_ending([core]) — 단골 30 이 된 날의 «다음 날 아침» 한 번. 그날 저녁 줄(questDoneShopTown)과 안 겹친다.
+     자취생 낯은 앞치마 낯(APRON_FACES) 안에서만 · 수 없음 · 손님 말 지어내지 않음.
+     둘째 줄 갈래: ev.fewPlants(방에 놓인 그루가 ⚖ 셋 밑) → shopEndingFew «오늘은 무엇부터 늘릴까.» — 빈 선반을 «내가 늘린 그루»라 하지 않는다.
+     넷째 줄은 참이다 — 간판(단골 10)이 단골 30 보다 늘 먼저 선다. 다섯째는 «내일도 주문»(5~9일 · 원천이 있을 때만)이 아니라 늘 참인 «끝이 아니야». */
+  shopEnding: [
+    { who: 'jachwi', face: 'think',    text: '문을 열기 전에 가게를 한 바퀴 둘러봤다.' },
+    { who: 'jachwi', face: 'happy',    text: '선반마다 내가 늘린 그루다.' },
+    { who: 'moni',   face: 'proud',    text: '오늘부터 여긴 «동네 식물 가게»야.' },
+    { who: 'jachwi', face: 'beam',     text: '간판보다 그 말이 더 좋다.' },
+    { who: 'moni',   face: 'teach',    text: '여기서 끝이 아니야. 가게는 계속이야.' },
+    { who: 'jachwi', face: 'beam',     text: '문을 열었다.' }
+  ],
+  shopEndingFew: [
+    { who: 'jachwi', face: 'think',    text: '문을 열기 전에 가게를 한 바퀴 둘러봤다.' },
+    { who: 'jachwi', face: 'think',    text: '오늘은 무엇부터 늘릴까.' },
+    { who: 'moni',   face: 'proud',    text: '오늘부터 여긴 «동네 식물 가게»야.' },
+    { who: 'jachwi', face: 'beam',     text: '간판보다 그 말이 더 좋다.' },
+    { who: 'moni',   face: 'teach',    text: '여기서 끝이 아니야. 가게는 계속이야.' },
+    { who: 'jachwi', face: 'beam',     text: '문을 열었다.' }
+  ],
   /* ★ 2026-10-10 [plan] D59 — 가게 판 잡담 다섯(산 집 · 진로 가게). 원룸 잡담이 산 집에선 쉬므로(§chatterContext movedHome) 그 빈자리를 채운다.
      거짓 없는 말만: 가게 방은 남쪽 창(house a3f78c57) · 다단 선반 윗단이 제일 밝은 자리(B) · 손님 말은 지어내지 않는다(인사·주문판만). 수는 안 말한다. */
   chatShopMorning: [
@@ -2513,6 +2534,8 @@ export const EVENT_SCRIPT = Object.freeze({
   job_start:           'jobStart',
   shop_open:           'shopOpen',
   shop_no_species:     'shopNoSpecies',
+  /* ★ 2026-10-23 [plan] D75 ⑤ — 가게 끝맺음(다음 날 아침 · 한 번) · 둘째 줄 갈래는 §scriptOf */
+  shop_ending:         'shopEnding',
   /* ★ 2026-10-23 [plan] D71 — 새 두 종 */
   sc_ask:              'scAsk',
   sc_rooted:           'scRooted',
@@ -2724,6 +2747,8 @@ const EVENT_ORDER = [
   'pp_trade_offer', 'pp_trade_declined', 'pp_trade_done',
   'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake', 'cut_too_wide',
   /* ★ 2026-10-10 [plan] D59 — 진로 첫날은 «이제부턴 진짜야» → 주문판 → (퀘스트 열림). 납품 «단골 하나 늘었어»는 퀘스트 끝(«단골 셋» 등)보다 앞 */
+  /* ★ 2026-10-23 [plan] D75 ⑤ — 끝맺음 아침 장면은 그날 가게 사건(새 주문 등 · 표 밖 999)보다 앞 */
+  'shop_ending',
   'job_start', 'shop_open', 'shop_no_species', 'order_done', 'regulars_milestone',
   /* ★ 2026-10-23 [plan] D71 — 들어오는 날 말이 곁줄 열림보다 앞(맡았다 → 가운데를 찾아 줘) */
   'sc_ask', 'sc_rooted', 'ca_care',
@@ -2809,6 +2834,8 @@ function scriptOf(ev, S = null) {
   if (id === 'al_wake')   return ev && ev.first === false ? 'alWakeAgain' : null;
   /* ★ 2026-10-10 [plan] D59 — 납품: 새 단골일 때만 한 줄(받아 간 말은 기록 줄 · core) · 이정표는 퀘스트 끝 대사와 겹치면 퀘스트 쪽이 말한다(§scriptsForEvents 걸름) */
   if (id === 'shop_no_species') return ev && ev.ppInShop === true ? 'shopNoSpeciesPP' : 'shopNoSpecies';
+  /* ★ 2026-10-23 [plan] D75 ⑤ — 방에 놓인 그루가 적으면 둘째 줄이 «오늘은 무엇부터 늘릴까»([core] ev.fewPlants) */
+  if (id === 'shop_ending') return ev && ev.fewPlants === true ? 'shopEndingFew' : 'shopEnding';
   if (id === 'order_done') return ev && ev.newRegular === true ? 'shopNewRegular' : null;
   if (id === 'regulars_milestone') return ev && ev.n === 3 ? 'shopRegulars3' : ev && ev.n === 10 ? 'shopSign' : ev && ev.n === 30 ? 'shopTown' : null;
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;

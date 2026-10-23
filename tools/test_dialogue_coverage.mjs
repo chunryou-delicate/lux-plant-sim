@@ -637,7 +637,9 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     /* ★ 2026-10-10 [plan] D59 — 식물 가게 사건 갈림(scriptOf): 납품 새 단골 · 단골 이정표 3/10/30 */
     'shopNewRegular', 'shopRegulars3', 'shopSign', 'shopTown', 'shopNoSpeciesPP',
     /* ★ 2026-10-23 [plan] D79 ㉡ — 가게 판 굶음 갈래(scriptOf hungry · 진로 shop · 산 투룸 · 홀수 날) */
-    'hungryShop'
+    'hungryShop',
+    /* ★ 2026-10-23 [plan] D75 ⑤ — 가게 끝맺음 둘째 줄 갈래(scriptOf shop_ending · ev.fewPlants) */
+    'shopEndingFew'
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);
@@ -718,6 +720,20 @@ check('잡담 — chatShopSiru 는 가게 판 + 빈 시루일 때만(D79)', () =
   const ctx = chatterContextOf({ day: 900, cropNow: { seedStock: 0, emptySiru: true, harvestTotal: 40 } }, { story: { job: { id: 'shop' } }, home: { room: 'tworoom' } });
   assert.equal(ctx.emptySiru, true, 'cropNow.emptySiru 를 못 읽습니다');
   assert.equal(row.when(ctx), true, '진짜 맥락으로 안 섭니다');
+});
+
+/* ★ 2026-10-23 [plan] D75 ⑤ — 가게 끝맺음 장면 */
+check('대사 — 가게 끝맺음 shop_ending 은 여섯 줄 · 그루가 적으면 둘째 줄만 갈린다(D75 ⑤)', () => {
+  assert.deepEqual(scriptsForEvents([{ id: 'shop_ending', fewPlants: false }]), ['shopEnding']);
+  assert.deepEqual(scriptsForEvents([{ id: 'shop_ending', fewPlants: true }]), ['shopEndingFew']);
+  assert.deepEqual(scriptsForEvents([{ id: 'shop_ending' }]), ['shopEnding']);          // 모르면 여섯 줄 그대로
+  const a = SCRIPTS.shopEnding, b = SCRIPTS.shopEndingFew;
+  assert.equal(a.length, 6); assert.equal(b.length, 6);
+  for (let i = 0; i < 6; i++) if (i !== 1) assert.deepEqual(a[i], b[i], `${i + 1}째 줄이 갈렸습니다 — 둘째 줄만 갈려야 합니다`);
+  /* 앞치마 낯 안에서만(APRON_FACES = beam · think · surprise · happy) */
+  for (const l of [...a, ...b]) if (l.who === 'jachwi') assert.ok(['beam', 'think', 'surprise', 'happy'].includes(l.face), `앞치마 낯 밖 '${l.face}'`);
+  /* 끝맺음 아침 장면이 같은 날 새 주문(표 밖)보다 앞 */
+  assert.deepEqual(scriptsForEvents([{ id: 'order_done', newRegular: true }, { id: 'shop_ending' }]), ['shopEnding', 'shopNewRegular']);
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
