@@ -19,7 +19,9 @@ const P = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/furniture_presets.jso
 const arr = Array.isArray(P) ? P : Object.entries(P).map(([id, v]) => ({ id, ...v }));
 /* ★ 가구점 줄 = shop.furnitureCatalogList(해금 뒤) 그대로 — «가구» 갈래만(가전·조명·붙박이·교실은 안 판다).
      ⚠ 10-09 처음엔 listed 표지만 봐서 119점(가전 TV·주방 카운터까지)을 찍고 «가구점 전부»라 적었다 — 틀렸다(83줄). */
-const CATALOG = shop.furnitureCatalogList({ tutorial: { enabled: true, lamp: { unlocked: true } } }).map(it => it.preset);
+/* ★ 2026-10-23 — 해금 때(unlock · shop §FURNITURE_UNLOCKS · core 090bc888)가 있는 가구도 찍는다 — «다 열린 판»으로 목록을 뽑는다.
+     해금 전 판으로 뽑으면 벽 화분걸이(unlock sc_ask)가 빠져 가게 그림 없이 줄이 뜬다(10-23 house 가 잡음) */
+const CATALOG = shop.furnitureCatalogList({ tutorial: { enabled: true, lamp: { unlocked: true } }, jobShop: { scAskOn: 0 } }).map(it => it.preset);
 const IDS = process.argv.slice(2).length ? process.argv.slice(2) : CATALOG;
 fs.mkdirSync(OUT, { recursive: true });
 

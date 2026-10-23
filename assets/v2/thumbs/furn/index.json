@@ -499,5 +499,9 @@
  "calendar_season": {
   "file": "assets/v2/thumbs/furn/calendar_season.webp",
   "v2": true
+ },
+ "wall_planter": {
+  "file": "assets/v2/thumbs/furn/wall_planter.webp",
+  "v2": false
  }
 }
