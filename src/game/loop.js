@@ -1365,7 +1365,8 @@ function nextDayBody(S, io) {
       cropWater: beansproutWaterStatus(S.firstPlay, S.day),
       cuttings, shop, market,
       species, alDormantNow: !!(species && species.alDormantNow), jobShop, jobCare, jobBreed,
-      breedAlCormWaitDays: (jobBreed && Number.isFinite(jobBreed.alCormWaitDays)) ? jobBreed.alCormWaitDays : null   /* C — plan f1dd0c27 */
+      breedAlCormWaitDays: (jobBreed && Number.isFinite(jobBreed.alCormWaitDays)) ? jobBreed.alCormWaitDays : null,   /* C — plan f1dd0c27 */
+      breedAlNoMotherDays: (jobBreed && Number.isFinite(jobBreed.alNoMotherDays)) ? jobBreed.alNoMotherDays : null   /* D87 — plan(상점 구근 귀띔 hintBreedAlShopCorm) */
     };
     /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
        몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
@@ -1470,7 +1471,8 @@ function nextDayBody(S, io) {
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
     cuttings, shop, market,
     species, alDormantNow: !!(species && species.alDormantNow), jobShop, jobCare, jobBreed,
-    breedAlCormWaitDays: (jobBreed && Number.isFinite(jobBreed.alCormWaitDays)) ? jobBreed.alCormWaitDays : null   /* C — plan f1dd0c27 */
+    breedAlCormWaitDays: (jobBreed && Number.isFinite(jobBreed.alCormWaitDays)) ? jobBreed.alCormWaitDays : null,   /* C — plan f1dd0c27 */
+    breedAlNoMotherDays: (jobBreed && Number.isFinite(jobBreed.alNoMotherDays)) ? jobBreed.alNoMotherDays : null   /* D87 — plan(상점 구근 귀띔 hintBreedAlShopCorm) */
   };
   /* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸([plan] plan-leafwait ③). 실패 판정(위) «뒤»라 무른 턴은 안 센다.
      ⚠ 이 경로(몬스테라가 온 뒤)에만 있다 — 앞 반환구(earlyTurn)는 몬스테라 전이라 칸이 없다(= 모른다 · 줄이 안 뜬다). */

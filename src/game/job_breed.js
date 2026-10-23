@@ -8,7 +8,7 @@
    ★ 표본 셋(§2-1) — 날마다 «어제까지 적은 자리»(커서 seen)에서 새로 난 것만 읽는다(사건 배선을 안 건드린다 · 두 번 안 센다 · 오늘부터 적는다):
        monstera  무늬 마디 삽수(뿌리 밝기 varieLightBand 가 정해진 것)의 새 잎 — 조건 = 뿌리 밝기(dark·mid·bright) · 결과 = 무지/산반/하프문/풀문
        al        구근 싹틈(그루 phase 'corm' → 아님) — 조건 = 구근 출처(varie_mother·plain_mother·shop · growth p.origin 의 'from_' 뗌) · 결과 = 무지/마블/반달
-       pp        새 잎(leafRows no > 커서) — 조건 = 그 그루의 줄 id(잘라 낸 끝은 어미 줄 — species §cutSpecies 의 motherId) · 결과 = 초록/마블/분홍 많음/분홍 잎
+       pp        새 잎(그루가 낸 잎 수 p.births > 커서 — 맨 위 k 장) — 조건 = 그 그루의 줄 id(잘라 낸 끝은 어미 줄 — species §cutSpecies 의 motherId) · 결과 = 초록/마블/분홍 많음/분홍 잎
      모주(몬스테라 화분)·씨앗 그루는 안 적는다(§2-1 · §9) · 맡은 그루(돌봄 q.care)도 안 적는다.
    ★ 재현(§2-3 · 칸은 data/balance/breed_slots.json — plan 이 쓰고 여기는 읽기만):
        rootBand        몬스테라 — 같은 뿌리 밝기에서 «서로 다른 삽수»가 그 등급 잎을 낸 수(D74 ② 삽수는 서로 다른 표본)
@@ -17,13 +17,13 @@
    상태: story.job = { id:'breed', since } · story.jobs.breed = { since, endedOn } ·
          S.jobBreed = { samples(최근 60), tally, sampleCount, varieties:[{ slot, day, name, cond }], pending:[{ slot, cond, day, auto }],
                         repro:{ [slot]:{ [cond]:{ n, refs } } }, candidates:{ [slot]: day }, milestones, seq, openedOn, ppLineSeq, lines:{ [potId]: line },
-                        seen:{ cut:{ [id]: n }, pp:{ [potId]: no }, al:{ [potId]: 1 } } }
+                        seen:{ cut:{ [id]: n }, pp:{ [potId]: no }(옛 — 안 읽음), ppB:{ [potId]: births }, al:{ [potId]: 1 } }, alFound, alFindDay, alNoMotherOff }
          tally(잡담 맥락이 읽음 · plan dialogue §breedChatOf): monstera{dark|mid|bright:{plain,sanban,halfmoon,fullmoon}} ·
                                                                 al{varie_mother|plain_mother|shop:{plain,marble,sector}} · pp{[line]:{green,marble,heavy,pink}}
    사건(turn.events · 대사는 plan): job_start{job:'breed'} · breed_open · breed_sample{line, first}(그 줄 첫 표본만 대사 · 기록 줄은 하루 한 줄) ·
          breed_candidate{slot} · breed_register{slot, name}(이름 입력 뒤 · registerBreed) · breed_milestone{n: 1|3|5} · breed_ending */
 import { jobOf, jobHistoryOf } from './job_shop.js';
-import { speciesRules, speciesPotsOf, SPECIES_GAME } from './species.js';
+import { speciesRules, speciesPotsOf, SPECIES_GAME, speciesShopOpen } from './species.js';
 import { cuttingsOf } from './propagation.js';
 import { varieGradeRules } from './shop.js';
 
@@ -53,7 +53,8 @@ const BJ = BREED_JOB;
 const emptyTally = () => ({ monstera: {}, al: {}, pp: {} });
 export function createJobBreedState() {
   return { samples: [], tally: emptyTally(), sampleCount: 0, varieties: [], pending: [], repro: {}, candidates: {}, milestones: {},
-           seq: 0, openedOn: null, ppLineSeq: 0, lines: {}, seen: { cut: {}, pp: {}, al: {} }, alFound: null, alFindDay: null };
+           seq: 0, openedOn: null, ppLineSeq: 0, lines: {}, seen: { cut: {}, pp: {}, al: {}, ppB: {} }, alFound: null, alFindDay: null,
+           alNoMotherOff: null };   /* D87 — «무늬 AL 어미 없음» 이 마지막으로 안 맞은 날(turn.breedAlNoMotherDays) */
 }
 export function jobBreedOf(S) {
   if (!S) throw new TypeError('[육종] 상태가 없습니다');
@@ -61,7 +62,7 @@ export function jobBreedOf(S) {
   const J = S.jobBreed;
   for (const [k, v] of Object.entries(createJobBreedState())) if (J[k] == null) J[k] = v;
   for (const k of ['monstera', 'al', 'pp']) if (!J.tally[k] || typeof J.tally[k] !== 'object') J.tally[k] = {};
-  for (const k of ['cut', 'pp', 'al']) if (!J.seen[k] || typeof J.seen[k] !== 'object') J.seen[k] = {};
+  for (const k of ['cut', 'pp', 'al', 'ppB']) if (!J.seen[k] || typeof J.seen[k] !== 'object') J.seen[k] = {};
   return J;
 }
 export const isBreedJob = S => !!(jobOf(S) && jobOf(S).id === 'breed');
@@ -113,14 +114,13 @@ function freshSamples(S, J, mark = true) {
     if (q.species === PP && R) {
       const line = lineOf(J, q, byId);
       let rows = []; try { rows = R.leafRows(q.plant) || []; } catch { rows = []; }
-      const seen = J.seen.pp[q.id] ?? -Infinity;
-      let top = seen;
-      for (const r of rows) {
-        if (!(r && Number.isFinite(r.no))) continue;
-        if (r.no > seen && J.seen.pp[q.id] != null) out.push({ day, line: 'pp', plantRef: `sp:${q.id}`, cond: String(line), out: r.grade });
-        if (r.no > top) top = r.no;
-      }
-      if (mark) J.seen.pp[q.id] = Number.isFinite(top) ? top : 0;
+      /* ⚠ 10-24 D87 — 커서는 «낸 잎 수»(p.births · 그루마다 늘기만 함)다. 마디 번호(no)로 쟀더니 자른 뒤(growth cutAbove 가 p.nodes = 자른 마디)
+           새 잎이 옛 꼭대기 번호를 넘을 때까지 하나도 안 적혔다(breedH PP 표본 2년 4~9장 · PP 칸 0/10). 새로 난 잎은 맨 위 k 장(잎은 위로 붙는다).
+           옛 세이브의 번호 커서(seen.pp)는 안 읽는다 — 그 그루는 오늘 커서만 세운다(첫 만남과 같은 셈 · 하루치를 안 적을 뿐 · 거짓 표본은 없음) */
+      const births = Number.isFinite(q.plant.births) ? q.plant.births : 0, seenB = J.seen.ppB[q.id];
+      if (seenB != null && births > seenB)
+        for (const r of rows.slice(-(births - seenB))) if (r && Number.isFinite(r.no)) out.push({ day, line: 'pp', plantRef: `sp:${q.id}`, cond: String(line), out: r.grade });
+      if (mark) J.seen.ppB[q.id] = births;
     } else if (q.species === AL) {
       const sprouted = q.plant.phase && q.plant.phase !== 'corm';
       if (sprouted && !J.seen.al[q.id]) {
@@ -205,7 +205,24 @@ export function stepBreedJob(S) {
   });
   out.fresh = fresh.length;
   out.alCormWaitDays = alCormWaitDaysOf(S, J, day);
+  out.alNoMotherDays = alNoMotherDaysOf(S, J, day);
   return out;
+}
+/* ★ plan(총괄 D87 ① 다리) — turn.breedAlNoMotherDays: 육종 판 · 마블·반달 칸이 둘 다 비었고(등록·대기 없음) · 무늬 AL 그루 0(맡은 것 빼고 · 가방 포함) ·
+     무늬 어미 구근 0(가방 S.species.corms · 심어 아직 안 싹튼 화분도 — 곧 무늬 그루가 날 수 있다) · 상점에 AL 구근 진열(speciesShopOpen al_corm)일 때만 수.
+     진로 연 날과 «마지막으로 안 맞은 날 다음 날» 중 늦은 날부터 지난 날 수 · 안 맞으면 null(몬이 «상점 구근을 들여 봐» 귀띔의 때 · hintBreedAlShopCorm) */
+export function alNoMotherDaysOf(S, J, day) {
+  if (!isBreedJob(S) || J.openedOn == null) return null;
+  const mine = speciesPotsOf(S).filter(q => q && !q.care && q.species === AL && q.plant);
+  const corms = (S.species && Array.isArray(S.species.corms)) ? S.species.corms : [];
+  const shop = !!speciesShopOpen(S, 'al_corm');
+  const holds = !['al_marble', 'al_sector'].some(id => registeredOrPending(J, id))
+    && !mine.some(q => q.plant.varie === 'marble' || q.plant.varie === 'sector')
+    && !mine.some(q => q.plant.phase === 'corm' && q.plant.origin === 'from_varie_mother')
+    && !corms.some(c => c && c.origin === 'from_varie_mother')
+    && shop;
+  if (!holds) { J.alNoMotherOff = day; return null; }
+  return day - Math.max(J.openedOn, Number.isFinite(J.alNoMotherOff) ? J.alNoMotherOff + 1 : -Infinity);
 }
 /* ★ plan f1dd0c27(총괄 D84 ②) — turn.breedAlCormWaitDays: 육종 판 · 마블·반달 칸이 둘 다 비었고(등록·대기 없음) · 구근을 찾을 수 있는 무늬 AL 이
      깨어 있을 때만(growth: phase growing ∧ varie ∧ finds < max_finds_lifetime ∧ sinceFind ≥ min_leaves_since_find) — 진로 연 날과 마지막으로 구근 찾은 날 중

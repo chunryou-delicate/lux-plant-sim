@@ -821,10 +821,51 @@ export async function play(name, seed, opt = {}) {
               if (opt.dump && Jb.varieties.length === 3) dump('breed3'); }
         catch (e) { B.regErr = String(e && e.message).slice(0, 80); break; }
       }
+      /* ④ PP — 오늘 새 잎이 났고 분홍 많음이 아니면 «다음 잎 분홍 많음 몫»이 가장 큰 잎 위를 자른다(growth runPP) · 관리하는 사람 · 귀띔(hintBreedPpHeavy)을 들은 사람 */
+      const ppHeavyCut = () => {
+        const R0 = SPM.speciesRules(), PK = BREED_SPEC.pink;
+        const heavyOdds = (x, drift) => { const lo = x + drift - PK.jitter, hi = x + drift + PK.jitter;
+          return x <= PK.green_max ? 0 : Math.max(0, Math.min(hi, PK.pink_leaf_min) - Math.max(lo, PK.heavy_min)) / (hi - lo); };
+        B.ppSeen = B.ppSeen || {};
+        for (const q of SPM.speciesPotsOf(S).filter(q => q.species === 'pink_princess' && SPM.speciesPlaced(q) && !q.care)) {
+          const rows = R0.leafRows(q.plant); if (!rows.length) continue;
+          const top = rows[rows.length - 1], seen = B.ppSeen[q.id];
+          B.ppSeen[q.id] = top.no;
+          if (seen == null || top.no <= seen || top.grade === 'heavy') continue;
+          let a7 = null, bestLo = null; try { a7 = R0.avg7(q.plant); bestLo = R0.thresholdsOf(q.plant).best_lo; } catch (e) { a7 = null; }
+          const drift = Number.isFinite(a7) && Number.isFinite(bestLo) && a7 < bestLo ? PK.drift_low_light : 0;
+          let best = null; for (const L of q.plant.leaves) { const o = heavyOdds(L.pink, drift); if (!best || o > best.o + 1e-9) best = { L, o }; }
+          if (best && best.L.no !== top.no) { try { SPM.cutSpecies(S, q.id, best.L.no); B.ppCuts++; } catch (e) { const k = reasonKey(e && e.message); (B.ppCutWhy = B.ppCutWhy || {})[k] = (B.ppCutWhy[k] || 0) + 1; } }
+        }
+      };
       if (P.breedHint) {
         /* D86 ① — 귀띔이 뜬 날(그날 대사 id) → 다음 날부터 그 말대로 */
         if (B.knowSleep == null && saidIds.includes('hintBreedAlSleep')) { B.knowSleep = S.day + 1; B.hintSleepAt = S.day - B.openDay; }
         if (B.knowBright == null && saidIds.includes('hintBreedFullmoon')) { B.knowBright = S.day + 1; B.hintBrightAt = S.day - B.openDay; }
+        /* D87 — plan fed58db3 귀띔 셋 */
+        if (B.knowShopCorm == null && saidIds.includes('hintBreedAlShopCorm')) { B.knowShopCorm = S.day + 1; B.hintShopCormAt = S.day - B.openDay; }
+        if (B.knowPpCut == null && saidIds.includes('hintBreedPpHeavy')) { B.knowPpCut = S.day + 1; B.hintPpCutAt = S.day - B.openDay; }
+        if (B.knowPpShop == null && saidIds.includes('hintBreedPpShop')) { B.knowPpShop = S.day + 1; B.hintPpShopAt = S.day - B.openDay; }
+        /* hintBreedAlShopCorm «상점 구근을 들여 봐 · 무늬 그루가 나오면 어미가 돼» → 무늬 AL(그루 · 무늬 어미 구근)이 없으면 상점 구근을 들인다(싹 기다리는 것까지 둘 ·
+             10만 남김) · 심고 놓기는 일반 손(재고 풀기 · 가장 밝은 빈 자리) · 무지 싹은 일반 손이 잎 2 에 판다 · 무늬 싹은 남긴다(어미) */
+        if (B.knowShopCorm != null && S.day >= B.knowShopCorm && SPM.speciesShopOpen(S, 'al_corm')) {
+          const mineAL = SPM.speciesPotsOf(S).filter(q => q && !q.care && q.species === 'alocasia_frydek' && q.plant);
+          const hasMother = mineAL.some(q => q.plant.varie === 'marble' || q.plant.varie === 'sector')
+            || mineAL.some(q => q.plant.phase === 'corm' && q.plant.origin === 'from_varie_mother')
+            || ((S.species && S.species.corms) || []).some(c => c && c.origin === 'from_varie_mother');
+          const waiting = mineAL.filter(q => q.plant.phase === 'corm').length + incomingOf(S, 'al_corm') + stockOf(S, 'al_corm');
+          for (let i = waiting; !hasMother && i < 2 && ts.cashWon > buyPriceOf('al_corm') + 100_000; i++) {
+            try { ord('al_corm', 1); B.shopCormsBought = (B.shopCormsBought || 0) + 1; } catch (e) { B.cormErr = String(e && e.message).slice(0, 80); break; } }
+        }
+        /* hintBreedPpHeavy «분홍 많은 잎이 맨 위에 오게 잘라» → ④ 손(growth runPP) · 잘라 낸 끝은 일반 손이 판다 */
+        if (B.knowPpCut != null && S.day >= B.knowPpCut) ppHeavyCut();
+        /* hintBreedPpShop «핑크프린세스가 없으면 상점에서 어린 그루를 들여 봐» → 가진 PP(맡은 것 빼고) 0 이면 하나 사서 풀기(놓기는 일반 손) */
+        if (B.knowPpShop != null && S.day >= B.knowPpShop) {
+          const ownPP = SPM.speciesPotsOf(S).filter(q => q && !q.care && q.species === 'pink_princess').length;
+          if (ownPP === 0 && stockOf(S, 'pp_young') === 0 && incomingOf(S, 'pp_young') === 0 && SPM.speciesShopOpen(S, 'pp_young') && ts.cashWon > buyPriceOf('pp_young') + 100_000) {
+            try { ord('pp_young', 1); B.ppBought = (B.ppBought || 0) + 1; } catch (e) { B.ppBuyErr = String(e && e.message).slice(0, 80); } }
+          if (stockOf(S, 'pp_young') > 0) { try { SPM.unpackSpeciesStock(S, 'pp_young', stockOf, useStock); } catch (e) { B.ppBuyErr = String(e && e.message).slice(0, 80); } }
+        }
         if (B.knowBright != null && S.day >= B.knowBright) {
           const lampWon = (ts.rules && ts.rules.lampPriceWon) || 0;
           while ((ts.lamp.owned || 0) < 3 && ts.cashWon >= lampWon + 100_000) { try { led('buy', () => buyLamp(ts)); B.lampsBought = (B.lampsBought || 0) + 1; } catch (e) { B.lampErr = String(e && e.message).slice(0, 80); break; } }
@@ -936,21 +977,7 @@ export async function play(name, seed, opt = {}) {
             (B.trace = B.trace || []).push(`${S.day - B.openDay}일 ${sea} AL[${ALS().map(q => `${q.plant.phase[0]}${q.plant.varie ? q.plant.varie[0] : ''}${q.plant.origin === 'from_varie_mother' ? '*' : q.plant.origin === 'shop' ? '$' : ''}${q.plant.finds}${q.plant.sinceFind ?? ''}@${(avgOf(q.slotId) || 0).toFixed(1)}`).join(' ')}] 구근 ${corms().map(c => (c.origin === 'from_varie_mother' ? '*' + (c.motherKind || '?')[0] : c.origin[5])).join('')} 들어옴 ${incomingOf(S, 'al_corm')} 재고 ${stockOf(S, 'al_corm')} 돈 ${Math.round(ts.cashWon / 1000)}k`);
           }
         }
-        /* ④ PP — 오늘 새 잎이 났고 분홍 많음이 아니면 «다음 잎 분홍 많음 몫»이 가장 큰 잎 위를 자른다(growth runPP) */
-        const PK = BREED_SPEC.pink;
-        const heavyOdds = (x, drift) => { const lo = x + drift - PK.jitter, hi = x + drift + PK.jitter;
-          return x <= PK.green_max ? 0 : Math.max(0, Math.min(hi, PK.pink_leaf_min) - Math.max(lo, PK.heavy_min)) / (hi - lo); };
-        B.ppSeen = B.ppSeen || {};
-        for (const q of SPM.speciesPotsOf(S).filter(q => q.species === 'pink_princess' && SPM.speciesPlaced(q) && !q.care)) {
-          const rows = R0.leafRows(q.plant); if (!rows.length) continue;
-          const top = rows[rows.length - 1], seen = B.ppSeen[q.id];
-          B.ppSeen[q.id] = top.no;
-          if (seen == null || top.no <= seen || top.grade === 'heavy') continue;
-          let a7 = null, bestLo = null; try { a7 = R0.avg7(q.plant); bestLo = R0.thresholdsOf(q.plant).best_lo; } catch (e) { a7 = null; }
-          const drift = Number.isFinite(a7) && Number.isFinite(bestLo) && a7 < bestLo ? PK.drift_low_light : 0;
-          let best = null; for (const L of q.plant.leaves) { const o = heavyOdds(L.pink, drift); if (!best || o > best.o + 1e-9) best = { L, o }; }
-          if (best && best.L.no !== top.no) { try { SPM.cutSpecies(S, q.id, best.L.no); B.ppCuts++; } catch (e) { const k = reasonKey(e && e.message); (B.ppCutWhy = B.ppCutWhy || {})[k] = (B.ppCutWhy[k] || 0) + 1; } }
-        }
+        ppHeavyCut();   /* ④ */
       }
       if (ts.cashWon < B.minCash) B.minCash = ts.cashWon;
       if (B.brokeOn == null && (ts.bankrupt || ts.cashWon <= 0)) B.brokeOn = S.day - B.openDay;
@@ -1277,6 +1304,11 @@ for (const name of NAMES) {
                   ` · 재우기 그루-날 판당 ${(br.reduce((a, r) => a + (r.breed.alForce || 0), 0) / Math.max(1, br.length)).toFixed(0)}(어두운 데 섬 ${br.reduce((a, r) => a + (r.breed.alDarkOk || 0), 0)} · 못 섬 ${br.reduce((a, r) => a + (r.breed.alDarkMiss || 0), 0)}) · 방 가장 어두운 7일 평균 중앙 ${med(br.map(r => r.breed.darkMin).filter(Number.isFinite))}`);
       if (br.some(r => r.persona && r.persona.breedHint)) console.log(`    D86 귀띔 — 재우기 귀띔 뜬 판 ${br.filter(r => r.breed.hintSleepAt != null).length}/${br.length}(연 뒤 날 중앙 ${med(br.map(r => r.breed.hintSleepAt).filter(x => x != null)) ?? '—'}) · ` +
                   `풀문 귀띔 뜬 판 ${br.filter(r => r.breed.hintBrightAt != null).length}/${br.length}(중앙 ${med(br.map(r => r.breed.hintBrightAt).filter(x => x != null)) ?? '—'}) · 2년 안 품종 3 ${br.filter(r => (r.breed.varieties || 0) >= 3).length}/${br.length}`);
+      if (br.some(r => r.persona && r.persona.breedHint)) {
+        const hk = (k, ko) => `${ko} ${br.filter(r => r.breed[k] != null).length}/${br.length}(중앙 ${med(br.map(r => r.breed[k]).filter(x => x != null)) ?? '—'})`;
+        console.log(`    D87 귀띔 — ${hk('hintShopCormAt', '상점 구근')} · ${hk('hintPpCutAt', 'PP 맨 위 자르기')} · ${hk('hintPpShopAt', 'PP 상점')} · ` +
+                    `산 상점 구근 합 ${br.reduce((a, r) => a + (r.breed.shopCormsBought || 0), 0)} · 산 PP 합 ${br.reduce((a, r) => a + (r.breed.ppBought || 0), 0)} · PP 자름 합 ${br.reduce((a, r) => a + (r.breed.ppCuts || 0), 0)}`);
+      }
       if (arg('breedlook', false)) for (const r of br) console.log(`      ${r.seed} AL 마지막 — ${r.breed.alLook || '—'}`);
       if (arg('breedtrace', false)) for (const r of br) for (const line of (r.breed.trace || [])) console.log(`      ${r.seed} ${line}`);
       console.log('    칸마다(한 해 안 등록 판 · 2년 안 등록 판 · 등록 날 중앙 · 후보 날 중앙) — ' + slots.map(id => {

@@ -25,7 +25,7 @@ const cut = (S, id, band, carried = 1) => { const c = { id, status: 'established
   leafVarie: Array(carried).fill(true), leafGrade: Array(carried).fill('sanban'), leaves: carried, variegatedLeaves: carried, slotId: 'x:' + id }; S.cuttings.push(c); return c; };
 const grow = (c, varie, grade) => { c.leafVarie.push(varie); c.leafGrade.push(varie ? grade : null); c.grewLeaves += 1; c.leaves += 1; };
 const ppPot = (S, pinks, opt = {}) => SP.addSpeciesPot(S, 'pink_princess', { newPlant: { pinks }, origin: opt.origin || 'trade', ...(opt.motherId ? { motherId: opt.motherId } : {}) });
-const ppLeaf = (q, pink) => { const p = q.plant; const no = (p.leaves.length ? p.leaves[p.leaves.length - 1].no : 0) + 1; p.leaves.push({ no, born: 0, stage: p.leaves[0].stage, pink }); p.nodes = no; };
+const ppLeaf = (q, pink) => { const p = q.plant; const no = (p.leaves.length ? p.leaves[p.leaves.length - 1].no : 0) + 1; p.leaves.push({ no, born: 0, stage: p.leaves[0].stage, pink }); p.nodes = no; p.births += 1; };   /* growth 처럼 낸 잎 수도 는다 */
 const alPot = (S, origin, motherKind = null) => SP.addSpeciesPot(S, 'alocasia_frydek', { origin: 'corm', newPlant: { origin, motherKind } });
 const sprout = (q, varie) => { q.plant.phase = 'growing'; q.plant.varie = varie; };
 const ids = r => r.events.map(e => e.id);
@@ -113,6 +113,24 @@ T('E PP 줄 — 분홍 많음 잇달아 셋 · 마블·분홍 잎·초록이 다
   assert.ok(Object.keys(J.tally.pp).includes(line));
 });
 
+T('E2 PP 자른 뒤 — 자른 마디부터 다시 나는 잎도 적는다(커서 = 낸 잎 수 · D87 breedH 에서 찾음) · 옛 번호 커서 세이브는 첫날 커서만', () => {
+  const S = breedS(); const q = ppPot(S, [0.3, 0.4, 0.5, 0.5, 0.5]); JB.openBreed(S);
+  const J = JB.jobBreedOf(S), R = SP.speciesRules();
+  const cut = R.cutAbove(q.plant, 2);   /* growth 그대로 — 모주는 마디 2 에서 다시 난다(p.nodes = 2) */
+  assert.ok(cut && cut.cutting && q.plant.nodes === 2);
+  ppLeaf(q, 0.7); const d = day(S);   /* 새 잎 no 3 — 옛 꼭대기 5 밑 */
+  assert.strictEqual(J.sampleCount, 1, `자른 뒤 난 잎을 안 적었다(표본 ${J.sampleCount})`);
+  assert.ok(d.events.some(e => e.id === 'breed_sample' && e.line === 'pp'));
+  ppLeaf(q, 0.7); ppLeaf(q, 0.7); day(S);
+  assert.deepStrictEqual(J.pending.map(p => [p.slot]), [['pp_heavy']], '자른 마디 위 분홍 많음 셋이 등록 대기가 안 됐다');
+  /* 옛 세이브 — 번호 커서(seen.pp)만 있고 ppB 없음: 그날은 커서만(거짓 표본 없음) · 다음 날부터 적는다 */
+  const S2 = breedS(); const q2 = ppPot(S2, [0.3, 0.4]); JB.openBreed(S2);
+  const J2 = JB.jobBreedOf(S2); J2.seen.ppB = {}; J2.seen.pp = { [q2.id]: 2 };
+  const old = JB.unpackJobBreed(JB.packJobBreed(J2)); S2.jobBreed = old;
+  ppLeaf(q2, 0.7); day(S2); assert.strictEqual(old.sampleCount, 0, '옛 세이브 첫날에 표본을 적었다');
+  ppLeaf(q2, 0.7); day(S2); assert.strictEqual(old.sampleCount, 1, '옛 세이브 다음 날 새 잎을 안 적었다');
+});
+
 T('F AL — 무늬 어미(마블) 셋 · 무지 어미·상점은 안 셈 · 출처 낱말', () => {
   const S = breedS();
   const P = [alPot(S, 'from_varie_mother', 'marble'), alPot(S, 'from_varie_mother', 'marble'), alPot(S, 'from_plain_mother'), alPot(S, 'shop'), alPot(S, 'from_varie_mother', 'marble')];
@@ -176,6 +194,25 @@ T('I turn.breedAlCormWaitDays — 찾을 수 있는 무늬 AL 이 깨어 있을 
   S.day += 4; assert.strictEqual(JB.stepBreedJob(S).alCormWaitDays, S.day - d0, '마지막 찾은 날부터가 아니다');
   JB.jobBreedOf(S).pending.push({ slot: 'al_sector', cond: 'sector', day: S.day, auto: 'x' });
   assert.strictEqual(day(S).alCormWaitDays, null, 'AL 칸이 찼는데 수가 났다');
+});
+
+T('J turn.breedAlNoMotherDays — 무늬 AL 그루·무늬 어미 구근 0 · 상점 구근 진열 · 칸 빔일 때만 · 연 날/깨진 뒤부터(D87)', () => {
+  const S = breedS(); JB.openBreed(S);
+  S.day += 10; assert.strictEqual(JB.stepBreedJob(S).alNoMotherDays, 10, '연 날부터가 아니다');
+  const q = alPot(S, 'shop'); assert.strictEqual(day(S).alNoMotherDays, 11, '상점 구근(무늬 모름)을 심었다고 끊겼다');
+  sprout(q, 'plain'); assert.strictEqual(day(S).alNoMotherDays, 12, '무지 그루로 끊겼다');
+  sprout(q, 'marble'); assert.strictEqual(day(S).alNoMotherDays, null, '무늬 AL 그루가 있는데 수가 났다');
+  q.plant.varie = null; assert.strictEqual(day(S).alNoMotherDays, 0, '깨진 다음 날부터가 아니다');
+  S.species.corms.push({ id: 'cm9', seed: 1, origin: 'from_varie_mother', motherKind: 'marble', foundDay: S.day });
+  assert.strictEqual(day(S).alNoMotherDays, null, '가방에 무늬 어미 구근이 있는데 수가 났다');
+  S.species.corms = []; const v = alPot(S, 'from_varie_mother', 'marble');
+  assert.strictEqual(day(S).alNoMotherDays, null, '심은 무늬 어미 구근(안 싹틈)이 있는데 수가 났다');
+  S.species.pots = S.species.pots.filter(x => x !== v); assert.strictEqual(day(S).alNoMotherDays, 0);
+  S.tutorial.enabled = true; S.tutorial.movedOut = false; assert.strictEqual(day(S).alNoMotherDays, null, '상점에 AL 구근이 없는데 수가 났다');
+  S.tutorial.enabled = false; day(S);
+  JB.jobBreedOf(S).varieties.push({ slot: 'al_marble', day: S.day, name: 'x', cond: 'marble' });
+  assert.strictEqual(day(S).alNoMotherDays, null, 'AL 칸이 찼는데 수가 났다');
+  const C = newS(); assert.strictEqual(JB.alNoMotherDaysOf(C, JB.jobBreedOf(C), C.day), null, '육종 판이 아닌데 수');
 });
 
 console.log(bad ? `job_breed: FAIL (${bad})` : 'job_breed: PASS');
