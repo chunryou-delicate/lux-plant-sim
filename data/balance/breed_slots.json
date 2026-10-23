@@ -13,7 +13,7 @@
       "desc": "같은 밝기에서 뿌리 낸 서로 다른 삽수 셋에서 하프문 잎", "teaches": "밝은 데서 뿌리 낸 삽수가 무늬도 좋다" },
     { "id": "monstera_fullmoon", "line": "monstera", "outcome": "fullmoon", "cond": "rootBand",
       "ko": "풀문 몬스테라", "short": "풀문",
-      "desc": "같은 밝기에서 뿌리 낸 서로 다른 삽수 셋에서 풀문 잎", "teaches": "드문 것은 많이 해 봐야 나온다" },
+      "desc": "같은 밝기에서 뿌리 낸 서로 다른 삽수 셋에서 풀문 잎 — 가장 밝은 자리에서 뿌리 낸 삽수가 잘 낸다", "teaches": "드문 것은 많이 해 봐야 나온다" },
     { "id": "al_marble", "line": "al", "outcome": "marble", "cond": "varieMotherKind",
       "ko": "마블 알로카시아", "short": "마블",
       "desc": "무늬 어미 구근에서 싹튼 마블 그루 셋", "teaches": "무늬는 어미를 닮는다" },
@@ -38,6 +38,7 @@
     "logSample": "📒 표본 — {cond} · {out}",
     "logRegister": "🏷 새 품종 — {name}({ko})"
   },
+  "_doc_labels": "조건 낱말 자(정정 10-24 · 총괄 D84 ④): 몬스테라 dark·mid·bright = 뿌리 낸 날 그날 DLI 를 무늬 ×1.4 밴드로 가른 것 — 밝음 ≥ 7.0 · 중간 ≥ 3.78 · 그 밑 어두움(propagation §resolveVarieLight · varie_grades.json lightBands). 낱말은 «밝은 데서 뿌리 낸»처럼 자리로 말하고 수는 안 적는다. 풀문 칸 설명의 «가장 밝은 자리»는 lightGrade 풀문 밝음 .15 · 중간 .05 · 어두움 .01 이라 참.",
   "_labels": {
     "monstera": { "cond": { "dark": "어두운 데서 뿌리 낸 삽수", "mid": "중간 밝기에서 뿌리 낸 삽수", "bright": "밝은 데서 뿌리 낸 삽수" },
                   "out": { "plain": "무지", "sanban": "산반", "halfmoon": "하프문", "fullmoon": "풀문" } },

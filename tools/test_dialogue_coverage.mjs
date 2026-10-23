@@ -935,6 +935,45 @@ check('대사 — 옮긴 날 · 돌아간 날 · 판을 이어 쓴 날 · 마지
   }
 });
 
+/* ★ 2026-10-24 [plan] 총괄 D84 — 육종 귀띔 둘(풀문 · AL 재우기): 때가 참일 때만 · 한 번 · 거짓 말 없음 */
+check('잡담 — 육종 귀띔 둘(풀문 · AL 재우기)은 때가 참일 때만 · 한 번(D84)', () => {
+  const row = id => CHATTER.find(r => r.id === id);
+  for (const id of ['hintBreedFullmoon', 'hintBreedAlSleep']) {
+    assert.ok(row(id) && SCRIPTS[id], `'${id}' 가 없습니다`);
+    assert.equal(row(id).gap, 9999, `'${id}' 는 한 번만`);
+    assert.ok(!REPEATABLE.has(id), `'${id}' 가 다시 나옵니다`);
+    for (const l of SCRIPTS[id])
+      assert.ok(l.who === 'moni' && !/[0-9]|세 |셋|넷|다섯|여섯|일곱|여덟|아홉|서른|퍼센트|금방|몇 번이고|깨면/.test(l.text), `'${id}' 수·거짓 낱말: ${l.text}`);
+  }
+  /* 잡담보다 앞(안 나온 것끼리는 표 앞이 이긴다) */
+  const at = id => CHATTER.findIndex(r => r.id === id);
+  assert.ok(at('hintBreedFullmoon') < at('chatBreedMorning') && at('hintBreedAlSleep') < at('chatBreedMorning'), '귀띔이 육종 잡담 뒤에 있습니다');
+  const ctx = (tally, turn = {}) => ({ ...chatterContextOf({ day: 1400, ...turn }, { story: { job: { id: 'breed' } }, home: { room: 'tworoom' }, jobBreed: { tally } }),
+                                       movedHome: true, jobId: 'breed' });
+  const F = row('hintBreedFullmoon').when;
+  assert.equal(F(ctx({ monstera: { mid: { plain: 1, sanban: 3, halfmoon: 2 } } })), true, '풀문 0 · 밝음 0 인데 안 섭니다');
+  assert.equal(F(ctx({ monstera: { mid: { sanban: 3, halfmoon: 2 }, bright: { sanban: 1 } } })), false, '밝음 표본이 있는데 섭니다');
+  assert.equal(F(ctx({ monstera: { mid: { sanban: 3, halfmoon: 1, fullmoon: 1 } } })), false, '풀문이 났는데 섭니다');
+  assert.equal(F(ctx({ monstera: { mid: { sanban: 2 } } })), false, '표본이 적은데 섭니다');
+  assert.equal(F(ctx({})), false, '몬스테라 표본이 없는데 섭니다');
+  assert.equal(chatterContextOf({ day: 1 }, { story: { job: { id: 'shop' } } }).breedFullmoonHint, null, '육종 판이 아닌데 참/거짓을 지어냅니다');
+  const A = row('hintBreedAlSleep').when;
+  assert.equal(A(ctx({}, { breedAlCormWaitDays: 60 })), true);
+  assert.equal(A(ctx({}, { breedAlCormWaitDays: 59 })), false);
+  assert.equal(A(ctx({})), false, '칸이 없는데(모른다) 섭니다');
+  assert.equal(A({ ...ctx({}, { breedAlCormWaitDays: 90 }), jobId: 'care' }), false, '돌봄 판에 육종 귀띔');
+  assert.equal(chatterContextOf({ day: 1 }, null).breedAlCormWaitDays, null);
+});
+check('데이터 — 풀문 칸 설명이 «가장 밝은 자리»를 가리키고 조건 낱말 자가 코드대로 적혀 있다(D84)', () => {
+  const T = JSON.parse(readFileSync(new URL('../data/balance/breed_slots.json', import.meta.url), 'utf8'));
+  const fm = T.slots.find(s => s.id === 'monstera_fullmoon');
+  assert.ok(/가장 밝은 자리/.test(fm.desc) && !/[0-9]/.test(fm.desc), `풀문 칸 설명: ${fm.desc}`);
+  assert.ok(/7\.0/.test(T._doc_labels) && /3\.78/.test(T._doc_labels) && !/avg ≥ 5/.test(T._doc_labels), '조건 낱말 자(밝음 7.0 · 중간 3.78)가 안 적혔습니다');
+  /* 조건 낱말 셋 = varie_grades.json lightBands 가 묶는 이름 셋 */
+  const V = JSON.parse(readFileSync(new URL('../data/balance/varie_grades.json', import.meta.url), 'utf8'));
+  assert.deepEqual([...new Set(Object.values(V.lightBands))].sort(), Object.keys(T._labels.monstera.cond).sort());
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {

@@ -2060,6 +2060,25 @@ export const SCRIPTS = {
   chatBreedPinkCut: [
     { who: 'moni',   face: 'teach',    text: '분홍 잎이 잇달면 그 아래를 잘라.' }
   ],
+  /* ★ 2026-10-24 [plan] 총괄 D84(growth c5639fd6 품종 칸 표) — 육종 귀띔 둘(한 번씩 · hint* 라 다시 안 나옴 · 몬이는 수를 안 말한다).
+     hintBreedFullmoon — 풀문 칸은 등 0~1 이면 한 해 0. «가장 밝은 자리에서 뿌리 낸 삽수가 풀문을 잘 낸다»를 수 없이 가리킨다.
+       참인 조건: 규칙 그대로(varie_grades.json lightGrade 풀문 밝음 .15 · 중간 .05 · 어두움 .01) · «등이 길»은 등이 그 자리 빛을 더한다는 말(hintShopDry 결 — 늘 참).
+       때: 기록장 몬스테라 표본 다섯 이상 · 풀문 0 · 밝음 조건 표본 0(§breedChatOf breedFullmoonHint).
+     hintBreedAlSleep — 마블·반달 AL 은 재우기를 모르면 한 해 안에 서기 어렵다(늘 밝은 데 0~.75). 어두운 데서 재우면 새끼 구근.
+       참인 조건(growth 10-24 확인 · species_growth §stepAL · growth_species.json alocasia_frydek dormancy·propagation): 겨울이 아니어도 7일 평균 빛이
+         min(무늬 3.5) 밑인 날이 21일 잇달면 잠 들기 시작 → 잎이 7일마다 하나씩 지고 다 진 날 흙 속에서 구근 1~3알(지난 찾음 뒤 새 잎 1장 이상 · 평생 2번) ·
+         무늬 그루면 «무늬 어미 구근»(무늬 몫 .75) · 잎이 다 지기 전에 밝은 데로 옮기면 깨고 구근 없음(→ «잎이 다 질 때까지 둬 봐»).
+       때: [core] turn.breedAlCormWaitDays ≥ 60(⚖ 대사 때) — 그 칸은 «구근을 찾을 수 있는 무늬 AL 이 깨어 있을 때만» 수라 «남겨»가 참이다.
+       피한 말(growth): «깨면 구근이 나온다»(구근은 잠에 들 때) · «어두우면 금방 잔다»(3주 넘게) · «몇 번이고 찾는다»(평생 두 번).
+       있는 AL 잠 대사(questAlKeepWinter · alAsleepCorms · statusAlSleeping)는 «자는 거야 · 버리지 마» — 이 줄은 «재우는 법»이라 겹치지 않는다. */
+  hintBreedFullmoon: [
+    { who: 'moni',   face: 'teach',    text: '풀문은 가장 밝은 자리에서 뿌리 낸 삽수가 잘 내.' },
+    { who: 'moni',   face: 'teach',    text: '뿌리 낼 삽수를 제일 밝은 데 둬 봐. 그런 자리가 모자라면 등이 길이야.' }
+  ],
+  hintBreedAlSleep: [
+    { who: 'moni',   face: 'bulb',     text: '알로카시아는 잠들면서 흙 속에 새끼 구근을 남겨. 무늬 어미 것은 무늬도 잘 나와.' },
+    { who: 'moni',   face: 'teach',    text: '겨울이 아니어도 어두운 데 오래 두면 잠들어. 잎이 다 질 때까지 둬 봐.' }
+  ],
   /* ═══ ★★ 2026-10-24 [plan] D72 D 나머지 «다른 진로 열기(바꾸기) · 마지막 덮개»(명세 plan-career-endings-spec-20261023 §2 · §4 · §11 · 총괄 D75 · D83) ═══
      사건([core]): job_start{job, switched:true}(끝맺음 뒤 처음 해 보는 진로로 옮긴 날) · job_start{job, switched:true, back:true}(끝맺음을 본 진로로 돌아간 날) ·
      shop_open{boardKept:true} · care_open{boardKept:true}(창 옆 판이 이미 걸려 있어 이름만 바뀌는 날) · final_cover(셋째 끝맺음 카드를 닫은 뒤 한 번).
@@ -3335,6 +3354,9 @@ export const CHATTER = [
   { id: 'chatCareQuiet',    gap: 21, when: c => c.movedHome && c.jobId === 'care' && fin(c.careOpen) && c.careOpen === 0 },
   { id: 'chatCareReady',    gap: 21, when: c => c.movedHome && c.jobId === 'care' && fin(c.careReady) && c.careReady >= 1 },
   /* ★ 2026-10-24 [plan] D72 C — 육종 판 잡담 넷(비교 셋은 기록이 참일 때만) */
+  /* ★ 2026-10-24 [plan] 총괄 D84 — 육종 귀띔 둘(한 번 · gap 9999 · 잡담보다 앞 — 안 나온 것끼리는 표 앞이 이긴다). 참인 조건은 대사 위 주석 */
+  { id: 'hintBreedFullmoon',    gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && c.breedFullmoonHint === true },
+  { id: 'hintBreedAlSleep',     gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && fin(c.breedAlCormWaitDays) && c.breedAlCormWaitDays >= 60 },
   { id: 'chatBreedMorning',     gap: 21, when: c => c.movedHome && c.jobId === 'breed' },
   { id: 'chatBreedBright',      gap: 21, when: c => c.movedHome && c.jobId === 'breed' && c.breedBrightHalfMore === true },
   { id: 'chatBreedPlainMother', gap: 21, when: c => c.movedHome && c.jobId === 'breed' && c.breedPlainMotherNone === true },
@@ -3627,7 +3649,7 @@ export function pickChatter(ctx = {}, recent = [], lastDay = {}) {
      breedPpLines: 핑크프린세스 줄 수 */
 function breedChatOf(S) {
   const T = S && S.jobBreed && S.jobBreed.tally;
-  if (!T || typeof T !== 'object') return { breedBrightHalfMore: null, breedPlainMotherNone: null, breedPpLines: null };
+  if (!T || typeof T !== 'object') return { breedBrightHalfMore: null, breedPlainMotherNone: null, breedPpLines: null, breedFullmoonHint: null };
   const n = v => (Number.isFinite(v) ? v : 0);
   const varie = r => (r ? n(r.sanban) + n(r.halfmoon) + n(r.fullmoon) : 0);
   const M = T.monstera || {};
@@ -3639,7 +3661,11 @@ function breedChatOf(S) {
   const pmAll = pm ? n(pm.plain) + n(pm.marble) + n(pm.sector) : 0;
   const plainNone = pmAll >= 2 && pm && n(pm.marble) + n(pm.sector) === 0;
   const pp = T.pp && typeof T.pp === 'object' ? Object.keys(T.pp).length : 0;
-  return { breedBrightHalfMore: brightMore, breedPlainMotherNone: plainNone, breedPpLines: pp };
+  /* ★ 2026-10-24 [plan] 총괄 D84 — 풀문 귀띔 때: 몬스테라 표본 다섯 이상 · 풀문 0 · 밝음 조건 표본 0 */
+  const rows = ['dark', 'mid', 'bright'].map(b => M[b] || {});
+  const all4 = r => n(r.plain) + n(r.sanban) + n(r.halfmoon) + n(r.fullmoon);
+  const fullmoonHint = rows.reduce((a, r) => a + all4(r), 0) >= 5 && rows.reduce((a, r) => a + n(r.fullmoon), 0) === 0 && all4(M.bright || {}) === 0;
+  return { breedBrightHalfMore: brightMore, breedPlainMotherNone: plainNone, breedPpLines: pp, breedFullmoonHint: fullmoonHint };
 }
 export function chatterContext(turn = {}, S = null) {
   const ts = (S && S.tutorial) || null;
@@ -3714,6 +3740,9 @@ export function chatterContext(turn = {}, S = null) {
     careReady: (S && S.jobCare && Array.isArray(S.jobCare.requests)) ? S.jobCare.requests.filter(r => r && r.savedOn != null).length : null,
     /* ★ 2026-10-24 [plan] D72 C — 육종 비교 잡담(S.jobBreed.tally · 명세 꼴 · 육종 판이 아니면 null). «참일 때만» — 셈이 실제로 그렇게 쌓였을 때 */
     ...breedChatOf(S),
+    /* ★ 2026-10-24 [plan] 총괄 D84 — [core] turn.breedAlCormWaitDays: 육종 판 · 마블·반달 AL 칸이 둘 다 비었고(등록·대기 없음) · 구근을 찾을 수 있는 무늬 AL
+       (잠 안 듦 · 평생 찾음 < 2 · 지난 찾음 뒤 새 잎 ≥ 1)이 하나 이상일 때만 — 진로 연 날과 마지막 구근 찾은 날 중 늦은 날부터 지난 날. 아니면 null(= 모른다 → 안 뜬다) */
+    breedAlCormWaitDays: (turn && Number.isFinite(turn.breedAlCormWaitDays)) ? turn.breedAlCormWaitDays : null,
     /* ★ 2026-10-23 [plan] D71 — 칼라테아([core] turn.caPlants · turn.caTooBright · 모르면 null) */
     caPlants: (turn && Number.isFinite(turn.caPlants)) ? turn.caPlants : null,
     caTooBright: (turn && typeof turn.caTooBright === 'boolean') ? turn.caTooBright : null,
