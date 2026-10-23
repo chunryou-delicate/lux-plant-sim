@@ -1,0 +1,320 @@
+{
+ "meta": {
+  "from": "tools/probe_sc_longvine.mjs",
+  "profile": "data/profiles/room_profile.tworoom.json",
+  "roomRev": "2a089a3 2026-08-23",
+  "seeds": 4,
+  "maxDays": 720,
+  "cands": [
+   0.5,
+   0.6,
+   0.7,
+   0.8,
+   1
+  ],
+  "potOverM": 0.25,
+  "highSpotMinM": 0.75,
+  "longVineMNow": 1,
+  "topSlots": [
+   "tworoom-shelf-etagere-3tier:6",
+   "tworoom-shelf-etagere-3tier:7",
+   "tworoom-shelf-etagere-3tier:8"
+  ],
+  "planter": "tworoom-hang-sun"
+ },
+ "rows": {
+  "1": {
+   "top": {
+    "spring": 161,
+    "summer": 173,
+    "autumn": 224,
+    "winter": 208
+   },
+   "sun3": {
+    "spring": 220,
+    "summer": 319,
+    "autumn": 329,
+    "winter": 319
+   },
+   "sun2": {
+    "spring": null,
+    "summer": null,
+    "autumn": null,
+    "winter": null
+   },
+   "low": {
+    "reachable": [],
+    "fastest": {
+     "0": {
+      "spring": null,
+      "summer": null,
+      "autumn": null,
+      "winter": null
+     },
+     "3": {
+      "spring": null,
+      "summer": null,
+      "autumn": null,
+      "winter": null
+     }
+    }
+   }
+  },
+  "0.5": {
+   "top": {
+    "spring": 80,
+    "summer": 71,
+    "autumn": 99,
+    "winter": 120
+   },
+   "sun3": {
+    "spring": 109,
+    "summer": 90,
+    "autumn": 212,
+    "winter": 194
+   },
+   "sun2": {
+    "spring": 167,
+    "summer": 310,
+    "autumn": 418,
+    "winter": 468
+   },
+   "low": {
+    "reachable": [
+     "tworoom-nightstand:0",
+     "tworoom-table-round:0",
+     "tworoom-shelf-low:3",
+     "tworoom-shelf-low:4",
+     "tworoom-shelf-low:5",
+     "tworoom-shelf-etagere-3tier:3",
+     "tworoom-shelf-etagere-3tier:4",
+     "tworoom-shelf-etagere-3tier:5",
+     "tworoom-plant-step-3:1",
+     "tworoom-plant-step-3:2",
+     "tworoom-shop-display:0",
+     "tworoom-shop-display:1",
+     "tworoom-shop-display:2",
+     "tworoom-shop-display:3",
+     "tworoom-shop-display:4",
+     "tworoom-shop-display:5",
+     "tworoom-shop-display:6",
+     "tworoom-shop-display:7",
+     "tworoom-shop-display:8"
+    ],
+    "fastest": {
+     "0": {
+      "spring": {
+       "days": 90,
+       "slot": "tworoom-shop-display:7"
+      },
+      "summer": {
+       "days": 74,
+       "slot": "tworoom-shop-display:7"
+      },
+      "autumn": {
+       "days": 178,
+       "slot": "tworoom-shop-display:7"
+      },
+      "winter": {
+       "days": 159,
+       "slot": "tworoom-shop-display:7"
+      }
+     },
+     "3": {
+      "spring": {
+       "days": 78,
+       "slot": "tworoom-shop-display:5"
+      },
+      "summer": {
+       "days": 71,
+       "slot": "tworoom-shelf-etagere-3tier:5"
+      },
+      "autumn": {
+       "days": 88,
+       "slot": "tworoom-shop-display:5"
+      },
+      "winter": {
+       "days": 99,
+       "slot": "tworoom-shop-display:7"
+      }
+     }
+    }
+   }
+  },
+  "0.6": {
+   "top": {
+    "spring": 97,
+    "summer": 88,
+    "autumn": 134,
+    "winter": 137
+   },
+   "sun3": {
+    "spring": 128,
+    "summer": 122,
+    "autumn": 235,
+    "winter": 217
+   },
+   "sun2": {
+    "spring": 393,
+    "summer": 399,
+    "autumn": 586,
+    "winter": 513
+   },
+   "low": {
+    "reachable": [
+     "tworoom-nightstand:0",
+     "tworoom-table-round:0",
+     "tworoom-shelf-low:3",
+     "tworoom-shelf-low:4",
+     "tworoom-shelf-low:5",
+     "tworoom-shelf-etagere-3tier:3",
+     "tworoom-shelf-etagere-3tier:4",
+     "tworoom-shelf-etagere-3tier:5",
+     "tworoom-plant-step-3:1",
+     "tworoom-plant-step-3:2"
+    ],
+    "fastest": {
+     "0": {
+      "spring": {
+       "days": 377,
+       "slot": "tworoom-shelf-etagere-3tier:4"
+      },
+      "summer": {
+       "days": 381,
+       "slot": "tworoom-shelf-etagere-3tier:4"
+      },
+      "autumn": {
+       "days": 416,
+       "slot": "tworoom-shelf-etagere-3tier:4"
+      },
+      "winter": {
+       "days": 475,
+       "slot": "tworoom-shelf-etagere-3tier:4"
+      }
+     },
+     "3": {
+      "spring": {
+       "days": 97,
+       "slot": "tworoom-shelf-etagere-3tier:5"
+      },
+      "summer": {
+       "days": 88,
+       "slot": "tworoom-shelf-etagere-3tier:5"
+      },
+      "autumn": {
+       "days": 127,
+       "slot": "tworoom-shelf-etagere-3tier:5"
+      },
+      "winter": {
+       "days": 131,
+       "slot": "tworoom-shelf-etagere-3tier:5"
+      }
+     }
+    }
+   }
+  },
+  "0.7": {
+   "top": {
+    "spring": 113,
+    "summer": 109,
+    "autumn": 166,
+    "winter": 156
+   },
+   "sun3": {
+    "spring": 151,
+    "summer": 151,
+    "autumn": 262,
+    "winter": 237
+   },
+   "sun2": {
+    "spring": 482,
+    "summer": 425,
+    "autumn": 633,
+    "winter": 551
+   },
+   "low": {
+    "reachable": [
+     "tworoom-nightstand:0",
+     "tworoom-plant-step-3:2"
+    ],
+    "fastest": {
+     "0": {
+      "spring": null,
+      "summer": null,
+      "autumn": null,
+      "winter": null
+     },
+     "3": {
+      "spring": {
+       "days": 136,
+       "slot": "tworoom-plant-step-3:2"
+      },
+      "summer": {
+       "days": 139,
+       "slot": "tworoom-plant-step-3:2"
+      },
+      "autumn": {
+       "days": 172,
+       "slot": "tworoom-plant-step-3:2"
+      },
+      "winter": {
+       "days": 162,
+       "slot": "tworoom-plant-step-3:2"
+      }
+     }
+    }
+   }
+  },
+  "0.8": {
+   "top": {
+    "spring": 129,
+    "summer": 130,
+    "autumn": 189,
+    "winter": 176
+   },
+   "sun3": {
+    "spring": 171,
+    "summer": 273,
+    "autumn": 287,
+    "winter": 256
+   },
+   "sun2": {
+    "spring": 505,
+    "summer": 483,
+    "autumn": 659,
+    "winter": 581
+   },
+   "low": {
+    "reachable": [
+     "tworoom-plant-step-3:2"
+    ],
+    "fastest": {
+     "0": {
+      "spring": null,
+      "summer": null,
+      "autumn": null,
+      "winter": null
+     },
+     "3": {
+      "spring": {
+       "days": 156,
+       "slot": "tworoom-plant-step-3:2"
+      },
+      "summer": {
+       "days": 163,
+       "slot": "tworoom-plant-step-3:2"
+      },
+      "autumn": {
+       "days": 194,
+       "slot": "tworoom-plant-step-3:2"
+      },
+      "winter": {
+       "days": 183,
+       "slot": "tworoom-plant-step-3:2"
+      }
+     }
+    }
+   }
+  }
+ }
+}
