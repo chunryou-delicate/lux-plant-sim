@@ -13,6 +13,7 @@ import { cuttingPriceOf, potPriceOf } from './shop.js';
 import { speciesPriceOf, speciesPotsOf, speciesPlaced, SPECIES_GAME, speciesRules, speciesReady, speciesShopOpen,
          SPECIES2, speciesKnown, scRooting, caInCare, addSpeciesPot, speciesPotOf, scCuttableNodes, scAtHighSpot } from './species.js';
 import { u01 } from '../growth/species_growth.js';
+import { signOf } from './hang_spots.js';   /* D — 간판 한 자리(house 3cda24bd · 순수 함수) */
 import { seasonOf } from '../engine/weather.js';
 
 let CUSTOMERS = null;
@@ -390,20 +391,32 @@ export function speciesHeldCount(S) {
   return speciesPotsOf(S).length + (((S && S.species && S.species.corms) || []).length) + (st.al_corm || 0) + (st.pp_young || 0);
 }
 /* ── 가게 첫날 ─────────────────────────────── 투룸으로 옮긴 그날 · 주문판 + 첫 주문(바로 맞출 수 있는 쉬움 하나) */
+/* ★ D 나머지(job_switch §switchJob) — ctx.boardKept: 창 옆 판이 이미 걸려 있어 이름만 주문판이 되는 날(사건 boardKept · 글 ctx.boardKeptKo) ·
+     ctx.link = { from: [손님 id], ko }: 처음 해 보는 가게의 첫 주문 손님을 돌봄 손님 중에서(손님 이음 · 기록 줄 customer_link 가 주문 줄 앞) */
 export function openShop(S, ctx = {}) {
   const J = jobShopOf(S), day = S.day ?? 0;
   if (J.openedOn != null) return { events: [] };
   J.openedOn = day;
-  const ev = [{ id: 'shop_open', ko: '창 옆에 작은 주문판을 걸었습니다' }];   /* 10-24 plan(c02bb033) — 판 자리 tworoom-hang-order 는 뒷벽 창 옆(game.html 기록 줄과 같은 말) */
+  const ev = [ctx.boardKept ? { id: 'shop_open', boardKept: true, ko: ctx.boardKeptKo || '창 옆 판을 이제 주문판으로 씁니다' }
+                            : { id: 'shop_open', ko: '창 옆에 작은 주문판을 걸었습니다' }];   /* 10-24 plan(c02bb033) — 판 자리 tworoom-hang-order 는 뒷벽 창 옆(game.html 기록 줄과 같은 말) */
   /* ★ 10-10 총괄 (가) «가게는 새 두 종과 함께» — 가진 새 종(PP·AL 그루 · 심은 구근 · 가방 구근 · 산 재고)이 0 이면 몬이가 구근을 권한다(plan shopNoSpecies · 말만) */
   /* ppInShop — PP 어린 그루가 지금 상점에 있나(교환을 두 번 거절한 판 · species §speciesShopOpen) — 있으면 plan 이 둘 다 권하는 줄(shopNoSpeciesPP)로 간다 */
   if (speciesHeldCount(S) === 0) { let ppInShop = false; try { ppInShop = !!speciesShopOpen(S, 'pp_young'); } catch { ppInShop = false; } ev.push({ id: 'shop_no_species', ppInShop }); }
   const src = shopSources(S, ctx);
   const spec = rollOrder(S, src, { first: true, day });
-  const cust = spec ? pickCustomer(S, { first: true }) : null;
+  const linked = spec ? linkedCustomer(S, ctx.link, 0x11e4) : null;
+  const cust = spec ? (linked || pickCustomer(S, { first: true })) : null;
+  if (linked && ctx.link.ko) ev.push({ id: 'customer_link', to: 'shop', customerId: linked.id, ko: `${linked.ko} — ${ctx.link.ko}` });
   if (spec && cust) ev.push(orderNewEvent(pushOrder(S, spec, cust, day)));
   J.nextOrderDay = day + nextGap(S);
   return { events: ev };
+}
+/* 손님 이음 — link.from(다른 진로에서 만난 손님 id) 중 주문 손님(special 아님)에서 판 씨앗으로 하나 · 없으면 null(예전 고르기) */
+export function linkedCustomer(S, link, salt) {
+  const ids = link && Array.isArray(link.from) ? link.from : [];
+  const pool = shopCustomers().filter(c => c && !c.special && ids.includes(c.id));
+  if (!pool.length) return null;
+  return pool[Math.min(pool.length - 1, Math.floor(u01(((S.sim && S.sim.seed) >>> 0) ^ salt, ids.length, 7) * pool.length))];
 }
 function nextGap(S) {
   const J = jobShopOf(S), [lo, hi] = SJ.orderGap;
@@ -413,6 +426,7 @@ function nextGap(S) {
 /* ── 하루 ─────────────────────────────── loop.nextDay 가 부른다(가게를 연 판만) · 반환 { events } */
 export function stepShopJob(S, ctx = {}) {
   const out = { events: [] };
+  if (!isShopJob(S) && movedHome(S)) return shopRestStep(S);   /* D — 내려놓은 가게: 걸린 주문만 기한까지 */
   if (!isShopJob(S) || !movedHome(S)) return out;
   const J = jobShopOf(S), day = S.day ?? 0;
   if (J.openedOn == null) return { events: openShop(S, ctx).events };
@@ -439,6 +453,32 @@ export function stepShopJob(S, ctx = {}) {
   out.dryDays = J.dryRun;
   return out;
 }
+
+/* ── ★ D 나머지 내려놓은 가게(plan-career-endings-spec §2-2 «멈춘다») ─────────────────────────────── 다른 진로로 옮긴 뒤 날마다:
+   새 주문 없음 · 걸린 주문은 기한까지 납품할 수 있고(주문판 «쉬는 가게» 줄) 기한이 지나면 조용히 사라진다(가게 하루와 같은 셈 · 기록 줄) ·
+   맡은 칼라테아(D71 ca_care)가 다 펴지면 가게 것(ca_saved — 걸린 일의 끝) · 끝맺음 · 단골 이정표 · 새 두 종 들어오는 날은 안 난다 */
+function shopRestStep(S) {
+  const out = { events: [] };
+  const J = S.jobShop, day = S.day ?? 0;
+  if (!J || typeof J !== 'object' || !(S.story && S.story.jobs && S.story.jobs.shop)) return out;
+  for (const o of [...(J.orders || [])]) if (day > o.dueOn) {
+    J.orders = J.orders.filter(x => x !== o); J.expired += 1;
+    const c = customerOf(o.customerId);
+    out.events.push({ id: 'order_expired', ko: `${c.ko}의 주문 기한이 지났습니다`, orderId: o.id, customerId: o.customerId, kind: o.kind, tier: o.tier, need: o.need, resting: true });
+  }
+  if (J.caPotId && J.caSavedOn == null && speciesKnown(SPECIES2.ca)) {
+    const q = speciesPotOf(S, J.caPotId);
+    const s = q && caInCare(q) ? speciesRules().summary(q.plant) : null;
+    if (s && s.leaves > 0 && s.curled === 0) {
+      q.care = null; J.caSavedOn = day;
+      const c = specialCustomer('ca_care');
+      out.events.push({ id: 'ca_saved', ko: `${c.ko} — ${c.thanks}`, customerId: c.id, potId: q.id, resting: true });
+    }
+  }
+  return out;
+}
+/* 걸린 것이 남은 내려놓은 가게인가(주문판 «쉬는 가게» 줄을 그릴 때) */
+export function shopRestingOpen(S) { return !isShopJob(S) && !!(S && S.jobShop && Array.isArray(S.jobShop.orders) && S.jobShop.orders.length); }
 
 /* ── ★ 2026-10-23 D71 새 두 종이 들어오는 날 ─────────────────────────────── stepShopJob 이 날마다(새 종의 하루는 loop 가 이미 돌렸다)
    sc_ask   단골 5 — «찾는 손님»이 묻고 간다 → 상점에 «스킨답서스 줄기 삽수» 진열(species §speciesShopOpen · shop CATALOG sc_cutting)
@@ -546,8 +586,14 @@ export function deliverOrder(S, orderId, ref) {
   const events = [{ id: 'order_done', ko: `${c.ko} — ${c.thanks}`, orderId: o.id, customerId: o.customerId, newRegular, won: cand.won }];
   for (const n of SJ.milestones) if (J.regulars.length >= n && J.milestones[n] == null) {
     J.milestones[n] = day;
-    events.push({ id: 'regulars_milestone', ko: `단골 ${n}명`, n });
-    if (n === SJ.signAt && J.signOnDay == null) { J.signOnDay = day; events.push({ id: 'shop_sign', ko: '가게 간판을 달았습니다' }); }
+    const ms = { id: 'regulars_milestone', ko: `단골 ${n}명`, n };
+    events.push(ms);
+    if (n === SJ.signAt && J.signOnDay == null) {
+      J.signOnDay = day;
+      /* ★ D85 ③(house signOf) — 간판 한 자리: 돌봄 칠판 간판이 먼저 서 있으면 새 간판을 안 세운다(signKept · 글 배너 — 화면) */
+      if (signOf({ shop: J.signOnDay, care: S.jobCare ? S.jobCare.signOnDay : null }).by !== 'shop') ms.signKept = true;
+      else events.push({ id: 'shop_sign', ko: '가게 간판을 달았습니다' });
+    }
   }
   return { won: cand.won, events, newRegular, removed: ref };
 }
@@ -569,7 +615,9 @@ export function jobShopSnapshot(S) {
     /* ★ D75(plan 명세 §5) — 진로 끝맺음 날(없으면 null) · 지금 진로 */
     jobsEnded: { shop: shopEndedOn(S), care: (S && S.story && S.story.jobs && S.story.jobs.care && Number.isFinite(S.story.jobs.care.endedOn)) ? S.story.jobs.care.endedOn : null,
                  breed: (S && S.story && S.story.jobs && S.story.jobs.breed && Number.isFinite(S.story.jobs.breed.endedOn)) ? S.story.jobs.breed.endedOn : null },   /* C 육종 */
-    jobActive: job ? job.id : null
+    jobActive: job ? job.id : null,
+    /* ★ D85 ③ — 먼저 선 간판의 진로(house signOf · 'shop' | 'care' | null) — quest shop_sign · care_sign 의 kept 글 */
+    signBy: S ? signOf({ shop: S.jobShop ? S.jobShop.signOnDay : null, care: S.jobCare ? S.jobCare.signOnDay : null }).by : null
   };
 }
 

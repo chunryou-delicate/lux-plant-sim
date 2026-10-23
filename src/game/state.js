@@ -156,6 +156,7 @@ export function newState(opt = {}) {
          `tutorial.movedOut`(②를 했나)과 아래 `ending.doneOnDay`(④를 봤나)다.
          적어 두면 「이사는 했는데 단계는 반지하」인 어긋난 판이 생기고 고칠 길이 없다. */
     story: { schema: 'story/1', movedInOnDay: null, branchAtMove: null, job: null, homeOnDay: null, jobs: {},   /* D75 jobs — oneroom §createStoryState 와 같게 */
+             finalCoverOn: null, jobSwitches: [],   /* D 나머지 — 마지막 덮개 · 진로 바꾼 자국(job_switch) */
              ending: { reachedOnDay: null, doneOnDay: null, dippedOnDay: null } },   /* oneroom.createStoryState 와 같은 꼴(test_oneroom A) */
 
     /* 인터넷 주문 상점 — 배송 중인 주문과 도착한 재고 (2026-08-03).

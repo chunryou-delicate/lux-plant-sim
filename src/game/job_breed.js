@@ -184,6 +184,8 @@ export function openBreed(S) {
   freshSamples(S, J, true);   /* 들고 온 그루에서 이미 난 것은 안 적는다 — 커서만 세운다(§1-3) */
   return { events: [{ id: 'breed_open', ko: '기록장을 새로 폈습니다' }] };
 }
+/* ★ D 나머지(job_switch §switchJob) — 끝맺음을 본 육종으로 돌아온 날: 쉬는 동안 난 잎·싹은 안 적는다(기록장은 «적기를 멈춤» · 명세 §2-2) — 커서만 오늘로 */
+export function rebaseBreedCursors(S) { const J = jobBreedOf(S); freshSamples(S, J, true); return J; }
 /* loop.nextDay 가 부른다(육종 판 · 산 투룸) — 삽수·새 종의 하루가 먼저 돈 뒤 */
 export function stepBreedJob(S) {
   const out = { events: [] };

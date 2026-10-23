@@ -13,7 +13,8 @@
    사건(turn.events · 대사는 plan dialogue): job_start{job:'care'} · care_open · care_new{problem} · care_stuck{problem} · care_saved{problem} ·
          care_return{problem, first} · care_expired · care_milestone{n} · care_ending · care_cut_gift
    ⚠ 손님 말은 대사가 아니라 기록 줄 «{손님 ko} — {실마리}»(plan — 대사는 틀 글자를 못 채움) */
-import { SHOP_JOB, shopCustomers, jobOf, jobHistoryOf } from './job_shop.js';
+import { SHOP_JOB, shopCustomers, jobOf, jobHistoryOf, linkedCustomer } from './job_shop.js';
+import { signOf } from './hang_spots.js';   /* D — 간판 한 자리(house 3cda24bd · 순수 함수) */
 import { speciesRules, speciesKnown, addSpeciesPot, speciesPotOf, speciesPotsOf, speciesPriceOf, speciesPlaced, SPECIES_GAME, speciesOf } from './species.js';
 import { u01 } from '../growth/species_growth.js';
 import { seasonOf } from '../engine/weather.js';
@@ -162,6 +163,12 @@ function pickCustomer(S) {
   for (let i = 0; i < pool.length; i++) { u -= w[i]; if (u < 0) return pool[i]; }
   return pool[pool.length - 1];
 }
+/* 돌봄 첫날 첫 맡김 손님 — 손님 이음(ctx.link · 가게 단골)이 있으면 그 중에서 · 지금 맡긴 손님은 빼고 */
+function firstCustomer(S, link) {
+  const busy = new Set(jobCareOf(S).requests.map(r => r.customerId));
+  const c = link ? linkedCustomer(S, { from: (link.from || []).filter(id => !busy.has(id)) }, 0xca11) : null;
+  return c ? { c, linked: true } : { c: pickCustomer(S), linked: false };
+}
 function pushRequest(S, p, cust) {
   const J = jobCareOf(S), day = S.day ?? 0;
   J.seq += 1;
@@ -183,14 +190,18 @@ function rollProblem(S, src) {
 }
 
 /* ── 돌봄 첫날 ─────────────────────────────── 맡김판 + 첫 맡김(오늘 바로 고칠 수 있는 쉬움 하나 — ca_bright → al_dark → pp_tip) */
+/* ★ D 나머지(job_switch §switchJob) — ctx.boardKept: 창 옆 판이 이미 걸려 있어 이름만 맡김판이 되는 날(사건 boardKept · 글 ctx.boardKeptKo) ·
+     ctx.link = { from: [가게 단골 id], ko }: 처음 해 보는 돌봄의 첫 맡김 손님을 가게 단골 중에서(손님 이음 · 기록 줄 customer_link 가 맡김 줄 앞) */
 export function openCare(S, ctx = {}) {
   const J = jobCareOf(S), day = S.day ?? 0;
   if (J.openedOn != null) return { events: [] };
   J.openedOn = day;
-  const ev = [{ id: 'care_open', ko: '창 옆에 맡김판을 걸었습니다' }];
+  const ev = [ctx.boardKept ? { id: 'care_open', boardKept: true, ko: ctx.boardKeptKo || '창 옆 판을 이제 맡김판으로 씁니다' }
+                            : { id: 'care_open', ko: '창 옆에 맡김판을 걸었습니다' }];
   const src = careSources(S, ctx);
   const first = ['ca_bright', 'al_dark', 'pp_tip'].map(id => src.find(p => p.id === id)).find(Boolean);
-  const cust = first ? pickCustomer(S) : null;
+  const fc = first ? firstCustomer(S, ctx.link) : null, cust = fc ? fc.c : null;
+  if (first && cust && fc.linked && ctx.link.ko) ev.push({ id: 'customer_link', to: 'care', customerId: cust.id, ko: `${cust.ko} — ${ctx.link.ko}` });
   if (first && cust) ev.push(pushRequest(S, first, cust));
   J.nextDay = day + nextGap(S);
   return { events: ev };
@@ -199,10 +210,36 @@ export function openCare(S, ctx = {}) {
 /* ── 하루 ─────────────────────────────── loop.nextDay 가 부른다(돌봄 판 · 산 투룸) · 새 종의 하루가 먼저 돈 뒤 */
 export function stepCareJob(S, ctx = {}) {
   const out = { events: [] };
-  if (!isCareJob(S) || !(S.home && S.home.room === SHOP_JOB.ownedHome.roomId)) return out;
+  if (!(S.home && S.home.room === SHOP_JOB.ownedHome.roomId)) return out;
+  if (!isCareJob(S)) return careRestStep(S);   /* D — 내려놓은 돌봄: 걸린 맡김만 기한까지 */
   const J = jobCareOf(S), day = S.day ?? 0;
   if (J.openedOn == null) return { events: openCare(S, ctx).events };
   { const e = careEndingStep(S, J, day); if (e) out.events.push(e); }   /* 아침 먼저 */
+  careRequestsStep(S, J, day, out);
+  if (J.nextDay != null && day >= J.nextDay) {
+    if (J.requests.length < CJ.maxOpen) {
+      const p = rollProblem(S, careSources(S, ctx));
+      const cust = p ? pickCustomer(S) : null;
+      if (p && cust) out.events.push(pushRequest(S, p, cust));
+    }
+    J.nextDay = day + nextGap(S);
+  }
+  return out;
+}
+/* ★ D 나머지 내려놓은 돌봄(plan-career-endings-spec §2-2 «멈춘다») — 다른 진로로 옮긴 뒤 날마다: 새 맡김 없음 ·
+     걸린 맡김은 기한까지(나음 판정 · 7일 한 줄 · 기한 날 손님이 찾아감 — 나았으면 수고비) · 끝맺음은 안 난다(이미 봤다) */
+function careRestStep(S) {
+  const out = { events: [] };
+  const J = S.jobCare, day = S.day ?? 0;
+  if (!J || typeof J !== 'object' || !Array.isArray(J.requests) || !J.requests.length || !(S.story && S.story.jobs && S.story.jobs.care)) return out;
+  careRequestsStep(S, jobCareOf(S), day, out);
+  for (const e of out.events) e.resting = true;
+  return out;
+}
+/* 걸린 것이 남은 내려놓은 돌봄인가(맡김판 «쉬는 돌봄» 줄을 그릴 때) */
+export function careRestingOpen(S) { return !isCareJob(S) && !!(S && S.jobCare && Array.isArray(S.jobCare.requests) && S.jobCare.requests.length); }
+/* 맡김마다 — 나음 · 7일 한 줄 · 기한(돌봄 하루 · 쉬는 돌봄이 같이 쓴다) */
+function careRequestsStep(S, J, day, out) {
   for (const r of [...J.requests]) {
     const q = speciesPotOf(S, r.potId);
     if (!q) { J.requests = J.requests.filter(x => x !== r); continue; }   /* 그루가 사라졌다(있을 수 없는 길) — 맡김도 걷는다 */
@@ -220,15 +257,6 @@ export function stepCareJob(S, ctx = {}) {
       }
     }
   }
-  if (J.nextDay != null && day >= J.nextDay) {
-    if (J.requests.length < CJ.maxOpen) {
-      const p = rollProblem(S, careSources(S, ctx));
-      const cust = p ? pickCustomer(S) : null;
-      if (p && cust) out.events.push(pushRequest(S, p, cust));
-    }
-    J.nextDay = day + nextGap(S);
-  }
-  return out;
 }
 const customerOf = id => shopCustomers().find(c => c.id === id) || { id, ko: id };
 function removePot(S, potId) { const sp = speciesOf(S); sp.pots = sp.pots.filter(q => q && q.id !== potId); }
@@ -249,8 +277,13 @@ function settle(S, r, { auto = false } = {}) {
                     requestId: r.id, won, first: J.saved === 1, auto }];
   for (const n of CJ.milestones) if (J.saved >= n && J.milestones[n] == null) {
     J.milestones[n] = day;
-    events.push({ id: 'care_milestone', ko: `살린 화분 ${n}`, n });
-    if (n === CJ.signAt && J.signOnDay == null) J.signOnDay = day;
+    const ms = { id: 'care_milestone', ko: `살린 화분 ${n}`, n };
+    events.push(ms);
+    if (n === CJ.signAt && J.signOnDay == null) {
+      J.signOnDay = day;
+      /* ★ D85 ③(house signOf) — 간판 한 자리: 가게 입간판이 먼저 서 있으면 칠판 간판을 안 세운다(signKept · 글 배너 — 화면) */
+      if (signOf({ shop: S.jobShop ? S.jobShop.signOnDay : null, care: J.signOnDay }).by !== 'care') ms.signKept = true;
+    }
   }
   return { won, events };
 }

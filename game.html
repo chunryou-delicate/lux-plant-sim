@@ -1451,6 +1451,14 @@
   #jobCards .job span{display:block;font-size:12px;line-height:1.5;color:var(--dim)}
   #jobCards .job button{margin-top:8px;width:100%;min-height:40px;font-weight:800}
   #jobCards .job.soon{opacity:.55}
+  /* ★ D 나머지 — 진로 바꾸기 카드 표(지금 하는 중 · 끝맺음 봄 · 해 볼 수 있음) · 덮개 동안 대사 창이 덮개 위(몬이 두 줄) */
+  #jobCards .job i.jmark{display:block;font-style:normal;font-size:12px;font-weight:700;color:#f0c674;margin-top:4px}   /* ⚠ .mark 는 방 위 말풍선 꼴(전역) — 이름을 겹치지 않는다(10-24 사진) */
+  #jobCards .job.cur{border-color:rgba(240,198,116,.5)}
+  #chapterEndSub .jobNote{display:block;margin-top:6px;font-size:12px;color:var(--dim)}
+  html.finalcover #dlg{z-index:96}
+  html.finalcover #dlgFace{display:none}   /* 덮개 동안 초상이 제목을 덮었다(10-24 사진) — 이름표(몬이)는 대사 창에 남는다 */
+  .linkBtn{background:none;border:0;padding:2px 4px;margin-left:4px;min-height:0;width:auto;color:#f0c674;font-weight:700;font-size:.92em;text-decoration:underline;cursor:pointer}
+  #orderBoard h4.rest{margin-top:12px}
   /* ★ D59 — 주문판(상점 탭 맨 위) */
   #orderBoard{margin:0 0 12px;padding:10px;border-radius:12px;border:1px solid rgba(255,190,110,.32);background:rgba(255,190,110,.06)}
   #orderBoard h4{margin:0 0 6px;font-size:13px;color:var(--gold)}
@@ -2289,7 +2297,7 @@
     <div class="psub" id="shopEndSub">단골 서른 — 가게 끝맺음</div>
     <div class="plots" id="shopEndRows"></div>
     <div id="shopEndFaces"></div>
-    <div class="pbtns"><button id="shopEndGo" class="go" type="button">계속 산다</button></div>
+    <div class="pbtns"><button id="shopEndSwitch" class="ghost" type="button" style="display:none">다른 진로도 해 본다</button><button id="shopEndGo" class="go" type="button">계속 산다</button></div>
   </div>
 </div>
 <!-- ★ 2026-10-24 C 육종 — 새 품종 이름(D74 ④ 입력 칸 + 자동 이름 미리 채움 · 비워 두면 자동 이름) -->
@@ -3280,7 +3288,7 @@ import { leafCardOf, bestLeafCardOf } from './src/game/shop.js';   /* ★ 10-10 
 /* ★ 2026-10-09 D47(총괄) — 가구점을 화면에 잇는다(줄 · 주문 · 가방 · 놓기). 셈·값·해금은 전부 코어(shop §furnitureCatalogList · state §placeBoughtFurniture) */
 import { furnitureCatalogList, isFurnitureItemId } from './src/game/shop.js';
 import { placeBoughtFurniture, giveFurniture } from './src/game/state.js';
-import { hangSpotsOf, hangPoseOf, hangFits, boardAs } from './src/game/hang_spots.js';   /* ★ 10-10 D59 가게 첫날 주문판 자리(방뷰를 다시 짓기 전에 셈한다) */   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
+import { hangSpotsOf, hangPoseOf, hangFits, boardAs, signOf } from './src/game/hang_spots.js';   /* ★ 10-10 D59 가게 첫날 주문판 자리(방뷰를 다시 짓기 전에 셈한다) */   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
 import { weatherE } from './src/engine/weather.js';
 import * as save from './src/game/save.js';
 import {
@@ -3357,6 +3365,7 @@ import { resolvePlacement } from './src/game/place.js';
 import * as JOB from './src/game/job_shop.js';
 import * as CARE from './src/game/job_care.js';   /* ★ 2026-10-24 B 판 «식물 돌봄»(plan-care-career-spec · D73 · D80) */
 import * as BREED from './src/game/job_breed.js';   /* ★ 2026-10-24 C 판 «무늬 육종»(plan-breed-career-spec · D74 · D83) */
+import * as SWITCH from './src/game/job_switch.js';   /* ★ 2026-10-24 D 나머지 «진로 바꾸기 · 마지막 덮개»(plan-career-endings-spec §2 · §11 · 총괄 D75 · D85) */
 import { creditShopOrder } from './src/game/shop.js';
 import { moveIntoOwnedHome } from './src/game/oneroom.js';
 /* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
@@ -3555,10 +3564,14 @@ function noteTurn(t) {
     if (t.events.some(e => e && e.id === 'shop_ending')) { shopEndPending = true; shopEndKind = 'shop'; }
     else if (t.events.some(e => e && e.id === 'care_ending')) { shopEndPending = true; shopEndKind = 'care'; }   /* B 돌봄 끝맺음(살린 30) */
     else if (t.events.some(e => e && e.id === 'breed_ending')) { shopEndPending = true; shopEndKind = 'breed'; }   /* C 육종 끝맺음(품종 3) */
+    /* D85 ④ — 끝맺음 장면: 진로 카메라가 선 뒤 주인공이 진열대 앞줄에서 비켜선다 */
+    if (t.events.some(e => e && /^(shop|care|breed)_ending$/.test(e.id)))
+      setTimeout(() => { try { const r = endingStandAside(); window.__byeotEndingStandLast = r; } catch (e) { console.warn('[끝맺음 선 자리]', e && e.message); } }, 600);
   }
   stuckDays = (t && (t.growthBlocked || t.headroomBlocked)) ? stuckDays + 1 : 0;
   if (!t) resetStageMemo();   /* 새 판(같은 쪽에서 S = newState → noteTurn(null)) — 어제 값이 남으면 첫 배너가 빠지거나 거짓으로 뜬다 */
   noteLeafGrades(t);
+  try { noteSignEvents(t && t.events); } catch (e) { console.warn('[간판]', e && e.message); }   /* D — 하루가 낸 10(기한 날 돌려줌 · 쉬는 돌봄) */
   checkStarved(t);          /* ★ 굶어 죽었나 — 턴이 낸 신호 하나로 본다(§gameOver) */
   /* ★ D35 — 창 끝날 결산에서 난 반찬가게 주문(수확 때 난 것은 그 단추가 배너를 낸다) */
   try { const nb = neighborOrderBannerOf((t && t.tutorial && t.tutorial.events) || []); if (nb.length) banners(nb); } catch { }
@@ -4293,6 +4306,14 @@ let hintNoDim = false;
 let oneroomShadeSaid = false;   /* 원룸 첫 장면 ③ 「선반 아래가 어두워졌습니다」 — 이 판에서 한 번 */
 let oneroomFurnSeen = null;
 const GIVEN_FURNITURE = Object.freeze(['order_board', 'care_board', 'memo_board']);   /* C — 육종 첫날 메모판(house 3cda24bd)도 받은 물건 */   /* ★ 10-24 B — 돌봄 첫날 맡김판(house 0ddf6061 care_board)도 받은 물건 */   /* ★ 10-10 [plan] 받은 물건 — «첫 가구»·«놓은 가구» 셈에서 뺀다(가게 첫날 주문판) */     /* ★ 10-10 — 이 켬에서 처음 본 «놓인 가구 수»(0 에서 1 이 되는 «순간»만 ③ 을 띄운다) */
+/* ★ D 나머지(house 3cda24bd §boardAs) — 받은 판은 진로를 바꿔도 그 자리에 두고 이름만 지금 진로의 판(주문판 · 맡김판 · 메모판) · 판이 아니면 null */
+function boardKoOf(preset) {
+  if (!GIVEN_FURNITURE.includes(preset)) return null;
+  let jobId = null; try { jobId = (JOB.jobOf(S) || {}).id || null; } catch (e) { jobId = null; }
+  const p = furnPresets[boardAs(preset, jobId)] || furnPresets[preset];
+  return (p && p.name_ko) || null;
+}
+window.__byeotBoardKo = (preset) => boardKoOf(preset);   /* 재는 손잡이 */
 /* ★★ 2026-09-04 — **「놓임」은 «확정된 것»만이다.** 놓는 순간 그루에 slotId/at 가 «먼저» 들어가고 [취소]가 되돌리므로(§placeConfirmCancel)
    `cropPotPlaced` 는 「여기에 둘까요?」 단계의 임시 자리도 놓임으로 센다. 그래서 둘째 시루가 [확인] «전»에 세팅 끝이 서서
    [확인] 손가락이 죽었다(총괄 걸음 f56). ⇒ 확정 대기(picked.before · 무대 confirming)인 그루는 안 센다. 세팅 끝·둘째 시루 갈래·퀘스트 스냅샷이 «이 한 자»를 쓴다. */
@@ -10111,14 +10132,9 @@ function drawQuestPanel() {
        `total` 은 `quest.QUESTS` 에서 오므로 줄이 늘면 저절로 따라온다(§2.8). */
     : (done >= total ? `${total}가지를 다 배웠습니다` : questEmptyKo());
   /* ★ D75(plan §10-4) — 진로를 연 판은 머리 첫 줄이 진로 머리(«식물 가게 · 단골 r명» · 끝맺음 뒤 칭호 칩) · 할 것은 둘째 줄 */
-  let jh = null; try { jh = JOB.jobHeadOf(S); } catch { jh = null; }
-  let jc = null; try { jc = CARE.careHeadOf(S); } catch { jc = null; }
-  let jb = null; try { jb = BREED.breedHeadOf(S); } catch (e) { jb = null; console.warn('[육종 머리]', e && e.message); }
-  if (jh || jc || jb) {
+  const headHTML = jobHeadHtml();   /* D 나머지 — 진로 머리 한 곳 */
+  if (headHTML) {
     const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const headHTML = jh ? (jh.title ? `<span class="titleChip">${esc(jh.title)}</span> · 단골 ${jh.regulars}명` : esc(jh.ko))
-                        : jc ? (jc.title ? `<span class="titleChip">${esc(jc.title)}</span> · 살린 화분 ${jc.saved}` : esc(jc.ko))
-                        : (jb.title ? `<span class="titleChip">${esc(jb.title)}</span> · 품종 ${jb.varieties}` : esc(jb.ko));
     $('questSub').innerHTML = headHTML + (subKo ? `<br>${esc(subKo)}` : '');
   } else $('questSub').textContent = subKo;
   /* 띠와 수는 **같은 값**을 말한다. 다르면 어느 쪽이 참인지 물어야 한다 */
@@ -10187,14 +10203,19 @@ function questRowsHtml(v) {
   let peeked = 0, hidden = 0;
   for (const q of v.all) {
     const state = q.state === 'done' ? 'done' : q.state === 'open' ? 'open' : 'locked';
-    if (state === 'locked') {
+    /* ★ 2026-10-24 D 나머지(plan quest §questView · 명세 §11-2 ⑥) — 옮겨 들어간 판의 짐 풀기 줄(skipped)은 영영 안 열리니 안 그린다 ·
+         내려놓은 진로의 전에 열렸던 줄(resting)은 잠긴 줄 셈 밖에서 «쉬는 중 — …로 돌아가면 이어집니다»(q.todo · JOB_REST_TODO) */
+    if (state === 'locked' && q.skipped) continue;
+    const resting = state === 'locked' && q.resting;
+    if (state === 'locked' && !resting) {
       if (peeked >= QUEST_PEEK_LOCKED) { hidden++; continue; }
       peeked++;
     }
-    const mark = state === 'done' ? '✓' : state === 'open' ? '▶' : '🔒';
+    const mark = state === 'done' ? '✓' : state === 'open' ? '▶' : resting ? '⏸' : '🔒';
     /* 끝낸 줄은 **이름만** 남긴다. 「끝냈습니다」와 까닭을 다시 적으면 지난 일이 화면을 먹는다 */
     const body =
-      state === 'locked' ? '<div class="qwhy">아직 열리지 않았습니다</div>'
+      resting ? `<div class="qwhy">${esc(q.todo)}</div>`
+      : state === 'locked' ? '<div class="qwhy">아직 열리지 않았습니다</div>'
       : state === 'done' ? ''
       : q.waiting && q.waitDo
         ? `<div class="qtodo">${esc(q.waitDo)}</div><div class="qwhy">${esc(q.why)}</div>`   /* plan 85af8fd7 — 먼저 할 손 */
@@ -10248,17 +10269,27 @@ function homeGoalOf() {
   if (!endingOn()) return null;
   try { const v = endingView(S, io, endingOptNow()); return v.visible ? v : null; } catch { return null; }
 }
+/* ★ 2026-10-24 D 나머지(plan-career-endings-spec §1-5 · §2-1) — 진로 머리 한 곳(할 일 창 · 할 일 탭 · 가계부):
+     칭호 칩(끝맺음을 본 진로 · 지금 진로 것이 맨 앞) · 지금 진로 수(단골 · 살린 화분 · 품종) · 지금 진로 끝맺음 뒤엔 «진로 바꾸기» 글자 단추.
+     칭호가 하나뿐인 첫 진로 판은 예전 글 그대로(«동네 식물 가게 · 단골 30명») */
+function jobHeadHtml() {
+  const cur = (JOB.jobOf(S) || {}).id || null;
+  if (!cur) return null;
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let h = null;
+  try { h = cur === 'shop' ? JOB.jobHeadOf(S) : cur === 'care' ? CARE.careHeadOf(S) : cur === 'breed' ? BREED.breedHeadOf(S) : null; }
+  catch (e) { h = null; console.warn('[진로 머리]', e && e.message); }
+  if (!h) return null;
+  const titles = SWITCH.jobTitles(S), mine = titles.find(t => t.id === cur);
+  const chips = [...(mine ? [mine] : []), ...titles.filter(t => t.id !== cur)].map(t => `<span class="titleChip">${esc(t.title)}</span>`).join(' ');
+  const num = cur === 'shop' ? `단골 ${h.regulars}명` : cur === 'care' ? `살린 화분 ${h.saved}` : `품종 ${h.varieties}`;
+  const body = mine ? `${chips} · ${num}` : `${chips ? chips + ' ' : ''}${esc(h.ko)}`;
+  const sw = SWITCH.canSwitchJob(S) ? ` <button type="button" class="linkBtn" data-act="jobSwitch">${esc((SWITCH.careerSwitchText().todoHead || {}).switch || '진로 바꾸기')}</button>` : '';
+  return body + sw;
+}
 function homeGoalHtml(v) {
-  /* ★ D75(plan §10-4) — 진로를 연 뒤엔 «내 집을 마련했습니다» 대신 진로 머리: «식물 가게 · 단골 r명» · 끝맺음 뒤 칭호 칩 «동네 식물 가게» */
-  if (v.done) {
-    let h = null; try { h = JOB.jobHeadOf(S); } catch { h = null; }
-    if (h) return h.title ? `<span class="titleChip">${h.title}</span> · 단골 ${h.regulars}명` : h.ko;
-    let hc = null; try { hc = CARE.careHeadOf(S); } catch { hc = null; }
-    if (hc) return hc.title ? `<span class="titleChip">${hc.title}</span> · 살린 화분 ${hc.saved}` : hc.ko;
-    let hb = null; try { hb = BREED.breedHeadOf(S); } catch (e) { hb = null; console.warn('[육종 머리]', e && e.message); }
-    if (hb) return hb.title ? `<span class="titleChip">${hb.title}</span> · 품종 ${hb.varieties}` : hb.ko;
-    return '내 집을 마련했습니다';
-  }
+  /* ★ D75(plan §10-4) — 진로를 연 뒤엔 «내 집을 마련했습니다» 대신 진로 머리(§jobHeadHtml) */
+  if (v.done) return jobHeadHtml() || '내 집을 마련했습니다';
   const why = String(v.why || '').replace(/"/g, '&quot;');
   const btn = `<button type="button" class="${v.ok ? 'go' : 'ghost'}" data-act="homeAsk"${v.ok ? '' : ' disabled'}` +
               ` title="${why}" style="width:auto;margin-top:6px">${v.buttonKo}</button>`;
@@ -10329,10 +10360,18 @@ function openShopEndWhenQuiet() {
   const groups = [];
   for (const id of (breed ? [] : care ? J.served : J.regulars) || []) { const c = JOB.shopCustomers().find(x => x && x.id === id); if (c && c.group && !groups.includes(c.group)) groups.push(c.group); if (groups.length >= 6) break; }
   $('shopEndFaces').innerHTML = groups.map(g => npcFaceHTML({ group: g }, 'face')).join('');
+  /* ★ D 나머지(§1-2 ③) — 단추 글은 career_switch.json · [다른 진로도 해 본다]는 아직 안 해 본 진로가 있을 때만 */
+  { const E = SWITCH.careerSwitchText().endCard || {};
+    if (E.stay) $('shopEndGo').textContent = E.stay;
+    if (E.switch) $('shopEndSwitch').textContent = E.switch;
+    $('shopEndSwitch').style.display = SWITCH.untriedJobs(S).length ? '' : 'none'; }
   $('shopEndPanel').classList.add('on'); $('shopEndPanel').setAttribute('aria-hidden', 'false');
   return true;
 }
-function closeShopEnd() { $('shopEndPanel').classList.remove('on'); $('shopEndPanel').setAttribute('aria-hidden', 'true'); draw(); flushHeldBanners(); }
+function closeShopEnd() {
+  $('shopEndPanel').classList.remove('on'); $('shopEndPanel').setAttribute('aria-hidden', 'true'); draw(); flushHeldBanners();
+  if (SWITCH.finalCoverDue(S)) openFinalCover();   /* D 나머지 §2-4 — 셋째 끝맺음 카드를 닫은 뒤 한 번 */
+}
 window.__byeotShopEnd = () => ({ pending: shopEndPending, open: $('shopEndPanel').classList.contains('on'), rows: $('shopEndRows').textContent, faces: $('shopEndFaces').querySelectorAll('img').length });   /* 재는 손잡이 */
 function closeHomeScene() {
   const sc = $('homeScene'); sc.classList.remove('on'); sc.setAttribute('aria-hidden', 'true');
@@ -10365,21 +10404,39 @@ function drawOrderBoard() {
   const box = $('orderBoard'); if (!box) return;
   if (!JOB.movedHome(S)) { box.style.display = 'none'; return; }
   box.style.display = '';
-  if (CARE.isCareJob(S)) { drawCareBoard(box); return; }   /* B — 돌봄 판은 같은 자리에 맡김판 */
-  if (BREED.isBreedJob(S)) { drawBreedBoard(box); return; }   /* C — 육종 판은 같은 자리에 기록장 */
-  const J = JOB.jobShopOf(S);
+  if (CARE.isCareJob(S)) drawCareBoard(box);   /* B — 돌봄 판은 같은 자리에 맡김판 */
+  else if (BREED.isBreedJob(S)) drawBreedBoard(box);   /* C — 육종 판은 같은 자리에 기록장 */
+  else drawShopBoard(box);
+  drawRestingBoards(box);   /* D — 내려놓은 진로의 걸린 것(기한까지) */
+}
+function shopOrderRowsHtml(J) {
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const cust = id => JOB.shopCustomers().find(c => c.id === id) || { ko: id };
-  const head = `<h4>🪧 주문판 · 단골 ${J.regulars.length}명</h4>`;
-  if (!J.orders.length) { box.innerHTML = head + `<div class="empty">지금 걸린 주문이 없습니다 — 손님이 곧 옵니다</div>`; return; }
-  box.innerHTML = head + J.orders.map(o => {
+  return J.orders.map(o => {
     const left = Math.max(0, o.dueOn - S.day), n = JOB.candidatesFor(S, o).length;
     const pct = Math.round((o.premium - 1) * 10);
     return `<div class="orow">${npcFaceHTML(cust(o.customerId), 'oface')}<div class="otxt">${esc(cust(o.customerId).ko)} · ${esc(JOB.orderWantKo(o))} · ${left}일 남음` +
            `<i>시세보다 ${pct}할 더${o.repeat ? ' · 다시 온 손님' : ''}</i></div>` +
            `<button class="${n ? 'primary' : 'ghost'}" type="button" data-deliver="${esc(o.id)}" ${n ? '' : 'disabled title="맞는 것이 아직 없습니다"'}>납품</button></div>`;
   }).join('');
+}
+function drawShopBoard(box) {
+  const J = JOB.jobShopOf(S);
+  const head = `<h4>🪧 주문판 · 단골 ${J.regulars.length}명</h4>`;
+  if (!J.orders.length) { box.innerHTML = head + `<div class="empty">지금 걸린 주문이 없습니다 — 손님이 곧 옵니다</div>`; return; }
+  box.innerHTML = head + shopOrderRowsHtml(J);
   for (const b of box.querySelectorAll('[data-deliver]')) b.onclick = guard(() => detail.open('deliver', { orderId: b.dataset.deliver }));
+}
+/* ★ D 나머지(plan-career-endings-spec §2-2 «걸린 것은 기한까지 마친다») — 내려놓은 진로의 열린 주문·맡김을 지금 판 밑에 줄로(새 일은 안 받는다) */
+function drawRestingBoards(box) {
+  let html = '';
+  const R = SWITCH.careerSwitchText().resting || {}, esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  if (JOB.shopRestingOpen(S)) html += `<h4 class="rest">${esc(R.shop || '🪧 쉬는 가게')}</h4>` + shopOrderRowsHtml(S.jobShop);   /* 글 — plan career_switch.json resting */
+  if (CARE.careRestingOpen(S)) html += `<h4 class="rest">${esc(R.care || '🩺 쉬는 돌봄')}</h4>` + careRowsHtml(S.jobCare);
+  if (!html) return;
+  box.insertAdjacentHTML('beforeend', html);
+  for (const b of box.querySelectorAll('[data-deliver]')) b.onclick = guard(() => detail.open('deliver', { orderId: b.dataset.deliver }));
+  for (const b of box.querySelectorAll('[data-careret]')) b.onclick = guard(() => returnCareNow(b.dataset.careret));
 }
 function deliverNow(orderId, ref) {
   let r = null;
@@ -10390,7 +10447,7 @@ function deliverNow(orderId, ref) {
   pushLog(S, '🤝 ' + done.ko);
   banner('🤝 납품했습니다', `${r.won.toLocaleString()}원${r.newRegular ? ' · 단골이 하나 늘었습니다' : ''}`);
   try { dlgOpen(story.events(r.events, S)); } catch (e) { console.warn('[납품]', e && e.message); }
-  if ((r.events || []).some(e => e && e.id === 'shop_sign')) { try { roomView && roomView.setShopSign && roomView.setShopSign(true); } catch { } }   /* ★ 10-10 단골 10 — 문 옆 입간판 */
+  noteSignEvents(r.events);   /* ★ 10-10 단골 10 — 문 옆 입간판 · D85 ③ 간판이 이미 서 있으면 글 배너 */
   try { sfx.thud(); } catch { }
   try { syncRoom(); } catch { }
   try { checkQuests(lastTurn); } catch { }
@@ -10412,6 +10469,7 @@ const JOB_KO = Object.freeze({
 });
 function openChapterEnd() {
   const el = $('chapterEnd'); if (!el) return;
+  resetChapterEnd();
   $('chapterEndAsk').style.display = 'none'; $('chapterAgain').textContent = CHAPTER_KO.again; chapterAgainArmed = false;
   const jc = $('jobCards');
   if (jc && endingDoneNow() && !JOB.hasJob(S)) {
@@ -10423,6 +10481,24 @@ function openChapterEnd() {
     for (const b of jc.querySelectorAll('[data-job]')) b.onclick = guard(() => (b.dataset.job === 'care' ? startCareNow() : b.dataset.job === 'breed' ? startBreedNow() : startShopNow()));
   } else if (jc) jc.style.display = 'none';
   el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
+}
+/* ══ ★ 2026-10-24 D 나머지 — 간판 한 자리(house signOf · 총괄 D85 ③) ══
+   가게 단골 10(shop_sign)·돌봄 살린 10(care_milestone n=10)은 한 모형 한 자리 — 먼저 선 진로의 간판이 남는다.
+   뒤에 10 에 닿은 진로(core 사건 signKept)는 간판을 다시 안 세우고 글 배너 + 기록 줄(career_switch.json sign) · ev_shop_sign 원화도 안 뜬다(questDoneShopSign 에만) */
+const signOnNow = () => signOf({ shop: S.jobShop ? S.jobShop.signOnDay : null, care: S.jobCare ? S.jobCare.signOnDay : null }).on;
+function noteSignEvents(events) {
+  const T = SWITCH.careerSwitchText().sign || {};
+  const put = () => { try { roomView && roomView.setShopSign && roomView.setShopSign(true); } catch (e) { console.warn('[간판]', e && e.message); } };
+  const kept = (t) => { if (t.log) pushLog(S, '🪧 ' + t.log); if (t.banner) banners([t.banner]); };
+  for (const e of events || []) {
+    if (!e) continue;
+    if (e.id === 'shop_sign') put();
+    else if (e.id === 'regulars_milestone' && e.n === JOB.SHOP_JOB.signAt && e.signKept === true) kept(T.shop || {});
+    else if (e.id === 'care_milestone' && e.n === CARE.CARE_JOB.signAt) {
+      if (e.signKept === true) kept(T.care || {});
+      else { put(); pushLog(S, '🪧 진열대 옆에 칠판 간판을 세웠습니다'); }
+    }
+  }
 }
 /* [가게를 연다] — 진로 · 산 집(투룸)으로 이사 · 주문판 · 첫 주문 */
 function startShopNow() {
@@ -10483,11 +10559,15 @@ window.__byeotStartCare = () => startCareNow();   /* 재는 손잡이 */
 /* 맡김판(상점 탭 맨 위 · 주문판 자리) — 줄: 손님 · 종 · 고장 한 마디 · 남은 날 · 나음/아직 · [돌려준다] */
 function drawCareBoard(box) {
   const J = CARE.jobCareOf(S);
-  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const cust = id => JOB.shopCustomers().find(c => c.id === id) || { ko: id };
   const head = `<h4>🩺 맡김판 · 살린 화분 ${J.saved}</h4>`;
   if (!J.requests.length) { box.innerHTML = head + `<div class="empty">지금 맡은 화분이 없습니다 — 손님이 곧 옵니다</div>`; return; }
-  box.innerHTML = head + J.requests.map(r => {
+  box.innerHTML = head + careRowsHtml(J);
+  for (const b of box.querySelectorAll('[data-careret]')) b.onclick = guard(() => returnCareNow(b.dataset.careret));
+}
+function careRowsHtml(J) {
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const cust = id => JOB.shopCustomers().find(c => c.id === id) || { ko: id };
+  return J.requests.map(r => {
     const left = Math.max(0, r.dueOn - S.day), pr = CARE.careProblemOf(r.problem) || { ko: r.problem };
     const ko = SPC.SPECIES_KO[(CARE.careProblemOf(r.problem) || {}).species] || '';
     const ok = r.savedOn != null;
@@ -10496,7 +10576,6 @@ function drawCareBoard(box) {
            `<i>${ok ? '나음 — 돌려줄 수 있습니다' : '아직'} · 수고비 — 나은 그루 시세의 ${share}할</i></div>` +
            `<button class="${ok ? 'primary' : 'ghost'}" type="button" data-careret="${esc(r.id)}" ${ok ? '' : 'disabled title="아직 낫지 않았습니다"'}>돌려준다</button></div>`;
   }).join('');
-  for (const b of box.querySelectorAll('[data-careret]')) b.onclick = guard(() => returnCareNow(b.dataset.careret));
 }
 function returnCareNow(requestId) {
   let r = null;
@@ -10504,7 +10583,7 @@ function returnCareNow(requestId) {
   catch (e) { banner('돌려주지 못했습니다', (e && e.message) || ''); return; }
   try { creditShopOrder(S, r.won, { ko: '돌봄 수고비', log: m => pushLog(S, m) }); } catch (e) { banner('수고비를 못 받았습니다', (e && e.message) || ''); }
   for (const e of r.events) if (e && e.id === 'care_return') pushLog(S, '🤝 ' + e.ko);
-  if ((r.events || []).some(e => e && e.id === 'care_milestone' && e.n === CARE.CARE_JOB.signAt)) { try { roomView && roomView.setShopSign && roomView.setShopSign(true); } catch (e) { console.warn('[칠판 간판]', e && e.message); } pushLog(S, '🪧 진열대 옆에 칠판 간판을 세웠습니다'); }   /* plan a3638d7f — 글자 없는 바닥 칠판(가게 간판 모형) */
+  noteSignEvents(r.events);   /* plan a3638d7f — 글자 없는 바닥 칠판(가게 간판 모형) · D85 ③ 간판이 이미 서 있으면 글 배너 */
   banner('🤝 돌려줬습니다', `수고비 ${r.won.toLocaleString()}원`);
   try { dlgOpen(story.events(r.events, S)); } catch (e) { console.warn('[돌려줌]', e && e.message); }
   try { sfx.thud(); } catch (e) { console.warn('[돌려줌 소리]', e && e.message); }
@@ -10605,7 +10684,90 @@ function registerBreedNow() {
 window.__byeotBreedName = () => ({ open: $('breedNamePanel').classList.contains('on'), slot: breedNameSlot, value: $('breedNameInput').value,
   title: $('breedNameTitle').textContent, sub: $('breedNameSub').textContent, hint: $('breedNameHint').textContent });   /* 재는 손잡이 */
 window.__byeotRegisterBreed = (name) => { if (name != null) $('breedNameInput').value = name; registerBreedNow(); };   /* 재는 손잡이 */
-function closeChapterEnd() { const el = $('chapterEnd'); if (!el) return; el.classList.remove('on'); el.setAttribute('aria-hidden', 'true'); }
+function closeChapterEnd() { const el = $('chapterEnd'); if (!el) return; el.classList.remove('on'); el.setAttribute('aria-hidden', 'true'); resetChapterEnd(); }
+/* 덮개는 셋이 같이 쓴다(진로 고르기 · 진로 바꾸기 · 마지막 덮개) — 닫을 때·열 때 처음 꼴로 */
+function resetChapterEnd() {
+  document.documentElement.classList.remove('finalcover');
+  const art = $('chapterEndArt'); if (art && art.dataset.hide) { art.style.display = ''; delete art.dataset.hide; }
+  if ($('chapterLook')) $('chapterLook').textContent = '방 둘러보기';
+  if ($('chapterAgain')) $('chapterAgain').style.display = '';
+}
+/* ══ ★ 2026-10-24 D 나머지 — 진로 바꾸기 화면(plan-career-endings-spec §2-1 · career_switch.json cards) ══
+   지금 진로의 끝맺음 뒤에만 연다(끝맺음 카드 [다른 진로도 해 본다] · 할 일 머리 «진로 바꾸기»). 카드 표 셋 — 지금 하는 중 · 끝맺음 봄 · 해 볼 수 있음 */
+function openSwitchCards() {
+  const el = $('chapterEnd'), jc = $('jobCards'); if (!el || !jc) return false;
+  if (!SWITCH.canSwitchJob(S)) return false;
+  resetChapterEnd();
+  const T = SWITCH.careerSwitchText(), C = T.cards || {};
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const art = $('chapterEndArt'); if (art) { art.style.display = 'none'; art.dataset.hide = '1'; }
+  $('chapterEndAsk').style.display = 'none';
+  $('chapterEndTitle').textContent = C.title || '진로 바꾸기';
+  $('chapterEndSub').innerHTML = esc(C.sub) + (C.note ? `<span class="jobNote">${esc(C.note)}</span>` : '');
+  jc.innerHTML = SWITCH.switchCards(S).map(c => `<div class="job${c.go ? '' : ' cur'}"><b>${esc(c.ko)}</b><span>${esc(c.sub)}</span><i class="jmark">${esc(c.markKo)}</i>` +
+    (c.go ? `<button class="primary" type="button" data-switchjob="${esc(c.id)}">${esc(c.go)}</button>` : '') + `</div>`).join('');
+  jc.style.display = 'flex';
+  for (const b of jc.querySelectorAll('[data-switchjob]')) b.onclick = guard(() => switchJobNow(b.dataset.switchjob));
+  $('chapterLook').textContent = C.close || '그만두기'; $('chapterAgain').style.display = 'none';   /* 글 — plan cards.close */
+  el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
+  return true;
+}
+window.__byeotSwitchCards = () => openSwitchCards();   /* 재는 손잡이 */
+/* 옮기기 — 이사 없음(산 투룸 그대로) · 판이 이미 걸렸으면 이름만(boardKept) · 없으면 그 진로의 판을 건다 · 첫날 사건(처음 해 보는 진로) 또는 돌아옴 한 줄 */
+function switchJobNow(toId) {
+  const hasBoard = addedFurniture(S).some(f => f && GIVEN_FURNITURE.includes(f.preset));
+  let spots7 = null; try { spots7 = careSpotsOf(S, io); } catch (e) { spots7 = null; console.warn('[진로 바꾸기 자리]', e && e.message); }
+  let r = null;
+  try { r = SWITCH.switchJob(S, toId, { boardKept: hasBoard, cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, spots7, lamps: (S.lamps && S.lamps.count) || 0 }); }
+  catch (e) { banner('진로를 못 바꿨습니다', (e && e.message) || ''); return null; }
+  let hung = false;
+  if (!hasBoard && !r.back) {
+    try {
+      const def = houseRooms.rooms && houseRooms.rooms[S.home.room];
+      const sp = hangSpotsOf(def).find(x => x.only === 'order_board');
+      const preset = boardAs('order_board', toId);
+      if (sp && furnPresets[preset]) {
+        const pose = hangPoseOf(sp, (def && def.size) || houseRooms.size, (furnPresets[preset] || {}).size_m || {});
+        const row = giveFurniture(S, preset, pose, { size: io.light.room.size });
+        if (row) { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); hung = true; }
+      }
+    } catch (e) { console.warn('[판]', e && e.message); }
+  }
+  const icon = { job_start: '🪴 ', shop_open: '🪧 ', care_open: '🪧 ', breed_open: '📒 ', customer_link: '🤝 ', order_new: '📋 ', care_new: '🩺 ' };
+  for (const e of r.events) if (e && e.ko) pushLog(S, (icon[e.id] || '') + e.ko + (e.want ? ` — ${e.want}` : ''));
+  closeChapterEnd();
+  if (r.banner && r.banner.title) banners([r.banner]);
+  try { dlgOpen(story.events(r.events, S)); } catch (e) { console.warn('[진로 바꾸기]', e && e.message); }
+  fillSlots(false);
+  draw();
+  if (hung && roomView && roomView.refreshFurniture) roomView.refreshFurniture().then(() => { try { syncRoom(); } catch (e) { console.warn('[판]', e && e.message); } }, e => console.warn('[판]', e && e.message));
+  try { syncShopRoomView(); } catch (e) { console.warn('[진로 카메라]', e && e.message); }
+  try { checkQuests(lastTurn); } catch (e) { console.warn('[진로 바꾸기 할 일]', e && e.message); }
+  return r;
+}
+window.__byeotSwitchJob = (id) => switchJobNow(id);   /* 재는 손잡이 */
+/* ══ ★ 2026-10-24 D 나머지 — 마지막 덮개(§2-4) «여기까지 — 이 집 이야기» ══ 원화 ev_first_story_end 재사용 · 몬이 두 줄(대사 창이 덮개 위) · [계속 산다] ·
+   [새 판으로]는 E 가 선 뒤에만(지금은 안 선다 — 덮개의 [처음부터 다시]도 감춘다) */
+function openFinalCover() {
+  const el = $('chapterEnd'), jc = $('jobCards'); if (!el) return false;
+  const r = SWITCH.markFinalCover(S);
+  if (!r.events.length) return false;
+  resetChapterEnd();
+  const F = SWITCH.careerSwitchText().finalCover || {};
+  const art = $('chapterEndArt'); if (art && F.art) art.src = './assets/illust/' + String(F.art).replace(/[^a-z0-9_]/gi, '') + '.png';
+  $('chapterEndAsk').style.display = 'none';
+  $('chapterEndTitle').textContent = F.title || '여기까지 — 이 집 이야기';
+  $('chapterEndSub').textContent = F.sub || '';
+  if (jc) jc.style.display = 'none';
+  $('chapterLook').textContent = F.stay || '계속 산다'; $('chapterAgain').style.display = 'none';
+  document.documentElement.classList.add('finalcover');
+  el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
+  pushLog(S, '🏅 ' + (F.title || '여기까지 — 이 집 이야기'));
+  try { dlgOpen(story.events(r.events, S)); } catch (e) { console.warn('[마지막 덮개]', e && e.message); }
+  try { saveNow(); } catch (e) { console.warn('[마지막 덮개 저장]', e && e.message); }
+  return true;
+}
+window.__byeotFinalCover = () => ({ due: SWITCH.finalCoverDue(S), on: document.documentElement.classList.contains('finalcover'), seenOn: (S.story && S.story.finalCoverOn) ?? null });   /* 재는 손잡이 */
 let chapterAgainArmed = false;
 if ($('chapterLook')) $('chapterLook').onclick = () => { closeChapterEnd(); try { draw(); } catch { } };
 if ($('chapterAgain')) $('chapterAgain').onclick = () => {
@@ -14036,7 +14198,7 @@ function syncShopRoomView() {
   /* ★ 10-10 한 판 걸음 — 가게를 연 그날 첫 화면이 여름옷이었다: 여는 순간 옛 방뷰에 앞치마를 청하고, 다시 지으며 그 기억(heroOutfitAsked)을 비운 뒤
        다음 draw 까지 새 방뷰에 안 청했다. 방뷰가 선 «지금» 청한다(몸이 늦게 서도 room_view 가 기억했다가 입힌다 · §setHeroOutfit) */
   try { syncHeroOutfit(); } catch (e) { console.warn('[옷]', e && e.message); }
-  try { if (roomView.setShopSign) roomView.setShopSign(CARE.isCareJob(S) ? CARE.jobCareOf(S).signOnDay != null : JOB.jobShopOf(S).signOnDay != null); } catch (e) { console.warn('[입간판]', e && e.message); }   /* B — 돌봄 10 «문패»는 간판 모형 그대로(D73 ③ · house 글자 없음 확인) */
+  try { if (roomView.setShopSign) roomView.setShopSign(signOnNow()); } catch (e) { console.warn('[입간판]', e && e.message); }   /* B — 돌봄 10 «문패»는 간판 모형 그대로(D73 ③) · D85 ③ 간판 한 자리 — 어느 진로든 먼저 선 간판(house signOf) */
   try {
     if (roomView.setHomeFrame) {
       const board = addedFurniture(S).filter(f => f.preset === 'order_board' || f.preset === 'care_board' || f.preset === 'memo_board').map(f => f.uid);   /* C — 메모판도 판 자리 */   /* B — 맡김판도 판 자리 */
@@ -14045,6 +14207,52 @@ function syncShopRoomView() {
   } catch (e) { console.warn('[가게 카메라]', e && e.message); }
 }
 window.__byeotShopView = () => syncShopRoomView();   /* 재는 손잡이 */
+/* ══ ★ 2026-10-24 D 나머지(총괄 D85 ④) — 끝맺음 장면에서 주인공이 비켜선다 ══
+   끝맺음 아침 장면은 진로 카메라(진열대·다단 선반·판) 위에 대사다. 주인공이 진열대 앞에 서 있으면 앞줄(D0·D1)을 가렸다(house 사진 jobcam_tworoom_b_390).
+   ⇒ 화면 칸을 훑어 «몸(발 ~ 머리 1.6m 네모)이 그루·판을 안 가리고 · 대사 창 위에 보이는» 바닥 한 점을 골라 걸어간다(가장 넓게 비는 데 · 같으면 가까운 데).
+   방 뷰의 공개 손만 쓴다(floorPointAt · worldToScreen · screenPosOf · walkTo) — room_view(house) 는 안 건드린다. 못 고르면 그대로 둔다(그림만 덜 좋음). */
+function endingStandAside() {
+  const rv = roomView;
+  if (!rv || !rv.walkTo || !rv.floorPointAt || !rv.worldToScreen || !rv.characters) return null;
+  const me = (rv.characters() || []).find(c => c && c.id === 'jachwi' && c.walkable);
+  if (!me) return null;
+  const cv = $('roomCanvas').getBoundingClientRect();
+  const dlgTop = (() => { const d = $('dlgBox') || $('dlg'); const r = d && d.getBoundingClientRect(); return r && r.height > 0 ? r.top - cv.top : cv.height * 0.84; })();
+  const keep = [];
+  for (const p of (rv.plants ? rv.plants() : [])) { const q = p && p.key != null ? rv.screenPosOf(p.key) : null; if (q) keep.push(q); }
+  for (const f of (rv.furniture ? rv.furniture() : [])) if (f && (GIVEN_FURNITURE.includes(f.preset) || SHOP_FRAME_UIDS.includes(f.uid))) { const q = rv.screenPosOf(f.uid); if (q) keep.push(q); }
+  /* 간판(가구가 아니라 소품 — house furniture_dress PROPS.tworoom shop_sign x −3.14 · z −0.95 · 높이 0.85 · 자리를 묻는 손이 없어 그 값을 적어 둔다) */
+  if (S.home && S.home.room === 'tworoom' && signOnNow()) for (const y of [0.15, 0.45, 0.8]) { const q = rv.worldToScreen(-3.14, y, -0.95); if (q) keep.push(q); }
+  const bodyOf = (x, z) => { const a = rv.worldToScreen(x, 0, z), b = rv.worldToScreen(x, 1.6, z); if (!a || !b) return null;
+    const h = Math.max(1, a.y - b.y), w = h * 0.55; return { l: a.x - w / 2, r: a.x + w / 2, t: b.y, b: a.y, foot: a }; };   /* 너비 — 머리칼까지(사진으로 잼) */
+  const clear = (bd) => Math.min(...keep.map(k => Math.max(bd.l - k.x, k.x - bd.r, bd.t - k.y, k.y - bd.b, 0) || -Math.min(k.x - bd.l, bd.r - k.x, k.y - bd.t, bd.b - k.y)));
+  const here = bodyOf(me.pos.x, me.pos.z);
+  /* 대사 초상(#dlgFace — 대사 창 위 왼쪽) 뒤에 숨지 않게 — 사진(10-24): 아랫몸이 몬이 초상에 덮였다 */
+  const faceR = (() => { const f = $('dlgFace'), r = f && f.getBoundingClientRect(); return r && r.height > 0 && r.width > 0 ? { l: r.left - cv.left, r: r.right - cv.left, t: r.top - cv.top, b: r.bottom - cv.top } : null; })();
+  const inView = bd => bd.l >= cv.width * 0.05 && bd.r <= cv.width * 0.95 && bd.t >= 0 && bd.b <= dlgTop;   /* 화면 끝에 반쯤 걸리지 않게 */
+  const faceHit = bd => !!(faceR && bd.r > faceR.l && bd.l < faceR.r && bd.b > faceR.t && bd.t < faceR.b);
+  if (here && keep.length && clear(here) >= 24 && inView(here)) return { moved: false, clear: Math.round(clear(here)) };   /* 안 가리면 그대로(초상 뒤에 숨는 것은 그루를 안 가린다) */
+  const box = rv.roomSize ? rv.roomSize() : null, cand = [];
+  for (let gy = 0.30; gy <= 0.95; gy += 0.05) for (let gx = 0.06; gx <= 0.94; gx += 0.04) {
+    const vx = cv.left + cv.width * gx, vy = cv.top + Math.min(dlgTop - 4, cv.height * gy);
+    const f = rv.floorPointAt(vx, vy); if (!f) continue;
+    if (box && (Math.abs(f.x) > box.w / 2 - 0.3 || Math.abs(f.z) > box.d / 2 - 0.3)) continue;   /* 방 밖 바닥(창 너머)은 못 간다 */
+    const bd = bodyOf(f.x, f.z); if (!bd || !inView(bd)) continue;
+    const c = keep.length ? clear(bd) : 999;
+    if (c >= 12) cand.push({ vx, vy, c, face: faceHit(bd), dist: Math.hypot(f.x - me.pos.x, f.z - me.pos.z), x: f.x, z: f.z });
+  }
+  /* 차례: 초상에 안 걸림 → 넉넉히 빈 데(40px 넘으면 같은 값 — 그중 가까운 데 · 장면 동안 멀리 걷지 않게) → 넓게 빈 데 · 가까운 데.
+     가구 안·벽 쪽은 walkTo 가 ok:false 로 돌려준다 → 다음 칸 */
+  const roomy = c => Math.min(c.c, 40);
+  const far = c => c.dist > 3;   /* 장면 동안 방을 가로질러 걷지 않게(3m 넘는 데는 뒤로) */
+  cand.sort((a, b) => (far(a) !== far(b) ? (far(a) ? 1 : -1) : a.face !== b.face ? (a.face ? 1 : -1) : Math.abs(roomy(a) - roomy(b)) > 8 ? roomy(b) - roomy(a) : a.dist - b.dist));
+  for (const k of cand.slice(0, 24)) {
+    const r = rv.walkTo('jachwi', k.vx, k.vy);
+    if (r && r.ok) return { moved: true, clear: Math.round(k.c), to: { x: +k.x.toFixed(2), z: +k.z.toFixed(2) } };
+  }
+  return { moved: false, clear: null, tried: Math.min(24, cand.length) };
+}
+window.__byeotEndingStand = () => endingStandAside();   /* 재는 손잡이 */
 /* 주인공 모습을 성별에 맞춘다 — 3D 몸·옷(v2_hero 한 곳) · 위 칸 «나» 얼굴. 방뷰를 세우기 «전»에 부른다(몸은 처음 받을 때 고른다) */
 function syncHeroGender() {
   const g = heroGenderNow();
@@ -16966,7 +17174,7 @@ const furnPicked = {
     /* 고를 때 누른 자리를 원점으로 삼는다 — 그 점이 곧 그 가구 위다.
        3D 점을 화면으로 되쏘는 길이 따로 없어도 상대 이동이 정확히 맞는다. */
     this.tapX = px; this.tapY = py;
-    $('furnName').textContent = f.name || f.preset || '가구';
+    $('furnName').textContent = boardKoOf(f.preset) || f.name || f.preset || '가구';   /* D — 판은 진로 이름(house boardAs) */
     /* ★겨눌 수 있는 등에서만 [겨누기]를 보여 준다 — 방뷰가 아니라 **조도 창**이 답을 안다
        (`aimable` 은 프리셋의 adjustable_height 에서 온다. 바 등은 붙박이라 false). */
     let range = null; try { range = io.light.aimRangeOf(f.uid); } catch { }
@@ -18792,6 +19000,11 @@ document.addEventListener('click', (e) => {
 });
 $('homeGo').onclick = guard(() => { doFinishHome(); });
 $('shopEndGo').onclick = guard(() => { closeShopEnd(); });   /* D75 [계속 산다] */
+$('shopEndSwitch').onclick = guard(() => { closeShopEnd(); openSwitchCards(); });   /* D 나머지 [다른 진로도 해 본다] */
+document.addEventListener('click', (e) => {   /* D 나머지 — 할 일 머리 «진로 바꾸기» 글자 단추(data-act="jobSwitch") */
+  const b = e.target && e.target.closest && e.target.closest('[data-act="jobSwitch"]');
+  if (b) { try { openSwitchCards(); } catch (err) { console.warn('[진로 바꾸기]', err && err.message); } }
+});
 $('breedNameGo').onclick = guard(() => registerBreedNow());   /* C [이 이름으로 등록] */
 $('breedNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('breedNameGo').click(); } });
 $('homeCancel').onclick = guard(() => { closeHomeAsk(); });

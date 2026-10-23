@@ -85,6 +85,8 @@ export function createStoryState() {
     job: null, homeOnDay: null,
     /* ★ 2026-10-23 D75 — 진로 이력({ shop: { since, endedOn } } · 진로 끝맺음 날 · job_shop §jobHistoryOf) */
     jobs: {},
+    /* ★ 2026-10-24 D 나머지 — 마지막 덮개를 본 날(job_switch §markFinalCover) · 진로 바꾼 자국([{ day, from, to, back }] · §switchJob) */
+    finalCoverOn: null, jobSwitches: [],
     /* ④ 는 ending.js 가 쓴다. 상태의 모양만 여기서 만든다 —
        state.newState 가 부르는 팩토리가 하나여야 세이브 규약도 하나가 된다. */
     ending: { reachedOnDay: null, doneOnDay: null, dippedOnDay: null }   /* dippedOnDay: 2026-10-08 닿았다가 다시 모자라진 날(ending §stepEnding) */

@@ -55,12 +55,24 @@ import { endingRulesFrom, endingProgress, finishEnding } from '../src/game/endin
 import * as JSHOP from '../src/game/job_shop.js';   /* ★ D59 «가게 사람» */
 import * as JCARE from '../src/game/job_care.js';   /* ★ 2026-10-24 B «돌봄 사람» */
 import * as JBREED from '../src/game/job_breed.js';   /* ★ 2026-10-24 C «육종 사람» */
+import * as JSWITCH from '../src/game/job_switch.js';   /* ★ 2026-10-24 D 나머지 «바꾸기 걸음» */
+import { hangSpotsOf, hangPoseOf } from '../src/game/hang_spots.js';
+import { giveFurniture } from '../src/game/state.js';
+/* 바꾸기 걸음(switchW)만 — 진로 첫날 창 옆 판을 게임처럼 건다(game.html startShopNow 와 같은 자리·손). 다른 사람은 예전 그대로(잰 값이 안 흔들리게 · 판은 세이브에만 · 빛 셈엔 안 넣음) */
+const HOUSE_ROOMS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/house_rooms.json'), 'utf8'));
+const FURN_PRESETS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/furniture_presets.json'), 'utf8')).presets;
+function hangJobBoard(S, light, preset) {
+  const def = HOUSE_ROOMS.rooms[S.home.room], sp = hangSpotsOf(def).find(x => x.only === 'order_board');
+  if (!sp || !FURN_PRESETS[preset]) return null;
+  return giveFurniture(S, preset, hangPoseOf(sp, (def && def.size) || HOUSE_ROOMS.size, FURN_PRESETS[preset].size_m || {}), { size: light.room.size });
+}
+import { jobOfQuest } from '../src/game/quest.js';
 /* C 관리하는 사람의 손이 읽는 growth 값(AL 구근 찾기 · PP 분홍) — 읽기만 */
 const BREED_SPEC = (() => { const j = JSON.parse(fs.readFileSync(new URL('../data/growth_species.json', import.meta.url), 'utf8')); return { alProp: j.species.alocasia_frydek.propagation, pink: j.species.pink_princess.pink }; })();
 import { careSpotsOf } from '../src/game/loop.js';
 import { moveIntoOwnedHome } from '../src/game/oneroom.js';
 import { creditShopOrder, buyPriceOf } from '../src/game/shop.js';
-import { serialize as serializeSave } from '../src/game/save.js';   /* --dump — 단계마다 게임 세이브 꼴(byeot/save/1)로 뜬다 */
+import { serialize as serializeSave, deserialize as deserializeSave } from '../src/game/save.js';   /* --dump — 단계마다 게임 세이브 꼴(byeot/save/1)로 뜬다 */
 import { stepQuests, questView, questRoomOk } from '../src/game/quest.js';
 import { nudgeWaiting, noteQuestWaits, nudgeWaitReason } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
@@ -152,6 +164,13 @@ export const PERSONAS = {
   shop71h: { ko: '가게 사람 + 둘째 두 종 · 높이 먼저(곁줄 sc_hang 끝날 때까지 지킴이 줄기를 안 자름)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
              shop: true, shopDays: 730, species: true, sp2: true, sp2Hold: true },
   /* ★ 총괄(10-23) «sc_hang 길 둘» — ② 창가 화분걸이(house tworoom-hang-sun · dropM 1.132) + 등 3: sc_ask 날 화분걸이를 사서 걸고 등을 셋까지 산다 · 높이 먼저 */
+  /* ★ 2026-10-24 D 나머지 «바꾸기 걸음»(plan-career-endings-spec §6-2 · §6-3) — 가게(shop71h 손) 끝맺음 → 돌봄(careR 손) → 돌봄 끝맺음 → 육종(breedR 손) →
+       육종 끝맺음(마지막 덮개) → 돌봄으로 돌아감 → 90일. 끝맺음 본 아침에 job_switch §switchJob(화면 [다른 진로도 해 본다]와 같은 손 · 판은 이미 걸림 boardKept).
+       잰다: 이사 없음 · 내려놓은 진로의 걸린 주문·맡김이 기한까지 다 끝나고 새로 안 남 · 쉬는 줄이 칩을 안 쥠 · hasJob/movedHome 그대로 · 간판 한 자리(signKept · signBy) ·
+       세이브 왕복(진로 이력 · 바꾼 자국) · 숨은 손해 0(돈 · 그루 · 셈이 옮기기 앞뒤 같음) · 손님 이음(첫 맡김 손님 = 가게 단골)
+       node tools/probe_branches.mjs --persona switchW --seeds g --days 3200 · 세이브 뜨기: --one '{"name":"switchW","seed":"g","targets":[5000000],"days":3200,"dump":"<폴더>"}' */
+  switchW: { ko: '바꾸기 걸음(가게 → 돌봄 → 육종 → 돌봄)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
+             shop: true, shopDays: 5000, species: true, sp2: true, sp2Hold: true, switchSeq: ['shop', 'care', 'breed', 'care'] },
   shop71w: { ko: '가게 사람 + 둘째 두 종 · 창가 화분걸이 + 등 3(높이 먼저)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
              shop: true, shopDays: 730, species: true, sp2: true, sp2Hold: true, sp2Wall: true },
   guide45: { ko: 'D45 새 두 종도 키움(D41 안내대로 + PP 교환 · AL 구근)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
@@ -173,7 +192,7 @@ function pickNode(nodes, budget, varieOnly) {
 
 /* ══ 한 판 ═════════════════════════════════════════════════════════════ */
 export async function play(name, seed, opt = {}) {
-  const P = PERSONAS[name];
+  const P = PERSONAS[name] ? { ...PERSONAS[name] } : null;   /* 판마다 제 꼴 — 바꾸기 걸음(switchSeq)이 진로 깃발을 갈아 끼운다 */
   if (!P) throw new Error('모르는 사람: ' + name);
   /* ★ 2026-10-09 D30 전/후 — 이 판(자식 프로세스)에서만 등급 표를 바꿔 끼운다 */
   if (opt.grades) installVarieGrades(JSON.parse(fs.readFileSync(opt.grades, 'utf8')));
@@ -792,6 +811,7 @@ export async function play(name, seed, opt = {}) {
           S.lamps.count = ts.lamp.owned || 0; if (ts.lamp) ts.lamp.placed = S.lamps.count; light.clearCache();
           if (pot0(S)) placeBest(sl => setPotSlot(S, pot0(S), sl.slotId, light.room.slots));
           for (const c of cuttingsOf(S)) if (c && c.status !== 'dead' && !c.slotId && !c.at) placeBest(sl => setCuttingAt(S, c, atOf(light, sl.slotId), { slots: light.room.slots, size: light.room.size }));
+          if (P.switchSeq) { try { out.boardHung = !!hangJobBoard(S, light, 'order_board'); } catch (e) { out.boardErr = String(e && e.message).slice(0, 120); } }
           const opened = JSHOP.openShop(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0 });
           out.shop = { openDay: S.day, cashAtOpen: ts.cashWon, done: 0, expired: 0, wonTotal: 0, expiredKinds: {}, doneKinds: {} };
           out.shop.noSpecies = opened.events.some(e => e && e.id === 'shop_no_species');
@@ -805,6 +825,66 @@ export async function play(name, seed, opt = {}) {
         } catch (e) { out.shopErr = (e && e.message) || String(e); }
       }
       if (!P.shop && !P.care && !P.breed && targets.every(t => out.reach[t] != null)) { out.endDay = S.day; break; }
+    }
+    /* ★ D 나머지 «바꾸기 걸음»(switchW · 위 사람 표) — 끝맺음 본 아침에 다음 진로 · 쉬는 진로 걸린 것 · 칩 · 간판 · 덮개 · 세이브 왕복 · 숨은 손해 */
+    if (P.switchSeq && JSHOP.hasJob(S)) {
+      const W = out.sw = out.sw || { at: 0, steps: [], rest: [], fails: [], cover: null, sign: [] };
+      const cur = JSHOP.jobOf(S).id;
+      for (const e of ((turn && turn.events) || [])) if (e && ((e.id === 'regulars_milestone' || e.id === 'care_milestone') && e.n === 10)) W.sign.push({ day: S.day, ev: e.id, kept: e.signKept === true });
+      for (const R of W.rest) if (!R.done) {
+        const J = R.job === 'shop' ? S.jobShop : S.jobCare, list = R.job === 'shop' ? J.orders : J.requests;
+        R.newOpen = Math.max(R.newOpen || 0, list.filter(x => !R.ids.includes(x.id)).length);
+        if (J.seq !== R.seq0) R.rolled = true;
+        if (R.job === cur) { R.done = true; R.endedBy = 'back'; }
+        else if (S.day > R.lastDue) { R.done = true; R.endedBy = 'due'; R.leftAfterDue = list.filter(x => R.ids.includes(x.id)).length; }
+      }
+      try { const v = questView(S, questSnapshotOf(S, io, { mealKinds: meals, targetWon: targets[0] }));
+            const cj = v.chip ? jobOfQuest(v.chip.id) : null; if (cj && cj !== cur) W.fails.push(`${S.day}일 쉬는 ${cj} 줄 ${v.chip.id} 이 칩을 쥠`);
+            W.restingMax = Math.max(W.restingMax || 0, (v.restingIds || []).length); W.skipped = (v.skippedIds || []).length; }
+      catch (e) { W.qErr = String(e && e.message).slice(0, 120); }
+      if (W.cover == null && JSWITCH.finalCoverDue(S)) { const r = JSWITCH.markFinalCover(S); W.cover = { day: S.day, events: r.events.map(e => e.id) }; dump('swCover'); }
+      const next = P.switchSeq[W.at + 1];
+      if (next && JSWITCH.jobEndedOn(S, cur) != null && S.day > JSWITCH.jobEndedOn(S, cur)) {   /* 끝맺음 아침(사건·사진 단계가 그날 돈다) 다음 날 */
+        const plantsOf = () => (S.pots || []).length + cuttingsOf(S).filter(c => c && c.status !== 'dead').length + SPM.speciesPotsOf(S).filter(q => q && !q.care).length;
+        const tally = () => ({ cash: ts.cashWon, plants: plantsOf(), room: S.home.room, shopDone: S.jobShop ? S.jobShop.done : null, regulars: S.jobShop ? S.jobShop.regulars.length : null,
+                               careSaved: S.jobCare ? S.jobCare.saved : null, varieties: S.jobBreed ? S.jobBreed.varieties.length : null, samples: S.jobBreed ? S.jobBreed.sampleCount : null,
+                               ended: JSON.stringify(Object.fromEntries(Object.entries(S.story.jobs || {}).filter(([, h]) => h && h.endedOn != null).map(([k, h]) => [k, h.endedOn]))),
+                               sign: JSON.stringify({ shop: S.jobShop ? S.jobShop.signOnDay : null, care: S.jobCare ? S.jobCare.signOnDay : null }) });
+        const Jc = cur === 'shop' ? S.jobShop : cur === 'care' ? S.jobCare : null, list = Jc ? (cur === 'shop' ? Jc.orders : Jc.requests) : [];
+        if (list.length) W.rest.push({ job: cur, since: S.day, ids: list.map(x => x.id), lastDue: Math.max(...list.map(x => x.dueOn)), seq0: Jc.seq });
+        const b0 = tally();
+        let r = null;
+        const boardKept = ((S.home && S.home.furnitureAdded) || []).some(f => f && ['order_board', 'care_board', 'memo_board'].includes(f.preset));
+        try { r = JSWITCH.switchJob(S, next, { boardKept, cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, spots7: careSpotsOf(S, io), lamps: (S.lamps && S.lamps.count) || 0 }); }
+        catch (e) { W.fails.push(`${S.day}일 옮기기 실패 ${cur}→${next}: ${e && e.message}`); P.switchSeq = P.switchSeq.slice(0, W.at + 1); }
+        if (r) {
+          const b1 = tally(), skip = new Set(r.back ? [] : next === 'shop' ? ['shopDone', 'regulars'] : next === 'care' ? ['careSaved'] : ['varieties', 'samples']);   /* 처음 해 보는 진로 칸은 새로 선다 */
+          const loss = Object.keys(b0).filter(k => !skip.has(k) && JSON.stringify(b0[k]) !== JSON.stringify(b1[k])).map(k => `${k} ${b0[k]}→${b1[k]}`);
+          let rt = null;
+          try { const back = deserializeSave(JSON.parse(JSON.stringify(serializeSave(S))), { firstPlayRules: RULES, allowMissingGrowth: true });
+                rt = JSON.stringify(back.story.jobs) === JSON.stringify(S.story.jobs) && back.story.job.id === next && JSON.stringify(back.story.jobSwitches) === JSON.stringify(S.story.jobSwitches); }
+          catch (e) { rt = 'err ' + String(e && e.message).slice(0, 80); }
+          const nw = r.events.find(e => e.id === 'care_new' || e.id === 'order_new'), lk = r.events.find(e => e.id === 'customer_link');
+          W.steps.push({ day: S.day, from: cur, to: next, back: r.back, events: r.events.map(e => e.id + (e.boardKept ? '{판 그대로}' : '') + (e.switched ? (e.back ? '{돌아옴}' : '{옮김}') : '')),
+                         loss, rt, hasJob: JSHOP.hasJob(S), movedHome: JSHOP.movedHome(S), room: S.home.room,
+                         link: lk ? (S.jobShop && S.jobShop.regulars.includes(lk.customerId) ? '가게 단골' : (S.jobCare && S.jobCare.served.includes(lk.customerId) ? '돌봄 손님' : '?')) : (nw ? '이음 없음' : null),
+                         signBy: (questSnapshotOf(S, io).signBy) ?? null, titles: JSWITCH.jobTitles(S).map(t => t.title) });
+          if (cur === 'shop') { out.shopRest = out.shop; out.shop = null; P.shop = false; }
+          if (cur === 'care') { out.careRest = out.care; out.care = null; P.care = false; }
+          if (cur === 'breed') { out.breedRest = out.breed; out.breed = null; P.breed = false; P.breedCare = false; }
+          if (next === 'care') { if (r.back && out.careRest) { out.care = out.careRest; out.careRest = null; }
+                                 else out.care = { openDay: S.day, cashAtOpen: ts.cashWon, wonTotal: 0, byProblem: {}, firstProblem: (nw && nw.problem) || null, ms: {} };
+                                 P.care = true; P.careRead = true; }
+          if (next === 'breed') { out.breed = { openDay: S.day, cashAtOpen: ts.cashWon, prizeWon: 0, vDays: [], slotDay: {}, cand: {}, ppCuts: 0, minCash: ts.cashWon,
+                                                v0: cuttingsOf(S).filter(c => c && c.status !== 'dead' && c.varieFromCut).length };
+                                  P.breed = true; P.breedCare = true; }
+          if (next === 'shop') { out.shop = r.back && out.shopRest ? out.shopRest : { openDay: S.day, cashAtOpen: ts.cashWon, done: 0, expired: 0, wonTotal: 0, expiredKinds: {}, doneKinds: {} }; P.shop = true; }
+          W.at += 1;
+          dump(`sw${W.at}`);
+        }
+      }
+      if (W.at >= P.switchSeq.length - 1 && W.lastAt == null) W.lastAt = S.day;
+      if (W.lastAt != null && S.day - W.lastAt >= 90) { out.endDay = S.day; break; }
     }
     /* ★ C «육종 사람» — 날마다: 대기 품종은 바로 등록(자동 이름 · 상금) · 관리하는 사람은 PP 를 분홍 많음에 붙잡게 자른다 · 날 수·돈을 센다 */
     if (out.breed) {
@@ -855,16 +935,66 @@ export async function play(name, seed, opt = {}) {
         if (B.knowShopCorm == null && saidIds.includes('hintBreedAlShopCorm')) { B.knowShopCorm = S.day + 1; B.hintShopCormAt = S.day - B.openDay; }
         if (B.knowPpCut == null && saidIds.includes('hintBreedPpHeavy')) { B.knowPpCut = S.day + 1; B.hintPpCutAt = S.day - B.openDay; }
         if (B.knowPpShop == null && saidIds.includes('hintBreedPpShop')) { B.knowPpShop = S.day + 1; B.hintPpShopAt = S.day - B.openDay; }
+        /* D88 ②③ — plan c1ad629b · b04f4e4e 귀띔 둘 */
+        if (B.knowRoot == null && saidIds.includes('hintBreedRootSpot')) { B.knowRoot = S.day + 1; B.hintRootAt = S.day - B.openDay; }
+        if (B.knowAlKinds == null && saidIds.includes('hintBreedAlKinds')) { B.knowAlKinds = S.day + 1; B.hintAlKindsAt = S.day - B.openDay; }
         /* hintBreedAlShopCorm «상점 구근을 들여 봐 · 무늬 그루가 나오면 어미가 돼» → 무늬 AL(그루 · 무늬 어미 구근)이 없으면 상점 구근을 들인다(싹 기다리는 것까지 둘 ·
              10만 남김) · 심고 놓기는 일반 손(재고 풀기 · 가장 밝은 빈 자리) · 무지 싹은 일반 손이 잎 2 에 판다 · 무늬 싹은 남긴다(어미) */
-        if (B.knowShopCorm != null && S.day >= B.knowShopCorm && SPM.speciesShopOpen(S, 'al_corm')) {
+        if (((B.knowShopCorm != null && S.day >= B.knowShopCorm) || (B.knowAlKinds != null && S.day >= B.knowAlKinds)) && SPM.speciesShopOpen(S, 'al_corm')) {
           const mineAL = SPM.speciesPotsOf(S).filter(q => q && !q.care && q.species === 'alocasia_frydek' && q.plant);
-          const hasMother = mineAL.some(q => q.plant.varie === 'marble' || q.plant.varie === 'sector')
-            || mineAL.some(q => q.plant.phase === 'corm' && q.plant.origin === 'from_varie_mother')
-            || ((S.species && S.species.corms) || []).some(c => c && c.origin === 'from_varie_mother');
+          const bagC = (S.species && S.species.corms) || [];
+          /* hintBreedAlKinds «무늬 갈래는 어미를 따라가 · 다른 갈래가 필요하면 상점 구근을 또» 를 들은 뒤엔 갈래마다 — 끝 안 난 갈래(등록·대기 아님)에 그 갈래 어미(그루 · 무늬 어미 구근)가 없으면 산다 */
+          const kindDone = k => Jb.varieties.some(v => v.slot === 'al_' + k) || Jb.pending.some(x => x.slot === 'al_' + k);
+          const kindSrc = k => mineAL.some(q => q.plant.varie === k) || mineAL.some(q => q.plant.phase === 'corm' && q.plant.origin === 'from_varie_mother' && q.plant.motherKind === k)
+                               || bagC.some(c => c && c.origin === 'from_varie_mother' && c.motherKind === k);
+          const hasMother = (B.knowAlKinds != null && S.day >= B.knowAlKinds)
+            ? ['marble', 'sector'].every(k => kindDone(k) || kindSrc(k))
+            : (mineAL.some(q => q.plant.varie === 'marble' || q.plant.varie === 'sector')
+               || mineAL.some(q => q.plant.phase === 'corm' && q.plant.origin === 'from_varie_mother')
+               || bagC.some(c => c && c.origin === 'from_varie_mother'));
           const waiting = mineAL.filter(q => q.plant.phase === 'corm').length + incomingOf(S, 'al_corm') + stockOf(S, 'al_corm');
           for (let i = waiting; !hasMother && i < 2 && ts.cashWon > buyPriceOf('al_corm') + 100_000; i++) {
             try { ord('al_corm', 1); B.shopCormsBought = (B.shopCormsBought || 0) + 1; } catch (e) { B.cormErr = String(e && e.message).slice(0, 80); break; } }
+        }
+        /* hintBreedRootSpot «뿌리 낼 동안만이라도 밝은 자리를 비워 줘 · 무늬는 뿌리 낸 날 자리로 정해져 · 그 뒤엔 자랄 만큼만 밝으면 어디든 돼»(plan · 총괄 D88 ②) →
+             뿌리 밝기가 아직 안 정해진 무늬 마디 삽수(물꽂이 뿌리내리는 중)는 그날 빛이 가장 밝은 자리에 — 빈 데가 없으면 AL·PP 화분과 자리를 맞바꾼다 ·
+             뿌리 밝기가 정해진 다음 날 맞바꾼 화분에 자리를 돌려주고, 삽수는 7일 평균 ≥ 3.78(무늬 잎이 자라는 빛 · breedR ⑤ 와 같은 자)인 빈 데로(없으면 맞바꾼 자리 그대로) */
+        if (B.knowRoot != null && S.day >= B.knowRoot) {
+          let sky = null; try { sky = light.skyFor(S.day, S.sim); } catch (e) { sky = null; }
+          const today = sid => { try { return light.dliOfSlot(sid, lightOptsOf(S, sky)); } catch (e) { return -1; } };
+          let fw = null; try { fw = careSpotsOf(S, io); } catch (e) { fw = null; }
+          const avg = new Map((fw || []).filter(x => Number.isFinite(x.dli)).map(x => [x.slotId, x.dli]));
+          const occBy = new Map();
+          for (const it of placedItems(S)) if (it && it.slotId) occBy.set(it.slotId, it);
+          for (const q of SPM.speciesPotsOf(S)) if (q && SPM.speciesPlaced(q) && q.slotId) occBy.set(q.slotId, q);
+          const moveCut = (c, sid) => { c.slotId = null; c.at = null; setCuttingAt(S, c, atOf(light, sid), { slots: light.room.slots, size: light.room.size }); };
+          const movePot = (q, sid) => SPM.setSpeciesAt(S, q.id, { slotId: sid, at: atOf(light, sid) });
+          B.rootSwap = B.rootSwap || {};
+          for (const c of cuttingsOf(S).filter(c => c && c.status !== 'dead' && c.varieFromCut && !c.varieLightBand && c.slotId)) {
+            const here = today(c.slotId);
+            const best = (light.room.slots || []).map(x => x.slotId).filter(sid => { const o = occBy.get(sid); return !o || o === c || (o.species && (o.species === 'alocasia_frydek' || o.species === 'pink_princess') && !o.care); })
+              .sort((a, b) => today(b) - today(a))[0];
+            if (!best || best === c.slotId || today(best) <= here + 0.3) continue;
+            const o = occBy.get(best), from = c.slotId;
+            try {
+              if (o && o !== c && o.species) { movePot(o, from); B.rootSwap[c.id] = { potId: o.id, bright: best }; B.rootSwaps = (B.rootSwaps || 0) + 1; occBy.set(from, o); }
+              else occBy.delete(from);
+              moveCut(c, best); occBy.set(best, c);
+            } catch (e) { B.rootSwapErr = String(e && e.message).slice(0, 80); }
+          }
+          for (const [cid, sw] of Object.entries(B.rootSwap)) {
+            const c = cuttingsOf(S).find(x => x && x.id === cid);
+            if (c && c.status !== 'dead' && !c.varieLightBand) continue;   /* 아직 뿌리 밝기 안 정해짐 */
+            delete B.rootSwap[cid];
+            const q = SPM.speciesPotOf(S, sw.potId);
+            if (!c || c.status === 'dead' || !q || !SPM.speciesPlaced(q) || c.slotId !== sw.bright) continue;
+            const potSid = q.slotId;
+            const grow = [...avg.entries()].filter(([sid, v]) => v >= 3.78 && !occBy.get(sid)).sort((a, b) => b[1] - a[1])[0];
+            try { if (grow) { moveCut(c, grow[0]); occBy.set(grow[0], c); occBy.delete(sw.bright); movePot(q, sw.bright); occBy.delete(potSid); }
+                  else { moveCut(c, potSid); movePot(q, sw.bright); }
+                  B.rootGiveBack = (B.rootGiveBack || 0) + 1; }
+            catch (e) { B.rootSwapErr = String(e && e.message).slice(0, 80); }
+          }
         }
         /* hintBreedPpHeavy «분홍 많은 잎이 맨 위에 오게 잘라» → ④ 손(growth runPP) · 잘라 낸 끝은 일반 손이 판다 */
         if (B.knowPpCut != null && S.day >= B.knowPpCut) ppHeavyCut();
@@ -914,6 +1044,10 @@ export async function play(name, seed, opt = {}) {
           const want = Math.min(ts.lamp.owned || 0, Number.isFinite(rigs) ? rigs : 0);
           if (S.lamps.count !== want) { S.lamps.count = want; ts.lamp.placed = want; light.clearCache(); B.lampsOn = want; } }
         const R0 = SPM.speciesRules();
+        /* ⑥ PP 가 하나도 없으면(가게 손이 다 판 판 · 바꾸기 걸음) 상점 어린 그루 하나 — 육종 판 진열(species §speciesShopOpen pp_young) · 놓기는 ③ */
+        if (!SPM.speciesPotsOf(S).some(q => q && !q.care && q.species === 'pink_princess') && stockOf(S, 'pp_young') === 0 && incomingOf(S, 'pp_young') === 0 &&
+            SPM.speciesShopOpen(S, 'pp_young') && ts.cashWon > buyPriceOf('pp_young') + 100_000) { try { ord('pp_young', 1); B.ppBought = (B.ppBought || 0) + 1; } catch (e) { B.ppBuyErr = String(e && e.message).slice(0, 80); } }
+        if (stockOf(S, 'pp_young') > 0) { try { SPM.unpackSpeciesStock(S, 'pp_young', stockOf, useStock); } catch (e) { B.ppBuyErr = String(e && e.message).slice(0, 80); } }
         const AL_KINDS = ['marble', 'sector'], AL_MAX_FINDS = BREED_SPEC.alProp.max_finds_lifetime, AL_MIN_SINCE = BREED_SPEC.alProp.min_leaves_since_find, AL_CAP = 6;
         const doneK = k => Jb.varieties.some(v => v.slot === 'al_' + k) || Jb.pending.some(x => x.slot === 'al_' + k);
         const ALS = () => SPM.speciesPotsOf(S).filter(q => q.species === 'alocasia_frydek' && !q.care && q.plant);
@@ -1127,6 +1261,8 @@ export async function play(name, seed, opt = {}) {
     }
   }
   /* 끝까지 안 풀린 막힘 */
+  if (out.sw) out.sw.signEnd = { shop: S.jobShop ? S.jobShop.signOnDay : null, care: S.jobCare ? S.jobCare.signOnDay : null, by: questSnapshotOf(S, io).signBy ?? null };
+  if (out.sw) out.sw.restDone = out.sw.rest.map(R => ({ job: R.job, n: R.ids.length, endedBy: R.endedBy || null, left: R.leftAfterDue ?? null, newOpen: R.newOpen || 0, rolled: !!R.rolled }));
   for (const [id, q] of qOpen) if (q.run >= STUCK_DAYS) out.stuck.push({ id, from: q.since, days: q.run, room: S.home.room, open: true });
   out.lastDay = S.day; out.cashEnd = ts.cashWon;
   if (opt.trace && out._trace) {
@@ -1302,6 +1438,15 @@ for (const name of NAMES) {
       console.log(`    달마다 «모주 잎(무늬)/삽수 잎(무늬)»: ` + rows.join(' · '));
     } }
   /* 장부(--ledger) — 판마다 이사 뒤 30일씩 · 단위 만 원 */
+  /* ★ 2026-10-24 D 나머지 «바꾸기 걸음» — 판마다: 옮긴 날 · 사건 · 숨은 손해 · 세이브 왕복 · 손님 이음 · 쉬는 진로 걸린 것 · 칩 · 간판 · 덮개 */
+  { const sw = rs.filter(r => r.sw);
+    for (const r of sw) {
+      const W = r.sw;
+      console.log(`  🔀 바꾸기 걸음 ${r.seed} — 옮김 ${W.steps.length}/${(P.switchSeq || []).length - 1} · 덮개 ${W.cover ? W.cover.day + '일 ' + W.cover.events.join(',') : '—'} · 칩 어긋남 ${W.fails.length}${W.fails.length ? ' (' + W.fails.slice(0, 3).join(' | ') + ')' : ''} · 쉬는 줄 최대 ${W.restingMax ?? '—'} · 건너뛴 줄 ${W.skipped ?? '—'}${W.qErr ? ' · 할 일 오류 ' + W.qErr : ''}`);
+      for (const st of W.steps) console.log(`     ${st.day}일 ${st.from}→${st.to}${st.back ? '(돌아감)' : ''} · ${st.events.join(' ')} · 숨은 손해 ${st.loss.length ? st.loss.join(' / ') : '0'} · 왕복 ${st.rt} · 방 ${st.room} · hasJob ${st.hasJob} · movedHome ${st.movedHome} · 손님 이음 ${st.link ?? '—'} · signBy ${st.signBy} · 칭호 ${st.titles.join('·') || '—'}`);
+      for (const R of (W.restDone || [])) console.log(`     쉬는 ${R.job} — 걸린 것 ${R.n} · 끝 ${R.endedBy || '아직'} · 기한 뒤 남음 ${R.left ?? '—'} · 새로 남 ${R.newOpen} · 새로 굴림 ${R.rolled}`);
+      console.log(`     간판 — 선 날 ${JSON.stringify(W.signEnd || {})} · 하루 사건 10 ${(W.sign || []).map(x => `${x.day}일 ${x.ev}${x.kept ? '{signKept}' : ''}`).join(' · ') || '—'}`);
+    } }
   /* ★ 2026-10-24 C «육종 사람» — 품종 1/3/5 날 · 칸마다 «투룸에서 한 해에 서나»(연 날부터 365일 안에 등록된 판 수) · 표본 · 상금 · 돈 바닥 */
   { const br = rs.filter(r => r.breed);
     if (br.length || rs.some(r => r.breedErr)) {
@@ -1324,6 +1469,7 @@ for (const name of NAMES) {
                   `풀문 귀띔 뜬 판 ${br.filter(r => r.breed.hintBrightAt != null).length}/${br.length}(중앙 ${med(br.map(r => r.breed.hintBrightAt).filter(x => x != null)) ?? '—'}) · 2년 안 품종 3 ${br.filter(r => (r.breed.varieties || 0) >= 3).length}/${br.length}`);
       if (br.some(r => r.persona && r.persona.breedHint)) {
         const hk = (k, ko) => `${ko} ${br.filter(r => r.breed[k] != null).length}/${br.length}(중앙 ${med(br.map(r => r.breed[k]).filter(x => x != null)) ?? '—'})`;
+        console.log(`    D88 귀띔 — ${hk('hintRootAt', '뿌리 자리 비우기')} · ${hk('hintAlKindsAt', 'AL 다른 갈래')} · 자리 맞바꿈 합 ${br.reduce((a, r) => a + (r.breed.rootSwaps || 0), 0)} · 돌려줌 합 ${br.reduce((a, r) => a + (r.breed.rootGiveBack || 0), 0)}${br.some(r => r.breed.rootSwapErr) ? ' · 맞바꿈 오류 ' + br.find(r => r.breed.rootSwapErr).breed.rootSwapErr : ''}`);
         console.log(`    D87 귀띔 — ${hk('hintShopCormAt', '상점 구근')} · ${hk('hintPpCutAt', 'PP 맨 위 자르기')} · ${hk('hintPpShopAt', 'PP 상점')} · ` +
                     `산 상점 구근 합 ${br.reduce((a, r) => a + (r.breed.shopCormsBought || 0), 0)} · 산 PP 합 ${br.reduce((a, r) => a + (r.breed.ppBought || 0), 0)} · PP 자름 합 ${br.reduce((a, r) => a + (r.breed.ppCuts || 0), 0)}`);
       }

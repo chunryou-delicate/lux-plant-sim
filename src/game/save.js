@@ -981,6 +981,11 @@ function packStory(story) {
     job: story.job && typeof story.job === 'object' && story.job.id
       ? { id: needStr(story.job.id, 'story.job.id'), since: story.job.since == null ? null : needInt(story.job.since, 'story.job.since', { min: 0 }) } : null,
     homeOnDay: optDay(story.homeOnDay, 'story.homeOnDay'),
+    /* ★ 2026-10-24 D 나머지(job_switch) — 마지막 덮개를 본 날 · 진로 바꾼 자국([{ day, from, to, back }]). 옛 세이브는 null · [] */
+    finalCoverOn: optDay(story.finalCoverOn, 'story.finalCoverOn'),
+    jobSwitches: (Array.isArray(story.jobSwitches) ? story.jobSwitches : []).filter(x => x && typeof x === 'object' && /^[a-z_]+$/.test(String(x.to || '')))
+      .map((x, i) => ({ day: needInt(x.day, `story.jobSwitches[${i}].day`, { min: 0 }), from: /^[a-z_]+$/.test(String(x.from || '')) ? String(x.from) : null,
+                        to: String(x.to), back: x.back === true })),
     /* ★ 2026-10-23 D75 — 진로 이력({ shop: { since, endedOn } } · 진로 끝맺음 날 · plan-career-endings-spec §7). 옛 세이브는 {} — 가게 판이면 job_shop §jobHistoryOf 가 채운다 */
     jobs: (() => {
       const raw = story.jobs && typeof story.jobs === 'object' ? story.jobs : {};
