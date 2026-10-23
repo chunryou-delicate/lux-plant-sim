@@ -2329,8 +2329,8 @@
     "memo_board": {
       "type": "bulletin_board",
       "name_ko": "메모판",
-      "intro_ko": "무늬가 난 날을 적어 붙여 두는 쪽지",
-      "_wall": "★ 2026-10-24 [house] D83 · D75(plan-career-endings-spec §2-3) — 육종 진로의 판 이름. 주문판(order_board)·맡김판(care_board)과 같은 모델·크기·자리(투룸 판 자리 only:order_board · hang_spots BOARD_KIND). 받은 판은 진로를 바꿔도 그대로 두고 육종일 때 이 이름·소개로 부른다(hang_spots boardAs). 이름은 명세 «메모판» · 소개 글은 house 초안(plan 이 고칠 수 있음).",
+      "intro_ko": "어디서 무엇이 났는지 적어 붙인 쪽지",
+      "_wall": "★ 2026-10-24 [house] D83 · D75(plan-career-endings-spec §2-3) — 육종 진로의 판 이름. 주문판(order_board)·맡김판(care_board)과 같은 모델·크기·자리(투룸 판 자리 only:order_board · hang_spots BOARD_KIND). 받은 판은 진로를 바꿔도 그대로 두고 육종일 때 이 이름·소개로 부른다(hang_spots boardAs). 이름은 명세 «메모판» · 소개 글 plan(10-24 D85 ② — house 초안 «무늬가 난 날…»을 다듬음: 무지 잎도 적히므로 «어디서 무엇이»).",
       "mount": "wall-hang",
       "size_m": {
         "w": 0.6,

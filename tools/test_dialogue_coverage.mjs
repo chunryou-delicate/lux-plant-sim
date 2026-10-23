@@ -38,7 +38,7 @@ import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { chatterContext as chatterContextOf } from '../src/game/dialogue.js';   /* ★ D78 귀띔 조건 */
 import { CARE_SCRIPT } from '../src/game/dialogue.js';                         /* ★ D72 B 돌봄 고장 대사 지도 */
-import { JOB_REST_TODO } from '../src/game/quest.js';                          /* ★ D72 D 나머지 쉬는 중 글 */
+import { JOB_REST_TODO, questOf } from '../src/game/quest.js';                 /* ★ D72 D 나머지 쉬는 중 글 · D85 간판 줄 kept */
 import { SHOP_JOB } from '../src/game/job_shop.js';                            /* ★ D72 D 나머지 칭호(core 값과 같은 말) */
 import { CARE_JOB } from '../src/game/job_care.js';
 import { createProfileLight } from '../src/game/room_profile.js';
@@ -650,6 +650,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     'jobStartBreed', 'breedFirstMonstera', 'breedFirstAl', 'breedFirstPp', 'breedMilestone1', 'breedMilestone3', 'breedMilestone5',
     /* ★ 2026-10-24 [plan] D72 D 나머지 — 바꾸기 갈림(scriptOf): 옮긴 날 · 돌아간 날 · 판을 이어 쓴 날 */
     'jobSwitch', 'jobSwitchCare', 'jobSwitchBreed', 'jobBack', 'shopOpenKept', 'careOpenKept',
+    /* ★ 2026-10-24 [plan] D85 ③ — 간판 한 자리 갈림(scriptOf): 10 이정표 signKept · 간판 줄 kept */
+    'shopSignKept', 'careMilestone10Kept', 'questShopSignKept', 'questDoneShopSignKept', 'questCareSignKept', 'questDoneCareSignKept',
     ...Object.values(CARE_SCRIPT).flatMap(m => [m.new, m.stuck, m.saved])
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
@@ -972,6 +974,38 @@ check('데이터 — 풀문 칸 설명이 «가장 밝은 자리»를 가리키�
   /* 조건 낱말 셋 = varie_grades.json lightBands 가 묶는 이름 셋 */
   const V = JSON.parse(readFileSync(new URL('../data/balance/varie_grades.json', import.meta.url), 'utf8'));
   assert.deepEqual([...new Set(Object.values(V.lightBands))].sort(), Object.keys(T._labels.monstera.cond).sort());
+});
+
+/* ★ 2026-10-24 [plan] 총괄 D85 ③ — 간판 한 자리(house signOf): 배너 글 · 기록 줄 · 대사 갈림 · «달았다/세웠다» 없음 */
+check('대사·데이터 — 간판 한 자리: 다른 진로 간판이 서 있으면 10 보상은 글 배너 · «몫도 한다» 대사로 갈린다(D85 ③)', () => {
+  assert.deepEqual(scriptsForEvents([{ id: 'regulars_milestone', n: 10, signKept: true }]), ['shopSignKept']);
+  assert.deepEqual(scriptsForEvents([{ id: 'regulars_milestone', n: 10 }]), ['shopSign']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_milestone', n: 10, signKept: true }]), ['careMilestone10Kept']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_milestone', n: 10 }]), ['careMilestone10']);
+  assert.deepEqual(scriptsForEvents([{ id: 'quest_opened', questId: 'shop_sign', kept: true }]), ['questShopSignKept']);
+  assert.deepEqual(scriptsForEvents([{ id: 'quest_opened', questId: 'shop_sign' }]), ['questShopSign']);
+  assert.deepEqual(scriptsForEvents([{ id: 'quest_done', questId: 'care_sign', kept: true }]), ['questDoneCareSignKept']);
+  /* kept 지도에 없는 줄은 kept 가 붙어도 예전 대사 */
+  assert.deepEqual(scriptsForEvents([{ id: 'quest_done', questId: 'shop_town', kept: true }]), ['questDoneShopTown']);
+  /* 이정표와 퀘스트 끝이 같은 턴이면 퀘스트 쪽만(예전 짝과 같은 셈) */
+  assert.deepEqual(scriptsForEvents([{ id: 'regulars_milestone', n: 10, signKept: true }, { id: 'quest_done', questId: 'shop_sign', kept: true }]), ['questDoneShopSignKept']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_milestone', n: 10, signKept: true }, { id: 'quest_done', questId: 'care_sign', kept: true }]), ['questDoneCareSignKept']);
+  const ids = ['shopSignKept', 'questShopSignKept', 'questDoneShopSignKept', 'careMilestone10Kept', 'questCareSignKept', 'questDoneCareSignKept'];
+  for (const id of ids) for (const l of SCRIPTS[id]) {
+    assert.ok(!/달았|달자|세웠|세우자|세운다|단다/.test(l.text), `'${id}' 간판이 이미 섰는데 새로 단다고 합니다: ${l.text}`);
+    if (l.who === 'jachwi') assert.ok(['beam', 'think', 'surprise', 'happy'].includes(l.face), `'${id}' 앞치마 낯 밖 '${l.face}'`);
+    if (l.who === 'moni') assert.ok(!/[0-9]|세 |셋|넷|다섯|여섯|일곱|여덟|아홉|서른|열이|퍼센트/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+  }
+  const T = JSON.parse(readFileSync(new URL('../data/balance/career_switch.json', import.meta.url), 'utf8'));
+  for (const j of ['shop', 'care']) {
+    const g = T.sign[j];
+    assert.ok(g && g.banner && g.banner.title && g.banner.sub && g.log, `sign.${j} 글이 비었습니다`);
+    assert.ok(!/[0-9]|달았|세웠/.test(g.banner.title + g.banner.sub + g.log), `sign.${j} — 수나 «세웠다» 낱말: ${g.log}`);
+    assert.equal(g.log, questOf(`${j}_sign`).kept.reward, `sign.${j}.log 와 퀘스트 kept.reward 가 다릅니다`);
+  }
+  /* 메모판 소개 글(D85 ②) — 판 셋이 «…쪽지» 결 · 무지 잎도 적히므로 «무늬가 난 날»만이 아니다 */
+  const F = JSON.parse(readFileSync(new URL('../data/furniture_presets.json', import.meta.url), 'utf8')).presets;
+  assert.ok(/쪽지$/.test(F.memo_board.intro_ko) && !/무늬가 난 날/.test(F.memo_board.intro_ko), `메모판 소개 글: ${F.memo_board.intro_ko}`);
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

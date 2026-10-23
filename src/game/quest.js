@@ -248,6 +248,9 @@ export function emptySnapshot() {
            /* ★ 2026-10-24 [plan] D72 D 나머지 «바꾸기»([core] jobShopSnapshot · null = 모른다) — jobsEnded { shop, care, breed } 진로마다 끝맺음 날(안 봤으면 null) ·
               jobActive 지금 진로 id(job 과 같은 자). 옮겨 들어간 판(§switchedIn)은 짐 풀기 줄을 건너뛰고 · 내려놓은 진로의 열렸던 줄은 «쉬는 중»(§questView resting) */
            jobsEnded: null, jobActive: null,
+           /* ★ 2026-10-24 [plan] 총괄 D85 ③ 간판 한 자리([core] house hang_spots §signOf({ shop: jobShop.signOnDay, care: jobCare.signOnDay }).by · null = 모른다/안 섬) —
+              'shop' | 'care' 먼저 선 간판의 진로. 다른 진로의 간판이 이미 서 있으면 간판 줄(shop_sign · care_sign)의 글이 «몫도 한다»로 바뀐다(§keptOf) */
+           signBy: null,
            alDormantNow: null, alWokeCount: null, alCormsFound: null, alFoundCormsPlanted: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
@@ -1030,6 +1033,10 @@ const shopChipTodo = (s, goal, label) => {
 const switchedIn = s => !!s && typeof s.job === 'string' && !!s.jobsEnded && typeof s.jobsEnded === 'object' &&
   Object.entries(s.jobsEnded).some(([k, v]) => k !== s.job && Number.isFinite(v));
 const isShop = s => !!s && s.movedHome === true && s.job === 'shop';
+/* ★ 2026-10-24 [plan] 총괄 D85 ③(house signOf · 끝맺음 명세 §2-3) — **간판 한 자리**: 가게 입간판(단골 10)과 돌봄 칠판 간판(살린 10)은 한 모형·한 자리라
+   먼저 선 진로의 간판이 남고, 뒤에 10 에 닿은 진로의 보상은 글 배너다. 그 판에서 «간판을 단다 · 가게 간판이 섭니다»는 거짓 —
+   간판 줄은 `kept`(ko · reward · why)로 바꿔 말하고 사건에 kept 를 싣는다(dialogue QUEST_*_KEPT_SCRIPT). signBy 가 null 이면 예전 그대로. */
+const signKept = (s, job) => !!s && typeof s.signBy === 'string' && s.signBy !== job;
 const SHOP_QUESTS = Object.freeze([
   Object.freeze({
     id: 'home_unpack',
@@ -1077,8 +1084,12 @@ const SHOP_QUESTS = Object.freeze([
     reward: '가게 간판이 섭니다',
     teaches: ['단골이 가게를 만든다'],
     why: '단골이 열이면 동네가 이 가게를 압니다. 간판을 답니다.',
+    /* ★ D85 ③ — 돌봄 간판이 이미 서 있는 판(§signKept). reward = data/balance/career_switch.json sign.shop.log(test_dialogue_coverage) */
+    kept: Object.freeze({ ko: '간판이 가게 몫도 한다', reward: '진열대 옆 간판이 이제 가게 간판 몫도 합니다',
+                          why: '단골이 열이면 동네가 이 가게를 압니다. 간판은 이미 서 있으니 그 간판이 가게 몫도 합니다.' }),
+    keptWhen: s => signKept(s, 'shop'),
     need: Object.freeze({ regulars: 10 }),
-    todo: (q, s) => shopChipTodo(s, q.need.regulars, '간판'),
+    todo: (q, s) => shopChipTodo(s, q.need.regulars, signKept(s, 'shop') ? '열' : '간판'),
     after: 'shop_regulars3',
     opens: (s, ctx) => isShop(s) && !!(ctx && ctx.doneIds.includes('shop_regulars3')),
     done:  (s, ctx) => isShop(s) && Number.isFinite(s.shopRegulars) && s.shopRegulars >= ctx.q.need.regulars
@@ -1158,8 +1169,12 @@ const CARE_QUESTS = Object.freeze([
     reward: '진열대 옆에 칠판 간판이 섭니다',
     teaches: ['살린 화분이 이름을 만든다'],
     why: '열 화분을 살리면 동네가 이 집을 압니다. 진열대 옆에 칠판 간판을 세웁니다.',
+    /* ★ D85 ③ — 가게 간판이 이미 서 있는 판(§signKept). reward = career_switch.json sign.care.log */
+    kept: Object.freeze({ ko: '간판이 돌봄 몫도 한다', reward: '진열대 옆 간판이 이제 돌봄 간판 몫도 합니다',
+                          why: '열 화분을 살리면 동네가 이 집을 압니다. 간판은 이미 서 있으니 그 간판이 돌봄 몫도 합니다.' }),
+    keptWhen: s => signKept(s, 'care'),
     need: Object.freeze({ saved: 10 }),
-    todo: (q, s) => careChipTodo(s, q.need.saved, '간판', 'careSaved'),
+    todo: (q, s) => careChipTodo(s, q.need.saved, signKept(s, 'care') ? '열' : '간판', 'careSaved'),
     after: 'care_kinds3',
     opens: (s, ctx) => isCare(s) && !!(ctx && ctx.doneIds.includes('care_kinds3')),
     done:  (s, ctx) => isCare(s) && Number.isFinite(s.careSaved) && s.careSaved >= ctx.q.need.saved
@@ -1389,6 +1404,12 @@ export const JOB_REST_TODO = Object.freeze({
   breed: '쉬는 중 — 무늬 육종으로 돌아가면 이어집니다'
 });
 export function jobOfQuest(id) { for (const [j, ids] of Object.entries(JOB_QUEST_IDS)) if (ids.includes(id)) return j; return null; }
+/* ★ 2026-10-24 [plan] 총괄 D85 ③ — 이 줄을 지금 «몫도 한다» 글로 말하나(간판 한 자리 · §signKept). 판정이 던지면 예전 글 */
+export function keptOf(q, s) {
+  const d = typeof q === 'string' ? questOf(q) : q;
+  if (!d || !d.kept || typeof d.keptWhen !== 'function') return false;
+  try { return !!d.keptWhen(snapOf(s)); } catch { return false; }
+}
 /* ★ 2026-10-09 D45 — 새 종 곁줄(§SPECIES_QUESTS) */
 export const SPECIES_QUEST_IDS = Object.freeze(SPECIES_QUESTS.map(q => q.id));
 export const ONEROOM_QUEST_IDS = Object.freeze(ONEROOM_QUESTS.map(q => q.id));
@@ -1497,6 +1518,7 @@ export function doneIdsOf(S) {
      resting     내려놓은 진로의 줄인데 전에 열렸던 것(열린 날이 적힘) — todo 가 «쉬는 중 — {진로}로 돌아가면 이어집니다»(JOB_REST_TODO)로 바뀐다.
                  칩은 원래 안 쥔다(opens 가 job 으로 막힌다) · 그 진로로 돌아가면 다시 열린다(열린 날이 있어 하루 몫을 안 씀 · D78)
      skipped     옮겨 들어간 판의 짐 풀기 줄(§switchedIn) — 영영 안 열리므로 «다음에 올 것»(upcoming)에서 뺀다
+     kept        ★ D85 ③ 간판 한 자리 — 다른 진로 간판이 이미 선 판의 간판 줄. ko · reward · why 가 «몫도 한다» 글(§keptOf)
      speaks      이 줄이 대사를 갖나 (2026-08-16 밤부터 **열여섯 줄 전부 true**)
    ══════════════════════════════════════════════════════════════════════ */
 /* ══ ★★ 2026-10-09 [plan] D50(총괄 · 값 0) — **칩은 «기다림» 줄을 건너뛰고 지금 할 수 있는 줄을 보인다** ══════════
@@ -1579,6 +1601,9 @@ export function questView(S, snapshot, opt = {}) {
     let skip = false;
     if (!isDone && !isOpen && typeof q.skips === 'function') { try { skip = !!q.skips(s); } catch { skip = false; } }
     it.skipped = skip;
+    /* ★ D85 ③ — 간판 한 자리(끝낸 줄도 — 이름이 그 판의 사실을 말하게) */
+    it.kept = keptOf(q, s);
+    if (it.kept) { it.ko = q.kept.ko; it.reward = q.kept.reward; it.why = q.kept.why; }
   });
   /* ★ 「지금 할 일」은 **하나만** 보여 준다. 목록을 내면 심부름 목록이 된다.
      고르는 자는 정의 순서다 — 그 순서가 곧 배우는 순서라서. */
@@ -1705,7 +1730,8 @@ export function stepQuests(S, snapshot) {
           }
         } catch { }
         opened.push(q.id);
-        events.push({ id: 'quest_opened', questId: q.id, ko: q.ko, todo: questTodo(q, s) });
+        { const k = keptOf(q, s);   /* ★ D85 ③ — 간판 한 자리면 «몫도 한다» 글 · 사건에 kept */
+          events.push({ id: 'quest_opened', questId: q.id, ko: k ? q.kept.ko : q.ko, todo: questTodo(q, s), ...(k ? { kept: true } : {}) }); }
         changed = true;
       }
       let isDone = false;
@@ -1713,7 +1739,8 @@ export function stepQuests(S, snapshot) {
       if (isDone) {
         doneNow.add(q.id);
         finished.push(q.id);
-        events.push({ id: 'quest_done', questId: q.id, ko: q.ko, todo: questTodo(q, s) });
+        { const k = keptOf(q, s);
+          events.push({ id: 'quest_done', questId: q.id, ko: k ? q.kept.ko : q.ko, todo: questTodo(q, s), ...(k ? { kept: true } : {}) }); }
         changed = true;
       }
     }

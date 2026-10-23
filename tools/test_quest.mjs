@@ -707,6 +707,40 @@ check('⑺ 바꾸기 — 첫 진로는 끝맺음을 봐도 «옮겨 들어간 �
   }
 });
 
+/* ══ ⑻ ★ 2026-10-24 [plan] 총괄 D85 ③ — 간판 한 자리(house signOf): 다른 진로 간판이 이미 서 있으면 간판 줄이 «몫도 한다»로 ══ */
+check('⑻ 간판 한 자리 — 돌봄 간판이 선 판의 가게 «간판» 줄은 «몫도 한다» 글 · 사건에 kept · 대사도 갈린다(D85 ③)', () => {
+  const b = newBoard(), sw = createStoryteller();
+  b.stamina.questsTaken = QUEST_IDS.filter(id => !['shop_sign', 'shop_town'].includes(id));
+  const snap = HM(1600, { shopDone: 12, shopRegulars: 10, signBy: 'care', jobsEnded: { shop: null, care: 1500, breed: null } });
+  const r = stepQuests(b, snap);
+  const op = r.events.find(e => e.id === 'quest_opened' && e.questId === 'shop_sign');
+  const dn = r.events.find(e => e.id === 'quest_done' && e.questId === 'shop_sign');
+  assert.ok(op && dn, `간판 줄이 열리고 끝나지 않았습니다 — ${JSON.stringify(r.events.map(e => e.id + ':' + e.questId))}`);
+  assert.equal(op.kept, true); assert.equal(dn.kept, true);
+  assert.equal(dn.ko, questOf('shop_sign').kept.ko);
+  const heard = sw.events(r.events);
+  assert.ok(heard.includes('questDoneShopSignKept') && !heard.includes('questDoneShopSign'), `간판 한 자리 대사가 아닙니다 — ${heard}`);
+  const v = questView(b, snap), row = v.all.find(a => a.id === 'shop_sign');
+  assert.equal(row.kept, true);
+  assert.equal(row.ko, questOf('shop_sign').kept.ko); assert.equal(row.reward, questOf('shop_sign').kept.reward);
+  assert.ok(!/(단다|답니다|섭니다)$/.test(row.ko + row.reward), `끝낸 줄 글이 «간판을 단다»로 남았습니다 — ${row.ko} · ${row.reward}`);
+  /* 제 진로 간판(가게 먼저)·모름(null)이면 예전 글 */
+  for (const signBy of ['shop', null]) {
+    const v2 = questView(b, { ...snap, signBy }), r2 = v2.all.find(a => a.id === 'shop_sign');
+    assert.equal(r2.kept, false, `signBy ${signBy} 인데 «몫도 한다»입니다`);
+    assert.equal(r2.ko, questOf('shop_sign').ko);
+  }
+  /* 돌봄 쪽도 같은 셈(가게 간판이 먼저) — 칩 글은 «열까지» */
+  const b2 = newBoard();
+  b2.stamina.questsTaken = QUEST_IDS.filter(id => !JOB_QUEST_IDS.care.includes(id) || ['care_unpack', 'care_first', 'care_kinds3'].includes(id));
+  const cs = CM(1700, { careSaved: 5, careKinds: 3, signBy: 'shop', jobsEnded: { shop: 1290, care: null, breed: null } });
+  const r3 = stepQuests(b2, cs);
+  assert.ok(r3.events.some(e => e.id === 'quest_opened' && e.questId === 'care_sign' && e.kept === true), `돌봄 간판 줄 열림에 kept 가 없습니다 — ${JSON.stringify(r3.events)}`);
+  const c3 = questView(b2, cs).all.find(a => a.id === 'care_sign');
+  assert.equal(c3.ko, questOf('care_sign').kept.ko);
+  assert.ok(/열까지/.test(c3.todo) && [...c3.todo].length <= TODO_MAX, `칩 글 — ${c3.todo}`);
+});
+
 /* ── 보고 ────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st2, name, msg] of results) {

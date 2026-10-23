@@ -41,6 +41,11 @@
     "toCare": "단골이 화분을 맡기러 왔다.",
     "toShop": "화분을 맡겼던 손님이 주문하러 왔다."
   },
+  "_doc_sign": "★ D85 ③ 간판 한 자리(house hang_spots §signOf) — 가게 입간판(단골 10)과 돌봄 칠판 간판(살린 10)은 한 모형·한 자리(진열대 옆). 먼저 선 진로의 간판이 남고, 뒤에 10 에 닿은 진로의 보상은 이 글 배너 + 기록 줄(간판을 새로 세우지 않는다). log 는 quest.js 간판 줄 kept.reward 와 같은 말(test_dialogue_coverage). 수는 안 적는다(10 은 ⚖ core signAt). 대사는 dialogue.js *Kept.",
+  "sign": {
+    "shop": { "banner": { "title": "🪧 동네가 이 가게를 알아봅니다", "sub": "진열대 옆 간판이 이제 가게 간판 몫도 합니다" }, "log": "진열대 옆 간판이 이제 가게 간판 몫도 합니다" },
+    "care": { "banner": { "title": "🪧 동네가 이 집을 알아봅니다", "sub": "진열대 옆 간판이 이제 돌봄 간판 몫도 합니다" }, "log": "진열대 옆 간판이 이제 돌봄 간판 몫도 합니다" }
+  },
   "_doc_finalCover": "세 진로 다 끝맺음 — 셋째 끝맺음 카드를 닫은 뒤 한 번(명세 §2-4). 원화 ev_first_story_end 재사용(지금 한 번도 안 뜨는 «여기까지 — 첫 이야기» 자리 · 크레딧 0). newGame 단추는 E(새 판)가 선 뒤에만. 몬이 두 줄은 dialogue.js finalCover(사건 final_cover).",
   "finalCover": {
     "title": "여기까지 — 이 집 이야기",

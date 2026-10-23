@@ -238,3 +238,11 @@
 - 사건 다섯(위 표) · `jobsEnded.breed`(C) · 진로 바꾸기 화면(career_switch.json `cards`) · 끝맺음 카드 [다른 진로도 해 본다](아직 끝맺음을 안 본 진로가 있을 때만) · 할 일 탭 «진로 바꾸기» · 옮기기 동작(§2-2) · 손님 이음(⚖) · 마지막 덮개 · 하네스(§6).
 - house: 판 이름이 진로를 따름(주문판/맡김판/메모판) · 간판 겹침 · 진로 카메라(§7).
 - 검사: node test_quest · test_dialogue_coverage PASS(exit=0) · 이웃 node 아홉(quest_chip · species_quests · job_shop · job_care · first_play · species2 · oneroom · tutorial · ending_flow) PASS. 브라우저 검사는 안 돌림(규칙·글만).
+
+### 11-4. ★ 10-24 총괄 D85 ③ — 간판 한 자리(house hang_spots §signOf 3cda24bd)
+- 가게 입간판(단골 10)과 돌봄 칠판 간판(살린 10)은 한 모형·한 자리(진열대 옆). 먼저 선 진로의 간판이 남고, 뒤에 10 에 닿은 진로의 보상은 **글 배너 + 기록 줄**이다(career_switch.json `sign` — 가게 «🪧 동네가 이 가게를 알아봅니다 / 진열대 옆 간판이 이제 가게 간판 몫도 합니다» · 돌봄 «🪧 동네가 이 집을 알아봅니다 / … 돌봄 간판 몫도 합니다»). 돌봄 10 배너 글은 없었다 — 가게와 같은 결로 같이 지었다.
+- 그 판에서 거짓이 되는 말 여섯을 갈랐다(후보: ㉠ 배너·기록 줄만 · ㉡ 대사·퀘스트 글까지 · 고른 것 ㉡ · 까닭: «간판을 달자 · 달았다 · 세우자 · 세웠다» · 퀘스트 «간판을 단다 · 가게 간판이 섭니다»가 간판이 이미 선 판에선 거짓):
+  - 이정표 10: `shopSignKept` · `careMilestone10Kept` — [core] 사건 `regulars_milestone{n:10, signKept}` · `care_milestone{n:10, signKept}`(signOf().by 가 다른 진로).
+  - 퀘스트 `shop_sign` · `care_sign`: 스냅샷 `signBy`([core] signOf().by) → `kept` 글(ko «간판이 가게/돌봄 몫도 한다» · reward = sign.*.log · why) · 칩 «…열까지» · 사건 quest_opened/quest_done 에 `kept` → `questShopSignKept` · `questDoneShopSignKept` · `questCareSignKept` · `questDoneCareSignKept`(이정표 짝 걸름 그대로).
+  - «간판보다 그 말이 더 좋다»(끝맺음 넷째 줄)는 그대로 참이다 — 어느 진로든 간판은 서 있다.
+- 첫 진로 판(signBy 가 제 진로 · null)은 예전 그대로. 가게 «간판 단 날» 원화(ev_shop_sign)는 questDoneShopSign 에만 붙어 kept 판엔 안 뜬다(game.html 원화 지도 — core 확인 거리).

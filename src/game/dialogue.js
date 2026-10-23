@@ -2108,6 +2108,33 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think',    text: '창 옆 판을 이제 맡김판으로 쓴다.' },
     { who: 'moni',   face: 'teach',    text: '아픈 화분이 오면 어디 있었는지부터 들어.' }
   ],
+  /* ★ 2026-10-24 [plan] 총괄 D85 ③ — **간판 한 자리**(house hang_spots §signOf): 가게 입간판(단골 10)과 돌봄 칠판 간판(살린 10)은 한 모형·한 자리.
+     먼저 선 진로의 간판이 남고, 뒤에 10 에 닿은 진로의 보상은 글 배너(data/balance/career_switch.json sign). 그 판에서
+     «간판을 달자 · 달았다 · 세우자 · 세웠다»는 거짓 — 사건 regulars_milestone{n:10, signKept} · care_milestone{n:10, signKept}([core]) · 퀘스트 kept(quest §keptOf)로 갈린다.
+     참인 조건: 간판은 이미 진열대 옆에 서 있다(가게 간판 · 돌봄 칠판 간판 둘 다 진열대 옆 · house) — «그 간판이 …몫도 한다»는 같은 간판을 두 진로가 같이 쓴다는 말.
+     몬이는 수를 안 말한다(옛 questShopSign «단골이 열이면»과 달리 수 없이). 자취생 낯은 앞치마 낯 안에서만. */
+  shopSignKept: [
+    { who: 'jachwi', face: 'surprise', text: '단골이 꽤 늘었다.' },
+    { who: 'moni',   face: 'cheer',    text: '진열대 옆 간판이 이제 가게 간판 몫도 하겠어.' }
+  ],
+  questShopSignKept: [
+    { who: 'moni',   face: 'teach',    text: '간판은 벌써 있어. 단골이 더 늘면 그 간판이 가게 몫도 할 거야.' }
+  ],
+  questDoneShopSignKept: [
+    { who: 'jachwi', face: 'beam',     text: '진열대 옆 간판이 이제 가게 간판 몫도 한다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 들어오는 손님마다 알아보겠다.' }
+  ],
+  careMilestone10Kept: [
+    { who: 'jachwi', face: 'surprise', text: '돌려준 화분이 꽤 쌓였다.' },
+    { who: 'moni',   face: 'cheer',    text: '진열대 옆 간판이 이제 돌봄 간판 몫도 하겠어.' }
+  ],
+  questCareSignKept: [
+    { who: 'moni',   face: 'teach',    text: '간판은 벌써 있어. 살린 화분이 쌓이면 그 간판이 돌봄 몫도 할 거야.' }
+  ],
+  questDoneCareSignKept: [
+    { who: 'jachwi', face: 'beam',     text: '진열대 옆 간판이 이제 돌봄 간판 몫도 한다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 들어오는 손님마다 알아보겠다.' }
+  ],
   finalCover: [
     { who: 'moni',   face: 'proud',    text: '가게도, 돌봄도, 육종도 다 해 봤네.' },
     { who: 'moni',   face: 'calm',     text: '그래도 물 주는 날은 또 와.' }
@@ -3064,6 +3091,9 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   leaf_two:     'questDoneLeafTwo',
   leaf_three:   'questDoneLeafThree'
 });
+/* ★ 2026-10-24 [plan] 총괄 D85 ③ — 간판 한 자리(다른 진로 간판이 이미 선 판)의 간판 줄 대사. 사건 quest_opened/quest_done 의 kept(quest §keptOf)일 때만 */
+export const QUEST_OPEN_KEPT_SCRIPT = Object.freeze({ shop_sign: 'questShopSignKept', care_sign: 'questCareSignKept' });
+export const QUEST_DONE_KEPT_SCRIPT = Object.freeze({ shop_sign: 'questDoneShopSignKept', care_sign: 'questDoneCareSignKept' });
 
 /* ★한 턴에 여러 사건이 겹칠 때의 **순서가 계약이다.**
    Day 4 는 수확·식비·배움 둘·식물신·도착이 한꺼번에 난다. 순서가 흔들리면
@@ -3225,11 +3255,13 @@ function scriptOf(ev, S = null) {
     return m ? m[id === 'care_new' ? 'new' : id === 'care_stuck' ? 'stuck' : 'saved'] : null;
   }
   if (id === 'care_return' || id === 'care_expired' || id === 'care_cut_gift') return null;
-  if (id === 'care_milestone') return ev && ev.n === 3 ? 'careMilestone3' : ev && ev.n === 10 ? 'careMilestone10' : ev && ev.n === 30 ? 'careMilestone30' : null;
+  /* ★ D85 ③ — 10 이정표: 다른 진로 간판이 이미 서 있으면([core] ev.signKept · house signOf) «몫도 하겠어» */
+  if (id === 'care_milestone') return ev && ev.n === 3 ? 'careMilestone3' : ev && ev.n === 10 ? (ev.signKept === true ? 'careMilestone10Kept' : 'careMilestone10') : ev && ev.n === 30 ? 'careMilestone30' : null;
   if (id === 'order_done') return ev && ev.newRegular === true ? 'shopNewRegular' : null;
-  if (id === 'regulars_milestone') return ev && ev.n === 3 ? 'shopRegulars3' : ev && ev.n === 10 ? 'shopSign' : ev && ev.n === 30 ? 'shopTown' : null;
-  if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
-  if (id === 'quest_done')   return QUEST_DONE_SCRIPT[ev && ev.questId] || null;
+  if (id === 'regulars_milestone') return ev && ev.n === 3 ? 'shopRegulars3' : ev && ev.n === 10 ? (ev.signKept === true ? 'shopSignKept' : 'shopSign') : ev && ev.n === 30 ? 'shopTown' : null;
+  /* ★ 2026-10-24 [plan] D85 ③ — 간판 한 자리면(ev.kept · quest §keptOf) «몫도 한다» 대사 */
+  if (id === 'quest_opened') return (ev && ev.kept === true && QUEST_OPEN_KEPT_SCRIPT[ev.questId]) || QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
+  if (id === 'quest_done')   return (ev && ev.kept === true && QUEST_DONE_KEPT_SCRIPT[ev.questId]) || QUEST_DONE_SCRIPT[ev && ev.questId] || null;
   return EVENT_SCRIPT[id] || null;
 }
 /* 정렬용 열쇠 — season·rent 는 갈린 뒤의 이름으로 줄을 선다.
@@ -3291,7 +3323,9 @@ export function scriptsForEvents(events = [], S = null) {
                           /* ★ 2026-10-23 [plan] D72 B — 돌봄 이정표 10 · 30 과 그 퀘스트 끝 */
                           ['careMilestone10', 'questDoneCareSign'], ['careMilestone30', 'questDoneCareTown'],
                           /* ★ 2026-10-24 [plan] D72 C — 육종 이정표 1 · 3 · 5 와 그 퀘스트 끝 */
-                          ['breedMilestone1', 'questDoneBreedFirstVariety'], ['breedMilestone3', 'questDoneBreedThree'], ['breedMilestone5', 'questDoneBreedAll']])
+                          ['breedMilestone1', 'questDoneBreedFirstVariety'], ['breedMilestone3', 'questDoneBreedThree'], ['breedMilestone5', 'questDoneBreedAll'],
+                          /* ★ 2026-10-24 [plan] D85 ③ — 간판 한 자리 갈래도 같은 짝 */
+                          ['shopSignKept', 'questDoneShopSignKept'], ['careMilestone10Kept', 'questDoneCareSignKept']])
     if (out.includes(ms) && out.includes(qd)) out.splice(out.indexOf(ms), 1);
   /* 새 단골 «하나 늘었어»와 «단골 셋/간판/서른» 끝이 같은 턴이면 앞말은 군말 */
   if (out.includes('shopNewRegular') && out.some(id => /^questDoneShop(Regulars3|Sign|Town)$|^shop(Regulars3|Sign|Town)$/.test(id)))
