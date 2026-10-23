@@ -119,19 +119,45 @@ export async function launch(opts = {}) {
          원인은 서버인데 화면은 조건 이야기를 한다. 제일 늦게 알아채는 종류다.
        ⚠ 잡는 것은 **연결 자체가 안 되는 경우**뿐이다. 404 는 크롬이 「열었다」고 보므로 여기서 안 잡힌다
          (빈 디렉터리를 서빙하는 서버가 실제로 있다 — 2026-08-23 [core]). 그건 검사가 제 조건으로 잡아야 한다. */
-    async goto(url) {
-      const r = await S('Page.navigate', { url });
-      if (r && r.errorText)
-        throw new Error(`페이지를 못 열었습니다 — ${url} (${r.errorText})
+    /* ★★ 2026-10-24 [core] 총괄(house 2d5a8046 가름) — **이동이 끝날 때까지 기다린다.**
+       예전 goto 는 `Page.navigate` 의 답(이동을 «시작»했다)만 받고 돌아왔다. 바로 뒤 eval 이 옛 문서가 사라지는 순간과 겹치면
+       CDP 답에 result 가 없어 TypeError 로 죽었다(test_cutaway_shared_mat — 묶음 다섯 판 중 한 판 · 첫 ok 앞 · 출력 없음).
+       ⇒ 새 문서가 붙고(Page.frameNavigated · 같은 loaderId) 그 문서의 기본 실행 맥락이 선 뒤(Runtime.executionContextCreated)에 돌아온다.
+         load 까지는 안 기다린다 — 게임은 부팅이 길어 검사마다 제 조건(waitFor)으로 잰다. 같은 문서 안 이동(# 만 바뀜)은 loaderId 가 없어 바로 돌아온다.
+       ⚠ 제한(기본 60초) 안에 안 붙으면 던진다 — 조용히 넘어가면 다음 eval 이 엉뚱한 문서를 잰다 */
+    async goto(url, { timeout = 60000 } = {}) {
+      const seen = { nav: new Set(), ctx: new Set() };
+      const fn = (method, p, sid) => {
+        if (sid !== sessionId || !p) return;
+        if (method === 'Page.frameNavigated' && p.frame && !p.frame.parentId) seen.nav.add(p.frame.loaderId);
+        if (method === 'Runtime.executionContextCreated' && p.context && p.context.auxData && p.context.auxData.isDefault)
+          seen.ctx.add(p.context.auxData.frameId);
+      };
+      listeners.push(fn);
+      try {
+        const r = await S('Page.navigate', { url });
+        if (r && r.errorText)
+          throw new Error(`페이지를 못 열었습니다 — ${url} (${r.errorText})
 ` +
-          `      서버가 떠 있는지 보십시오: python tools/serve.py <포트> · BYEOT_URL=http://localhost:<포트>`);
+            `      서버가 떠 있는지 보십시오: python tools/serve.py <포트> · BYEOT_URL=http://localhost:<포트>`);
+        if (!r || !r.loaderId) return;
+        const t0 = Date.now();
+        while (!(seen.nav.has(r.loaderId) && seen.ctx.has(r.frameId))) {
+          if (Date.now() - t0 > timeout)
+            throw new Error(`페이지가 ${timeout}ms 안에 안 넘어갔습니다 — ${url} ` +
+                            `(새 문서 ${seen.nav.has(r.loaderId) ? '붙음' : '안 붙음'} · 실행 맥락 ${seen.ctx.has(r.frameId) ? '섬' : '안 섬'})`);
+          await sleep(20);
+        }
+      } finally { const i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); }
     },
     async eval(expr, awaitPromise = true) {
       const r = await S('Runtime.evaluate', {
         expression: expr, awaitPromise, returnByValue: true, allowUnsafeEvalBlockedByCSP: true
       });
-      if (r.exceptionDetails) throw new Error(r.exceptionDetails.text + ' ' +
+      if (r && r.exceptionDetails) throw new Error(r.exceptionDetails.text + ' ' +
         (r.exceptionDetails.exception && r.exceptionDetails.exception.description || ''));
+      /* ★ 10-24 — 답에 result 가 없으면(문서가 바뀌는 순간 등) 읽을 수 있는 말로 던진다(예전엔 «reading 'value'» TypeError) */
+      if (!r || !r.result) throw new Error(`eval 답에 result 가 없습니다(문서가 바뀌는 중이었나) — ${String(expr).slice(0, 80)}`);
       return r.result.value;
     },
     /* 조건이 참이 될 때까지 기다린다. 틀리면 왜 안 됐는지 남긴다. */
