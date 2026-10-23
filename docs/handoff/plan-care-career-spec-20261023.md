@@ -210,3 +210,9 @@
 - 사건: `job_start{job:'care'}` · `care_open` · `care_new{problem, customerId, requestId, potId}` · `care_stuck{problem}` · `care_saved{problem}` · `care_return` · `care_expired` · `care_cut_gift` · `care_milestone{n}` · `care_ending`.
 - 진로 카드(game.html JOB_KO): `{ id:'care', ko:'식물 돌봄', sub:'남의 화분을 맡아 살립니다', go:'돌봄을 시작한다' }`.
 - `movedHome` 을 진로 공통으로(isShopJob 묶임 넓히기 · §4).
+
+### 13-4. 칠판 간판 (10-24 · house 0ddf6061)
+- house 확인: 가게 간판 모형은 **글자가 없다**(바닥에 세우는 A형 칠판 · 한쪽 면에 분필 화분 하나 · 다른 면은 빈 칠판) ⇒ D73 ③ ①(간판 모형을 다시 씀)이 선다.
+- 그러나 벽에 붙는 «문패» 꼴이 아니다 ⇒ 글을 그림에 맞춤: 퀘스트 `care_sign` «칠판 간판을 세운다» · 보상 «문 앞에 칠판 간판이 섭니다» · 칩 «살린 화분 r — 간판까지 k» · 이정표 10 몬이 «문 앞에 간판을 세우자!» · 퀘스트 끝 자취생 «문 앞에 칠판 간판을 세웠다.» · 끝맺음 넷째 줄 «간판보다 그 말이 더 좋다.»(퀘스트 id 는 그대로 `care_sign`).
+- 맡김판 소개 글: «손님이 화분과 함께 남기고 간 쪽지»(plan-furniture-texts).
+- ⚠ D 판 «바꾸기»(가게 → 돌봄)에서 가게 간판이 이미 서 있으면 같은 꾸밈 자리 — 돌봄 10 은 글 배너(끝맺음 명세 §2-3 그대로).

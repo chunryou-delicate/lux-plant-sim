@@ -1086,7 +1086,7 @@ const SHOP_QUESTS = Object.freeze([
 ]);
 
 /* ══ ★★ 2026-10-23 [plan] D72 B 판 «식물 돌봄» 사슬 (명세 docs/handoff/plan-care-career-spec-20261023.md §5 · 총괄 D73) ══
-   짐 풀기 → 첫 돌봄(살린 1) → 여러 고장(갈래 3) → 문패(살린 10) → 동네 식물 의사(살린 30) · 느린 곁줄 «고장 여덟 다 고쳐 봄»(갈래 8).
+   짐 풀기 → 첫 돌봄(살린 1) → 여러 고장(갈래 3) → 칠판 간판(살린 10 · 가게 간판 모형 — 글자 없는 바닥 칠판 · house 0ddf6061) → 동네 식물 의사(살린 30) · 느린 곁줄 «고장 여덟 다 고쳐 봄»(갈래 8).
    ★ 짐 풀기는 가게 home_unpack 을 안 건드리고 따로 둔다 — 그 줄의 보상 글·끝 대사(«…네 가게야»)가 가게 말이라서(plan 판단).
    칩 글(D51 결): 돌려줄 화분이 있으면 «돌려줄 화분 k» · 맡은 화분이 있으면 «맡은 화분 n · 가장 급한 것 d일 남음» · 없으면 «살린 화분 r — {다음}까지 k».
    ⚠ 칸이 null 이면(배선 전) 안 열린다. 진로는 한 판에 하나(D73) — job === 'care' 일 때만. */
@@ -1140,12 +1140,12 @@ const CARE_QUESTS = Object.freeze([
   Object.freeze({
     id: 'care_sign',
     room: 'tworoom',
-    ko: '문패를 단다',
-    reward: '돌봄 문패가 섭니다',
+    ko: '칠판 간판을 세운다',
+    reward: '문 앞에 칠판 간판이 섭니다',
     teaches: ['살린 화분이 이름을 만든다'],
-    why: '열 화분을 살리면 동네가 이 집을 압니다. 문패를 답니다.',
+    why: '열 화분을 살리면 동네가 이 집을 압니다. 문 앞에 칠판 간판을 세웁니다.',
     need: Object.freeze({ saved: 10 }),
-    todo: (q, s) => careChipTodo(s, q.need.saved, '문패', 'careSaved'),
+    todo: (q, s) => careChipTodo(s, q.need.saved, '간판', 'careSaved'),
     after: 'care_kinds3',
     opens: (s, ctx) => isCare(s) && !!(ctx && ctx.doneIds.includes('care_kinds3')),
     done:  (s, ctx) => isCare(s) && Number.isFinite(s.careSaved) && s.careSaved >= ctx.q.need.saved

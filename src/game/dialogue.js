@@ -1888,19 +1888,20 @@ export const SCRIPTS = {
   ],
   careMilestone10: [
     { who: 'jachwi', face: 'surprise', text: '돌려준 화분이 꽤 쌓였다.' },
-    { who: 'moni',   face: 'cheer',    text: '문패를 달자!' }
+    { who: 'moni',   face: 'cheer',    text: '문 앞에 간판을 세우자!' }
   ],
   careMilestone30: [
     { who: 'jachwi', face: 'beam',     text: '동네에서 식물이 아프면 여기래.' },
     { who: 'moni',   face: 'proud',    text: '남의 화분까지 읽게 됐네.' }
   ],
   /* 돌봄 끝맺음(살린 30 · 다음 날 아침 · 명세 plan-career-endings-spec §4 · 가게 shop_ending 결).
-     넷째 줄 «문패»는 참이다 — 문패(살린 10)가 서른보다 늘 먼저 선다(간판 그림에 글자가 있으면 글 배너지만 «문패»라 부른다 · D73 ③). */
+     넷째 줄 «간판»은 참이다 — 칠판 간판(살린 10)이 서른보다 늘 먼저 선다. 가게 간판 모형을 다시 쓴다(바닥에 세우는 칠판 · 글자 없음 · house 0ddf6061 · D73 ③ ①) —
+     벽에 붙는 «문패» 꼴이 아니라서 대사·퀘스트 글은 «칠판 간판을 세운다»로 그림에 맞춘다. */
   careEnding: [
     { who: 'jachwi', face: 'think',    text: '맡김판을 보기 전에 진열대를 한 바퀴 둘러봤다.' },
     { who: 'jachwi', face: 'happy',    text: '처음엔 내 화분도 어두운 데 뒀었는데.' },
     { who: 'moni',   face: 'proud',    text: '오늘부터 여긴 «동네 식물 의사»야.' },
-    { who: 'jachwi', face: 'beam',     text: '문패보다 그 말이 더 좋다.' },
+    { who: 'jachwi', face: 'beam',     text: '간판보다 그 말이 더 좋다.' },
     { who: 'moni',   face: 'teach',    text: '여기서 끝이 아니야. 아픈 화분은 또 와.' },
     { who: 'jachwi', face: 'beam',     text: '맡김판을 열었다.' }
   ],
@@ -1926,10 +1927,10 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'cheer',    text: '여러 가지를 고쳐 봤네. 이제 읽을 줄 알아.' }
   ],
   questCareSign: [
-    { who: 'moni',   face: 'teach',    text: '살린 화분이 쌓이면 문패를 달자.' }
+    { who: 'moni',   face: 'teach',    text: '살린 화분이 쌓이면 문 앞에 간판을 세우자.' }
   ],
   questDoneCareSign: [
-    { who: 'jachwi', face: 'beam',     text: '문패를 달았다.' },
+    { who: 'jachwi', face: 'beam',     text: '문 앞에 칠판 간판을 세웠다.' },
     { who: 'moni',   face: 'proud',    text: '이제 지나가는 사람도 알아.' }
   ],
   questCareTown: [
