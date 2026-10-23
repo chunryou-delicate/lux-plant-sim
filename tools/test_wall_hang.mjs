@@ -10,6 +10,8 @@
      E 부딪힘·빛 차폐에 안 든다(colliders · occluders)
      F 그림 면 — 옷 층 report.faceTex · 달력은 setSeason 으로 쪽이 바뀜
      G 전용 자리 — 투룸 주문판 자리에 포스터는 안 됨 · 주문판은 됨
+     H 벽 화분걸이(D71) — 화분 자리 하나 · 조도 엔진 자리 목록에 듦 · 깎인 벽에서도 안 숨음
+     I «위» 자리 — dropM · high(다단 선반 윗단 · 화분걸이는 높음 · 계단 진열대 윗단은 아님) · 자유 좌표 dropBelow
    ⚠ 가방·가구점 화면 흐름은 core 몫(여기서는 안 본다).
 ============================================================ */
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
@@ -96,6 +98,49 @@ try {
   ok('G 투룸 걸이 자리 여섯 · 주문판 자리 하나', G.n === 6 && G.order === 1, JSON.stringify(G));
   ok('G 주문판 자리에 포스터는 안 된다 · 주문판은 된다 · 주문판은 다른 자리에 안 된다', !!G.a && G.b && typeof G.b === 'object' && !!G.c, JSON.stringify(G));
   if (SHOT) await page.shot(SHOT.replace(/\.png$/, '_tworoom.png'));
+
+  /* H 벽 화분걸이(D71 · 10-23) — 걸이 자리에 걸리고 화분 하나를 받는다 · 깎인 벽에서도 안 숨는다(화분이 허공에 안 뜨게)
+     I «위» 자리 — 자리마다 dropM(늘어지는 덩굴이 떨어질 높이) · high(≥ HIGH_DROP_M) · 자유 좌표도 같은 자(house.js dropBelow) */
+  const H = JSON.parse(await page.eval(`(async () => { const v = window.view, e = window.engine;
+    let order = null; try { v.hangPose('tworoom-hang-order', 'wall_planter'); } catch (err) { order = err.message; }
+    e.setFurnitureEdits([], [{ uid: 'add-wall_planter-1', preset: 'wall_planter', ...v.hangPose('tworoom-hang-3', 'wall_planter') },
+                             { uid: 'add-wall_planter-2', preset: 'wall_planter', ...v.hangPose('tworoom-hang-5', 'wall_planter') }]);
+    await v.refreshFurniture();
+    const b = e.room.built, S = id => b.plantSlots.find(s => s.slotId === id) || null;
+    const p1 = S('add-wall_planter-1:0'), p2 = S('add-wall_planter-2:0');
+    const H3 = await import('/src/render3d/house.js');
+    const free = p1 && typeof H3.dropBelow === 'function' ? H3.dropBelow(b, { x: p1.x, y: p1.y, z: p1.z }) : null;   // 대조 판(dropBelow 없음)에서도 칸마다 빨강이 찍히게
+    const ioHas = (e.room.slots || []).some(s => s.slotId === 'add-wall_planter-1:0');
+    let put = null; try { await v.setPlant('add-wall_planter-1:0', { kind: 'monstera', growthDays: 60, seed: 3, band: 'good' }); put = 'ok'; } catch (err) { put = err.message; }
+    const g2 = b.furniture.children.find(g => g.userData.uid === 'add-wall_planter-2');
+    const shown2 = !!(g2 && g2.visible && g2.children.every(c => c.visible));
+    /* 그 화분걸이 상자(자리 그대로 · 0.30 × 0.22)만 센다 — 이름 칸이 없어 자리로 맞춘다(E 와 같은 자) */
+    const g1 = b.furniture.children.find(g => g.userData.uid === 'add-wall_planter-1'), q = g1 ? g1.position : { x: NaN, z: NaN };
+    const colN = (b.colliders || []).filter(c => c.kind === 'furn' && Math.abs(c.x - q.x) < 0.06 && Math.abs(c.z - q.z) < 0.06).length;
+    const occN = (b.occluders || []).filter(o => Math.abs(o.x + o.w / 2 - q.x) < 0.2 && Math.abs(o.z + o.d / 2 - q.z) < 0.2 && o.y0 > 1).length;
+    /* 대조 — 같은 자로 다단 선반은 잡혀야 한다(자가 헛돌지 않나) */
+    const et0 = b.furniture.children.find(g => g.userData.uid === 'tworoom-shelf-etagere-3tier');
+    const colEt = et0 ? (b.colliders || []).filter(c => c.kind === 'furn' && Math.abs(c.x - et0.position.x) < 0.06 && Math.abs(c.z - et0.position.z) < 0.06).length : -1;
+    const et = b.plantSlots.filter(s => s.slotId.startsWith('tworoom-shelf-etagere-3tier:'));
+    const etTop = et.filter(s => s.y > 0.7), dsp = b.plantSlots.filter(s => s.slotId.startsWith('tworoom-shop-display:') && s.y > 0.7);
+    const right = b.shells.right && b.shells.right.userData._stub;
+    return JSON.stringify({ order, p1, p2, free, ioHas, put, shown2, right, colN, occN, colEt, HIGH: H3.HIGH_DROP_M,
+      etTop: etTop.map(s => [s.dropM, s.high]), dsp: dsp.map(s => [s.dropM, s.high]),
+      highIds: b.plantSlots.filter(s => s.high).map(s => s.slotId) });
+  })()`, true, 120000));
+  ok('H 벽 화분걸이는 주문판 자리에 안 걸린다', !!H.order, String(H.order));
+  ok('H 걸면 화분 자리 하나가 생기고 조도 엔진 자리 목록(io.light.room.slots)에도 든다', !!H.p1 && !!H.p2 && H.ioHas, JSON.stringify([H.p1 && H.p1.slotId, H.ioHas]));
+  ok('H 그 자리에 화분이 놓인다', H.put === 'ok', String(H.put));
+  ok('H 부딪힘·빛 차폐에 안 든다(같은 자로 다단 선반은 잡힌다)', H.colN === 0 && H.occN === 0 && H.colEt >= 1, JSON.stringify([H.colN, H.occN, H.colEt]));
+  ok('H 깎인 벽(투룸 오른벽 · 기본 카메라)에 건 화분걸이도 보인다(화분이 허공에 안 뜨게)', H.right === true && H.shown2, JSON.stringify([H.right, H.shown2]));
+  ok(`I 왼벽 화분걸이는 바닥까지(높은 자리) — dropM ${H.p1 && H.p1.dropM} ≥ ${H.HIGH}`, H.p1 && H.p1.high && H.p1.dropM > 1.2 && Math.abs(H.p1.dropM - H.p1.y) < 0.01, JSON.stringify(H.p1));
+  ok('I 화분걸이에서 줄기가 떨어지는 쪽은 벽에서 먼 쪽(왼벽 +X · 오른벽 −X)', H.p1 && H.p2 && H.p1.dropDir[0] === 1 && H.p2.dropDir[0] === -1, JSON.stringify([H.p1 && H.p1.dropDir, H.p2 && H.p2.dropDir]));   // 밑 판에 닿는 갈래는 아래 진열대 칸이 잰다
+  ok('I 자유 좌표 자(dropBelow)가 자리 값과 같다', H.free && Math.abs(H.free.dropM - H.p1.dropM) < 1e-3 && H.free.high === H.p1.high, JSON.stringify(H.free));
+  ok('I 다단 선반 윗단 셋은 바닥까지(0.794 · 높은 자리)', H.etTop.length === 3 && H.etTop.every(([d, h]) => h && Math.abs(d - 0.794) < 0.01), JSON.stringify(H.etTop));
+  ok('I 계단식 진열대 윗단(0.815)은 바로 아랫단에 닿는다(0.25 · 높은 자리 아님)', H.dsp.length === 3 && H.dsp.every(([d, h]) => !h && Math.abs(d - 0.25) < 0.03), JSON.stringify(H.dsp));
+  console.log('  높은 자리', H.highIds.join(' · '));
+  if (SHOT) { await page.eval(`(() => { window.view.setHomeFrame({ uids: ['tworoom-shop-display', 'tworoom-shelf-etagere-3tier', 'add-wall_planter-1'], pad: 0.7 }, true); return 1; })()`);
+              await sleep(3000); await page.shot(SHOT.replace(/\.png$/, '_planter.png')); }
 } finally { await page.close(); }
 console.log(`\nwall_hang: ${fail ? 'FAIL' : 'PASS'} (${pass}/${pass + fail})`);
 process.exit(fail ? 1 : 0);

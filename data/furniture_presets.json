@@ -2284,6 +2284,27 @@
       "room": "벽(걸이 자리)",
       "shop_listed": false,
       "_shop": "★ 가게(투룸 · plan D59)에 딸린 것 — 가구점에 안 낸다. 투룸 «주문판 자리»(hangSpots only:order_board)에만 건다. v2 옷 order_board.glb(Tripo)."
+    },
+    "wall_planter": {
+      "type": "wall_planter",
+      "name_ko": "벽 화분걸이",
+      "intro_ko": "덩굴을 위에서 늘어뜨리는 자리 — 높을수록 길게",
+      "_wall": "★ 2026-10-23 [house] D71(plan-species2-shop-spec §4) — 벽 걸이 v1 걸이 자리에 거는 화분 받침(코드 가구 · 크레딧 0). 화분 하나 · 높은 자리(house.js dropBelow · high). 이름·소개 plan f2f521f7.",
+      "mount": "wall-hang",
+      "size_m": {
+        "w": 0.25,
+        "d": 0.25,
+        "h": 0.34
+      },
+      "w": 0.25,
+      "d": 0.25,
+      "h": 0.34,
+      "color": "#d9c3a9",
+      "accent": "#857d74",
+      "room": "벽(걸이 자리)",
+      "shop_listed": false,
+      "unlock": "sc_ask",
+      "_shop": "★ plan 권함: 가구점에 sc_ask(단골 5) 날부터. core 가 furnitureCatalogList 에서 unlock 을 거르는 날 shop_listed 를 true 로 켠다(그전엔 안 뜬다 · test_furnishop 수 그대로)."
     }
   },
   "_slots": "가구 userData.slots=[{x,y,z}](로컬 m, y=화분 밑면), tier_heights=[y..], size_m={w,d,h}. 에셋창 GLB 선반과 동일 스키마.",

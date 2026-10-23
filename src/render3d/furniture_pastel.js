@@ -1340,6 +1340,31 @@ B.calendar=(o)=>{
   for(const sx of [-1,1]){ const r=cyl(0.008,0.008,0.03,ring,sx*w*0.22,h/2-0.004,d*0.1,8); r.rotation.x=Math.PI/2; g.add(r); }
   g.userData.size={w,h,d}; g.userData.mount=o.mount||'wall-hang'; return g;
 };
+/* ★ 2026-10-23 [house] 벽 화분걸이(D71 · plan «덩굴을 위에서 늘어뜨리는 자리 — 높을수록 길게») — 벽 걸이 v1 걸이 자리에 거는 화분 받침.
+     원점 = 물건 가운데(벽걸이 규약) · 앞 = +Z · 뒤판이 벽에 닿는다(z −d/2). 화분 하나(자리 하나 · 판 윗면).
+     늘어지는 줄기가 보이게 앞턱은 낮게(2.2cm) · 옆은 열어 둔다 · 쇠 고리는 가는 테 하나(줄기를 안 가린다).
+     높은 자리다 — 걸이 자리 높이(cy 1.5)에서 판 끝을 지나 바닥(또는 밑 가구)까지 떨어진다(house.js dropBelow · high).
+     부딪힘·빛 가림에 안 든다(house.js · mount wall-hang) · 벽이 깎여도 안 숨는다(화분이 허공에 안 뜨게 · syncWallHang). */
+B.wall_planter=(o)=>{
+  const w=o.w??0.25, h=o.h??0.34, d=o.d??0.25;                                         // 상판 0.25 격자(test_furn_size · 칸 1×1)
+  const g=new THREE.Group();
+  const wood=furnMat(o.color??'#d9c3a9','matte'), iron=furnMat(o.accent??'#857d74','satin');
+  const pt=0.016, bt=0.024;                                                              // 뒤판 · 받침판 두께
+  g.add(panel(w*0.86,h,pt,wood,0,0,-d/2+pt/2,0.008));                                   // 뒤판
+  const by=-h/2+0.09, bd=d-pt, bz=-d/2+pt+bd/2, top=by+bt/2;                            // 받침판(윗면 = 자리)
+  g.add(panel(w,bt,bd,wood,0,by,bz,0.01));
+  g.add(bx(w-0.02,0.022,0.014,wood,0,top+0.011,d/2-0.007));                             // 앞턱(낮게)
+  for(const sx of [-1,1]){                                                               // 쇠 받침대 둘(뒤판 밑동 → 판 앞 밑)
+    const z0=-d/2+pt, y0=-h/2+0.01, z1=d/2-0.035, y1=by-bt/2, L=Math.hypot(z1-z0,y1-y0);
+    const s=bx(0.012,0.012,L,iron,sx*(w/2-0.04),(y0+y1)/2,(z0+z1)/2); s.rotation.x=-Math.atan2(y1-y0,z1-z0); g.add(s);
+  }
+  const rr=Math.min(w/2-0.012,(bd-0.03)/2+0.01);                                        // 쇠 테 반지름 — 가장 큰 화분(자리 지름 bd−0.03)보다 1cm 밖
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(rr,0.004,6,32),iron);               // 화분을 잡는 쇠 테
+  ring.rotation.x=Math.PI/2; ring.position.set(0,top+0.07,bz); g.add(ring);
+  const hook=cyl(0.006,0.006,0.03,iron,0,h/2-0.03,-d/2+pt+0.012,8); hook.rotation.x=Math.PI/2; g.add(hook);   // 위 걸개
+  g.userData.size={w,h,d}; g.userData.mount=o.mount||'wall-hang';
+  return addSlots(g, [{x:0,y:+top.toFixed(3),z:+bz.toFixed(3)}], [+top.toFixed(3)], [bd]);
+};
 B.wall_clock=(o)=>{
   const r=(o.w??0.3)/2;
   const g=new THREE.Group(); const m=furnMat(o.color??'#e8dfd2','matte');

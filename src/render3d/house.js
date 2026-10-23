@@ -936,7 +936,7 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
   if(furnGroup.children.length) room.add(furnGroup);
 
   // 가구 위 화분 슬롯을 월드좌표로 수집 (조도 계산·배치용)
-  const plantSlots=[];
+  const plantSlots=[], slotOwner=[];
   furnGroup.traverse(o=>{
     if(!o.userData||!o.userData.slots) return;
     const base=o.position, rot=o.rotation.y||0, c=Math.cos(rot), s=Math.sin(rot);
@@ -953,7 +953,16 @@ export function buildHouse(GRAIN, roomDefIn, winPresets, doorPresets={}, finishe
         maxPotD:(o.userData.tier_max_pot_d||[])[Math.min(i,(o.userData.tier_max_pot_d||[]).length-1)],
         occIdx:o.userData.occIdx
       });
+      slotOwner.push(o);
     });
+  });
+  /* ★ 2026-10-23 [house] «위» 자리(D71 · plan-species2-shop-spec §4) — 자리마다 늘어지는 덩굴이 «아래로» 떨어질 수 있는 높이.
+     dropM 이 스킨답서스 줄기 상한(growth)이고, high 가 «높은 자리»(core sc_pot 어려움 가드 · 퀘스트 sc_hang)다. 셈은 아래 dropBelow 한 곳 */
+  room.updateMatrixWorld(true);
+  const dropMeshes = dropMeshesOf(furnGroup);
+  plantSlots.forEach((sl, i) => {
+    const d = dropBelowMeshes(dropMeshes, sl, slotOwner[i], { w: CW, d: CD });
+    sl.dropM = d.dropM; sl.dropEdgeM = d.edgeM; sl.dropDir = d.dir; sl.high = d.high;
   });
 
   /* ★ 그림자 정책을 '목록'이 아니라 '속성'으로 붙인다.
@@ -1271,6 +1280,80 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
   syncWallHang(shells);
 }
 
+/* ════════ «위» 자리 — 늘어지는 덩굴이 떨어질 높이 (2026-10-23 [house] · D71 · plan-species2-shop-spec §3·§4) ════════
+   스킨답서스 줄기는 놓인 자리 «아래로» 자란다. 그 상한 = 자리에서 판 끝까지 나가 거기서 아래 첫 면(없으면 바닥)까지 떨어지는 높이.
+   · 방향: 받치는 가구의 네 축(앞 +Z · 뒤 · 좌우) 중 방 가운데 쪽. 앞(+Z)에 덤 0.5 — 가구 앞이 방을 본다(빌더 규약 · 0.35 면 방 구석 진열대 끝 자리가 판을 따라 옆으로 1m 나갔다).
+     앞벽 창턱처럼 +Z 가 벽 쪽이면 −Z 가 이긴다 · 벽 화분걸이는 앞(+Z)이 벽에서 먼 쪽이다(hang_spots ROT).
+   · 걸음 2cm · 광선은 판 위 3cm 에서 아래로. 같은 판(3cm 안)이면 더 나가고, 판이 끝나면 그 아래 첫 면까지가 dropM.
+     계단식 진열대 윗단은 바로 아랫단에 닿고(짧다), 다단 선반 윗단·창턱·벽 화분걸이는 바닥까지 간다(길다).
+   · 면 = 가구 메시(코드 판). 고르기 껍데기(colorWrite 끔)·유리(옅은 투명)·v2 옷(v2visual)·천장 등은 뺀다.
+     옷 층이 숨긴 대리(visible:false 재질)는 면으로 본다 — 짓는 때와 옷 입은 뒤 값이 같게(core rayIgnores 와 같은 결).
+     숨긴 가구(조상 visible false · 안 산 식물등)는 뺀다.
+   반환 { dropM, edgeM(판 끝까지 수평 거리 · 줄기가 먼저 기어갈 길), landY, dir:[x,z](떨어지는 쪽), high(dropM ≥ HIGH_DROP_M) }
+   ⚖ HIGH_DROP_M 은 후보다 — «높은 자리에서만 닿는 길이»(sc_pot 어려움 · sc_hang)의 정본 문턱은 growth 줄기 상한 규칙이 정한다.
+     0.7 은 투룸 가게 배치에서 창턱(≈0.78)·다단 선반 윗단(0.79)·벽 화분걸이(≈1.4)는 넘고, 계단 단(≤0.3)·낮은 선반 윗판은 못 넘게 고른 값. */
+export const HIGH_DROP_M = 0.7;
+let _dropRay = null;
+function dropMeshesOf(furnGroup){
+  const out = [];
+  if(!furnGroup) return out;
+  furnGroup.traverse(o=>{
+    if(!o.isMesh || !o.geometry || o.userData.v2visual || o.userData.pickShell || o.userData.isPickBox) return;
+    for(let p=o; p && p!==furnGroup; p=p.parent){
+      if(p.visible===false) return;
+      if(p.userData && (p.userData.hangFromCeiling || p.userData.v2dress)) return;
+    }
+    const m = Array.isArray(o.material) ? o.material[0] : o.material;
+    if(!m) return;
+    if(m.visible !== false){
+      if(m.colorWrite === false) return;              // 고르기 껍데기
+      if(m.transparent && m.opacity < 0.5) return;    // 유리
+    }
+    out.push(o);
+  });
+  return out;
+}
+function dropBelowMeshes(meshes, at, owner, roomSize){
+  const ray = _dropRay || (_dropRay = new THREE.Raycaster());
+  const DOWN = new THREE.Vector3(0,-1,0), O = new THREE.Vector3();
+  const rot = owner ? (owner.rotation.y||0) : 0;
+  const fz = [Math.sin(rot), Math.cos(rot)], fx = [Math.cos(rot), -Math.sin(rot)];
+  const cand = [[fz,0.5], [[-fz[0],-fz[1]],0], [fx,0], [[-fx[0],-fx[1]],0]];
+  const tx = -at.x, tz = -at.z, L = Math.hypot(tx, tz);     // 방 가운데 = 원점
+  let dir = fz, best = -Infinity;
+  for(const [v,bonus] of cand){
+    const sc = (L > 0.1 ? (v[0]*tx + v[1]*tz) / L : 0) + bonus;
+    if(sc > best){ best = sc; dir = v; }
+  }
+  const D = [+dir[0].toFixed(3), +dir[1].toFixed(3)];
+  const y0 = at.y;
+  if(!(y0 > 0.05)) return { dropM:+Math.max(0,y0||0).toFixed(3), edgeM:0, landY:0, dir:D, high:false };   // 바닥 자리
+  const STEP = 0.02, MAXR = 2.5;
+  for(let r=0; r<=MAXR+1e-9; r+=STEP){
+    O.set(at.x + dir[0]*r, y0 + 0.03, at.z + dir[1]*r);
+    ray.set(O, DOWN); ray.far = y0 + 0.05;
+    const h = ray.intersectObjects(meshes, false)[0];
+    const y = h ? Math.max(0, h.point.y) : 0;
+    if(y < y0 - 0.03){
+      const dropM = +(y0 - y).toFixed(3);
+      return { dropM, edgeM:+r.toFixed(2), landY:+y.toFixed(3), dir:D, high: dropM >= HIGH_DROP_M };
+    }
+  }
+  return { dropM:0, edgeM:null, landY:+y0.toFixed(3), dir:D, high:false };   // 판이 안 끝난다(2.5m 넘는 판) — 못 늘어진다
+}
+/* 자유 좌표 화분(pot.at)에도 같은 자 — 받치는 가구는 그 아래 첫 면의 가구. built 는 buildRoom 이 낸 것(지금 방) */
+export function dropBelow(built, at){
+  if(!built || !built.furniture || !at || !Number.isFinite(at.x) || !Number.isFinite(at.y) || !Number.isFinite(at.z)) return null;
+  built.furniture.updateMatrixWorld(true);
+  const meshes = dropMeshesOf(built.furniture);
+  const ray = _dropRay || (_dropRay = new THREE.Raycaster());
+  ray.set(new THREE.Vector3(at.x, at.y + 0.03, at.z), new THREE.Vector3(0,-1,0)); ray.far = 0.1;
+  const h = ray.intersectObjects(meshes, false)[0];
+  let owner = h ? h.object : null;
+  while(owner && owner.parent && owner.parent !== built.furniture) owner = owner.parent;
+  return dropBelowMeshes(meshes, at, owner, built.size);
+}
+
 /* ★ 2026-10-10 [house] 벽 걸이가 제 벽을 따라 숨는다 — 벽이 밑동이면 그림도 안 보인다.
    · 가구 노드(g)는 안 건드리고 그 «자식»만 숨긴다 — g.visible 은 room_view setFurnitureVisible 몫이다(두 손이 한 값을 다투지 않게).
      숨긴 자식에는 표지(_cutHide)를 달아 그것만 되살린다(원래 안 보이던 자식은 그대로).
@@ -1284,6 +1367,7 @@ function syncWallHang(shells){
   const walls = ['back','front','left','right'].map(k => shells[k]).filter(sh => sh && sh.userData.normal && sh.userData.center);
   for (const g of root.children) {
     if (!g.userData || g.userData.mount !== 'wall-hang') continue;
+    if (Array.isArray(g.userData.slots) && g.userData.slots.length) continue;   // 화분을 받는 걸이(벽 화분걸이)는 안 숨긴다 — 숨기면 화분만 허공에 뜬다
     let best = null, bd = Infinity;
     for (const sh of walls) {
       const { normal: n, center: c } = sh.userData;
