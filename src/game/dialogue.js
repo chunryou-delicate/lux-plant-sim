@@ -1797,6 +1797,166 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach',    text: '여기서 끝이 아니야. 가게는 계속이야.' },
     { who: 'jachwi', face: 'beam',     text: '문을 열었다.' }
   ],
+  /* ═══ ★★ 2026-10-23 [plan] D72 B 판 «식물 돌봄»(명세 plan-care-career-spec-20261023 §6 · 총괄 D73) ═══
+     사건([core]): job_start{job:'care'} · care_open · care_new{problem} · care_stuck{problem}(맡김마다 한 번) · care_saved{problem} ·
+     care_return(대사 없음 — 첫 돌려줌은 퀘스트 care_first 끝 대사가 같은 턴에 말한다) · care_expired(기록 줄만 · 탓하지 않는다) ·
+     care_milestone{n: 3|10|30} · care_ending(살린 30 다음 날 아침 · 한 번).
+     손님 말은 대사가 아니라 기록 줄(data/balance/care_problems.json clue · _lines · [core] «{손님 ko} — {줄}»).
+     ★ 실마리는 손님 말 하나 — 몬이는 처음에 답을 안 말한다(막히면 stuck 한 번). 수는 안 말한다. 자취생 낯은 앞치마 낯(think·happy·beam·surprise) 안에서만. */
+  jobStartCare: [
+    { who: 'moni',   face: 'teach',    text: '이제부턴 진짜야. 남의 화분이니까 더 꼼꼼히 봐.' },
+    { who: 'moni',   face: 'cheer',    text: '대신 네가 배운 걸 다 쓸 수 있어.' }
+  ],
+  careOpen: [
+    { who: 'jachwi', face: 'think',    text: '문 옆에 맡김판을 걸었다.' },
+    { who: 'moni',   face: 'teach',    text: '아픈 화분이 오면 어디 있었는지부터 들어.' }
+  ],
+  careNewCaBright: [
+    { who: 'jachwi', face: 'think', text: '잎이 다 말려 있다.' }
+  ],
+  careStuckCaBright: [
+    { who: 'moni',   face: 'teach', text: '창가에서 왔대. 해가 너무 셌던 거야.' }
+  ],
+  careSavedCaBright: [
+    { who: 'jachwi', face: 'happy', text: '잎이 다 펴졌다.' }
+  ],
+  careNewCaDark: [
+    { who: 'jachwi', face: 'think', text: '잎이 말린 채 그대로다.' }
+  ],
+  careStuckCaDark: [
+    { who: 'moni',   face: 'teach', text: '너무 어두우면 잎을 못 펴. 가운데로 옮겨 줘.' }
+  ],
+  careSavedCaDark: [
+    { who: 'jachwi', face: 'happy', text: '잎이 다 펴졌다.' }
+  ],
+  careNewPpTip: [
+    { who: 'jachwi', face: 'surprise', text: '맨 위 잎들이 온통 분홍이다. 끝이 멈췄다.' }
+  ],
+  careStuckPpTip: [
+    { who: 'moni',   face: 'teach', text: '분홍 잎이 잇달아 난 줄 아래를 잘라야 끝이 살아.' }
+  ],
+  careSavedPpTip: [
+    { who: 'jachwi', face: 'happy', text: '시들던 끝을 살렸다.' }
+  ],
+  careNewPpGreen: [
+    { who: 'jachwi', face: 'think', text: '새 잎이 다 초록이다.' }
+  ],
+  careStuckPpGreen: [
+    { who: 'moni',   face: 'teach', text: '분홍이 남은 마디 위를 자르고, 밝은 데 둬.' }
+  ],
+  careSavedPpGreen: [
+    { who: 'jachwi', face: 'happy', text: '분홍 잎이 다시 났다.' }
+  ],
+  careNewAlDark: [
+    { who: 'jachwi', face: 'think', text: '잎이 하나도 없다. 흙 속은 단단하다.' }
+  ],
+  careStuckAlDark: [
+    { who: 'moni',   face: 'teach', text: '죽은 게 아니야. 어두워서 잠든 거야. 밝은 데 둬.' }
+  ],
+  careSavedAlDark: [
+    { who: 'jachwi', face: 'beam', text: '다시 깨어났다.' }
+  ],
+  careNewAlWinter: [
+    { who: 'jachwi', face: 'think', text: '잎이 다 졌다. 흙 속에 구근이 있다.' }
+  ],
+  careStuckAlWinter: [
+    { who: 'moni',   face: 'teach', text: '겨울엔 자는 거야. 버리지 말고 봄을 기다려.' }
+  ],
+  careSavedAlWinter: [
+    { who: 'jachwi', face: 'beam', text: '봄이 되니 다시 깨어났다.' }
+  ],
+  careNewScFloor: [
+    { who: 'jachwi', face: 'think', text: '줄기 끝이 바닥에 닿아 있다.' }
+  ],
+  careStuckScFloor: [
+    { who: 'moni',   face: 'teach', text: '바닥에 닿아서 멈춘 거야. 높은 데 걸어 줘.' }
+  ],
+  careSavedScFloor: [
+    { who: 'jachwi', face: 'happy', text: '줄기가 다시 내려온다.' }
+  ],
+  careNewScPlain: [
+    { who: 'jachwi', face: 'think', text: '새 잎에 흰 무늬가 없다.' }
+  ],
+  careStuckScPlain: [
+    { who: 'moni',   face: 'teach', text: '무늬도 빛을 먹어. 조금 더 밝은 데 둬.' }
+  ],
+  careSavedScPlain: [
+    { who: 'jachwi', face: 'happy', text: '무늬 있는 새 잎이 났다.' }
+  ],
+  careMilestone3: [
+    { who: 'moni',   face: 'cheer',    text: '살린 화분이 늘었어. 소문이 나겠다.' }
+  ],
+  careMilestone10: [
+    { who: 'jachwi', face: 'surprise', text: '돌려준 화분이 꽤 쌓였다.' },
+    { who: 'moni',   face: 'cheer',    text: '문패를 달자!' }
+  ],
+  careMilestone30: [
+    { who: 'jachwi', face: 'beam',     text: '동네에서 식물이 아프면 여기래.' },
+    { who: 'moni',   face: 'proud',    text: '남의 화분까지 읽게 됐네.' }
+  ],
+  /* 돌봄 끝맺음(살린 30 · 다음 날 아침 · 명세 plan-career-endings-spec §4 · 가게 shop_ending 결).
+     넷째 줄 «문패»는 참이다 — 문패(살린 10)가 서른보다 늘 먼저 선다(간판 그림에 글자가 있으면 글 배너지만 «문패»라 부른다 · D73 ③). */
+  careEnding: [
+    { who: 'jachwi', face: 'think',    text: '맡김판을 보기 전에 진열대를 한 바퀴 둘러봤다.' },
+    { who: 'jachwi', face: 'happy',    text: '처음엔 내 화분도 어두운 데 뒀었는데.' },
+    { who: 'moni',   face: 'proud',    text: '오늘부터 여긴 «동네 식물 의사»야.' },
+    { who: 'jachwi', face: 'beam',     text: '문패보다 그 말이 더 좋다.' },
+    { who: 'moni',   face: 'teach',    text: '여기서 끝이 아니야. 아픈 화분은 또 와.' },
+    { who: 'jachwi', face: 'beam',     text: '맡김판을 열었다.' }
+  ],
+  /* 돌봄 사슬 열림·끝(quest.js §CARE_QUESTS) */
+  questCareUnpack: [
+    { who: 'jachwi', face: 'curious',  text: '창이 둘이다. 어디부터 놓지.' },
+    { who: 'moni',   face: 'teach',    text: '남의 화분 받기 전에 네 것부터 자리를 잡자.' }
+  ],
+  questDoneCareUnpack: [
+    { who: 'moni',   face: 'proud',    text: '다 놓았네. 여기가 네 집이고 돌봄 자리야.' }
+  ],
+  questCareFirst: [
+    { who: 'moni',   face: 'teach',    text: '맡김판을 봐. 어디가 아픈지는 손님 말에 있어.' }
+  ],
+  questDoneCareFirst: [
+    { who: 'jachwi', face: 'beam',     text: '첫 화분을 살려 돌려줬다.' },
+    { who: 'moni',   face: 'proud',    text: '네가 살린 거야.' }
+  ],
+  questCareKinds3: [
+    { who: 'moni',   face: 'teach',    text: '아픈 데는 여러 가지야. 하나씩 고쳐 보자.' }
+  ],
+  questDoneCareKinds3: [
+    { who: 'moni',   face: 'cheer',    text: '여러 가지를 고쳐 봤네. 이제 읽을 줄 알아.' }
+  ],
+  questCareSign: [
+    { who: 'moni',   face: 'teach',    text: '살린 화분이 쌓이면 문패를 달자.' }
+  ],
+  questDoneCareSign: [
+    { who: 'jachwi', face: 'beam',     text: '문패를 달았다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 지나가는 사람도 알아.' }
+  ],
+  questCareTown: [
+    { who: 'moni',   face: 'calm',     text: '천천히 가자. 살린 화분이 다 이름이 돼.' }
+  ],
+  questDoneCareTown: [
+    { who: 'jachwi', face: 'beam',     text: '동네에서 식물이 아프면 여기래.' },
+    { who: 'moni',   face: 'proud',    text: '남의 화분까지 읽게 됐네.' }
+  ],
+  questCareAllKinds: [
+    { who: 'moni',   face: 'teach',    text: '아픈 데는 가지가지야. 다 한 번씩 고쳐 보자.' }
+  ],
+  questDoneCareAllKinds: [
+    { who: 'moni',   face: 'proud',    text: '이제 어디가 아파도 알겠네.' }
+  ],
+  /* 돌봄 판 잡담(산 집 · 진로 돌봄 · gap 21) — 거짓 없는 말만: 일찍 돌려줘도 된다(명세 §2-4) */
+  chatCareMorning: [
+    { who: 'jachwi', face: 'think',    text: '아침에 맡은 화분부터 본다.' },
+    { who: 'moni',   face: 'calm',     text: '남의 것이라 더 눈이 가지.' }
+  ],
+  chatCareQuiet: [
+    { who: 'jachwi', face: 'think',    text: '오늘은 맡김판이 비었다.' },
+    { who: 'moni',   face: 'calm',     text: '그런 날엔 네 화분을 돌보는 거야.' }
+  ],
+  chatCareReady: [
+    { who: 'moni',   face: 'teach',    text: '나은 화분은 일찍 돌려줘도 돼.' }
+  ],
   shopEndingFew: [
     { who: 'jachwi', face: 'think',    text: '문을 열기 전에 가게를 한 바퀴 둘러봤다.' },
     { who: 'jachwi', face: 'think',    text: '오늘은 무엇부터 늘릴까.' },
@@ -2506,6 +2666,17 @@ export function createDialogue(seen = new Set()) {
    ★새 이벤트 체계를 만들지 않는다 — loop.js 가 `turn.events` 로 내는 id 를 그대로 읽는다.
      (첫 플레이 신호는 first_play.firstPlayEventsOf, 살림 신호는 tutorial.tutorialDay,
       식물·배움·이사 신호는 loop.stepTutorial 이 낸다.) */
+/* ★ 2026-10-23 [plan] D72 B — 고장마다 대사 세 줄(보이는 것 · 막힐 때 · 나았을 때). data/balance/care_problems.json 의 scripts 와 같아야 한다(test_dialogue_coverage) */
+export const CARE_SCRIPT = Object.freeze({
+  ca_bright: Object.freeze({ new: 'careNewCaBright', stuck: 'careStuckCaBright', saved: 'careSavedCaBright' }),
+  ca_dark: Object.freeze({ new: 'careNewCaDark', stuck: 'careStuckCaDark', saved: 'careSavedCaDark' }),
+  pp_tip: Object.freeze({ new: 'careNewPpTip', stuck: 'careStuckPpTip', saved: 'careSavedPpTip' }),
+  pp_green: Object.freeze({ new: 'careNewPpGreen', stuck: 'careStuckPpGreen', saved: 'careSavedPpGreen' }),
+  al_dark: Object.freeze({ new: 'careNewAlDark', stuck: 'careStuckAlDark', saved: 'careSavedAlDark' }),
+  al_winter: Object.freeze({ new: 'careNewAlWinter', stuck: 'careStuckAlWinter', saved: 'careSavedAlWinter' }),
+  sc_floor: Object.freeze({ new: 'careNewScFloor', stuck: 'careStuckScFloor', saved: 'careSavedScFloor' }),
+  sc_plain: Object.freeze({ new: 'careNewScPlain', stuck: 'careStuckScPlain', saved: 'careSavedScPlain' }),
+});
 export const EVENT_SCRIPT = Object.freeze({
   beansprout_harvest:  'harvest',
   /* ★ 2026-08-27 — 한날에 몰려 익어 손이 모자란 날([Plan] ⑤ · loop.js §crop_hands_short).
@@ -2536,6 +2707,9 @@ export const EVENT_SCRIPT = Object.freeze({
   shop_no_species:     'shopNoSpecies',
   /* ★ 2026-10-23 [plan] D75 ⑤ — 가게 끝맺음(다음 날 아침 · 한 번) · 둘째 줄 갈래는 §scriptOf */
   shop_ending:         'shopEnding',
+  /* ★ 2026-10-23 [plan] D72 B — 돌봄 사건(고장마다 갈림은 §scriptOf · CARE_SCRIPT) */
+  care_open:           'careOpen',
+  care_ending:         'careEnding',
   /* ★ 2026-10-23 [plan] D71 — 새 두 종 */
   sc_ask:              'scAsk',
   sc_rooted:           'scRooted',
@@ -2651,6 +2825,13 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   /* ★ 2026-10-23 [plan] D71 — 새 두 종 곁줄 */
   sc_hang:                'questScHang',
   ca_unfurl:              'questCaUnfurl',
+  /* ★ 2026-10-23 [plan] D72 B — 돌봄 사슬 */
+  care_unpack:            'questCareUnpack',
+  care_first:             'questCareFirst',
+  care_kinds3:            'questCareKinds3',
+  care_sign:              'questCareSign',
+  care_town:              'questCareTown',
+  care_all_kinds:         'questCareAllKinds',
   al_keep_winter:         'questAlKeepWinter',
   al_plant_corm:          'questAlPlantCorm',
   oneroom_home_fund:      'questOneroomHomeFund',
@@ -2694,6 +2875,12 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   shop_town:              'questDoneShopTown',
   sc_hang:                'questDoneScHang',
   ca_unfurl:              'questDoneCaUnfurl',
+  care_unpack:            'questDoneCareUnpack',
+  care_first:             'questDoneCareFirst',
+  care_kinds3:            'questDoneCareKinds3',
+  care_sign:              'questDoneCareSign',
+  care_town:              'questDoneCareTown',
+  care_all_kinds:         'questDoneCareAllKinds',
   al_keep_winter:         'questDoneAlKeepWinter',
   al_plant_corm:          'questDoneAlPlantCorm',
   oneroom_home_fund:      'questDoneOneroomHomeFund',
@@ -2748,8 +2935,10 @@ const EVENT_ORDER = [
   'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake', 'cut_too_wide',
   /* ★ 2026-10-10 [plan] D59 — 진로 첫날은 «이제부턴 진짜야» → 주문판 → (퀘스트 열림). 납품 «단골 하나 늘었어»는 퀘스트 끝(«단골 셋» 등)보다 앞 */
   /* ★ 2026-10-23 [plan] D75 ⑤ — 끝맺음 아침 장면은 그날 가게 사건(새 주문 등 · 표 밖 999)보다 앞 */
-  'shop_ending',
+  'shop_ending', 'care_ending',
   'job_start', 'shop_open', 'shop_no_species', 'order_done', 'regulars_milestone',
+  /* ★ 2026-10-23 [plan] D72 B — 돌봄 첫날: 진로 → 맡김판 → 첫 맡김 · 나은 날 «잎이 다 펴졌다»는 퀘스트 끝보다 앞 */
+  'care_open', 'care_new', 'care_stuck', 'care_saved', 'care_milestone',
   /* ★ 2026-10-23 [plan] D71 — 들어오는 날 말이 곁줄 열림보다 앞(맡았다 → 가운데를 찾아 줘) */
   'sc_ask', 'sc_rooted', 'ca_care',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
@@ -2822,7 +3011,8 @@ function scriptOf(ev, S = null) {
   if (id === 'hungry') {
     const even = ev && Number.isFinite(ev.left) && ev.left % 2 === 0;
     /* ★ 2026-10-23 [plan] D79 ㉡ — 가게 판(진로 shop · 산 투룸)은 홀수 날 «팔고, 시루부터»(hungryShop) */
-    const shop = !!(S && S.story && S.story.job && S.story.job.id === 'shop' && S.home && S.home.room === 'tworoom');
+    /* ★ D72 B — 진로가 있는 산 투룸이면(가게 · 돌봄) «시루가 밥»은 같다 */
+    const shop = !!(S && S.story && S.story.job && S.story.job.id && S.home && S.home.room === 'tworoom');
     return even ? 'hungryTalk2' : (shop ? 'hungryShop' : 'hungryTalk');
   }
   /* ★ 2026-10-09 [plan] D45 — 교환은 두 번째 물음·두 번째 거절이 따로 · 구근 싹은 무늬인가로 갈림(모르면 말 없음) */
@@ -2836,6 +3026,14 @@ function scriptOf(ev, S = null) {
   if (id === 'shop_no_species') return ev && ev.ppInShop === true ? 'shopNoSpeciesPP' : 'shopNoSpecies';
   /* ★ 2026-10-23 [plan] D75 ⑤ — 방에 놓인 그루가 적으면 둘째 줄이 «오늘은 무엇부터 늘릴까»([core] ev.fewPlants) */
   if (id === 'shop_ending') return ev && ev.fewPlants === true ? 'shopEndingFew' : 'shopEnding';
+  /* ★ 2026-10-23 [plan] D72 B — 돌봄: 진로 첫날은 진로로 갈림 · 고장마다 세 줄(CARE_SCRIPT) · 이정표 3/10/30 · 돌려줌·기한은 대사 없음(기록 줄) */
+  if (id === 'job_start') return ev && ev.job === 'care' ? 'jobStartCare' : 'jobStart';
+  if (id === 'care_new' || id === 'care_stuck' || id === 'care_saved') {
+    const m = CARE_SCRIPT[ev && ev.problem];
+    return m ? m[id === 'care_new' ? 'new' : id === 'care_stuck' ? 'stuck' : 'saved'] : null;
+  }
+  if (id === 'care_return' || id === 'care_expired' || id === 'care_cut_gift') return null;
+  if (id === 'care_milestone') return ev && ev.n === 3 ? 'careMilestone3' : ev && ev.n === 10 ? 'careMilestone10' : ev && ev.n === 30 ? 'careMilestone30' : null;
   if (id === 'order_done') return ev && ev.newRegular === true ? 'shopNewRegular' : null;
   if (id === 'regulars_milestone') return ev && ev.n === 3 ? 'shopRegulars3' : ev && ev.n === 10 ? 'shopSign' : ev && ev.n === 30 ? 'shopTown' : null;
   if (id === 'quest_opened') return QUEST_OPEN_SCRIPT[ev && ev.questId] || null;
@@ -2897,7 +3095,9 @@ export function scriptsForEvents(events = [], S = null) {
   /* ★ 2026-10-10 [plan] — 마지막 무늬 «원천»(D22)과 마지막 무늬 «삽수»(D27 갈래 셋)가 한 손에 서면 D22 가 말한다(더 센 말) */
   if (out.includes('sellLastVarie') && out.includes('sellKeepOne')) out.splice(out.indexOf('sellKeepOne'), 1);
   /* ★ 2026-10-10 [plan] D59 — 이정표와 그 퀘스트 끝이 같은 턴이면 퀘스트 끝 대사만(같은 말 두 번 · «단골이 셋이야»). 퀘스트를 이미 끝낸 판(두 번째 서른 등)은 이정표가 말한다 */
-  for (const [ms, qd] of [['shopRegulars3', 'questDoneShopRegulars3'], ['shopSign', 'questDoneShopSign'], ['shopTown', 'questDoneShopTown']])
+  for (const [ms, qd] of [['shopRegulars3', 'questDoneShopRegulars3'], ['shopSign', 'questDoneShopSign'], ['shopTown', 'questDoneShopTown'],
+                          /* ★ 2026-10-23 [plan] D72 B — 돌봄 이정표 10 · 30 과 그 퀘스트 끝 */
+                          ['careMilestone10', 'questDoneCareSign'], ['careMilestone30', 'questDoneCareTown']])
     if (out.includes(ms) && out.includes(qd)) out.splice(out.indexOf(ms), 1);
   /* 새 단골 «하나 늘었어»와 «단골 셋/간판/서른» 끝이 같은 턴이면 앞말은 군말 */
   if (out.includes('shopNewRegular') && out.some(id => /^questDoneShop(Regulars3|Sign|Town)$|^shop(Regulars3|Sign|Town)$/.test(id)))
@@ -2954,7 +3154,11 @@ export const CHATTER = [
   { id: 'chatShopQuiet',    gap: 21, when: c => c.movedHome && c.jobId === 'shop' && fin(c.shopOpenOrders) && c.shopOpenOrders === 0 },
   { id: 'chatShopApron',    gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
   /* ★ 2026-10-23 [plan] D79 ㉠ — 빈 시루가 있을 때만 */
-  { id: 'chatShopSiru',     gap: 21, when: c => c.movedHome && c.jobId === 'shop' && c.emptySiru === true },
+  { id: 'chatShopSiru',     gap: 21, when: c => c.movedHome && !!c.jobId && c.emptySiru === true },   /* ★ D72 B — 진로가 있는 산 투룸 어디서나(돌봄도 «시루가 밥») */
+  /* ★ 2026-10-23 [plan] D72 B — 돌봄 판 잡담 셋 */
+  { id: 'chatCareMorning',  gap: 21, when: c => c.movedHome && c.jobId === 'care' },
+  { id: 'chatCareQuiet',    gap: 21, when: c => c.movedHome && c.jobId === 'care' && fin(c.careOpen) && c.careOpen === 0 },
+  { id: 'chatCareReady',    gap: 21, when: c => c.movedHome && c.jobId === 'care' && fin(c.careReady) && c.careReady >= 1 },
   { id: 'chatOneroomMorning', when: c => c.movedOut && !c.movedHome && c.daysInOneroom != null && c.daysInOneroom <= 14 },
   /* ★ 원룸에서의 **첫** 수확. `cropHarvested` 는 거둔 날부터 다시 심기 전까지 참이라
      후보가 되는 날 자체가 드물다. 그래서 ① 목록에서 **거의 맨 앞**에 두고
@@ -3305,6 +3509,9 @@ export function chatterContext(turn = {}, S = null) {
     shopOpenOrders: (S && S.jobShop && Array.isArray(S.jobShop.orders)) ? S.jobShop.orders.length : null,
     /* ★ 2026-10-23 [plan] D79 — [core] turn.shopOrderDryDays: 가게 판에서 «열린 주문 0건인 날»이 며칠째 이었나(걸린 주문이 있으면 0 · 가게 판이 아니면 null) */
     shopOrderDryDays: (turn && Number.isFinite(turn.shopOrderDryDays)) ? turn.shopOrderDryDays : null,
+    /* ★ 2026-10-23 [plan] D72 B — 돌봄 판(S.jobCare.requests · 명세 §4 꼴) — 열린 맡김 수 · 나아서 돌려줄 수 있는 수(돌봄 판이 아니면 null) */
+    careOpen: (S && S.jobCare && Array.isArray(S.jobCare.requests)) ? S.jobCare.requests.length : null,
+    careReady: (S && S.jobCare && Array.isArray(S.jobCare.requests)) ? S.jobCare.requests.filter(r => r && r.savedOn != null).length : null,
     /* ★ 2026-10-23 [plan] D71 — 칼라테아([core] turn.caPlants · turn.caTooBright · 모르면 null) */
     caPlants: (turn && Number.isFinite(turn.caPlants)) ? turn.caPlants : null,
     caTooBright: (turn && typeof turn.caTooBright === 'boolean') ? turn.caTooBright : null,

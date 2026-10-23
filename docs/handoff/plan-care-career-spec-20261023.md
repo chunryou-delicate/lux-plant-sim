@@ -191,3 +191,22 @@
 - 가게 명세 §4 · game.html:12148 «낙엽·고사 켜짐» ↔ 코드는 몬스테라 낙엽만(마지막 한 장 안 떨어짐) · 고사 규칙 없음. → ✔ 10-23 D73: 가게 명세 §4·§7 은 plan 이 코드대로 고침 · game.html 주석은 core · 아래 growth 글은 growth 에 총괄이 넘김.
 - growth_tuning.json 건강 글(303줄 근처) «min 3.0» ↔ 읽는 값 2.7(18줄) — 글이 낡음(growth 몫).
 - growth-tworoom-shop.json meta `roomRev 2026-08-23 · generatedAt 10-09` ↔ 가게 기준 배치 B 는 10-10 — 표 자리 이름은 배치 B 와 맞으나 B 판에 쓸 때 growth 가 다시 잰다.
+
+## 13. ★ 2026-10-23 plan 이 지은 것 (총괄 «B 짓기» 청 · [core] 키는 core 에 먼저 보냄)
+
+### 13-1. 넣은 것
+- **data/balance/care_problems.json**(plan 이 씀 · core 는 읽기만): `problems[8]` = { id · species · tier · unlockAtSaved(⚖ 0/3/6 · al_winter 1) · seasons · ko(맡김판 고장 한 마디) · clue(기록 줄) · teaches · scripts{new·stuck·saved} } · `_lines` { returned · collected · cutGift · regularAsk }. 수(기한·수고비·빈도·막힘 날)는 안 둔다 — core 한 곳.
+- **quest.js `CARE_QUESTS`**(room 'tworoom' · `job === 'care'`): `care_unpack` → `care_first`(살린 1) → `care_kinds3`(갈래 3) → `care_sign`(살린 10 · 문패) → `care_town`(살린 30) · 느린 곁줄 `care_all_kinds`(갈래 8). 스냅샷 칸 `careOpen · careReady · careSaved · careKinds · careDueSoonest`. 칩 글 `careChipTodo`. `CARE_QUEST_IDS`.
+- **dialogue.js**: `jobStartCare` · `careOpen` · 고장마다 세 줄(`CARE_SCRIPT` — careNew* 자취생 «보이는 것» · careStuck* 몬이 «막힐 때» · careSaved* 자취생 «나았을 때») · `careMilestone3/10/30` · `careEnding`(살린 30 다음 날 아침 여섯 줄) · 퀘스트 열림·끝 열두 줄 · 잡담 셋(`chatCareMorning` · `chatCareQuiet` · `chatCareReady`) · 맥락 칸 `careOpen · careReady`(S.jobCare.requests 에서) · 이정표 10/30 ↔ 퀘스트 끝 겹침 걸름 · EVENT_ORDER(진로 → 맡김판 → 첫 맡김).
+- **검사**: test_quest 걸음에 돌봄 판(가게 걸음 뒤 진로만 'care' · 여섯 줄 다 열리고 다 끝남) · test_dialogue_coverage 셋(표 ↔ 대사 지도 · 사건 갈림 · 잡담 · 앞치마 낯 · 몬이 수 안 말함).
+
+### 13-2. 명세에서 바뀐 것 (plan 판단 · 까닭)
+1. **짐 풀기는 가게 `home_unpack` 을 공통으로 고치지 않고 `care_unpack` 을 따로** — `home_unpack` 의 보상 글(«투룸이 내 가게가 됩니다»)·끝 대사(«…네 가게야»)가 가게 말이라, 고치면 가게 판 글이 바뀐다. 따로 두면 가게는 그대로다. (§5 의 «home_unpack 진로 공통»을 이렇게 읽는다.)
+2. **첫 돌려줌 대사(«네가 살린 거야»)는 퀘스트 `care_first` 끝으로** — `care_return{first}` 와 퀘스트 끝이 늘 같은 턴이라 두 번 말한다. `care_return` · `care_expired` · `care_cut_gift` 는 대사 없이 기록 줄만.
+3. **몬이는 수를 안 말한다** — §6 의 이정표 글(«화분 셋을 살렸어» 등)을 «살린 화분이 늘었어. 소문이 나겠다.» · «문패를 달자!» 로. 이정표 10 의 자취생 줄은 «돌려준 화분이 꽤 쌓였다.»(«맡기러 오는 손님이 늘었다»는 거짓 — 맡김은 살린 수와 상관없이 5~9일마다).
+4. **D79 시루 두 줄을 돌봄 판에도**: 굶음 갈래 `hungryShop` · 빈 시루 잡담 `chatShopSiru` 를 «진로가 있는 산 투룸»으로 넓힘 — «시루가 밥»은 돌봄도 같다.
+
+### 13-3. [core] 에 보낸 키 (10-23)
+- 사건: `job_start{job:'care'}` · `care_open` · `care_new{problem, customerId, requestId, potId}` · `care_stuck{problem}` · `care_saved{problem}` · `care_return` · `care_expired` · `care_cut_gift` · `care_milestone{n}` · `care_ending`.
+- 진로 카드(game.html JOB_KO): `{ id:'care', ko:'식물 돌봄', sub:'남의 화분을 맡아 살립니다', go:'돌봄을 시작한다' }`.
+- `movedHome` 을 진로 공통으로(isShopJob 묶임 넓히기 · §4).

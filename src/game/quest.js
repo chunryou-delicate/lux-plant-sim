@@ -239,6 +239,9 @@ export function emptySnapshot() {
               scLongVine «높은 자리에서만 닿는 길이»에 닿은 줄기 수(문턱은 growth 줄기 상한 규칙에서 core 가 센다 — plan 은 수를 안 박는다) ·
               caCareOpen 맡은 칼라테아가 있고 아직 안 펴짐 · caSaved 맡은 칼라테아 잎이 다 펴졌다 */
            scPlants: null, scLongVine: null, caCareOpen: null, caSaved: null,
+           /* ★ 2026-10-23 [plan] D72 B «식물 돌봄»([core] · null = 모른다) — careOpen 열린 맡김 수 · careReady 나아서 돌려줄 수 있는 수 ·
+              careSaved 살린 수(돌려준 것) · careKinds 살려 본 고장 갈래 수 · careDueSoonest 가장 급한 맡김 남은 날 */
+           careOpen: null, careReady: null, careSaved: null, careKinds: null, careDueSoonest: null,
            alDormantNow: null, alWokeCount: null, alCormsFound: null, alFoundCormsPlanted: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
@@ -1082,6 +1085,100 @@ const SHOP_QUESTS = Object.freeze([
   })
 ]);
 
+/* ══ ★★ 2026-10-23 [plan] D72 B 판 «식물 돌봄» 사슬 (명세 docs/handoff/plan-care-career-spec-20261023.md §5 · 총괄 D73) ══
+   짐 풀기 → 첫 돌봄(살린 1) → 여러 고장(갈래 3) → 문패(살린 10) → 동네 식물 의사(살린 30) · 느린 곁줄 «고장 여덟 다 고쳐 봄»(갈래 8).
+   ★ 짐 풀기는 가게 home_unpack 을 안 건드리고 따로 둔다 — 그 줄의 보상 글·끝 대사(«…네 가게야»)가 가게 말이라서(plan 판단).
+   칩 글(D51 결): 돌려줄 화분이 있으면 «돌려줄 화분 k» · 맡은 화분이 있으면 «맡은 화분 n · 가장 급한 것 d일 남음» · 없으면 «살린 화분 r — {다음}까지 k».
+   ⚠ 칸이 null 이면(배선 전) 안 열린다. 진로는 한 판에 하나(D73) — job === 'care' 일 때만. */
+const isCare = s => !!s && s.movedHome === true && s.job === 'care';
+const careChipTodo = (s, goal, label, field) => {
+  if (s && Number.isFinite(s.careReady) && s.careReady > 0) return `돌려줄 화분 ${s.careReady}`;
+  if (s && Number.isFinite(s.careOpen) && s.careOpen > 0 && Number.isFinite(s.careDueSoonest))
+    return `맡은 화분 ${s.careOpen} · 가장 급한 것 ${Math.max(0, s.careDueSoonest)}일 남음`;
+  const r = (s && Number.isFinite(s[field])) ? s[field] : 0;
+  return field === 'careKinds' ? `고쳐 본 고장 ${r} — ${label}까지 ${Math.max(0, goal - r)}` : `살린 화분 ${r} — ${label}까지 ${Math.max(0, goal - r)}`;
+};
+const CARE_QUESTS = Object.freeze([
+  Object.freeze({
+    id: 'care_unpack',
+    room: 'tworoom',
+    ko: '짐을 풀고 자리를 잡는다',
+    reward: '투룸이 돌봄 자리가 됩니다',
+    teaches: ['남의 화분보다 내 자리부터'],
+    why: '들고 온 것은 가방에서 아무 일도 안 합니다. 남의 화분을 받기 전에 내 것부터 자리를 잡습니다.',
+    todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
+      ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
+    opens: s => isCare(s),
+    done:  s => isCare(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
+  }),
+  Object.freeze({
+    id: 'care_first',
+    room: 'tworoom',
+    ko: '첫 화분을 살린다',
+    reward: '손님이 화분을 받아 갑니다',
+    teaches: ['어디가 아픈지는 어디 있었는지에 있다'],
+    why: '맡김판에 아픈 화분이 옵니다. 손님 말에 실마리가 있습니다. 알맞은 자리에 두거나 손을 쓰면 낫습니다.',
+    todo: (q, s) => (s && Number.isFinite(s.careReady) && s.careReady > 0) ? '나은 화분을 돌려주세요'
+      : (s && Number.isFinite(s.careOpen) && s.careOpen > 0) ? '맡은 화분이 어디가 아픈지 보세요' : '맡김판에 화분이 오기를 기다리세요',
+    after: 'care_unpack',
+    opens: (s, ctx) => isCare(s) && !!(ctx && ctx.doneIds.includes('care_unpack')),
+    done:  s => isCare(s) && Number.isFinite(s.careSaved) && s.careSaved >= 1
+  }),
+  Object.freeze({
+    id: 'care_kinds3',
+    room: 'tworoom',
+    ko: '여러 고장을 고친다',
+    reward: '돌봄이 손에 익습니다',
+    teaches: ['아픈 데마다 고치는 손이 다르다'],
+    why: '너무 밝음 · 너무 어두움 · 가위 · 높이 · 기다림 — 고장마다 고치는 손이 다릅니다.',
+    need: Object.freeze({ kinds: 3 }),
+    todo: (q, s) => careChipTodo(s, q.need.kinds, '셋', 'careKinds'),
+    after: 'care_first',
+    opens: (s, ctx) => isCare(s) && !!(ctx && ctx.doneIds.includes('care_first')),
+    done:  (s, ctx) => isCare(s) && Number.isFinite(s.careKinds) && s.careKinds >= ctx.q.need.kinds
+  }),
+  Object.freeze({
+    id: 'care_sign',
+    room: 'tworoom',
+    ko: '문패를 단다',
+    reward: '돌봄 문패가 섭니다',
+    teaches: ['살린 화분이 이름을 만든다'],
+    why: '열 화분을 살리면 동네가 이 집을 압니다. 문패를 답니다.',
+    need: Object.freeze({ saved: 10 }),
+    todo: (q, s) => careChipTodo(s, q.need.saved, '문패', 'careSaved'),
+    after: 'care_kinds3',
+    opens: (s, ctx) => isCare(s) && !!(ctx && ctx.doneIds.includes('care_kinds3')),
+    done:  (s, ctx) => isCare(s) && Number.isFinite(s.careSaved) && s.careSaved >= ctx.q.need.saved
+  }),
+  Object.freeze({
+    id: 'care_town',
+    room: 'tworoom',
+    ko: '동네 식물 의사',
+    reward: '동네 식물 의사라고 불립니다',
+    teaches: ['오래 살리면 이름이 된다'],
+    why: '서른 화분을 살리면 동네에서 식물이 아프면 이 집을 떠올립니다.',
+    need: Object.freeze({ saved: 30 }),
+    todo: (q, s) => careChipTodo(s, q.need.saved, '서른', 'careSaved'),
+    after: 'care_sign',
+    opens: (s, ctx) => isCare(s) && !!(ctx && ctx.doneIds.includes('care_sign')),
+    done:  (s, ctx) => isCare(s) && Number.isFinite(s.careSaved) && s.careSaved >= ctx.q.need.saved
+  }),
+  /* 느린 곁줄 — 배움이 다 쓰였는가(D73 ② · D 판 끝맺음이 이 칸을 쓸 수 있다). 사슬 뒤라 칩을 안 쥔다 */
+  Object.freeze({
+    id: 'care_all_kinds',
+    room: 'tworoom',
+    ko: '고장 여덟을 다 고쳐 본다',
+    reward: '어디가 아파도 압니다',
+    teaches: ['자리 · 가위 · 높이 · 기다림'],
+    why: '여덟 가지 고장을 한 번씩 다 고쳐 보면, 그동안 배운 손이 다 쓰인 것입니다.',
+    need: Object.freeze({ kinds: 8 }),
+    todo: (q, s) => careChipTodo(s, q.need.kinds, '여덟', 'careKinds'),
+    after: 'care_kinds3',
+    opens: (s, ctx) => isCare(s) && !!(ctx && ctx.doneIds.includes('care_kinds3')),
+    done:  (s, ctx) => isCare(s) && Number.isFinite(s.careKinds) && s.careKinds >= ctx.q.need.kinds
+  })
+]);
+
 /* ══ ★★ 2026-10-09 [plan] D45(총괄) — 새 식물 두 종의 곁줄 셋 (명세 docs/handoff/plan-newspecies-20261009.md) ══
    몬스테라 «자리» · 핑크프린세스 «가위» · 알로카시아 «철». 셋 다 곁줄이다 — 원룸 사슬(배열 앞)이 열려 있는 동안
    「지금 할 일」 칩을 안 잡는다(questView 는 정의 순서에서 첫째를 뽑는다 · 이 묶음은 맨 끝).
@@ -1166,7 +1263,9 @@ const SPECIES_QUESTS = Object.freeze([
      ①②의 어떤 줄도 「지금 할 일」이 못 된다 — 박사님이 짚으신 그 구멍이 거기서 났다. */
 /* ★ 2026-10-07 — 원룸 다섯 줄은 «느린 줄 앞»이다. 맨 뒤면 잎 줄이 영영 안 끝나는 판(그루째 판 판)에서
      원룸 줄이 「지금 할 일」이 못 된다 — 위 ③ 을 맨 뒤로 옮긴 것과 같은 까닭이다. 반지하에서는 방이 걸러 안 보인다. */
-export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SHOP_QUESTS, ...SPECIES_QUESTS, ...SPECIES2_QUESTS]);
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SHOP_QUESTS, ...CARE_QUESTS, ...SPECIES_QUESTS, ...SPECIES2_QUESTS]);
+/* ★ 2026-10-23 [plan] D72 B — 돌봄 사슬(§CARE_QUESTS) */
+export const CARE_QUEST_IDS = Object.freeze(CARE_QUESTS.map(q => q.id));
 /* ★ 2026-10-23 D71 — 새 두 종 곁줄(§SPECIES2_QUESTS) */
 export const SPECIES2_QUEST_IDS = Object.freeze(SPECIES2_QUESTS.map(q => q.id));
 /* ★ 2026-10-10 D59 — 식물 가게 사슬(§SHOP_QUESTS) */

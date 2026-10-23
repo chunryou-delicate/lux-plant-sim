@@ -37,6 +37,7 @@
 import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { chatterContext as chatterContextOf } from '../src/game/dialogue.js';   /* ★ D78 귀띔 조건 */
+import { CARE_SCRIPT } from '../src/game/dialogue.js';                         /* ★ D72 B 돌봄 고장 대사 지도 */
 import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, pot0, setPotSlot, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
@@ -639,7 +640,10 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     /* ★ 2026-10-23 [plan] D79 ㉡ — 가게 판 굶음 갈래(scriptOf hungry · 진로 shop · 산 투룸 · 홀수 날) */
     'hungryShop',
     /* ★ 2026-10-23 [plan] D75 ⑤ — 가게 끝맺음 둘째 줄 갈래(scriptOf shop_ending · ev.fewPlants) */
-    'shopEndingFew'
+    'shopEndingFew',
+    /* ★ 2026-10-23 [plan] D72 B — 돌봄 사건 갈림(scriptOf): 진로 첫날 · 고장마다 세 줄(CARE_SCRIPT) · 이정표 3/10/30 */
+    'jobStartCare', 'careMilestone3', 'careMilestone10', 'careMilestone30',
+    ...Object.values(CARE_SCRIPT).flatMap(m => [m.new, m.stuck, m.saved])
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
   assert.equal(dead.length, 0, `아무 데서도 안 불리는 대사: ${dead}`);
@@ -706,6 +710,8 @@ check('대사 — 가게 판 굶음은 홀수 날 «팔고, 시루부터»(hungr
   assert.deepEqual(scriptsForEvents([{ id: 'hungry', left: 2 }], shopS), ['hungryTalk2']);
   assert.deepEqual(scriptsForEvents([{ id: 'hungry', left: 3 }], oneS), ['hungryTalk']);
   assert.deepEqual(scriptsForEvents([{ id: 'hungry', left: 3 }]), ['hungryTalk']);   // 판을 모르면 예전 그대로
+  const careS = { story: { job: { id: 'care', since: 600 } }, home: { room: 'tworoom' } };
+  assert.deepEqual(scriptsForEvents([{ id: 'hungry', left: 3 }], careS), ['hungryShop']);   // ★ D72 B — 돌봄 판도 «시루가 밥»
 });
 check('잡담 — chatShopSiru 는 가게 판 + 빈 시루일 때만(D79)', () => {
   const row = CHATTER.find(r => r.id === 'chatShopSiru');
@@ -714,7 +720,8 @@ check('잡담 — chatShopSiru 는 가게 판 + 빈 시루일 때만(D79)', () =
   assert.equal(row.when({ ...base, emptySiru: true }), true, '빈 시루가 있는데 안 섭니다');
   assert.equal(row.when({ ...base, emptySiru: false }), false, '빈 시루가 없는데 섭니다');
   assert.equal(row.when({ ...base, emptySiru: null }), false, '모르는데(null) 섭니다');
-  assert.equal(row.when({ movedHome: true, jobId: 'care', emptySiru: true }), false, '가게 판이 아닌데 섭니다');
+  assert.equal(row.when({ movedHome: true, jobId: 'care', emptySiru: true }), true, '돌봄 판인데 안 섭니다(D72 B — 진로가 있는 산 투룸 어디서나)');
+  assert.equal(row.when({ movedHome: true, jobId: null, emptySiru: true }), false, '진로가 없는데 섭니다');
   assert.equal(row.when({ movedHome: false, jobId: 'shop', emptySiru: true }), false, '산 집이 아닌데 섭니다');
   /* 맥락 칸이 cropNow 에서 오는지(새 칸 아님) */
   const ctx = chatterContextOf({ day: 900, cropNow: { seedStock: 0, emptySiru: true, harvestTotal: 40 } }, { story: { job: { id: 'shop' } }, home: { room: 'tworoom' } });
@@ -734,6 +741,73 @@ check('대사 — 가게 끝맺음 shop_ending 은 여섯 줄 · 그루가 적�
   for (const l of [...a, ...b]) if (l.who === 'jachwi') assert.ok(['beam', 'think', 'surprise', 'happy'].includes(l.face), `앞치마 낯 밖 '${l.face}'`);
   /* 끝맺음 아침 장면이 같은 날 새 주문(표 밖)보다 앞 */
   assert.deepEqual(scriptsForEvents([{ id: 'order_done', newRegular: true }, { id: 'shop_ending' }]), ['shopEnding', 'shopNewRegular']);
+});
+
+/* ★ 2026-10-23 [plan] D72 B — 돌봄: 고장 표 ↔ 대사 지도 · 사건 갈림 · 잡담 */
+check('데이터 — care_problems.json 고장 여덟이 대사 지도(CARE_SCRIPT)와 같은 말을 한다(D72 B)', () => {
+  const T = JSON.parse(readFileSync(new URL('../data/balance/care_problems.json', import.meta.url), 'utf8'));
+  const ids = T.problems.map(p => p.id);
+  assert.equal(ids.length, 8, `고장이 ${ids.length}개입니다`);
+  assert.deepEqual([...ids].sort(), Object.keys(CARE_SCRIPT).sort(), '표와 대사 지도의 고장이 다릅니다');
+  const SPECIES = ['calathea', 'pink_princess', 'alocasia_frydek', 'scindapsus'];
+  for (const p of T.problems) {
+    assert.ok(SPECIES.includes(p.species), `'${p.id}' 모르는 종 '${p.species}'`);
+    assert.ok(['easy', 'normal', 'hard', 'spring'].includes(p.tier), `'${p.id}' 모르는 tier '${p.tier}'`);
+    assert.ok(Number.isInteger(p.unlockAtSaved) && p.unlockAtSaved >= 0, `'${p.id}' unlockAtSaved`);
+    assert.ok(Array.isArray(p.seasons) && p.seasons.length, `'${p.id}' seasons`);
+    assert.ok(p.ko && p.clue && p.teaches, `'${p.id}' 글 칸이 비었습니다`);
+    assert.deepEqual(p.scripts, { ...CARE_SCRIPT[p.id] }, `'${p.id}' 대사 키가 지도와 다릅니다`);
+    for (const k of ['new', 'stuck', 'saved']) assert.ok(SCRIPTS[p.scripts[k]], `'${p.id}' 없는 대사 '${p.scripts[k]}'`);
+    assert.ok(!/(언니|오빠|누나|형님|아가씨|총각|그녀)/.test(p.clue), `'${p.id}' 손님 말에 성별 낱말`);
+  }
+  for (const k of ['returned', 'collected', 'cutGift', 'regularAsk']) assert.ok(T._lines && T._lines[k], `기록 줄 '${k}' 이 없습니다`);
+  /* 처음 열리는 고장 셋 = 손 셋(자리 · 가위 · 기다림) 하나씩 */
+  assert.deepEqual(T.problems.filter(p => p.unlockAtSaved === 0).map(p => p.id).sort(), ['al_dark', 'ca_bright', 'pp_tip']);
+});
+check('대사 — 돌봄 사건이 제 대사로 갈린다 · 돌려줌·기한은 조용하다(D72 B)', () => {
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start', job: 'care' }]), ['jobStartCare']);
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start' }]), ['jobStart']);                    // 가게는 예전 그대로
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start', job: 'shop' }]), ['jobStart']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_new', problem: 'ca_bright' }]), ['careNewCaBright']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_stuck', problem: 'pp_tip' }]), ['careStuckPpTip']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_saved', problem: 'sc_floor' }]), ['careSavedScFloor']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_new', problem: '없는고장' }]), []);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_return', first: true }, { id: 'care_expired' }, { id: 'care_cut_gift' }]), []);
+  /* 첫날 차례: 진로 → 맡김판 → 첫 맡김 */
+  assert.deepEqual(scriptsForEvents([{ id: 'care_new', problem: 'ca_bright' }, { id: 'care_open' }, { id: 'job_start', job: 'care' }]),
+    ['jobStartCare', 'careOpen', 'careNewCaBright']);
+  /* 이정표 10 · 30 과 그 퀘스트 끝이 같은 턴이면 퀘스트 쪽만 */
+  assert.deepEqual(scriptsForEvents([{ id: 'care_milestone', n: 10 }, { id: 'quest_done', questId: 'care_sign' }]), ['questDoneCareSign']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_milestone', n: 30 }, { id: 'quest_done', questId: 'care_town' }]), ['questDoneCareTown']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_milestone', n: 3 }]), ['careMilestone3']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_ending' }]), ['careEnding']);
+  assert.equal(SCRIPTS.careEnding.length, 6);
+  /* 자취생 낯은 앞치마 낯 안에서만(돌봄도 앞치마 · plan-care §10 ⑧) */
+  const careIds = ['jobStartCare', 'careOpen', 'careEnding', 'careMilestone3', 'careMilestone10', 'careMilestone30',
+                   ...Object.values(CARE_SCRIPT).flatMap(m => [m.new, m.stuck, m.saved])];
+  for (const id of careIds) for (const l of SCRIPTS[id])
+    if (l.who === 'jachwi') assert.ok(['beam', 'think', 'surprise', 'happy'].includes(l.face), `'${id}' 앞치마 낯 밖 '${l.face}'`);
+  /* 몬이는 수를 안 말한다 */
+  for (const id of careIds) for (const l of SCRIPTS[id])
+    if (l.who === 'moni') assert.ok(!/[0-9]|하나|둘|셋|넷|다섯|여섯|일곱|여덟|아홉|열|서른/.test(l.text.replace(/하나씩|열어|열었|열면/g, '')), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+});
+check('잡담 — 돌봄 판 잡담 셋은 진로 돌봄 · 산 집일 때만(D72 B)', () => {
+  const row = id => CHATTER.find(r => r.id === id);
+  for (const id of ['chatCareMorning', 'chatCareQuiet', 'chatCareReady']) assert.ok(row(id) && SCRIPTS[id], `'${id}' 가 없습니다`);
+  const base = { movedHome: true, jobId: 'care' };
+  assert.equal(row('chatCareMorning').when(base), true);
+  assert.equal(row('chatCareMorning').when({ movedHome: true, jobId: 'shop' }), false, '가게 판에 돌봄 잡담');
+  assert.equal(row('chatCareQuiet').when({ ...base, careOpen: 0 }), true);
+  assert.equal(row('chatCareQuiet').when({ ...base, careOpen: 1 }), false);
+  assert.equal(row('chatCareQuiet').when({ ...base, careOpen: null }), false);
+  assert.equal(row('chatCareReady').when({ ...base, careReady: 1 }), true);
+  assert.equal(row('chatCareReady').when({ ...base, careReady: 0 }), false);
+  /* 맥락 칸이 S.jobCare 에서 온다(새 core 칸 아님) */
+  const S = { story: { job: { id: 'care' } }, home: { room: 'tworoom' },
+              jobCare: { requests: [{ problem: 'ca_bright', savedOn: null }, { problem: 'pp_tip', savedOn: 905 }] } };
+  const c = chatterContextOf({ day: 906 }, S);
+  assert.equal(c.careOpen, 2); assert.equal(c.careReady, 1);
+  assert.equal(chatterContextOf({ day: 906 }, { story: { job: { id: 'shop' } } }).careOpen, null, '돌봄 판이 아닌데 0 을 지어냅니다');
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

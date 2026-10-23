@@ -1,0 +1,44 @@
+{
+  "_doc": [
+    "★ 2026-10-23 [plan] D72 B 판 «진로 — 식물 돌봄»의 고장 여덟(명세 docs/handoff/plan-care-career-spec-20261023.md §2-2 · 총괄 D73).",
+    "지금 규칙이 실제로 내는 고장만 쓴다 — 물·해충·병·과습은 규칙이 없어 없다. 화분은 안 죽는다(실패는 기한뿐).",
+    "칸: id · species(growth 종 id) · tier(easy|normal|hard|spring — spring = AL 겨울잠 · 봄 + ⚖ 날) · unlockAtSaved(그 고장이 열리는 살린 수 ⚖) ·",
+    "    seasons(낼 수 있는 철) · ko(맡김판 줄의 고장 한 마디) · clue(맡길 때 기록 줄 «{손님 ko} — {clue}») · teaches(배움) ·",
+    "    scripts(대사 키 — 보이는 것 new · 막힐 때 stuck · 나았을 때 saved. 대사 글은 대사 엔진이 읽는 dialogue.js 한 곳에 둔다 · 글 두 벌 금지).",
+    "⚠ 수(기한·수고비 몫·빈도·막힘 날)는 여기 두지 않는다 — core 한 곳(명세 §2-3·§2-4 · 가게 수 재사용).",
+    "고칠 자리 가드(min~max · best_lo · 높은 자리 · 겨울 밖)는 core 원천 판정 한 곳이 growth 문턱으로 센다(명세 §2-3 표)."
+  ],
+  "problems": [
+    { "id": "ca_bright", "species": "calathea", "tier": "easy", "unlockAtSaved": 0, "seasons": ["spring", "summer", "autumn", "winter"],
+      "ko": "잎이 다 말림", "clue": "창가에 뒀더니 잎이 다 말렸다며 맡겼다.", "teaches": "너무 밝아도 탈이다",
+      "scripts": { "new": "careNewCaBright", "stuck": "careStuckCaBright", "saved": "careSavedCaBright" } },
+    { "id": "ca_dark", "species": "calathea", "tier": "normal", "unlockAtSaved": 6, "seasons": ["spring", "summer", "autumn", "winter"],
+      "ko": "잎이 안 펴짐", "clue": "창가에서 치웠는데도 잎이 안 펴진다며 맡겼다.", "teaches": "너무 어두우면 아무것도 안 된다",
+      "scripts": { "new": "careNewCaDark", "stuck": "careStuckCaDark", "saved": "careSavedCaDark" } },
+    { "id": "pp_tip", "species": "pink_princess", "tier": "easy", "unlockAtSaved": 0, "seasons": ["spring", "summer", "autumn", "winter"],
+      "ko": "끝이 멈춤", "clue": "새 잎이 온통 분홍이더니 끝이 멈췄다며 맡겼다.", "teaches": "너무 분홍이면 끝이 시든다",
+      "scripts": { "new": "careNewPpTip", "stuck": "careStuckPpTip", "saved": "careSavedPpTip" } },
+    { "id": "pp_green", "species": "pink_princess", "tier": "normal", "unlockAtSaved": 3, "seasons": ["spring", "summer", "autumn", "winter"],
+      "ko": "분홍이 빠짐", "clue": "분홍이 하나도 없는 잎만 난다며 맡겼다.", "teaches": "어두우면 분홍이 빠진다 · 가위로 되돌린다",
+      "scripts": { "new": "careNewPpGreen", "stuck": "careStuckPpGreen", "saved": "careSavedPpGreen" } },
+    { "id": "al_dark", "species": "alocasia_frydek", "tier": "easy", "unlockAtSaved": 0, "seasons": ["spring", "summer", "autumn"],
+      "ko": "잎이 다 짐", "clue": "잎이 다 져서 죽은 것 같다며 맡겼다.", "teaches": "어두우면 잠든다 — 죽은 게 아니다",
+      "scripts": { "new": "careNewAlDark", "stuck": "careStuckAlDark", "saved": "careSavedAlDark" } },
+    { "id": "al_winter", "species": "alocasia_frydek", "tier": "spring", "unlockAtSaved": 1, "seasons": ["autumn", "winter"],
+      "ko": "겨울에 잎이 짐", "clue": "겨울에 잎이 다 녹았다며 버리기 전에 맡겼다.", "teaches": "겨울엔 잔다",
+      "scripts": { "new": "careNewAlWinter", "stuck": "careStuckAlWinter", "saved": "careSavedAlWinter" } },
+    { "id": "sc_floor", "species": "scindapsus", "tier": "normal", "unlockAtSaved": 3, "seasons": ["spring", "summer", "autumn", "winter"],
+      "ko": "줄기가 멈춤", "clue": "줄기가 바닥에 닿더니 더 안 자란다며 맡겼다.", "teaches": "높이 둘수록 길게",
+      "scripts": { "new": "careNewScFloor", "stuck": "careStuckScFloor", "saved": "careSavedScFloor" } },
+    { "id": "sc_plain", "species": "scindapsus", "tier": "normal", "unlockAtSaved": 6, "seasons": ["spring", "summer", "autumn", "winter"],
+      "ko": "무늬가 없음", "clue": "새 잎에 무늬가 없다며 맡겼다.", "teaches": "무늬도 빛을 먹는다",
+      "scripts": { "new": "careNewScPlain", "stuck": "careStuckScPlain", "saved": "careSavedScPlain" } }
+  ],
+  "_doc_lines": "기록 줄(대사 아님 · core 가 «{손님 ko} — {줄}»로). returned 돌려줄 때 · collected 기한 날 손님이 찾아감(탓하지 않는다) · cutGift 잘라 낸 끝은 자취생 것 · regularAsk 다른 진로 단골이 처음 맡기러 옴(D 판 바꾸기 뒤).",
+  "_lines": {
+    "returned": "화분을 받아 갔다.",
+    "collected": "화분을 찾아갔다.",
+    "cutGift": "잘라 낸 건 가져도 된대.",
+    "regularAsk": "단골이 화분을 맡기러 왔다."
+  }
+}

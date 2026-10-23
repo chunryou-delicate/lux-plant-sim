@@ -211,6 +211,11 @@ const SPEC = { cuttings: [CW, VB, ES, { ...ES, gen: 2 }], varieSalesSinceMove: 1
 const END_SPEC = { ...SPEC, ppPlants: 1, ppPinkHoldCuts: 1, alCormsFound: 1, alFoundCormsPlanted: 1, alWokeCount: 1, cashWon: 5_000_000 };
 const HM = (day, o = {}) => OR(day, { ...END_SPEC, movedHome: true, job: 'shop', bagPlants: 0,
                                      shopDone: 0, shopRegulars: 0, shopOpenOrders: 0, shopDueSoonest: null, ...o });
+/* ★ 2026-10-23 [plan] D72 B — 진로 «식물 돌봄» 걸음. 진로는 한 판에 하나(D73)라 실제 판에선 가게와 안 겹친다 —
+     이 걸음은 «퀘스트 판정»만 재므로 가게 걸음 뒤에 진로 칸만 'care' 로 바꿔 잇는다(D 판 «끝맺음 뒤 다른 진로 열기»와도 같은 모양). */
+const CM = (day, o = {}) => OR(day, { ...END_SPEC, movedHome: true, job: 'care', bagPlants: 0,
+                                     scPlants: 1, scLongVine: 1, caCareOpen: false, caSaved: true,
+                                     careOpen: 0, careReady: 0, careSaved: 0, careKinds: 0, careDueSoonest: null, ...o });
 const steps = [
   /* ─ 초반 사슬 ─────────────────────────────────────────────────────── */
   /* 1  ★★ 켠 그 순간 — **여기서 ①이 열려야 한다**(예전엔 0줄이었다) */
@@ -321,7 +326,19 @@ const steps = [
   HM(820, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 0 }),
   HM(850, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 1 }),
   HM(860, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 1, caCareOpen: true, caSaved: false }),
-  HM(880, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 1, caCareOpen: false, caSaved: true })
+  HM(880, { shopDone: 30, shopRegulars: 30, scPlants: 1, scLongVine: 1, caCareOpen: false, caSaved: true }),
+
+  /* ─ 진로 «식물 돌봄»(D72 B · D73) — 돌봄 사슬 다섯 + 느린 곁줄 «고장 여덟» ─────────── */
+  CM(900, { bagPlants: 1 }),
+  CM(901),
+  CM(902, { careOpen: 1, careDueSoonest: 21 }),
+  CM(910, { careOpen: 0, careSaved: 1, careKinds: 1 }),
+  CM(911, { careSaved: 1, careKinds: 1 }),
+  CM(940, { careSaved: 3, careKinds: 3 }),
+  CM(941, { careSaved: 3, careKinds: 3 }),
+  CM(1000, { careSaved: 10, careKinds: 5 }),
+  CM(1001, { careSaved: 10, careKinds: 5 }),
+  CM(1200, { careSaved: 30, careKinds: 8 })
 ];
 steps.forEach((s, i) => step(i + 1, s));
 
