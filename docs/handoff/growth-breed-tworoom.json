@@ -1,0 +1,4363 @@
+{
+ "meta": {
+  "from": "tools/probe_breed_tworoom.mjs",
+  "decision": "총괄 D83 ③ · plan-breed-career-spec §7 · §8",
+  "profile": "data/profiles/room_profile.tworoom.json",
+  "roomRev": "2a089a3 2026-08-23",
+  "slots": 29,
+  "seeds": 12,
+  "days": 720,
+  "year": 360,
+  "lampCounts": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "starts": {
+   "spring": 0,
+   "summer": 90,
+   "autumn": 180,
+   "winter": 270
+  },
+  "monsteraBand": {
+   "rule": "뿌리 낸 날 그날 DLI · plant_grow bandOf(dli, 무늬) · varie_grades lightBands",
+   "brightMin": 7,
+   "growMin": 3.78,
+   "rootDays": 12,
+   "leafDays": 20,
+   "leafVarie": {
+    "dark": 0.4,
+    "mid": 0.9,
+    "bright": 0.9
+   },
+   "lightGrade": {
+    "dark": {
+     "sanban": 0.8,
+     "halfmoon": 0.19,
+     "fullmoon": 0.01
+    },
+    "mid": {
+     "sanban": 0.55,
+     "halfmoon": 0.4,
+     "fullmoon": 0.05
+    },
+    "bright": {
+     "sanban": 0.35,
+     "halfmoon": 0.5,
+     "fullmoon": 0.15
+    }
+   }
+  },
+  "hands": {
+   "monstera": [
+    {
+     "id": "m1c8",
+     "v0": 1,
+     "cap": 8,
+     "main": true
+    },
+    {
+     "id": "m3c8",
+     "v0": 3,
+     "cap": 8
+    },
+    {
+     "id": "m1c16",
+     "v0": 1,
+     "cap": 16
+    }
+   ],
+   "al": [
+    {
+     "id": "force",
+     "force": true,
+     "cap": 6,
+     "main": true
+    },
+    {
+     "id": "natural",
+     "force": false,
+     "cap": 6
+    }
+   ],
+   "pp": [
+    {
+     "id": "trade",
+     "main": true
+    }
+   ]
+  },
+  "handsKo": {
+   "monstera": "무늬 마디 삽수 v0 개 → 밝은 빈 자리에서 12일 물꽂이(안 옮김) · 다음 날 흙 · 남은 밝은 데 · 잎 둘 이상에 맨 위 무늬면 잘라 새 물꽂이(삽수 수 ≤ cap)",
+   "al": "상점 구근을 상한(cap 화분)까지 — 끝 안 난 갈래의 무늬 어미가 없을 때만 · 무지 싹·끝난 갈래·두 번 찾은 그루는 팜 · force = 어두운 자리로 재워 구근 찾기 · natural = 늘 밝은 데",
+   "pp": "교환 그루(잎 둘) · 가장 밝은 자리 · 새 잎이 분홍 많음이 아니면 «다음 잎 분홍 많음 몫»이 가장 큰 잎 위를 자름"
+  },
+  "note": "줄마다 방을 혼자 쓴다(줄끼리 자리 다툼 없음 · 셋을 같이 돌리는 것은 core 하네스 §7) · 굴림은 이 검사 씨앗(분포만 같다)"
+ },
+ "table": {
+  "monstera_halfmoon": {
+   "spring": {
+    "0": {
+     "m1c8": {
+      "inYear": 0.08,
+      "median": null,
+      "fastest": 236,
+      "reached": 4,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       468,
+       null,
+       236,
+       521,
+       477,
+       null,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.5,
+      "median": 209,
+      "fastest": 40,
+      "reached": 8,
+      "days": [
+       null,
+       555,
+       null,
+       40,
+       84,
+       364,
+       null,
+       153,
+       209,
+       165,
+       null,
+       151
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 399,
+      "reached": 5,
+      "days": [
+       495,
+       495,
+       null,
+       null,
+       null,
+       399,
+       null,
+       453,
+       null,
+       null,
+       null,
+       471
+      ]
+     }
+    },
+    "1": {
+     "m1c8": {
+      "inYear": 0.25,
+      "median": 489,
+      "fastest": 206,
+      "reached": 9,
+      "days": [
+       489,
+       null,
+       604,
+       null,
+       null,
+       379,
+       542,
+       236,
+       424,
+       206,
+       512,
+       240
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.58,
+      "median": 177,
+      "fastest": 40,
+      "reached": 8,
+      "days": [
+       null,
+       null,
+       null,
+       40,
+       84,
+       201,
+       null,
+       98,
+       177,
+       165,
+       545,
+       129
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.25,
+      "median": 420,
+      "fastest": 193,
+      "reached": 9,
+      "days": [
+       430,
+       257,
+       429,
+       null,
+       430,
+       420,
+       null,
+       376,
+       null,
+       193,
+       420,
+       200
+      ]
+     }
+    },
+    "2": {
+     "m1c8": {
+      "inYear": 1,
+      "median": 140,
+      "fastest": 114,
+      "reached": 12,
+      "days": [
+       150,
+       143,
+       120,
+       114,
+       122,
+       147,
+       149,
+       140,
+       152,
+       118,
+       186,
+       135
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.92,
+      "median": 100,
+      "fastest": 55,
+      "reached": 12,
+      "days": [
+       140,
+       532,
+       76,
+       120,
+       55,
+       119,
+       100,
+       86,
+       218,
+       88,
+       128,
+       83
+      ]
+     },
+     "m1c16": {
+      "inYear": 1,
+      "median": 136,
+      "fastest": 110,
+      "reached": 12,
+      "days": [
+       121,
+       170,
+       180,
+       114,
+       153,
+       168,
+       201,
+       131,
+       176,
+       129,
+       136,
+       110
+      ]
+     }
+    },
+    "3": {
+     "m1c8": {
+      "inYear": 1,
+      "median": 129,
+      "fastest": 116,
+      "reached": 12,
+      "days": [
+       129,
+       134,
+       182,
+       128,
+       126,
+       165,
+       133,
+       116,
+       129,
+       119,
+       130,
+       140
+      ]
+     },
+     "m3c8": {
+      "inYear": 1,
+      "median": 80,
+      "fastest": 53,
+      "reached": 12,
+      "days": [
+       114,
+       101,
+       72,
+       54,
+       53,
+       77,
+       81,
+       76,
+       93,
+       80,
+       97,
+       87
+      ]
+     },
+     "m1c16": {
+      "inYear": 1,
+      "median": 110,
+      "fastest": 89,
+      "reached": 12,
+      "days": [
+       135,
+       109,
+       169,
+       109,
+       110,
+       141,
+       158,
+       89,
+       145,
+       109,
+       110,
+       145
+      ]
+     }
+    }
+   },
+   "summer": {
+    "0": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 412,
+      "reached": 4,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       412,
+       438,
+       null,
+       426,
+       422,
+       null,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.58,
+      "median": 170,
+      "fastest": 70,
+      "reached": 9,
+      "days": [
+       290,
+       442,
+       null,
+       70,
+       378,
+       128,
+       null,
+       147,
+       170,
+       166,
+       131,
+       null
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 422,
+      "reached": 3,
+      "days": [
+       427,
+       null,
+       422,
+       null,
+       678,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     }
+    },
+    "1": {
+     "m1c8": {
+      "inYear": 0.25,
+      "median": 511,
+      "fastest": 276,
+      "reached": 8,
+      "days": [
+       520,
+       655,
+       null,
+       511,
+       null,
+       276,
+       494,
+       286,
+       292,
+       null,
+       415,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.83,
+      "median": 156,
+      "fastest": 70,
+      "reached": 11,
+      "days": [
+       156,
+       390,
+       351,
+       70,
+       320,
+       92,
+       null,
+       116,
+       110,
+       103,
+       163,
+       302
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.08,
+      "median": 698,
+      "fastest": 344,
+      "reached": 6,
+      "days": [
+       null,
+       698,
+       387,
+       null,
+       null,
+       400,
+       null,
+       501,
+       344,
+       null,
+       405,
+       null
+      ]
+     }
+    },
+    "2": {
+     "m1c8": {
+      "inYear": 1,
+      "median": 136,
+      "fastest": 101,
+      "reached": 12,
+      "days": [
+       142,
+       101,
+       102,
+       120,
+       172,
+       136,
+       154,
+       131,
+       106,
+       310,
+       208,
+       166
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.92,
+      "median": 84,
+      "fastest": 60,
+      "reached": 11,
+      "days": [
+       76,
+       158,
+       60,
+       60,
+       null,
+       83,
+       260,
+       84,
+       102,
+       80,
+       138,
+       161
+      ]
+     },
+     "m1c16": {
+      "inYear": 1,
+      "median": 145,
+      "fastest": 92,
+      "reached": 12,
+      "days": [
+       107,
+       151,
+       226,
+       92,
+       119,
+       136,
+       162,
+       153,
+       145,
+       123,
+       148,
+       157
+      ]
+     }
+    },
+    "3": {
+     "m1c8": {
+      "inYear": 1,
+      "median": 128,
+      "fastest": 90,
+      "reached": 12,
+      "days": [
+       115,
+       90,
+       180,
+       123,
+       160,
+       112,
+       134,
+       128,
+       130,
+       236,
+       122,
+       137
+      ]
+     },
+     "m3c8": {
+      "inYear": 1,
+      "median": 73,
+      "fastest": 54,
+      "reached": 12,
+      "days": [
+       94,
+       96,
+       54,
+       54,
+       56,
+       73,
+       117,
+       73,
+       73,
+       72,
+       102,
+       138
+      ]
+     },
+     "m1c16": {
+      "inYear": 1,
+      "median": 128,
+      "fastest": 108,
+      "reached": 12,
+      "days": [
+       108,
+       130,
+       170,
+       153,
+       137,
+       108,
+       108,
+       128,
+       118,
+       178,
+       130,
+       128
+      ]
+     }
+    }
+   },
+   "autumn": {
+    "0": {
+     "m1c8": {
+      "inYear": 0.17,
+      "median": null,
+      "fastest": 332,
+      "reached": 4,
+      "days": [
+       null,
+       683,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       332,
+       null,
+       560,
+       354
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.75,
+      "median": 281,
+      "fastest": 84,
+      "reached": 10,
+      "days": [
+       327,
+       null,
+       84,
+       550,
+       181,
+       321,
+       252,
+       null,
+       281,
+       246,
+       258,
+       281
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.08,
+      "median": null,
+      "fastest": 267,
+      "reached": 4,
+      "days": [
+       null,
+       null,
+       null,
+       657,
+       599,
+       null,
+       null,
+       null,
+       399,
+       null,
+       267,
+       null
+      ]
+     }
+    },
+    "1": {
+     "m1c8": {
+      "inYear": 0.58,
+      "median": 297,
+      "fastest": 217,
+      "reached": 11,
+      "days": [
+       285,
+       426,
+       297,
+       368,
+       259,
+       407,
+       320,
+       288,
+       217,
+       null,
+       234,
+       363
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.83,
+      "median": 236,
+      "fastest": 84,
+      "reached": 11,
+      "days": [
+       236,
+       null,
+       84,
+       335,
+       289,
+       261,
+       232,
+       655,
+       226,
+       299,
+       207,
+       212
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.42,
+      "median": 362,
+      "fastest": 236,
+      "reached": 11,
+      "days": [
+       236,
+       673,
+       363,
+       318,
+       322,
+       null,
+       362,
+       700,
+       240,
+       396,
+       239,
+       593
+      ]
+     }
+    },
+    "2": {
+     "m1c8": {
+      "inYear": 1,
+      "median": 157,
+      "fastest": 125,
+      "reached": 12,
+      "days": [
+       157,
+       195,
+       153,
+       205,
+       137,
+       234,
+       220,
+       180,
+       144,
+       125,
+       127,
+       188
+      ]
+     },
+     "m3c8": {
+      "inYear": 1,
+      "median": 136,
+      "fastest": 74,
+      "reached": 12,
+      "days": [
+       74,
+       328,
+       84,
+       211,
+       166,
+       156,
+       161,
+       136,
+       135,
+       91,
+       210,
+       86
+      ]
+     },
+     "m1c16": {
+      "inYear": 1,
+      "median": 144,
+      "fastest": 103,
+      "reached": 12,
+      "days": [
+       127,
+       144,
+       271,
+       171,
+       121,
+       237,
+       264,
+       103,
+       144,
+       125,
+       190,
+       156
+      ]
+     }
+    },
+    "3": {
+     "m1c8": {
+      "inYear": 1,
+      "median": 142,
+      "fastest": 108,
+      "reached": 12,
+      "days": [
+       142,
+       174,
+       108,
+       137,
+       126,
+       148,
+       149,
+       153,
+       119,
+       158,
+       210,
+       137
+      ]
+     },
+     "m3c8": {
+      "inYear": 1,
+      "median": 77,
+      "fastest": 33,
+      "reached": 12,
+      "days": [
+       70,
+       223,
+       33,
+       185,
+       53,
+       82,
+       73,
+       77,
+       86,
+       88,
+       73,
+       86
+      ]
+     },
+     "m1c16": {
+      "inYear": 1,
+      "median": 167,
+      "fastest": 88,
+      "reached": 12,
+      "days": [
+       177,
+       209,
+       185,
+       137,
+       106,
+       251,
+       207,
+       88,
+       175,
+       167,
+       154,
+       133
+      ]
+     }
+    }
+   },
+   "winter": {
+    "0": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 479,
+      "reached": 3,
+      "days": [
+       612,
+       null,
+       null,
+       null,
+       null,
+       611,
+       null,
+       null,
+       null,
+       null,
+       479,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.17,
+      "median": null,
+      "fastest": 199,
+      "reached": 4,
+      "days": [
+       null,
+       null,
+       null,
+       199,
+       560,
+       298,
+       null,
+       null,
+       null,
+       null,
+       null,
+       587
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 543,
+      "reached": 5,
+      "days": [
+       543,
+       620,
+       571,
+       null,
+       560,
+       null,
+       null,
+       null,
+       null,
+       597,
+       null,
+       null
+      ]
+     }
+    },
+    "1": {
+     "m1c8": {
+      "inYear": 0.42,
+      "median": 610,
+      "fastest": 190,
+      "reached": 7,
+      "days": [
+       null,
+       610,
+       null,
+       null,
+       null,
+       null,
+       320,
+       296,
+       190,
+       672,
+       244,
+       233
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.33,
+      "median": 583,
+      "fastest": 199,
+      "reached": 11,
+      "days": [
+       708,
+       263,
+       null,
+       199,
+       460,
+       676,
+       617,
+       599,
+       244,
+       583,
+       628,
+       201
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.42,
+      "median": 465,
+      "fastest": 208,
+      "reached": 9,
+      "days": [
+       208,
+       null,
+       507,
+       null,
+       465,
+       null,
+       496,
+       344,
+       209,
+       313,
+       209,
+       526
+      ]
+     }
+    },
+    "2": {
+     "m1c8": {
+      "inYear": 1,
+      "median": 147,
+      "fastest": 100,
+      "reached": 12,
+      "days": [
+       127,
+       332,
+       113,
+       182,
+       217,
+       142,
+       170,
+       203,
+       147,
+       187,
+       100,
+       147
+      ]
+     },
+     "m3c8": {
+      "inYear": 1,
+      "median": 113,
+      "fastest": 98,
+      "reached": 12,
+      "days": [
+       139,
+       133,
+       113,
+       187,
+       112,
+       102,
+       110,
+       98,
+       139,
+       145,
+       108,
+       125
+      ]
+     },
+     "m1c16": {
+      "inYear": 1,
+      "median": 154,
+      "fastest": 99,
+      "reached": 12,
+      "days": [
+       173,
+       154,
+       186,
+       196,
+       113,
+       223,
+       162,
+       152,
+       210,
+       130,
+       100,
+       99
+      ]
+     }
+    },
+    "3": {
+     "m1c8": {
+      "inYear": 1,
+      "median": 132,
+      "fastest": 86,
+      "reached": 12,
+      "days": [
+       131,
+       89,
+       170,
+       104,
+       161,
+       155,
+       86,
+       128,
+       132,
+       150,
+       150,
+       135
+      ]
+     },
+     "m3c8": {
+      "inYear": 1,
+      "median": 112,
+      "fastest": 33,
+      "reached": 12,
+      "days": [
+       112,
+       114,
+       53,
+       33,
+       61,
+       93,
+       79,
+       113,
+       128,
+       133,
+       175,
+       146
+      ]
+     },
+     "m1c16": {
+      "inYear": 1,
+      "median": 136,
+      "fastest": 103,
+      "reached": 12,
+      "days": [
+       176,
+       134,
+       159,
+       144,
+       161,
+       150,
+       141,
+       128,
+       126,
+       108,
+       103,
+       136
+      ]
+     }
+    }
+   }
+  },
+  "monstera_fullmoon": {
+   "spring": {
+    "0": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 521,
+      "reached": 1,
+      "days": [
+       null,
+       521,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 386,
+      "reached": 2,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       613,
+       null,
+       null,
+       null,
+       null,
+       null,
+       386
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": null,
+      "reached": 0,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     }
+    },
+    "1": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 411,
+      "reached": 5,
+      "days": [
+       null,
+       411,
+       null,
+       null,
+       null,
+       522,
+       null,
+       488,
+       null,
+       564,
+       null,
+       557
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.08,
+      "median": null,
+      "fastest": 204,
+      "reached": 4,
+      "days": [
+       null,
+       null,
+       null,
+       564,
+       null,
+       625,
+       null,
+       null,
+       391,
+       null,
+       null,
+       204
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 422,
+      "reached": 1,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       422,
+       null,
+       null,
+       null,
+       null
+      ]
+     }
+    },
+    "2": {
+     "m1c8": {
+      "inYear": 0.33,
+      "median": 389,
+      "fastest": 213,
+      "reached": 12,
+      "days": [
+       508,
+       213,
+       389,
+       219,
+       412,
+       415,
+       715,
+       326,
+       225,
+       377,
+       409,
+       562
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.5,
+      "median": 206,
+      "fastest": 81,
+      "reached": 10,
+      "days": [
+       601,
+       null,
+       488,
+       81,
+       432,
+       122,
+       null,
+       206,
+       160,
+       140,
+       436,
+       129
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.5,
+      "median": 340,
+      "fastest": 168,
+      "reached": 11,
+      "days": [
+       508,
+       171,
+       222,
+       170,
+       null,
+       472,
+       470,
+       168,
+       282,
+       448,
+       419,
+       340
+      ]
+     }
+    },
+    "3": {
+     "m1c8": {
+      "inYear": 0.75,
+      "median": 215,
+      "fastest": 146,
+      "reached": 12,
+      "days": [
+       512,
+       245,
+       146,
+       194,
+       500,
+       215,
+       368,
+       185,
+       292,
+       187,
+       190,
+       285
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.67,
+      "median": 167,
+      "fastest": 71,
+      "reached": 12,
+      "days": [
+       436,
+       403,
+       362,
+       71,
+       194,
+       137,
+       138,
+       99,
+       613,
+       167,
+       333,
+       99
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.75,
+      "median": 254,
+      "fastest": 151,
+      "reached": 12,
+      "days": [
+       375,
+       176,
+       358,
+       158,
+       173,
+       272,
+       473,
+       151,
+       530,
+       290,
+       169,
+       254
+      ]
+     }
+    }
+   },
+   "summer": {
+    "0": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": null,
+      "reached": 0,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.33,
+      "median": null,
+      "fastest": 142,
+      "reached": 5,
+      "days": [
+       null,
+       null,
+       null,
+       142,
+       null,
+       330,
+       null,
+       null,
+       367,
+       323,
+       320,
+       null
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 517,
+      "reached": 1,
+      "days": [
+       null,
+       null,
+       null,
+       517,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     }
+    },
+    "1": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": null,
+      "reached": 0,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.5,
+      "median": 352,
+      "fastest": 166,
+      "reached": 7,
+      "days": [
+       352,
+       null,
+       null,
+       291,
+       null,
+       172,
+       null,
+       657,
+       279,
+       166,
+       231,
+       null
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": null,
+      "reached": 0,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     }
+    },
+    "2": {
+     "m1c8": {
+      "inYear": 0.5,
+      "median": 357,
+      "fastest": 137,
+      "reached": 9,
+      "days": [
+       137,
+       357,
+       276,
+       264,
+       477,
+       325,
+       null,
+       null,
+       179,
+       null,
+       411,
+       455
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.5,
+      "median": 225,
+      "fastest": 76,
+      "reached": 9,
+      "days": [
+       197,
+       216,
+       460,
+       76,
+       null,
+       190,
+       null,
+       377,
+       147,
+       225,
+       430,
+       null
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.5,
+      "median": 348,
+      "fastest": 185,
+      "reached": 11,
+      "days": [
+       198,
+       439,
+       299,
+       185,
+       431,
+       391,
+       438,
+       348,
+       285,
+       307,
+       null,
+       363
+      ]
+     }
+    },
+    "3": {
+     "m1c8": {
+      "inYear": 0.58,
+      "median": 292,
+      "fastest": 143,
+      "reached": 12,
+      "days": [
+       219,
+       292,
+       143,
+       411,
+       528,
+       232,
+       466,
+       373,
+       414,
+       156,
+       250,
+       350
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.83,
+      "median": 169,
+      "fastest": 70,
+      "reached": 12,
+      "days": [
+       210,
+       153,
+       335,
+       70,
+       390,
+       94,
+       594,
+       169,
+       122,
+       116,
+       274,
+       300
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.67,
+      "median": 308,
+      "fastest": 149,
+      "reached": 12,
+      "days": [
+       412,
+       310,
+       356,
+       155,
+       217,
+       308,
+       365,
+       149,
+       192,
+       299,
+       488,
+       447
+      ]
+     }
+    }
+   },
+   "autumn": {
+    "0": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": null,
+      "reached": 0,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 639,
+      "reached": 1,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       639
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": null,
+      "reached": 0,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     }
+    },
+    "1": {
+     "m1c8": {
+      "inYear": 0.08,
+      "median": null,
+      "fastest": 343,
+      "reached": 3,
+      "days": [
+       null,
+       null,
+       647,
+       567,
+       null,
+       null,
+       null,
+       null,
+       343,
+       null,
+       null,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.08,
+      "median": null,
+      "fastest": 288,
+      "reached": 4,
+      "days": [
+       511,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       368,
+       null,
+       599,
+       288
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 409,
+      "reached": 2,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       547,
+       409,
+       null
+      ]
+     }
+    },
+    "2": {
+     "m1c8": {
+      "inYear": 0.5,
+      "median": 350,
+      "fastest": 209,
+      "reached": 11,
+      "days": [
+       302,
+       350,
+       259,
+       527,
+       467,
+       467,
+       715,
+       null,
+       209,
+       254,
+       336,
+       639
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.67,
+      "median": 220,
+      "fastest": 157,
+      "reached": 10,
+      "days": [
+       220,
+       618,
+       310,
+       210,
+       419,
+       null,
+       218,
+       null,
+       193,
+       231,
+       157,
+       184
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.58,
+      "median": 351,
+      "fastest": 223,
+      "reached": 11,
+      "days": [
+       328,
+       358,
+       560,
+       640,
+       245,
+       603,
+       null,
+       351,
+       267,
+       299,
+       223,
+       475
+      ]
+     }
+    },
+    "3": {
+     "m1c8": {
+      "inYear": 0.67,
+      "median": 283,
+      "fastest": 161,
+      "reached": 12,
+      "days": [
+       580,
+       330,
+       161,
+       306,
+       279,
+       428,
+       462,
+       414,
+       217,
+       213,
+       283,
+       248
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.75,
+      "median": 202,
+      "fastest": 114,
+      "reached": 12,
+      "days": [
+       170,
+       559,
+       217,
+       258,
+       312,
+       459,
+       202,
+       572,
+       129,
+       115,
+       133,
+       114
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.75,
+      "median": 279,
+      "fastest": 115,
+      "reached": 12,
+      "days": [
+       312,
+       272,
+       241,
+       226,
+       233,
+       488,
+       454,
+       296,
+       115,
+       325,
+       640,
+       279
+      ]
+     }
+    }
+   },
+   "winter": {
+    "0": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 511,
+      "reached": 2,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       628,
+       null,
+       511,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": null,
+      "reached": 0,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 533,
+      "reached": 1,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       533,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     }
+    },
+    "1": {
+     "m1c8": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 473,
+      "reached": 1,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       473,
+       null,
+       null,
+       null,
+       null
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.08,
+      "median": null,
+      "fastest": 350,
+      "reached": 2,
+      "days": [
+       null,
+       631,
+       null,
+       350,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null
+      ]
+     },
+     "m1c16": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 509,
+      "reached": 1,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       null,
+       509,
+       null,
+       null,
+       null,
+       null
+      ]
+     }
+    },
+    "2": {
+     "m1c8": {
+      "inYear": 0.33,
+      "median": 408,
+      "fastest": 222,
+      "reached": 11,
+      "days": [
+       590,
+       353,
+       511,
+       691,
+       386,
+       546,
+       null,
+       436,
+       222,
+       270,
+       408,
+       279
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.33,
+      "median": 550,
+      "fastest": 156,
+      "reached": 7,
+      "days": [
+       308,
+       156,
+       null,
+       null,
+       null,
+       311,
+       250,
+       null,
+       612,
+       null,
+       550,
+       389
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.42,
+      "median": 495,
+      "fastest": 268,
+      "reached": 10,
+      "days": [
+       542,
+       595,
+       334,
+       269,
+       495,
+       525,
+       null,
+       320,
+       268,
+       269,
+       null,
+       611
+      ]
+     }
+    },
+    "3": {
+     "m1c8": {
+      "inYear": 0.75,
+      "median": 216,
+      "fastest": 146,
+      "reached": 12,
+      "days": [
+       494,
+       146,
+       192,
+       515,
+       376,
+       216,
+       220,
+       324,
+       154,
+       183,
+       193,
+       328
+      ]
+     },
+     "m3c8": {
+      "inYear": 0.83,
+      "median": 275,
+      "fastest": 162,
+      "reached": 12,
+      "days": [
+       520,
+       275,
+       347,
+       373,
+       302,
+       234,
+       162,
+       276,
+       186,
+       193,
+       244,
+       290
+      ]
+     },
+     "m1c16": {
+      "inYear": 0.92,
+      "median": 208,
+      "fastest": 113,
+      "reached": 12,
+      "days": [
+       337,
+       148,
+       231,
+       165,
+       331,
+       452,
+       146,
+       208,
+       113,
+       220,
+       169,
+       303
+      ]
+     }
+    }
+   }
+  },
+  "al_marble": {
+   "spring": {
+    "0": {
+     "force": {
+      "inYear": 1,
+      "median": 150,
+      "fastest": 105,
+      "reached": 12,
+      "days": [
+       214,
+       150,
+       187,
+       159,
+       187,
+       105,
+       158,
+       147,
+       113,
+       115,
+       246,
+       113
+      ]
+     },
+     "natural": {
+      "inYear": 0.08,
+      "median": 585,
+      "fastest": 225,
+      "reached": 7,
+      "days": [
+       null,
+       225,
+       585,
+       null,
+       629,
+       374,
+       430,
+       null,
+       402,
+       null,
+       null,
+       402
+      ]
+     }
+    },
+    "1": {
+     "force": {
+      "inYear": 1,
+      "median": 144,
+      "fastest": 105,
+      "reached": 12,
+      "days": [
+       210,
+       144,
+       165,
+       151,
+       184,
+       105,
+       149,
+       132,
+       113,
+       115,
+       226,
+       113
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": 476,
+      "fastest": 374,
+      "reached": 9,
+      "days": [
+       621,
+       462,
+       614,
+       null,
+       458,
+       374,
+       476,
+       null,
+       402,
+       null,
+       608,
+       402
+      ]
+     }
+    },
+    "2": {
+     "force": {
+      "inYear": 1,
+      "median": 124,
+      "fastest": 105,
+      "reached": 12,
+      "days": [
+       197,
+       124,
+       153,
+       137,
+       197,
+       105,
+       135,
+       121,
+       113,
+       115,
+       223,
+       113
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 374,
+      "reached": 3,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       374,
+       null,
+       null,
+       402,
+       null,
+       null,
+       402
+      ]
+     }
+    },
+    "3": {
+     "force": {
+      "inYear": 1,
+      "median": 122,
+      "fastest": 105,
+      "reached": 12,
+      "days": [
+       197,
+       122,
+       153,
+       138,
+       197,
+       105,
+       135,
+       121,
+       113,
+       115,
+       223,
+       113
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 374,
+      "reached": 3,
+      "days": [
+       null,
+       null,
+       null,
+       null,
+       null,
+       374,
+       null,
+       null,
+       402,
+       null,
+       null,
+       402
+      ]
+     }
+    }
+   },
+   "summer": {
+    "0": {
+     "force": {
+      "inYear": 0.92,
+      "median": 131,
+      "fastest": 104,
+      "reached": 12,
+      "days": [
+       284,
+       131,
+       277,
+       139,
+       417,
+       104,
+       145,
+       128,
+       116,
+       116,
+       298,
+       116
+      ]
+     },
+     "natural": {
+      "inYear": 0.58,
+      "median": 340,
+      "fastest": 284,
+      "reached": 12,
+      "days": [
+       644,
+       336,
+       315,
+       644,
+       658,
+       284,
+       340,
+       672,
+       312,
+       340,
+       644,
+       312
+      ]
+     }
+    },
+    "1": {
+     "force": {
+      "inYear": 1,
+      "median": 126,
+      "fastest": 104,
+      "reached": 12,
+      "days": [
+       284,
+       125,
+       163,
+       137,
+       298,
+       104,
+       143,
+       126,
+       116,
+       116,
+       296,
+       116
+      ]
+     },
+     "natural": {
+      "inYear": 0.25,
+      "median": 396,
+      "fastest": 284,
+      "reached": 12,
+      "days": [
+       637,
+       372,
+       524,
+       644,
+       396,
+       284,
+       386,
+       644,
+       312,
+       644,
+       518,
+       312
+      ]
+     }
+    },
+    "2": {
+     "force": {
+      "inYear": 1,
+      "median": 124,
+      "fastest": 104,
+      "reached": 12,
+      "days": [
+       284,
+       124,
+       154,
+       137,
+       285,
+       104,
+       140,
+       121,
+       116,
+       116,
+       290,
+       116
+      ]
+     },
+     "natural": {
+      "inYear": 0.25,
+      "median": 644,
+      "fastest": 284,
+      "reached": 12,
+      "days": [
+       658,
+       644,
+       658,
+       644,
+       658,
+       284,
+       644,
+       644,
+       312,
+       644,
+       658,
+       312
+      ]
+     }
+    },
+    "3": {
+     "force": {
+      "inYear": 1,
+      "median": 124,
+      "fastest": 104,
+      "reached": 12,
+      "days": [
+       284,
+       124,
+       154,
+       137,
+       281,
+       104,
+       140,
+       122,
+       116,
+       116,
+       290,
+       116
+      ]
+     },
+     "natural": {
+      "inYear": 0.25,
+      "median": 644,
+      "fastest": 284,
+      "reached": 12,
+      "days": [
+       658,
+       644,
+       658,
+       644,
+       658,
+       284,
+       644,
+       644,
+       312,
+       644,
+       658,
+       312
+      ]
+     }
+    }
+   },
+   "autumn": {
+    "0": {
+     "force": {
+      "inYear": 0.92,
+      "median": 231,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       297,
+       250,
+       279,
+       231,
+       264,
+       194,
+       394,
+       223,
+       208,
+       194,
+       322,
+       208
+      ]
+     },
+     "natural": {
+      "inYear": 0.5,
+      "median": 264,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       568,
+       250,
+       422,
+       554,
+       264,
+       194,
+       250,
+       568,
+       212,
+       543,
+       554,
+       211
+      ]
+     }
+    },
+    "1": {
+     "force": {
+      "inYear": 1,
+      "median": 231,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       297,
+       250,
+       279,
+       231,
+       264,
+       194,
+       294,
+       223,
+       208,
+       194,
+       322,
+       208
+      ]
+     },
+     "natural": {
+      "inYear": 0.5,
+      "median": 296,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       568,
+       282,
+       434,
+       554,
+       278,
+       194,
+       296,
+       401,
+       222,
+       428,
+       428,
+       222
+      ]
+     }
+    },
+    "2": {
+     "force": {
+      "inYear": 1,
+      "median": 194,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       297,
+       194,
+       250,
+       231,
+       257,
+       194,
+       208,
+       194,
+       194,
+       194,
+       293,
+       194
+      ]
+     },
+     "natural": {
+      "inYear": 0.17,
+      "median": 554,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       568,
+       554,
+       568,
+       554,
+       568,
+       194,
+       554,
+       554,
+       222,
+       554,
+       568,
+       554
+      ]
+     }
+    },
+    "3": {
+     "force": {
+      "inYear": 1,
+      "median": 194,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       297,
+       194,
+       250,
+       231,
+       256,
+       194,
+       208,
+       194,
+       194,
+       194,
+       293,
+       194
+      ]
+     },
+     "natural": {
+      "inYear": 0.17,
+      "median": 554,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       568,
+       554,
+       568,
+       554,
+       568,
+       194,
+       554,
+       554,
+       222,
+       554,
+       568,
+       554
+      ]
+     }
+    }
+   },
+   "winter": {
+    "0": {
+     "force": {
+      "inYear": 1,
+      "median": 193,
+      "fastest": 146,
+      "reached": 12,
+      "days": [
+       306,
+       146,
+       231,
+       258,
+       270,
+       193,
+       160,
+       148,
+       146,
+       203,
+       232,
+       160
+      ]
+     },
+     "natural": {
+      "inYear": 0.42,
+      "median": 464,
+      "fastest": 160,
+      "reached": 10,
+      "days": [
+       null,
+       176,
+       332,
+       null,
+       715,
+       464,
+       213,
+       464,
+       160,
+       467,
+       478,
+       172
+      ]
+     }
+    },
+    "1": {
+     "force": {
+      "inYear": 1,
+      "median": 193,
+      "fastest": 146,
+      "reached": 12,
+      "days": [
+       303,
+       146,
+       231,
+       244,
+       270,
+       193,
+       160,
+       148,
+       146,
+       203,
+       232,
+       160
+      ]
+     },
+     "natural": {
+      "inYear": 0.08,
+      "median": 478,
+      "fastest": 179,
+      "reached": 10,
+      "days": [
+       null,
+       179,
+       464,
+       null,
+       578,
+       464,
+       478,
+       540,
+       464,
+       478,
+       478,
+       464
+      ]
+     }
+    },
+    "2": {
+     "force": {
+      "inYear": 1,
+      "median": 193,
+      "fastest": 146,
+      "reached": 12,
+      "days": [
+       284,
+       146,
+       231,
+       227,
+       283,
+       193,
+       160,
+       148,
+       146,
+       203,
+       232,
+       160
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": 478,
+      "fastest": 464,
+      "reached": 7,
+      "days": [
+       null,
+       464,
+       null,
+       null,
+       null,
+       464,
+       478,
+       null,
+       464,
+       478,
+       478,
+       464
+      ]
+     }
+    },
+    "3": {
+     "force": {
+      "inYear": 1,
+      "median": 193,
+      "fastest": 146,
+      "reached": 12,
+      "days": [
+       284,
+       146,
+       231,
+       228,
+       283,
+       193,
+       160,
+       148,
+       146,
+       203,
+       232,
+       160
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": 478,
+      "fastest": 464,
+      "reached": 8,
+      "days": [
+       null,
+       464,
+       null,
+       null,
+       null,
+       464,
+       478,
+       478,
+       464,
+       478,
+       478,
+       464
+      ]
+     }
+    }
+   }
+  },
+  "al_sector": {
+   "spring": {
+    "0": {
+     "force": {
+      "inYear": 1,
+      "median": 141,
+      "fastest": 58,
+      "reached": 12,
+      "days": [
+       156,
+       150,
+       140,
+       74,
+       172,
+       131,
+       145,
+       207,
+       157,
+       58,
+       141,
+       126
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": 416,
+      "fastest": 370,
+      "reached": 9,
+      "days": [
+       null,
+       370,
+       619,
+       374,
+       612,
+       388,
+       416,
+       null,
+       416,
+       374,
+       null,
+       416
+      ]
+     }
+    },
+    "1": {
+     "force": {
+      "inYear": 1,
+      "median": 131,
+      "fastest": 58,
+      "reached": 12,
+      "days": [
+       152,
+       144,
+       128,
+       74,
+       170,
+       131,
+       136,
+       191,
+       136,
+       58,
+       125,
+       126
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": 449,
+      "fastest": 374,
+      "reached": 10,
+      "days": [
+       604,
+       449,
+       597,
+       374,
+       430,
+       388,
+       463,
+       581,
+       null,
+       374,
+       null,
+       416
+      ]
+     }
+    },
+    "2": {
+     "force": {
+      "inYear": 1,
+      "median": 122,
+      "fastest": 58,
+      "reached": 12,
+      "days": [
+       139,
+       121,
+       121,
+       74,
+       170,
+       131,
+       122,
+       177,
+       126,
+       58,
+       122,
+       126
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 374,
+      "reached": 4,
+      "days": [
+       null,
+       null,
+       null,
+       374,
+       null,
+       388,
+       null,
+       null,
+       null,
+       374,
+       null,
+       416
+      ]
+     }
+    },
+    "3": {
+     "force": {
+      "inYear": 1,
+      "median": 122,
+      "fastest": 58,
+      "reached": 12,
+      "days": [
+       138,
+       121,
+       122,
+       74,
+       168,
+       131,
+       122,
+       177,
+       126,
+       58,
+       122,
+       126
+      ]
+     },
+     "natural": {
+      "inYear": 0,
+      "median": null,
+      "fastest": 374,
+      "reached": 4,
+      "days": [
+       null,
+       null,
+       null,
+       374,
+       null,
+       388,
+       null,
+       null,
+       null,
+       374,
+       null,
+       416
+      ]
+     }
+    }
+   },
+   "summer": {
+    "0": {
+     "force": {
+      "inYear": 0.92,
+      "median": 131,
+      "fastest": 56,
+      "reached": 12,
+      "days": [
+       150,
+       131,
+       127,
+       71,
+       404,
+       131,
+       128,
+       280,
+       133,
+       56,
+       138,
+       133
+      ]
+     },
+     "natural": {
+      "inYear": 0.67,
+      "median": 326,
+      "fastest": 284,
+      "reached": 12,
+      "days": [
+       658,
+       322,
+       329,
+       284,
+       644,
+       298,
+       326,
+       644,
+       326,
+       326,
+       658,
+       326
+      ]
+     }
+    },
+    "1": {
+     "force": {
+      "inYear": 1,
+      "median": 130,
+      "fastest": 56,
+      "reached": 12,
+      "days": [
+       140,
+       125,
+       126,
+       71,
+       284,
+       131,
+       126,
+       279,
+       133,
+       56,
+       130,
+       133
+      ]
+     },
+     "natural": {
+      "inYear": 0.42,
+      "median": 373,
+      "fastest": 284,
+      "reached": 12,
+      "days": [
+       531,
+       359,
+       507,
+       284,
+       409,
+       298,
+       373,
+       491,
+       644,
+       284,
+       644,
+       326
+      ]
+     }
+    },
+    "2": {
+     "force": {
+      "inYear": 1,
+      "median": 124,
+      "fastest": 56,
+      "reached": 12,
+      "days": [
+       138,
+       123,
+       124,
+       71,
+       271,
+       131,
+       123,
+       274,
+       133,
+       56,
+       123,
+       133
+      ]
+     },
+     "natural": {
+      "inYear": 0.33,
+      "median": 644,
+      "fastest": 284,
+      "reached": 12,
+      "days": [
+       644,
+       644,
+       644,
+       284,
+       644,
+       298,
+       644,
+       658,
+       644,
+       284,
+       644,
+       326
+      ]
+     }
+    },
+    "3": {
+     "force": {
+      "inYear": 1,
+      "median": 123,
+      "fastest": 56,
+      "reached": 12,
+      "days": [
+       136,
+       123,
+       123,
+       71,
+       176,
+       131,
+       123,
+       275,
+       133,
+       56,
+       123,
+       133
+      ]
+     },
+     "natural": {
+      "inYear": 0.33,
+      "median": 644,
+      "fastest": 284,
+      "reached": 12,
+      "days": [
+       644,
+       644,
+       644,
+       284,
+       644,
+       298,
+       644,
+       658,
+       644,
+       284,
+       644,
+       326
+      ]
+     }
+    }
+   },
+   "autumn": {
+    "0": {
+     "force": {
+      "inYear": 0.92,
+      "median": 223,
+      "fastest": 64,
+      "reached": 12,
+      "days": [
+       198,
+       236,
+       223,
+       83,
+       236,
+       208,
+       377,
+       281,
+       264,
+       64,
+       223,
+       222
+      ]
+     },
+     "natural": {
+      "inYear": 0.75,
+      "median": 226,
+      "fastest": 183,
+      "reached": 12,
+      "days": [
+       198,
+       236,
+       405,
+       194,
+       236,
+       208,
+       236,
+       582,
+       226,
+       183,
+       398,
+       225
+      ]
+     }
+    },
+    "1": {
+     "force": {
+      "inYear": 1,
+      "median": 223,
+      "fastest": 64,
+      "reached": 12,
+      "days": [
+       198,
+       236,
+       223,
+       83,
+       236,
+       208,
+       281,
+       281,
+       264,
+       64,
+       223,
+       222
+      ]
+     },
+     "natural": {
+      "inYear": 0.58,
+      "median": 269,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       198,
+       269,
+       417,
+       194,
+       250,
+       208,
+       283,
+       418,
+       554,
+       411,
+       411,
+       236
+      ]
+     }
+    },
+    "2": {
+     "force": {
+      "inYear": 1,
+      "median": 194,
+      "fastest": 64,
+      "reached": 12,
+      "days": [
+       198,
+       194,
+       194,
+       83,
+       236,
+       208,
+       194,
+       252,
+       208,
+       64,
+       194,
+       208
+      ]
+     },
+     "natural": {
+      "inYear": 0.33,
+      "median": 554,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       198,
+       554,
+       554,
+       194,
+       554,
+       208,
+       554,
+       568,
+       554,
+       554,
+       554,
+       208
+      ]
+     }
+    },
+    "3": {
+     "force": {
+      "inYear": 1,
+      "median": 194,
+      "fastest": 64,
+      "reached": 12,
+      "days": [
+       198,
+       194,
+       194,
+       83,
+       236,
+       208,
+       194,
+       252,
+       208,
+       64,
+       194,
+       208
+      ]
+     },
+     "natural": {
+      "inYear": 0.33,
+      "median": 554,
+      "fastest": 194,
+      "reached": 12,
+      "days": [
+       198,
+       554,
+       554,
+       194,
+       582,
+       208,
+       554,
+       568,
+       554,
+       554,
+       554,
+       208
+      ]
+     }
+    }
+   },
+   "winter": {
+    "0": {
+     "force": {
+      "inYear": 1,
+      "median": 162,
+      "fastest": 118,
+      "reached": 12,
+      "days": [
+       248,
+       146,
+       176,
+       162,
+       257,
+       219,
+       146,
+       217,
+       160,
+       118,
+       118,
+       217
+      ]
+     },
+     "natural": {
+      "inYear": 0.33,
+      "median": 464,
+      "fastest": 118,
+      "reached": 10,
+      "days": [
+       null,
+       464,
+       315,
+       464,
+       681,
+       478,
+       200,
+       null,
+       464,
+       118,
+       118,
+       478
+      ]
+     }
+    },
+    "1": {
+     "force": {
+      "inYear": 1,
+      "median": 162,
+      "fastest": 118,
+      "reached": 12,
+      "days": [
+       245,
+       146,
+       176,
+       162,
+       257,
+       219,
+       146,
+       217,
+       160,
+       118,
+       118,
+       217
+      ]
+     },
+     "natural": {
+      "inYear": 0.25,
+      "median": 464,
+      "fastest": 118,
+      "reached": 10,
+      "days": [
+       null,
+       464,
+       492,
+       464,
+       552,
+       478,
+       464,
+       526,
+       318,
+       118,
+       118,
+       null
+      ]
+     }
+    },
+    "2": {
+     "force": {
+      "inYear": 1,
+      "median": 162,
+      "fastest": 118,
+      "reached": 12,
+      "days": [
+       226,
+       146,
+       176,
+       162,
+       256,
+       219,
+       146,
+       217,
+       160,
+       118,
+       118,
+       217
+      ]
+     },
+     "natural": {
+      "inYear": 0.17,
+      "median": 478,
+      "fastest": 118,
+      "reached": 8,
+      "days": [
+       null,
+       464,
+       492,
+       464,
+       null,
+       478,
+       464,
+       null,
+       478,
+       118,
+       118,
+       null
+      ]
+     }
+    },
+    "3": {
+     "force": {
+      "inYear": 1,
+      "median": 162,
+      "fastest": 118,
+      "reached": 12,
+      "days": [
+       225,
+       146,
+       176,
+       162,
+       255,
+       219,
+       146,
+       217,
+       160,
+       118,
+       118,
+       217
+      ]
+     },
+     "natural": {
+      "inYear": 0.17,
+      "median": 478,
+      "fastest": 118,
+      "reached": 9,
+      "days": [
+       null,
+       464,
+       492,
+       464,
+       null,
+       478,
+       464,
+       492,
+       478,
+       118,
+       118,
+       null
+      ]
+     }
+    }
+   }
+  },
+  "pp_heavy": {
+   "spring": {
+    "0": {
+     "trade": {
+      "inYear": 0.58,
+      "median": 229,
+      "fastest": 86,
+      "reached": 12,
+      "days": [
+       86,
+       96,
+       580,
+       409,
+       533,
+       485,
+       414,
+       130,
+       283,
+       229,
+       136,
+       166
+      ]
+     }
+    },
+    "1": {
+     "trade": {
+      "inYear": 0.5,
+      "median": 294,
+      "fastest": 75,
+      "reached": 12,
+      "days": [
+       126,
+       121,
+       435,
+       75,
+       390,
+       489,
+       461,
+       169,
+       294,
+       464,
+       362,
+       151
+      ]
+     }
+    },
+    "2": {
+     "trade": {
+      "inYear": 0.92,
+      "median": 159,
+      "fastest": 51,
+      "reached": 12,
+      "days": [
+       100,
+       357,
+       145,
+       68,
+       192,
+       268,
+       210,
+       159,
+       651,
+       175,
+       51,
+       130
+      ]
+     }
+    },
+    "3": {
+     "trade": {
+      "inYear": 0.92,
+      "median": 159,
+      "fastest": 51,
+      "reached": 12,
+      "days": [
+       100,
+       357,
+       145,
+       68,
+       192,
+       268,
+       210,
+       159,
+       651,
+       175,
+       51,
+       130
+      ]
+     }
+    }
+   },
+   "summer": {
+    "0": {
+     "trade": {
+      "inYear": 0.58,
+      "median": 288,
+      "fastest": 49,
+      "reached": 11,
+      "days": [
+       49,
+       418,
+       395,
+       60,
+       452,
+       288,
+       null,
+       350,
+       385,
+       286,
+       110,
+       231
+      ]
+     }
+    },
+    "1": {
+     "trade": {
+      "inYear": 0.58,
+      "median": 343,
+      "fastest": 45,
+      "reached": 12,
+      "days": [
+       90,
+       343,
+       78,
+       59,
+       456,
+       578,
+       348,
+       368,
+       414,
+       450,
+       45,
+       133
+      ]
+     }
+    },
+    "2": {
+     "trade": {
+      "inYear": 0.92,
+      "median": 164,
+      "fastest": 44,
+      "reached": 12,
+      "days": [
+       88,
+       359,
+       146,
+       59,
+       207,
+       292,
+       230,
+       164,
+       666,
+       184,
+       44,
+       126
+      ]
+     }
+    },
+    "3": {
+     "trade": {
+      "inYear": 0.92,
+      "median": 164,
+      "fastest": 44,
+      "reached": 12,
+      "days": [
+       88,
+       359,
+       146,
+       59,
+       207,
+       292,
+       230,
+       164,
+       665,
+       184,
+       44,
+       126
+      ]
+     }
+    }
+   },
+   "autumn": {
+    "0": {
+     "trade": {
+      "inYear": 0.33,
+      "median": 382,
+      "fastest": 195,
+      "reached": 11,
+      "days": [
+       195,
+       210,
+       661,
+       646,
+       562,
+       null,
+       382,
+       554,
+       376,
+       246,
+       360,
+       626
+      ]
+     }
+    },
+    "1": {
+     "trade": {
+      "inYear": 0.67,
+      "median": 344,
+      "fastest": 91,
+      "reached": 11,
+      "days": [
+       91,
+       135,
+       344,
+       358,
+       404,
+       276,
+       357,
+       380,
+       null,
+       139,
+       405,
+       227
+      ]
+     }
+    },
+    "2": {
+     "trade": {
+      "inYear": 0.92,
+      "median": 202,
+      "fastest": 56,
+      "reached": 12,
+      "days": [
+       117,
+       359,
+       185,
+       75,
+       237,
+       300,
+       253,
+       202,
+       674,
+       217,
+       56,
+       163
+      ]
+     }
+    },
+    "3": {
+     "trade": {
+      "inYear": 0.92,
+      "median": 202,
+      "fastest": 56,
+      "reached": 12,
+      "days": [
+       117,
+       359,
+       185,
+       75,
+       236,
+       300,
+       253,
+       202,
+       674,
+       217,
+       56,
+       163
+      ]
+     }
+    }
+   },
+   "winter": {
+    "0": {
+     "trade": {
+      "inYear": 0.5,
+      "median": 353,
+      "fastest": 194,
+      "reached": 10,
+      "days": [
+       227,
+       198,
+       null,
+       586,
+       535,
+       487,
+       499,
+       null,
+       353,
+       194,
+       210,
+       232
+      ]
+     }
+    },
+    "1": {
+     "trade": {
+      "inYear": 0.67,
+      "median": 254,
+      "fastest": 123,
+      "reached": 12,
+      "days": [
+       123,
+       144,
+       570,
+       478,
+       408,
+       532,
+       353,
+       267,
+       165,
+       254,
+       177,
+       226
+      ]
+     }
+    },
+    "2": {
+     "trade": {
+      "inYear": 0.92,
+      "median": 190,
+      "fastest": 68,
+      "reached": 12,
+      "days": [
+       124,
+       359,
+       176,
+       91,
+       221,
+       284,
+       236,
+       190,
+       661,
+       206,
+       68,
+       159
+      ]
+     }
+    },
+    "3": {
+     "trade": {
+      "inYear": 0.92,
+      "median": 190,
+      "fastest": 68,
+      "reached": 12,
+      "days": [
+       124,
+       358,
+       175,
+       91,
+       221,
+       284,
+       236,
+       190,
+       661,
+       206,
+       68,
+       159
+      ]
+     }
+    }
+   }
+  }
+ },
+ "aux": {
+  "brightRootSlots": {
+   "spring": {
+    "0": {
+     "median": 0,
+     "min": 0
+    },
+    "1": {
+     "median": 0,
+     "min": 0
+    },
+    "2": {
+     "median": 3,
+     "min": 3
+    },
+    "3": {
+     "median": 5,
+     "min": 5
+    }
+   },
+   "summer": {
+    "0": {
+     "median": 3,
+     "min": 0
+    },
+    "1": {
+     "median": 3,
+     "min": 0
+    },
+    "2": {
+     "median": 4,
+     "min": 0
+    },
+    "3": {
+     "median": 5,
+     "min": 0
+    }
+   },
+   "autumn": {
+    "0": {
+     "median": 0,
+     "min": 0
+    },
+    "1": {
+     "median": 0,
+     "min": 0
+    },
+    "2": {
+     "median": 2,
+     "min": 0
+    },
+    "3": {
+     "median": 5,
+     "min": 0
+    }
+   },
+   "winter": {
+    "0": {
+     "median": 0,
+     "min": 0
+    },
+    "1": {
+     "median": 0,
+     "min": 0
+    },
+    "2": {
+     "median": 0,
+     "min": 0
+    },
+    "3": {
+     "median": 1,
+     "min": 1
+    }
+   }
+  },
+  "monRoots": {
+   "spring": {
+    "0": {
+     "m1c8": {
+      "n": 72,
+      "dark": 0.39,
+      "mid": 0.25,
+      "bright": 0.36
+     },
+     "m3c8": {
+      "n": 72,
+      "dark": 0.4,
+      "mid": 0.38,
+      "bright": 0.22
+     },
+     "m1c16": {
+      "n": 71,
+      "dark": 0.44,
+      "mid": 0.24,
+      "bright": 0.32
+     }
+    },
+    "1": {
+     "m1c8": {
+      "n": 72,
+      "dark": 0.4,
+      "mid": 0.28,
+      "bright": 0.32
+     },
+     "m3c8": {
+      "n": 72,
+      "dark": 0.42,
+      "mid": 0.51,
+      "bright": 0.07
+     },
+     "m1c16": {
+      "n": 72,
+      "dark": 0.42,
+      "mid": 0.31,
+      "bright": 0.28
+     }
+    },
+    "2": {
+     "m1c8": {
+      "n": 96,
+      "dark": 0.07,
+      "mid": 0.42,
+      "bright": 0.51
+     },
+     "m3c8": {
+      "n": 96,
+      "dark": 0.1,
+      "mid": 0.39,
+      "bright": 0.51
+     },
+     "m1c16": {
+      "n": 132,
+      "dark": 0.08,
+      "mid": 0.35,
+      "bright": 0.57
+     }
+    },
+    "3": {
+     "m1c8": {
+      "n": 96,
+      "dark": 0.02,
+      "mid": 0.44,
+      "bright": 0.54
+     },
+     "m3c8": {
+      "n": 96,
+      "dark": 0.06,
+      "mid": 0.49,
+      "bright": 0.45
+     },
+     "m1c16": {
+      "n": 144,
+      "dark": 0.01,
+      "mid": 0.46,
+      "bright": 0.53
+     }
+    }
+   },
+   "summer": {
+    "0": {
+     "m1c8": {
+      "n": 72,
+      "dark": 0.5,
+      "mid": 0.15,
+      "bright": 0.35
+     },
+     "m3c8": {
+      "n": 72,
+      "dark": 0.42,
+      "mid": 0.06,
+      "bright": 0.53
+     },
+     "m1c16": {
+      "n": 72,
+      "dark": 0.47,
+      "mid": 0.18,
+      "bright": 0.35
+     }
+    },
+    "1": {
+     "m1c8": {
+      "n": 72,
+      "dark": 0.51,
+      "mid": 0.29,
+      "bright": 0.19
+     },
+     "m3c8": {
+      "n": 72,
+      "dark": 0.42,
+      "mid": 0.1,
+      "bright": 0.49
+     },
+     "m1c16": {
+      "n": 72,
+      "dark": 0.5,
+      "mid": 0.29,
+      "bright": 0.21
+     }
+    },
+    "2": {
+     "m1c8": {
+      "n": 84,
+      "dark": 0.02,
+      "mid": 0.37,
+      "bright": 0.61
+     },
+     "m3c8": {
+      "n": 96,
+      "dark": 0.11,
+      "mid": 0.33,
+      "bright": 0.55
+     },
+     "m1c16": {
+      "n": 95,
+      "dark": 0.03,
+      "mid": 0.32,
+      "bright": 0.65
+     }
+    },
+    "3": {
+     "m1c8": {
+      "n": 96,
+      "dark": 0,
+      "mid": 0.5,
+      "bright": 0.5
+     },
+     "m3c8": {
+      "n": 96,
+      "dark": 0.03,
+      "mid": 0.45,
+      "bright": 0.52
+     },
+     "m1c16": {
+      "n": 113,
+      "dark": 0.01,
+      "mid": 0.5,
+      "bright": 0.49
+     }
+    }
+   },
+   "autumn": {
+    "0": {
+     "m1c8": {
+      "n": 72,
+      "dark": 0.53,
+      "mid": 0.29,
+      "bright": 0.18
+     },
+     "m3c8": {
+      "n": 72,
+      "dark": 0.43,
+      "mid": 0.44,
+      "bright": 0.13
+     },
+     "m1c16": {
+      "n": 72,
+      "dark": 0.46,
+      "mid": 0.35,
+      "bright": 0.19
+     }
+    },
+    "1": {
+     "m1c8": {
+      "n": 72,
+      "dark": 0.36,
+      "mid": 0.57,
+      "bright": 0.07
+     },
+     "m3c8": {
+      "n": 72,
+      "dark": 0.39,
+      "mid": 0.61,
+      "bright": 0
+     },
+     "m1c16": {
+      "n": 72,
+      "dark": 0.42,
+      "mid": 0.56,
+      "bright": 0.03
+     }
+    },
+    "2": {
+     "m1c8": {
+      "n": 90,
+      "dark": 0,
+      "mid": 0.43,
+      "bright": 0.57
+     },
+     "m3c8": {
+      "n": 82,
+      "dark": 0.07,
+      "mid": 0.39,
+      "bright": 0.54
+     },
+     "m1c16": {
+      "n": 114,
+      "dark": 0.1,
+      "mid": 0.35,
+      "bright": 0.55
+     }
+    },
+    "3": {
+     "m1c8": {
+      "n": 96,
+      "dark": 0,
+      "mid": 0.52,
+      "bright": 0.48
+     },
+     "m3c8": {
+      "n": 96,
+      "dark": 0.03,
+      "mid": 0.33,
+      "bright": 0.64
+     },
+     "m1c16": {
+      "n": 125,
+      "dark": 0,
+      "mid": 0.5,
+      "bright": 0.5
+     }
+    }
+   },
+   "winter": {
+    "0": {
+     "m1c8": {
+      "n": 72,
+      "dark": 0.49,
+      "mid": 0.15,
+      "bright": 0.36
+     },
+     "m3c8": {
+      "n": 72,
+      "dark": 0.74,
+      "mid": 0.07,
+      "bright": 0.19
+     },
+     "m1c16": {
+      "n": 69,
+      "dark": 0.58,
+      "mid": 0.13,
+      "bright": 0.29
+     }
+    },
+    "1": {
+     "m1c8": {
+      "n": 72,
+      "dark": 0.44,
+      "mid": 0.33,
+      "bright": 0.22
+     },
+     "m3c8": {
+      "n": 72,
+      "dark": 0.61,
+      "mid": 0.32,
+      "bright": 0.07
+     },
+     "m1c16": {
+      "n": 72,
+      "dark": 0.39,
+      "mid": 0.4,
+      "bright": 0.21
+     }
+    },
+    "2": {
+     "m1c8": {
+      "n": 96,
+      "dark": 0.03,
+      "mid": 0.61,
+      "bright": 0.35
+     },
+     "m3c8": {
+      "n": 94,
+      "dark": 0.15,
+      "mid": 0.63,
+      "bright": 0.22
+     },
+     "m1c16": {
+      "n": 132,
+      "dark": 0.07,
+      "mid": 0.49,
+      "bright": 0.44
+     }
+    },
+    "3": {
+     "m1c8": {
+      "n": 96,
+      "dark": 0.01,
+      "mid": 0.38,
+      "bright": 0.61
+     },
+     "m3c8": {
+      "n": 96,
+      "dark": 0.02,
+      "mid": 0.63,
+      "bright": 0.35
+     },
+     "m1c16": {
+      "n": 129,
+      "dark": 0.02,
+      "mid": 0.41,
+      "bright": 0.57
+     }
+    }
+   }
+  },
+  "alBought": {
+   "spring": {
+    "0": {
+     "force": 12,
+     "natural": 12
+    },
+    "1": {
+     "force": 12,
+     "natural": 12
+    },
+    "2": {
+     "force": 12,
+     "natural": 12
+    },
+    "3": {
+     "force": 12,
+     "natural": 12
+    }
+   },
+   "summer": {
+    "0": {
+     "force": 12,
+     "natural": 12
+    },
+    "1": {
+     "force": 12,
+     "natural": 12
+    },
+    "2": {
+     "force": 12,
+     "natural": 12
+    },
+    "3": {
+     "force": 12,
+     "natural": 12
+    }
+   },
+   "autumn": {
+    "0": {
+     "force": 12,
+     "natural": 12
+    },
+    "1": {
+     "force": 12,
+     "natural": 12
+    },
+    "2": {
+     "force": 12,
+     "natural": 12
+    },
+    "3": {
+     "force": 12,
+     "natural": 12
+    }
+   },
+   "winter": {
+    "0": {
+     "force": 12,
+     "natural": 12
+    },
+    "1": {
+     "force": 12,
+     "natural": 12
+    },
+    "2": {
+     "force": 12,
+     "natural": 12
+    },
+    "3": {
+     "force": 12,
+     "natural": 12
+    }
+   }
+  },
+  "ppCuts": {
+   "spring": {
+    "0": 5,
+    "1": 8,
+    "2": 4,
+    "3": 4
+   },
+   "summer": {
+    "0": 4,
+    "1": 6,
+    "2": 4,
+    "3": 4
+   },
+   "autumn": {
+    "0": 9,
+    "1": 8,
+    "2": 4,
+    "3": 4
+   },
+   "winter": {
+    "0": 8,
+    "1": 7,
+    "2": 4,
+    "3": 4
+   }
+  }
+ },
+ "zeroInYear": [
+  "monstera_halfmoon · summer · 등0",
+  "monstera_halfmoon · winter · 등0",
+  "monstera_fullmoon · spring · 등0",
+  "monstera_fullmoon · spring · 등1",
+  "monstera_fullmoon · summer · 등0",
+  "monstera_fullmoon · summer · 등1",
+  "monstera_fullmoon · autumn · 등0",
+  "monstera_fullmoon · winter · 등0",
+  "monstera_fullmoon · winter · 등1"
+ ],
+ "zeroInYearAllHands": [
+  "monstera_fullmoon · spring · 등0",
+  "monstera_fullmoon · autumn · 등0",
+  "monstera_fullmoon · winter · 등0"
+ ],
+ "underHalfInYear": [
+  "monstera_halfmoon · spring · 등0 0.08",
+  "monstera_halfmoon · spring · 등1 0.25",
+  "monstera_halfmoon · summer · 등1 0.25",
+  "monstera_halfmoon · autumn · 등0 0.17",
+  "monstera_halfmoon · winter · 등1 0.42",
+  "monstera_fullmoon · spring · 등2 0.33",
+  "monstera_fullmoon · autumn · 등1 0.08",
+  "monstera_fullmoon · winter · 등2 0.33",
+  "pp_heavy · autumn · 등0 0.33"
+ ]
+}
