@@ -2105,6 +2105,27 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach',    text: '핑크프린세스가 없으면 상점에서 어린 그루를 들여 봐.' },
     { who: 'moni',   face: 'scissors', text: '자르는 손으로 분홍을 이어 갈 수 있어.' }
   ],
+  /* ★ 2026-10-24 [plan] 총괄 D88 ②(core «어디서 멎었나» 표 b8f90e5e) — 마지막 귀띔 둘(한 번씩 · 몬이는 수를 안 말한다 · 이 뒤로 다리를 더 안 놓음 D88 ③).
+     hintBreedRootSpot — 몬스테라: 판마다 산 삽수가 거의 다 어두운 데서 뿌리 냄(어두움 1~12 · 중간 0~3 · 밝음 0 — 밝은 자리는 AL·PP 화분이 먼저 차지) →
+       하프문이 «같은 조건 셋»에 못 닿고 1~2/3 에서 멎음.
+       참인 조건: 무늬 마디 삽수의 새 잎 무늬율·등급은 **뿌리 낸 날 그 자리 밝기**로 정해지고 한 번 정해지면 안 바뀐다(propagation §resolveVarieLight) —
+         어두움 40% · 중간·밝음 90%(D40 ×2 · 상한 .9) · 하프문 몫 어두움 .19 · 중간 .40 · 밝음 .50 → «어두운 데서 뿌리 낸 삽수는 무늬가 잘 안 나» ·
+         «그 뒤엔 옮겨도 돼»(뿌리 낸 뒤 자리를 바꿔도 소질은 그대로).
+       풀문 귀띔(«가장 밝은 자리»)과 안 겹친다: 이 줄은 «어두운 데를 피하라 · 뿌리 낼 동안만 자리를 비워라»다.
+       때: 기록장 몬스테라 표본 중 어두움 조건 다섯 이상이고 중간·밝음을 합친 것보다 많음 · 하프문 칸 등록·대기 아님(§breedChatOf breedRootDarkHint).
+     hintBreedAlKinds — AL: 무늬 어미 줄이 서도 한 갈래(마블이나 반달)만 이어짐(열 판 중 한 판만 둘 다 · 상점 싹 무늬 9/50).
+       참인 조건: 무늬 어미 구근은 어미 갈래를 잇고(motherKind · from_varie_mother) 상점 구근이 무늬면 갈래를 고르게 굴린다(growth_species.json alocasia_frydek)
+         → «무늬 갈래는 어미를 따라가» · «다른 갈래가 필요하면 상점 구근을 또 들여 봐».
+       때: AL 두 칸 중 하나만 등록·대기(같은 조건 셋 도달) · 다른 갈래는 무늬 어미 구근 싹 표본 0(§breedChatOf breedAlKindsHint). */
+  hintBreedRootSpot: [
+    { who: 'moni',   face: 'teach',    text: '어두운 데서 뿌리 낸 삽수는 무늬가 잘 안 나.' },
+    { who: 'moni',   face: 'teach',    text: '뿌리 낼 동안만이라도 밝은 자리를 비워 줘.' },
+    { who: 'moni',   face: 'calm',     text: '무늬는 뿌리 낸 날 자리로 정해져. 그 뒤엔 옮겨도 돼.' }
+  ],
+  hintBreedAlKinds: [
+    { who: 'moni',   face: 'bulb',     text: '무늬 갈래는 어미를 따라가. 마블 어미는 마블, 반달 어미는 반달.' },
+    { who: 'moni',   face: 'teach',    text: '다른 갈래가 필요하면 상점 구근을 또 들여 봐.' }
+  ],
   /* ═══ ★★ 2026-10-24 [plan] D72 D 나머지 «다른 진로 열기(바꾸기) · 마지막 덮개»(명세 plan-career-endings-spec-20261023 §2 · §4 · §11 · 총괄 D75 · D83) ═══
      사건([core]): job_start{job, switched:true}(끝맺음 뒤 처음 해 보는 진로로 옮긴 날) · job_start{job, switched:true, back:true}(끝맺음을 본 진로로 돌아간 날) ·
      shop_open{boardKept:true} · care_open{boardKept:true}(창 옆 판이 이미 걸려 있어 이름만 바뀌는 날) · final_cover(셋째 끝맺음 카드를 닫은 뒤 한 번).
@@ -3421,6 +3442,9 @@ export const CHATTER = [
   { id: 'hintBreedAlShopCorm',  gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && fin(c.breedAlNoMotherDays) && c.breedAlNoMotherDays >= 21 },
   { id: 'hintBreedPpHeavy',     gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && c.breedPpHeavyHint === true },
   { id: 'hintBreedPpShop',      gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && c.breedPpShopHint === true },
+  /* ★ 2026-10-24 [plan] 총괄 D88 ② — 마지막 귀띔 둘(한 번 · 잡담보다 앞). 참인 조건은 대사 위 주석 */
+  { id: 'hintBreedRootSpot',    gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && c.breedRootDarkHint === true },
+  { id: 'hintBreedAlKinds',     gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && c.breedAlKindsHint === true },
   { id: 'chatBreedMorning',     gap: 21, when: c => c.movedHome && c.jobId === 'breed' },
   { id: 'chatBreedBright',      gap: 21, when: c => c.movedHome && c.jobId === 'breed' && c.breedBrightHalfMore === true },
   { id: 'chatBreedPlainMother', gap: 21, when: c => c.movedHome && c.jobId === 'breed' && c.breedPlainMotherNone === true },
@@ -3713,7 +3737,7 @@ export function pickChatter(ctx = {}, recent = [], lastDay = {}) {
      breedPpLines: 핑크프린세스 줄 수 */
 function breedChatOf(S) {
   const T = S && S.jobBreed && S.jobBreed.tally;
-  if (!T || typeof T !== 'object') return { breedBrightHalfMore: null, breedPlainMotherNone: null, breedPpLines: null, breedFullmoonHint: null, breedPpHeavyHint: null };
+  if (!T || typeof T !== 'object') return { breedBrightHalfMore: null, breedPlainMotherNone: null, breedPpLines: null, breedFullmoonHint: null, breedPpHeavyHint: null, breedRootDarkHint: null, breedAlKindsHint: null };
   const n = v => (Number.isFinite(v) ? v : 0);
   const varie = r => (r ? n(r.sanban) + n(r.halfmoon) + n(r.fullmoon) : 0);
   const M = T.monstera || {};
@@ -3735,7 +3759,16 @@ function breedChatOf(S) {
   const ppOff = ppRows.reduce((a, r) => a + n(r.green) + n(r.marble) + n(r.pink), 0);
   const J = S.jobBreed, hasSlot = id => [...(Array.isArray(J.varieties) ? J.varieties : []), ...(Array.isArray(J.pending) ? J.pending : [])].some(v => v && v.slot === id);
   const ppHeavyHint = ppAll >= 3 && ppOff >= 2 && !hasSlot('pp_heavy');
-  return { breedBrightHalfMore: brightMore, breedPlainMotherNone: plainNone, breedPpLines: pp, breedFullmoonHint: fullmoonHint, breedPpHeavyHint: ppHeavyHint };
+  /* ★ 2026-10-24 [plan] 총괄 D88 ② — 뿌리 자리 귀띔 때: 몬스테라 어두움 조건 표본 다섯 이상 · 중간·밝음 합보다 많음 · 하프문 칸 등록·대기 아님 */
+  const darkN = all4(M.dark || {}), litN = all4(M.mid || {}) + all4(M.bright || {});
+  const rootDarkHint = darkN >= 5 && darkN > litN && !hasSlot('monstera_halfmoon');
+  /* AL 갈래 귀띔 때: 두 칸 중 하나만 등록·대기 · 다른 갈래는 무늬 어미 구근 싹 표본 0 */
+  const vm = (T.al && T.al.varie_mother) || {};
+  const alOne = hasSlot('al_marble') !== hasSlot('al_sector');
+  const otherKind = hasSlot('al_marble') ? 'sector' : 'marble';
+  const alKindsHint = alOne && n(vm[otherKind]) === 0;
+  return { breedBrightHalfMore: brightMore, breedPlainMotherNone: plainNone, breedPpLines: pp, breedFullmoonHint: fullmoonHint, breedPpHeavyHint: ppHeavyHint,
+           breedRootDarkHint: rootDarkHint, breedAlKindsHint: alKindsHint };
 }
 export function chatterContext(turn = {}, S = null) {
   const ts = (S && S.tutorial) || null;

@@ -1050,6 +1050,36 @@ check('잡담 — breedH 빈 다리 귀띔 둘(상점 구근 · PP 자르기)은
   assert.ok(!SCRIPTS.hintBreedPpHeavy.some(l => /그 아래를 잘라/.test(l.text)), 'PP 귀띔이 chatBreedPinkCut 과 같은 말을 합니다');
 });
 
+/* ★ 2026-10-24 [plan] 총괄 D88 ② — 마지막 귀띔 둘(뿌리 자리 · AL 갈래): 때가 참일 때만 · 한 번 · 수·거짓 낱말 없음 · 풀문 귀띔과 안 겹침 */
+check('잡담 — 마지막 귀띔 둘(뿌리 자리 · AL 갈래)은 때가 참일 때만 · 한 번(D88 ②)', () => {
+  const row = id => CHATTER.find(r => r.id === id);
+  for (const id of ['hintBreedRootSpot', 'hintBreedAlKinds']) {
+    assert.ok(row(id) && SCRIPTS[id], `'${id}' 가 없습니다`);
+    assert.equal(row(id).gap, 9999, `'${id}' 는 한 번만`);
+    assert.ok(!REPEATABLE.has(id), `'${id}' 가 다시 나옵니다`);
+    for (const l of SCRIPTS[id])
+      assert.ok(l.who === 'moni' && !/[0-9]|세 |셋|넷|다섯|여섯|일곱|여덟|아홉|서른|퍼센트|반드시|꼭 나/.test(l.text), `'${id}' 수·장담 낱말: ${l.text}`);
+  }
+  assert.ok(!SCRIPTS.hintBreedRootSpot.some(l => /가장 밝은/.test(l.text)), '뿌리 자리 귀띔이 풀문 귀띔(«가장 밝은 자리»)과 같은 말을 합니다');
+  const at = id => CHATTER.findIndex(r => r.id === id);
+  assert.ok(at('hintBreedRootSpot') < at('chatBreedMorning') && at('hintBreedAlKinds') < at('chatBreedMorning'), '귀띔이 육종 잡담 뒤에 있습니다');
+  const ctx = jb => ({ ...chatterContextOf({ day: 1400 }, { story: { job: { id: 'breed' } }, home: { room: 'tworoom' }, jobBreed: { varieties: [], pending: [], ...jb } }),
+                       movedHome: true, jobId: 'breed' });
+  const R = row('hintBreedRootSpot').when;
+  assert.equal(R(ctx({ tally: { monstera: { dark: { plain: 3, sanban: 2, halfmoon: 1 }, mid: { sanban: 1 } } } })), true, '어두움이 대부분인데 안 섭니다');
+  assert.equal(R(ctx({ tally: { monstera: { dark: { plain: 3, sanban: 2 }, mid: { sanban: 3, halfmoon: 2 } } } })), false, '중간이 더 많은데 섭니다');
+  assert.equal(R(ctx({ tally: { monstera: { dark: { plain: 2, sanban: 1 } } } })), false, '표본이 적은데 섭니다');
+  assert.equal(R(ctx({ tally: { monstera: { dark: { plain: 6 } } }, varieties: [{ slot: 'monstera_halfmoon' }] })), false, '하프문 칸을 이미 등록했는데 섭니다');
+  const A = row('hintBreedAlKinds').when;
+  assert.equal(A(ctx({ tally: { al: { varie_mother: { marble: 4, plain: 1 } } }, varieties: [{ slot: 'al_marble' }] })), true, '한 갈래만 섰는데 안 섭니다');
+  assert.equal(A(ctx({ tally: { al: { varie_mother: { marble: 3 } } }, pending: [{ slot: 'al_marble' }] })), true, '이름 대기(같은 조건 셋)인데 안 섭니다');
+  assert.equal(A(ctx({ tally: { al: { varie_mother: { marble: 4, sector: 1 } } }, varieties: [{ slot: 'al_marble' }] })), false, '다른 갈래 무늬 어미 싹이 있는데 섭니다');
+  assert.equal(A(ctx({ tally: { al: {} }, varieties: [{ slot: 'al_marble' }, { slot: 'al_sector' }] })), false, '두 칸 다 섰는데 섭니다');
+  assert.equal(A(ctx({ tally: { al: {} } })), false, '아무 갈래도 안 섰는데 섭니다');
+  const c0 = chatterContextOf({ day: 1 }, { story: { job: { id: 'care' } } });
+  assert.equal(c0.breedRootDarkHint, null); assert.equal(c0.breedAlKindsHint, null);
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {
