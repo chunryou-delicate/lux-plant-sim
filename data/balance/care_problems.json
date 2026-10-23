@@ -18,7 +18,7 @@
     { "id": "pp_tip", "species": "pink_princess", "tier": "easy", "unlockAtSaved": 0, "seasons": ["spring", "summer", "autumn", "winter"],
       "ko": "끝이 멈춤", "clue": "새 잎이 온통 분홍이더니 끝이 멈췄다며 맡겼다.", "teaches": "너무 분홍이면 끝이 시든다",
       "scripts": { "new": "careNewPpTip", "stuck": "careStuckPpTip", "saved": "careSavedPpTip" } },
-    { "id": "pp_green", "species": "pink_princess", "tier": "normal", "unlockAtSaved": 3, "seasons": ["spring", "summer", "autumn", "winter"],
+    { "id": "pp_green", "species": "pink_princess", "tier": "hard", "unlockAtSaved": 3, "seasons": ["spring", "summer", "autumn", "winter"],
       "ko": "분홍이 빠짐", "clue": "분홍이 하나도 없는 잎만 난다며 맡겼다.", "teaches": "어두우면 분홍이 빠진다 · 가위로 되돌린다",
       "scripts": { "new": "careNewPpGreen", "stuck": "careStuckPpGreen", "saved": "careSavedPpGreen" } },
     { "id": "al_dark", "species": "alocasia_frydek", "tier": "easy", "unlockAtSaved": 0, "seasons": ["spring", "summer", "autumn"],
