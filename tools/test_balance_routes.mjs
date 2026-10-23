@@ -391,12 +391,18 @@ check('①-1 ★A 와 B 가 실제로 다른가 — 같으면 B 는 경로가 �
     `얻는 것이 하나도 없습니다 — 즉 B 는 A 보다 열등한 같은 경로입니다`);
 });
 
-check('①-2 ★A 가 가을 안에 끝나는가 — story_arc §2 가 "표준"이라 부른 경로다', () => {
-  const autumn = A0.ok.filter(r => r.season === 'autumn').length;
-  info(`  A 의 계절 분포 — ${Object.entries(A0.seasons).map(([k, v]) => `${k} ${v}판`).join(' · ')}`);
-  assert.ok(autumn > A0.ok.length / 2,
-    `★A 는 ${A0.ok.length}판 중 ${autumn}판만 가을에 끝납니다 — 중앙값이 ${A0.medDay}일(${A0.ok.length ? A0.ok[Math.floor(A0.ok.length / 2)].season : '?'})이라 ` +
-    `"등 없이 가을 안에 이사"가 표준이 아닙니다`);
+/* ★ 2026-10-24 [core] 총괄 D81 ⑧ — 8월 목표(«A 가 가을 안에 이사» · «튜토 완주 게임 80일»)는 원룸 · 내 집 엔딩으로 넓힌 판보다 앞선 낡은 자였다.
+     지금 판 실측(probe_branches «안내대로» 사람 · 씨앗 10 · campaign D79): 이사 중앙 ≈136일 · 500만(내 집) ≈342일(게임 날).
+     이 자는 «시루 1 고정»(바닥) 사람이라 안내대로 판의 136일을 따라오는 것이 아니라 **그보다 늦어야** 맞다(D79 «시루가 밥» — 시루를 늘리는 것이 길).
+     ⚠ 아래 둘은 실측 기준점이지 게임 값이 아니다 — 판이 바뀌면 probe_branches 로 다시 재서 고친다 */
+const NOW_MOVE_GUIDED_DAY = 136;   /* 안내대로 이사 중앙(게임 날) */
+const NOW_HOME_DAY = 342;          /* 500만(내 집 엔딩) 중앙(게임 날) */
+check('①-2 ★바닥(시루 1 · 등 없이)은 안내대로 판의 이사(≈136일)보다 늦다 — 시루를 늘리는 것이 길이다(D79)', () => {
+  const medGame = A0.ok.length ? median(A0.ok.map(r => r.lastGameDay)) : null;
+  info(`  A 이사 ${A0.ok.length}/${A0.runs.length}판 · 게임 날 중앙 ${medGame ?? '—'} · 계절 ${Object.entries(A0.seasons).map(([k, v]) => `${k} ${v}판`).join(' · ') || '—'}`);
+  assert.ok(A0.rate < 0.5 || medGame > NOW_MOVE_GUIDED_DAY,
+    `★시루를 안 늘린 A 가 ${A0.ok.length}/${A0.runs.length}판 · 중앙 ${medGame}일에 이사합니다 — 안내대로 판(≈${NOW_MOVE_GUIDED_DAY}일)보다 빠르거나 같아 ` +
+    `"시루를 늘려라"는 안내가 할 일이 없습니다`);
 });
 
 /* ══ ② 계절을 빛에 걸면 ═══════════════════════════════════════════════════ */
@@ -459,13 +465,17 @@ check('③ 튜토 완주 시간이 balance_decisions §D 의 "30~50분"에 드�
   const min = (R.medGameDays * 10 + R.medTaps * TAP_SEC) / 60;
   assert.ok(min >= 30 && min <= 50,
     `튜토 완주 추정 ${min.toFixed(1)}분 — 목표 30~50분 밖입니다 ` +
-    `(게임 ${R.medGameDays}일 · 누름 ${R.medTaps}회 · 10초/일 · 누름당 ${TAP_SEC}초)`);
+    `(게임 ${R.medGameDays}일 · 누름 ${R.medTaps}회 · 10초/일 · 누름당 ${TAP_SEC}초)` +
+    /* ⚠ 10-24 총괄 D81 — «30~50분»은 그대로 둔다. 넘친 것은 진짜 미달 → F 다듬기 목록(plan-polish-list) */
+    (min > 50 ? ` · F 다듬기 목록 «튜토 ${(min - 50).toFixed(1)}분 넘침»(D81)` : ''));
 });
 
-check('③-b 게임일이 balance_decisions §D 의 "튜토 완주 게임일 80일"에 드는가', () => {
+/* ★ 10-24 D81 ⑧ — «튜토 완주 게임 80일»(8월) → 지금 판: 이사(튜토 완주)가 내 집 판(500만 ≈342일)보다 앞서야 원룸 장이 남는다.
+     바닥 사람도 그 안에 나가는지를 잰다(한 판도 못 나가면 떨어진다 — 아래 R 이 «나간 판»이 없으면 끝날(상한)을 쓰기 때문) */
+check('③-b 이사(튜토 완주)가 내 집 판(500만 ≈342일)보다 앞서는가 — 원룸 장이 남는다(D81)', () => {
   const R = A0.ok.length ? A0 : (B0.ok.length ? B0 : C0);
-  assert.ok(R.medGameDays <= 100,
-    `튜토 완주가 게임 ${R.medGameDays}일입니다 — §D 목표 80일의 ${(R.medGameDays / 80).toFixed(1)}배입니다`);
+  assert.ok(R.ok.length > 0 && R.medGameDays < NOW_HOME_DAY,
+    `튜토 완주(이사)가 ${R.ok.length ? `게임 ${R.medGameDays}일` : '한 판도 없음'}입니다 — 내 집 판 ≈${NOW_HOME_DAY}일보다 앞서야 원룸 장이 남습니다`);
 });
 
 /* ── 보고 ───────────────────────────────────────────────────────────────── */
