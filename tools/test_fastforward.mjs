@@ -261,7 +261,11 @@ check('⑵ 어두운 자리 — 12일이 지나도 도착 진행도 그대로', 
   const S = firstPlayState();
   const arrivalDay = driveToArrival(S, io, clock);
   assert.equal(growth.growthDays(), ARR);
-  assert.equal(pot0(S).slotId, 'arrival', '몬스테라는 어두운 자리에 도착한다');
+  /* ⚠⚠ 2026-10-24 [core] — 이 줄은 08-17(박사님 «선물은 가방으로 온다» · loop §harvestCrop givePlant slotId null)부터 «낡은 자»였다(null ≠ 'arrival').
+       도착은 가방(자리 없음)이고 어두운 자리에 «놓는» 것은 사람 손이다 — 아래 ⑹ 판(583줄)과 같은 손으로 가장 어두운 자리에 놓고 잰다 */
+  assert.equal(pot0(S).slotId, null, '선물 몬스테라는 가방으로 온다(자리 없음)');
+  pot0(S).slotId = 'arrival';                                   // 사람이 가장 어두운 자리에 놓는다(가방 → 처음 놓기 · 유도의 «안 자란 날»은 첫 플레이 몬스테라 자리로 센다)
+  moveMonstera(S.firstPlay, 'arrival', { slots: io.light.room.slots, firstPlace: true });
 
   const phaseBefore = JSON.stringify(S.firstPlay.monstera.growthPhase);
   /* ★★ 2026-08-09 — **열흘째에 유도 대사가 끼어든다**(first_play §몬스테라 유도).
@@ -300,6 +304,8 @@ check('⑵-b 어두운 자리에서 stopOnBlock 을 켜면 첫 정지에서 선�
   const io = { light: mkLight(SLOTS()), growth: mkGrowth() };
   const S = firstPlayState();
   driveToArrival(S, io, clock);
+  pot0(S).slotId = 'arrival';                                   // ⚠ 10-24 — 가방으로 온 선물을 어두운 자리에(⑵ 와 같은 손 · 안 놓으면 정지가 «막힘»이 아니라 한도)
+  moveMonstera(S.firstPlay, 'arrival', { slots: io.light.room.slots, firstPlace: true });
   const run = drive(S, io, clock, { untilEvent: true, maxDays: 12, stopOnBlock: true });
   clock.run();
   assert.equal(run.stop.reason, 'blocked');

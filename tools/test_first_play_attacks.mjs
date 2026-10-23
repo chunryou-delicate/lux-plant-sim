@@ -371,8 +371,10 @@ function firstPlayState(slotId = 'dark') {
   assert.deepEqual([grow(0.2), grow(0.7), grow(1.2)].map(r => r.perPot[0].grams),
     [3, 2, 1].map(m => cropCycleSavedWon(RULES, m, 0, 0) / 10));
   /* ⇒ 지금 값이 확정 눈금(200-500)과 맞는지는 여기서 한 번 못 박는다 */
+  /* ⚠⚠ 2026-10-24 [core] — 08-16(30c7728c 수확 배수 반지하 ×2) 뒤로 이 줄은 «낡은 자»였다(실제 1000·700·400). 총괄 D79: ×2 는 지금 게임 값 그대로 —
+       눈금(200-500)에 배수를 곱해 못 박는다(first_play §CROP_HARVEST_MULT · 손으로 적는 규약) */
   assert.deepEqual([grow(0.2), grow(0.7), grow(1.2)].map(r => r.perPot[0].grams),
-    [500, 350, 200]);
+    [500, 350, 200].map(g => g * 2));
 }
 
 /* ── 11. 도착 → 말린 새순: 완료는 spear_furled 에서만 ── */

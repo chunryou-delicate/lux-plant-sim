@@ -792,7 +792,11 @@ export function neighborOrderStep(S, opt = {}) {
 function attachEvents(S, turn, fpBefore) {
   const out = [];
   const push = list => { for (const e of list || []) if (e && e.id) out.push(e); };
-  push(firstPlayEventsOf(fpBefore, S.firstPlay));
+  /* ★ 2026-10-24 [core] — 첫 플레이 사건은 «여기서 한 번»만 센다(turn.firstPlayEvents 로 남김). firstPlayEventsOf 는 유도 «들려준 순간»(guide.hinted)을
+       적는 자리라(08-29) 두 번 부르면 둘째 부름엔 그 사건이 안 나온다 — 빨리 감기가 그렇게 불러 «새순이 안 납니다» 유도에서 못 섰다(test_fastforward ⑵) */
+  const fpEvents = firstPlayEventsOf(fpBefore, S.firstPlay);
+  turn.firstPlayEvents = fpEvents;
+  push(fpEvents);
   /* 상점 도착도 사건이다 — 안 실으면 "시켰는데 왔는지 아무도 말 안 하는" 날이 생긴다 */
   if (turn.shop) push(turn.shop.events);
   /* ★ 중고 거래 연락도 같은 자리다 — **올린 뒤 화면이 조용하면 「아무 일도 없다」가 된다**
@@ -2057,7 +2061,8 @@ export function startFastForward(S, io, opt = {}) {
     run.days++;
 
     /* ── 이벤트 수집 ─────────────────────────────────────────── */
-    const events = firstPlayEventsOf(fpBefore, S.firstPlay);
+    /* ★ 10-24 — 하루 결산이 이미 센 첫 플레이 사건을 쓴다(다시 부르면 유도 «들려줌»이 적힌 뒤라 그 사건이 빠진다 · §attachEvents) */
+    const events = Array.isArray(turn.firstPlayEvents) ? [...turn.firstPlayEvents] : firstPlayEventsOf(fpBefore, S.firstPlay);
     const phaseId = turn.growthPhase ? turn.growthPhase.phaseId : null;
     if (phaseId && run.lastPhaseId && phaseId !== run.lastPhaseId &&
         !events.some(e => e.id === FIRST_PLAY_COMPLETE_PHASE_ID))

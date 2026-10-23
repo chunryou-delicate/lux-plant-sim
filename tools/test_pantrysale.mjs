@@ -185,7 +185,9 @@ console.log('\n== D. ★먼저 거둔 것부터 — 파는 순서와 먹는 순�
   assert.equal(after[after.length - 1].won, LOTS4[3],
     '★★맨 뒤(제일 나중에 거둔) 판이 먼저 깎였다 — FIFO 가 아니다');
   /* 다 먹을 때까지 돌리면 판이 남지 않는다 */
-  for (let d = 0; d < 10 && fp.food.pantryWon > 0; d++) eatFromPantry(fp);
+  /* ⚠ 2026-10-24 [core] — 열흘이면 비던 곳간이 08-16(수확 배수 ×2 · D79 로 그대로) 뒤로 두 배라 열흘로는 안 빈다(7,000원 남음 · 낡은 자).
+       지키는 것은 «다 먹을 때까지 돌리면 판이 안 남는다» — 날 수가 아니다 */
+  for (let d = 0; d < 60 && fp.food.pantryWon > 0; d++) eatFromPantry(fp);
   assert.equal(fp.food.pantryWon, 0);
   assert.equal(pantryLotsOf(fp).length, 0, '★곳간이 비었는데 판이 남았다');
   ok('먹기도 팔기도 먼저 거둔 판부터 나간다 (FIFO)');
@@ -364,7 +366,8 @@ console.log('\n== J. ★★오늘 밥상 — 300g 까지 쓰고 남는 것은 �
   const { fp } = sameDayHarvest(1);                 // 어두운 자리 한 시루 = 최상 품질 한 회전
   const cycleG = Math.round(W0 / 10);               // 500g (2026-08-18 · 전에는 400g)
   assert.equal(pantryGramsOf(fp), cycleG, `★한 시루가 ${cycleG}g 을 안 냈다`);
-  assert.equal(cycleG, 500, '★콩나물 최상 품질이 500g 이 아니다 (확정 눈금 200-500)');
+  /* ⚠ 10-24 [core] — 08-16 수확 배수 ×2(D79 로 그대로) 뒤로 «낡은 자»였다(1000 ≠ 500) — 눈금 500g × 배수 2 */
+  assert.equal(cycleG, 500 * 2, '★콩나물 최상 품질이 눈금 500g × 수확 배수 2 가 아니다 (확정 눈금 200-500 · D79)');
   const q = mealPlanQuote(fp);
   assert.equal(q.defaultGrams, 300, '★디폴트가 300g 이 아니다');
   assert.equal(q.maxGrams, 300, '★★하루에 300g 보다 많이 쓸 수 있다 — 상한이 안 걸렸다');
