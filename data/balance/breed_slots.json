@@ -1,0 +1,49 @@
+{
+  "_doc": [
+    "★ 2026-10-24 [plan] D72 C 판 «진로 — 무늬 육종»의 품종 칸 다섯과 기록장 글(명세 docs/handoff/plan-breed-career-spec-20261023.md §2 · 총괄 D74).",
+    "지금 규칙이 내는 무늬만 쓴다 — 몬스테라 삽수(뿌리 밝기 = 환경) · 알로카시아 구근(어미 = 유전) · 핑크프린세스(자를 마디 = 선발). 새 무늬 규칙은 없다.",
+    "등록 = 같은 조건에서 셋(1 관찰 · 2 후보 · 3 등록). 판정은 core 한 곳 — 여기는 이름·글·판정 낱말만 둔다.",
+    "칸: id · line(monstera|al|pp) · outcome(판정 낱말 = 등급 id) · cond(재현 «같은 조건»의 뜻 — rootBand 뿌리 낸 밝기가 같음 · varieMotherKind 무늬 어미 구근 · 같은 갈래 · ppLineRun 한 줄에서 잇달아) ·",
+    "    ko(칸 이름) · short(자동 이름에 드는 낱말) · desc(기록장 칸 한 줄) · teaches(배움).",
+    "⚠ 수(상금 = 그 결과 잎 한 장 값 ×1 · 표본 낱줄 수 · 이름 길이)는 여기 두지 않는다 — core 한 곳(D74 ③). 몬이는 수를 안 말한다 — 수는 화면 글에만."
+  ],
+  "slots": [
+    { "id": "monstera_halfmoon", "line": "monstera", "outcome": "halfmoon", "cond": "rootBand",
+      "ko": "하프문 몬스테라", "short": "하프문",
+      "desc": "같은 밝기에서 뿌리 낸 서로 다른 삽수 셋에서 하프문 잎", "teaches": "밝은 데서 뿌리 낸 삽수가 무늬도 좋다" },
+    { "id": "monstera_fullmoon", "line": "monstera", "outcome": "fullmoon", "cond": "rootBand",
+      "ko": "풀문 몬스테라", "short": "풀문",
+      "desc": "같은 밝기에서 뿌리 낸 서로 다른 삽수 셋에서 풀문 잎", "teaches": "드문 것은 많이 해 봐야 나온다" },
+    { "id": "al_marble", "line": "al", "outcome": "marble", "cond": "varieMotherKind",
+      "ko": "마블 알로카시아", "short": "마블",
+      "desc": "무늬 어미 구근에서 싹튼 마블 그루 셋", "teaches": "무늬는 어미를 닮는다" },
+    { "id": "al_sector", "line": "al", "outcome": "sector", "cond": "varieMotherKind",
+      "ko": "반달 알로카시아", "short": "반달",
+      "desc": "무늬 어미 구근에서 싹튼 반달 그루 셋", "teaches": "무늬는 어미를 닮는다 — 갈래까지" },
+    { "id": "pp_heavy", "line": "pp", "outcome": "heavy", "cond": "ppLineRun",
+      "ko": "분홍 많은 핑크프린세스", "short": "분홍",
+      "desc": "한 줄에서 분홍 많음 잎 셋이 잇달아(사이에 분홍 잎·초록 없이)", "teaches": "고르는 손이 줄을 끈다" }
+  ],
+  "autoName": "볕 {short} {n}호",
+  "_doc_autoName": "n = 등록 차례(첫 품종 1호 · 칸과 상관없이). 이름 입력 칸에 미리 채워 두고 그냥 넘겨도 된다(D74 ④).",
+  "_ui": {
+    "tab": "기록장",
+    "empty": "아직 적은 것이 없습니다 — 새 잎이 나면 저절로 적힙니다",
+    "slotRow": "{ko} — 같은 조건 {n}/3",
+    "slotRegistered": "{ko} — 등록 · «{name}»",
+    "nameTitle": "새 품종 — 이름을 지어 주세요",
+    "nameSub": "같은 조건에서 거듭 났습니다 — {ko}",
+    "nameButton": "이 이름으로 등록",
+    "nameHint": "비워 두면 «{auto}»로 등록됩니다",
+    "logSample": "📒 표본 — {cond} · {out}",
+    "logRegister": "🏷 새 품종 — {name}({ko})"
+  },
+  "_labels": {
+    "monstera": { "cond": { "dark": "어두운 데서 뿌리 낸 삽수", "mid": "중간 밝기에서 뿌리 낸 삽수", "bright": "밝은 데서 뿌리 낸 삽수" },
+                  "out": { "plain": "무지", "sanban": "산반", "halfmoon": "하프문", "fullmoon": "풀문" } },
+    "al":       { "cond": { "varie_mother": "무늬 어미 구근", "plain_mother": "무지 어미 구근", "shop": "상점 구근" },
+                  "out": { "plain": "무지", "marble": "마블", "sector": "반달" } },
+    "pp":       { "cond": { "line": "줄 {k}" },
+                  "out": { "green": "초록", "marble": "분홍 마블", "heavy": "분홍 많음", "pink": "분홍 잎" } }
+  }
+}

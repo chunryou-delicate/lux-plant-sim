@@ -1958,6 +1958,108 @@ export const SCRIPTS = {
   chatCareReady: [
     { who: 'moni',   face: 'teach',    text: '나은 화분은 일찍 돌려줘도 돼.' }
   ],
+  /* ═══ ★★ 2026-10-24 [plan] D72 C 판 «무늬 육종»(명세 plan-breed-career-spec-20261023 §6 · 총괄 D74) ═══
+     사건([core]): job_start{job:'breed'} · breed_open · breed_sample{line, first}(그 줄 첫 표본만 말함) · breed_candidate{slot}(같은 조건 둘째) ·
+     breed_register{slot, name}(셋째 · 이름 입력 뒤) · breed_milestone{n: 1|3|5} · breed_ending(품종 3 다음 날 아침 · 한 번).
+     표본 기록 줄 · «🏷 새 품종 — {이름}»은 [core] 가 data/balance/breed_slots.json _ui 꼴로. ★ 몬이는 수를 안 말한다(«셋»도) — 수는 칩·화면 글만.
+     자취생 낯은 앞치마 낯(think·happy·beam·surprise) 안에서만. «하나는 우연»은 규칙 그대로의 말이다(재현 = 같은 조건 셋). */
+  jobStartBreed: [
+    { who: 'moni',   face: 'teach',    text: '이제부턴 진짜야. 하나 나온 건 우연이야.' },
+    { who: 'moni',   face: 'cheer',    text: '같은 게 거듭 나오면 그때 네 거야.' }
+  ],
+  breedOpen: [
+    { who: 'jachwi', face: 'think',    text: '기록장을 새로 폈다.' },
+    { who: 'moni',   face: 'teach',    text: '무엇이 났는지, 어디서 났는지 다 적자.' }
+  ],
+  breedFirstMonstera: [
+    { who: 'moni',   face: 'teach',    text: '밝은 데서 뿌리 낸 삽수가 무늬도 좋아.' }
+  ],
+  breedFirstAl: [
+    { who: 'moni',   face: 'teach',    text: '무늬 어미 구근에서 무늬가 잘 나와.' }
+  ],
+  breedFirstPp: [
+    { who: 'moni',   face: 'teach',    text: '분홍은 아래 잎을 닮아. 고르는 건 가위야.' }
+  ],
+  breedCandidate: [
+    { who: 'moni',   face: 'cheer',    text: '또 났네. 한 번만 더 나오면 우연이 아니야.' }
+  ],
+  breedRegister: [
+    { who: 'jachwi', face: 'beam',     text: '같은 무늬가 거듭 났다. 이름을 붙였다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 이건 네 품종이야.' }
+  ],
+  breedMilestone1: [
+    { who: 'moni',   face: 'cheer',    text: '첫 품종이야. 기록이 이름이 됐어.' }
+  ],
+  breedMilestone3: [
+    { who: 'jachwi', face: 'beam',     text: '이름 붙인 품종이 여럿이 됐다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 육종가라고 해도 돼.' }
+  ],
+  breedMilestone5: [
+    { who: 'moni',   face: 'proud',    text: '기록장 칸이 다 찼어.' }
+  ],
+  /* 육종 끝맺음(품종 3 · 다음 날 아침 · 명세 plan-career-endings-spec §4 · 가게·돌봄 결 · 칭호 «무늬 육종가») */
+  breedEnding: [
+    { who: 'jachwi', face: 'think',    text: '기록장을 처음부터 넘겨 봤다.' },
+    { who: 'jachwi', face: 'happy',    text: '내가 이름 붙인 무늬들이 줄지어 있다.' },
+    { who: 'moni',   face: 'proud',    text: '오늘부터 너는 «무늬 육종가»야.' },
+    { who: 'jachwi', face: 'beam',     text: '한 번은 우연, 거듭이면 내 것.' },
+    { who: 'moni',   face: 'teach',    text: '여기서 끝이 아니야. 다음엔 무엇이 날까.' },
+    { who: 'jachwi', face: 'beam',     text: '기록장을 새 쪽으로 넘겼다.' }
+  ],
+  /* 육종 사슬 열림·끝(quest.js §BREED_QUESTS) */
+  questBreedUnpack: [
+    { who: 'jachwi', face: 'curious',  text: '창이 둘이다. 어디부터 놓지.' },
+    { who: 'moni',   face: 'teach',    text: '적기 전에 자리부터 잡자. 새 잎이 나야 적을 게 생겨.' }
+  ],
+  questDoneBreedUnpack: [
+    { who: 'moni',   face: 'proud',    text: '다 놓았네. 이제 적을 일만 남았어.' }
+  ],
+  questBreedFirstSample: [
+    { who: 'moni',   face: 'teach',    text: '새 잎이 나면 저절로 적혀. 무엇이 났는지, 어디서 났는지.' }
+  ],
+  questDoneBreedFirstSample: [
+    { who: 'jachwi', face: 'think',    text: '기록장에 첫 줄이 섰다.' },
+    { who: 'moni',   face: 'calm',     text: '하나 나온 건 우연이야. 거듭 봐야 해.' }
+  ],
+  questBreedFirstVariety: [
+    { who: 'moni',   face: 'teach',    text: '같은 조건에서 같은 무늬가 거듭 나면 품종이야.' }
+  ],
+  questDoneBreedFirstVariety: [
+    { who: 'moni',   face: 'cheer',    text: '첫 품종이야. 기록이 이름이 됐어.' }
+  ],
+  questBreedThree: [
+    { who: 'moni',   face: 'calm',     text: '천천히 가자. 칸마다 조건이 달라.' }
+  ],
+  questDoneBreedThree: [
+    { who: 'jachwi', face: 'beam',     text: '이름 붙인 품종이 여럿이 됐다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 육종가라고 해도 돼.' }
+  ],
+  questBreedThreeLines: [
+    { who: 'moni',   face: 'teach',    text: '몬스테라는 자리, 알로카시아는 어미, 핑크프린세스는 가위야.' }
+  ],
+  questDoneBreedThreeLines: [
+    { who: 'moni',   face: 'proud',    text: '다 봤네. 확률에도 꼴이 여럿 있어.' }
+  ],
+  questBreedAll: [
+    { who: 'moni',   face: 'teach',    text: '남은 칸도 채워 보자.' }
+  ],
+  questDoneBreedAll: [
+    { who: 'moni',   face: 'proud',    text: '기록장 칸이 다 찼어.' }
+  ],
+  /* 육종 판 잡담(산 집 · 진로 육종 · gap 21) — 비교 잡담은 «기록이 참일 때만»(S.jobBreed.tally 셈이 실제로 그렇게 쌓였을 때 · 명세 §6) */
+  chatBreedMorning: [
+    { who: 'jachwi', face: 'think',    text: '아침마다 기록장부터 넘겨 본다.' },
+    { who: 'moni',   face: 'calm',     text: '쌓이는 게 보이지?' }
+  ],
+  chatBreedBright: [
+    { who: 'moni',   face: 'teach',    text: '밝은 데 뿌리 낸 쪽이 하프문이 많지?' }
+  ],
+  chatBreedPlainMother: [
+    { who: 'moni',   face: 'calm',     text: '무지 어미 구근에선 무늬가 안 나오네.' }
+  ],
+  chatBreedPinkCut: [
+    { who: 'moni',   face: 'teach',    text: '분홍 잎이 잇달면 그 아래를 잘라.' }
+  ],
   shopEndingFew: [
     { who: 'jachwi', face: 'think',    text: '문을 열기 전에 가게를 한 바퀴 둘러봤다.' },
     { who: 'jachwi', face: 'think',    text: '오늘은 무엇부터 늘릴까.' },
@@ -2711,6 +2813,11 @@ export const EVENT_SCRIPT = Object.freeze({
   /* ★ 2026-10-23 [plan] D72 B — 돌봄 사건(고장마다 갈림은 §scriptOf · CARE_SCRIPT) */
   care_open:           'careOpen',
   care_ending:         'careEnding',
+  /* ★ 2026-10-24 [plan] D72 C — 육종 사건(줄·칸·이정표 갈림은 §scriptOf) */
+  breed_open:          'breedOpen',
+  breed_candidate:     'breedCandidate',
+  breed_register:      'breedRegister',
+  breed_ending:        'breedEnding',
   /* ★ 2026-10-23 [plan] D71 — 새 두 종 */
   sc_ask:              'scAsk',
   sc_rooted:           'scRooted',
@@ -2833,6 +2940,13 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   care_sign:              'questCareSign',
   care_town:              'questCareTown',
   care_all_kinds:         'questCareAllKinds',
+  /* ★ 2026-10-24 [plan] D72 C — 육종 사슬 */
+  breed_unpack:           'questBreedUnpack',
+  breed_first_sample:     'questBreedFirstSample',
+  breed_first_variety:    'questBreedFirstVariety',
+  breed_three:            'questBreedThree',
+  breed_three_lines:      'questBreedThreeLines',
+  breed_all:              'questBreedAll',
   al_keep_winter:         'questAlKeepWinter',
   al_plant_corm:          'questAlPlantCorm',
   oneroom_home_fund:      'questOneroomHomeFund',
@@ -2882,6 +2996,12 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   care_sign:              'questDoneCareSign',
   care_town:              'questDoneCareTown',
   care_all_kinds:         'questDoneCareAllKinds',
+  breed_unpack:           'questDoneBreedUnpack',
+  breed_first_sample:     'questDoneBreedFirstSample',
+  breed_first_variety:    'questDoneBreedFirstVariety',
+  breed_three:            'questDoneBreedThree',
+  breed_three_lines:      'questDoneBreedThreeLines',
+  breed_all:              'questDoneBreedAll',
   al_keep_winter:         'questDoneAlKeepWinter',
   al_plant_corm:          'questDoneAlPlantCorm',
   oneroom_home_fund:      'questDoneOneroomHomeFund',
@@ -2936,10 +3056,12 @@ const EVENT_ORDER = [
   'pp_tip_withered', 'pp_pink_warn', 'pp_reverted', 'al_sprout', 'al_wake', 'cut_too_wide',
   /* ★ 2026-10-10 [plan] D59 — 진로 첫날은 «이제부턴 진짜야» → 주문판 → (퀘스트 열림). 납품 «단골 하나 늘었어»는 퀘스트 끝(«단골 셋» 등)보다 앞 */
   /* ★ 2026-10-23 [plan] D75 ⑤ — 끝맺음 아침 장면은 그날 가게 사건(새 주문 등 · 표 밖 999)보다 앞 */
-  'shop_ending', 'care_ending',
+  'shop_ending', 'care_ending', 'breed_ending',
   'job_start', 'shop_open', 'shop_no_species', 'order_done', 'regulars_milestone',
   /* ★ 2026-10-23 [plan] D72 B — 돌봄 첫날: 진로 → 맡김판 → 첫 맡김 · 나은 날 «잎이 다 펴졌다»는 퀘스트 끝보다 앞 */
   'care_open', 'care_new', 'care_stuck', 'care_saved', 'care_milestone',
+  /* ★ 2026-10-24 [plan] D72 C — 육종 첫날: 진로 → 기록장 → (첫 표본) · 등록 «이름을 붙였다»는 퀘스트 끝(«첫 품종이야»)보다 앞 */
+  'breed_open', 'breed_sample', 'breed_candidate', 'breed_register', 'breed_milestone',
   /* ★ 2026-10-23 [plan] D71 — 들어오는 날 말이 곁줄 열림보다 앞(맡았다 → 가운데를 찾아 줘) */
   'sc_ask', 'sc_rooted', 'ca_care',
   /* ★★ 퀘스트는 **끝난 것이 먼저, 열린 것이 나중**이다 (2026-08-17).
@@ -3028,7 +3150,13 @@ function scriptOf(ev, S = null) {
   /* ★ 2026-10-23 [plan] D75 ⑤ — 방에 놓인 그루가 적으면 둘째 줄이 «오늘은 무엇부터 늘릴까»([core] ev.fewPlants) */
   if (id === 'shop_ending') return ev && ev.fewPlants === true ? 'shopEndingFew' : 'shopEnding';
   /* ★ 2026-10-23 [plan] D72 B — 돌봄: 진로 첫날은 진로로 갈림 · 고장마다 세 줄(CARE_SCRIPT) · 이정표 3/10/30 · 돌려줌·기한은 대사 없음(기록 줄) */
-  if (id === 'job_start') return ev && ev.job === 'care' ? 'jobStartCare' : 'jobStart';
+  if (id === 'job_start') return ev && ev.job === 'care' ? 'jobStartCare' : ev && ev.job === 'breed' ? 'jobStartBreed' : 'jobStart';
+  /* ★ 2026-10-24 [plan] D72 C — 표본은 그 줄 첫 표본만 말한다(나머지는 기록 줄) · 이정표 1/3/5 */
+  if (id === 'breed_sample') {
+    if (!(ev && ev.first === true)) return null;
+    return ev.line === 'monstera' ? 'breedFirstMonstera' : ev.line === 'al' ? 'breedFirstAl' : ev.line === 'pp' ? 'breedFirstPp' : null;
+  }
+  if (id === 'breed_milestone') return ev && ev.n === 1 ? 'breedMilestone1' : ev && ev.n === 3 ? 'breedMilestone3' : ev && ev.n === 5 ? 'breedMilestone5' : null;
   if (id === 'care_new' || id === 'care_stuck' || id === 'care_saved') {
     const m = CARE_SCRIPT[ev && ev.problem];
     return m ? m[id === 'care_new' ? 'new' : id === 'care_stuck' ? 'stuck' : 'saved'] : null;
@@ -3098,7 +3226,9 @@ export function scriptsForEvents(events = [], S = null) {
   /* ★ 2026-10-10 [plan] D59 — 이정표와 그 퀘스트 끝이 같은 턴이면 퀘스트 끝 대사만(같은 말 두 번 · «단골이 셋이야»). 퀘스트를 이미 끝낸 판(두 번째 서른 등)은 이정표가 말한다 */
   for (const [ms, qd] of [['shopRegulars3', 'questDoneShopRegulars3'], ['shopSign', 'questDoneShopSign'], ['shopTown', 'questDoneShopTown'],
                           /* ★ 2026-10-23 [plan] D72 B — 돌봄 이정표 10 · 30 과 그 퀘스트 끝 */
-                          ['careMilestone10', 'questDoneCareSign'], ['careMilestone30', 'questDoneCareTown']])
+                          ['careMilestone10', 'questDoneCareSign'], ['careMilestone30', 'questDoneCareTown'],
+                          /* ★ 2026-10-24 [plan] D72 C — 육종 이정표 1 · 3 · 5 와 그 퀘스트 끝 */
+                          ['breedMilestone1', 'questDoneBreedFirstVariety'], ['breedMilestone3', 'questDoneBreedThree'], ['breedMilestone5', 'questDoneBreedAll']])
     if (out.includes(ms) && out.includes(qd)) out.splice(out.indexOf(ms), 1);
   /* 새 단골 «하나 늘었어»와 «단골 셋/간판/서른» 끝이 같은 턴이면 앞말은 군말 */
   if (out.includes('shopNewRegular') && out.some(id => /^questDoneShop(Regulars3|Sign|Town)$|^shop(Regulars3|Sign|Town)$/.test(id)))
@@ -3160,6 +3290,11 @@ export const CHATTER = [
   { id: 'chatCareMorning',  gap: 21, when: c => c.movedHome && c.jobId === 'care' },
   { id: 'chatCareQuiet',    gap: 21, when: c => c.movedHome && c.jobId === 'care' && fin(c.careOpen) && c.careOpen === 0 },
   { id: 'chatCareReady',    gap: 21, when: c => c.movedHome && c.jobId === 'care' && fin(c.careReady) && c.careReady >= 1 },
+  /* ★ 2026-10-24 [plan] D72 C — 육종 판 잡담 넷(비교 셋은 기록이 참일 때만) */
+  { id: 'chatBreedMorning',     gap: 21, when: c => c.movedHome && c.jobId === 'breed' },
+  { id: 'chatBreedBright',      gap: 21, when: c => c.movedHome && c.jobId === 'breed' && c.breedBrightHalfMore === true },
+  { id: 'chatBreedPlainMother', gap: 21, when: c => c.movedHome && c.jobId === 'breed' && c.breedPlainMotherNone === true },
+  { id: 'chatBreedPinkCut',     gap: 21, when: c => c.movedHome && c.jobId === 'breed' && fin(c.breedPpLines) && c.breedPpLines >= 1 },
   { id: 'chatOneroomMorning', when: c => c.movedOut && !c.movedHome && c.daysInOneroom != null && c.daysInOneroom <= 14 },
   /* ★ 원룸에서의 **첫** 수확. `cropHarvested` 는 거둔 날부터 다시 심기 전까지 참이라
      후보가 되는 날 자체가 드물다. 그래서 ① 목록에서 **거의 맨 앞**에 두고
@@ -3442,6 +3577,26 @@ export function pickChatter(ctx = {}, recent = [], lastDay = {}) {
 }
 
 /* 턴 → 작은 말 고르기에 쓸 상황. ★turn 과 S 의 **읽기만** 한다. */
+/* ★ 2026-10-24 [plan] D72 C — 육종 기록장 셈(S.jobBreed.tally)에서 «참인 비교»만 낸다. 문턱(⚖ 다섯 · 둘)은 대사 때이지 값이 아니다.
+     breedBrightHalfMore: 밝은 데 뿌리 낸 삽수의 무늬 잎 중 하프문 몫이 중간·어두운 데보다 크다(양쪽 무늬 잎 다섯 이상)
+     breedPlainMotherNone: 무지 어미 구근 둘 이상에서 무늬가 하나도 없었다(규칙상 0 — 기록이 그걸 보여 줄 때)
+     breedPpLines: 핑크프린세스 줄 수 */
+function breedChatOf(S) {
+  const T = S && S.jobBreed && S.jobBreed.tally;
+  if (!T || typeof T !== 'object') return { breedBrightHalfMore: null, breedPlainMotherNone: null, breedPpLines: null };
+  const n = v => (Number.isFinite(v) ? v : 0);
+  const varie = r => (r ? n(r.sanban) + n(r.halfmoon) + n(r.fullmoon) : 0);
+  const M = T.monstera || {};
+  const bright = M.bright || null, other = { sanban: n(M.mid && M.mid.sanban) + n(M.dark && M.dark.sanban),
+    halfmoon: n(M.mid && M.mid.halfmoon) + n(M.dark && M.dark.halfmoon), fullmoon: n(M.mid && M.mid.fullmoon) + n(M.dark && M.dark.fullmoon) };
+  const bv = varie(bright), ov = varie(other);
+  const brightMore = (bv >= 5 && ov >= 5) ? (n(bright.halfmoon) / bv > other.halfmoon / ov) : false;
+  const pm = (T.al && T.al.plain_mother) || null;
+  const pmAll = pm ? n(pm.plain) + n(pm.marble) + n(pm.sector) : 0;
+  const plainNone = pmAll >= 2 && pm && n(pm.marble) + n(pm.sector) === 0;
+  const pp = T.pp && typeof T.pp === 'object' ? Object.keys(T.pp).length : 0;
+  return { breedBrightHalfMore: brightMore, breedPlainMotherNone: plainNone, breedPpLines: pp };
+}
 export function chatterContext(turn = {}, S = null) {
   const ts = (S && S.tutorial) || null;
   const fp = (S && S.firstPlay) || null;
@@ -3513,6 +3668,8 @@ export function chatterContext(turn = {}, S = null) {
     /* ★ 2026-10-23 [plan] D72 B — 돌봄 판(S.jobCare.requests · 명세 §4 꼴) — 열린 맡김 수 · 나아서 돌려줄 수 있는 수(돌봄 판이 아니면 null) */
     careOpen: (S && S.jobCare && Array.isArray(S.jobCare.requests)) ? S.jobCare.requests.length : null,
     careReady: (S && S.jobCare && Array.isArray(S.jobCare.requests)) ? S.jobCare.requests.filter(r => r && r.savedOn != null).length : null,
+    /* ★ 2026-10-24 [plan] D72 C — 육종 비교 잡담(S.jobBreed.tally · 명세 꼴 · 육종 판이 아니면 null). «참일 때만» — 셈이 실제로 그렇게 쌓였을 때 */
+    ...breedChatOf(S),
     /* ★ 2026-10-23 [plan] D71 — 칼라테아([core] turn.caPlants · turn.caTooBright · 모르면 null) */
     caPlants: (turn && Number.isFinite(turn.caPlants)) ? turn.caPlants : null,
     caTooBright: (turn && typeof turn.caTooBright === 'boolean') ? turn.caTooBright : null,

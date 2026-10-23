@@ -171,3 +171,20 @@
 - 화분 `variegated` 가 늘 false(state.js:404 · 726) → 화분 어미 무지 마디 삽수는 영영 0% · `VARIE.variegatedMother` 안 쓰임 · job_shop `motherVarie` 를 넘기는 곳이 없음. «plain 은 복제해도 영원히 0»(propagation.js:536)과는 맞는다(core · QUESTION).
 - 등급 장부는 첫 화분만(game.html:3614 → shop.js:1953) — 씨앗 그루 무늬 잎은 값 매길 때 산반으로 떨어진다(shop.js:1671).
 - 낡은 글: GAME_PLAN «수경번식 무늬 80% 계승»(코드는 뿌리 낸 날 밝기 · 계승 아님 — GAME_PLAN 은 plan 이 안 고침) · researcher_track:62 «희귀 잎당 2%»(코드 풀문 1/5/15%) · save.js:259 «세대 감쇠 0.8ⁿ»(`genRise` 0) · varie_grades.json 글 «0.45×350,000»(표는 밝음 산반 .35).
+
+## 13. ★ 2026-10-24 plan 이 지어 둔 것 (총괄 «C 준비» 청 · 사건·칸이 오기 전엔 조용 · [core] 키는 먼저 보냄)
+
+### 13-1. 넣은 것
+- **data/balance/breed_slots.json**(plan 이 씀 · core 는 읽기만): `slots[5]` = { id · line · outcome(등급 id) · cond(rootBand · varieMotherKind · ppLineRun) · ko · short · desc · teaches } · `autoName` «볕 {short} {n}호»(n = 등록 차례) · `_ui`(기록장 탭 · 빈 칸 · 칸 줄 «{ko} — 같은 조건 {n}/3» · 등록 줄 · 이름 입력 칸 제목·밑글·단추·힌트 · 기록 줄 꼴) · `_labels`(조건·결과 낱말). 수는 안 둔다.
+- **quest.js `BREED_QUESTS`**(room 'tworoom' · `job === 'breed'`): `breed_unpack` → `breed_first_sample` → `breed_first_variety` → `breed_three`(끝맺음 자리) · 곁줄 `breed_three_lines` · 느린 곁줄 `breed_all`. 스냅샷 칸 `breedSamples · breedLines · breedVarieties · breedBest{slot, ko, n}`. 칩 `breedChipTodo`.
+- **dialogue.js**: `jobStartBreed` · `breedOpen` · 줄마다 첫 표본 셋 · `breedCandidate` · `breedRegister` · `breedMilestone1/3/5` · `breedEnding` 여섯 줄 · 퀘스트 열두 줄 · 잡담 넷(아침 + 비교 셋 — S.jobBreed.tally 가 참일 때만: 밝은 쪽 하프문 몫이 더 큼(양쪽 무늬 잎 다섯 이상) · 무지 어미 구근 둘 이상에서 무늬 0 · PP 줄이 있음) · 이정표 ↔ 퀘스트 끝 걸름.
+- **검사**: test_quest 걸음에 육종 판(돌봄 걸음 뒤 진로만 'breed' · 여섯 줄 다 열리고 끝남) · test_dialogue_coverage 셋(칸 표 · 사건 갈림 · 비교 잡담 참/거짓 · 앞치마 낯 · 몬이 수 안 말함).
+
+### 13-2. 명세에서 바뀐 것 (plan 판단 · 까닭)
+1. **«세 줄을 다 적는다»를 사슬 안이 아니라 곁줄로** — 알로카시아·핑크프린세스가 없는 판도 몬스테라만으로 품종을 낼 수 있는데, 사슬에 두면 그 판의 사슬이 «구근·PP 를 사 오라»에 막힌다. 사슬은 첫 표본 → 첫 품종 → 품종 셋.
+2. **몬이는 «셋»도 안 말한다** — §6 의 «같은 게 셋 나오면» → «같은 게 거듭 나오면» · «품종이 셋. 이제 육종가라고 해도 돼.» → 자취생 «이름 붙인 품종이 여럿이 됐다.» + 몬이 «이제 육종가라고 해도 돼.» «하나 나온 건 우연» · «한 번만 더»는 규칙 그대로의 말이라 둔다. 수(3)는 칩·화면 글(«같은 조건 n/3»)이 말한다.
+3. **«책상 위에 기록장을 폈다» → «기록장을 새로 폈다»** — 기록장은 화면이고 방에 책상 자리가 정해지지 않았다(자리 낱말은 방을 보고 — 간판·주문판에서 두 번 틀림).
+4. **breedBest 에 ko 를 같이**(칩 «{칸} 같은 조건 n/3» — quest.js 는 데이터를 안 읽는 순수 모듈이라 core 가 이름을 실어 준다).
+
+### 13-3. 끝맺음 장면(품종 3 다음 날 아침 · 칭호 «무늬 육종가»)
+«기록장을 처음부터 넘겨 봤다.» · «내가 이름 붙인 무늬들이 줄지어 있다.» · 몬이 «오늘부터 너는 «무늬 육종가»야.» · «한 번은 우연, 거듭이면 내 것.» · 몬이 «여기서 끝이 아니야. 다음엔 무엇이 날까.» · «기록장을 새 쪽으로 넘겼다.»

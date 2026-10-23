@@ -643,6 +643,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     'shopEndingFew',
     /* ★ 2026-10-23 [plan] D72 B — 돌봄 사건 갈림(scriptOf): 진로 첫날 · 고장마다 세 줄(CARE_SCRIPT) · 이정표 3/10/30 */
     'jobStartCare', 'careMilestone3', 'careMilestone10', 'careMilestone30',
+    /* ★ 2026-10-24 [plan] D72 C — 육종 사건 갈림(scriptOf): 진로 첫날 · 줄마다 첫 표본 · 이정표 1/3/5 */
+    'jobStartBreed', 'breedFirstMonstera', 'breedFirstAl', 'breedFirstPp', 'breedMilestone1', 'breedMilestone3', 'breedMilestone5',
     ...Object.values(CARE_SCRIPT).flatMap(m => [m.new, m.stuck, m.saved])
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
@@ -808,6 +810,70 @@ check('잡담 — 돌봄 판 잡담 셋은 진로 돌봄 · 산 집일 때만(D7
   const c = chatterContextOf({ day: 906 }, S);
   assert.equal(c.careOpen, 2); assert.equal(c.careReady, 1);
   assert.equal(chatterContextOf({ day: 906 }, { story: { job: { id: 'shop' } } }).careOpen, null, '돌봄 판이 아닌데 0 을 지어냅니다');
+});
+
+/* ★ 2026-10-24 [plan] D72 C — 육종: 칸 표 · 사건 갈림 · 비교 잡담(참일 때만) */
+check('데이터 — breed_slots.json 품종 칸 다섯 · 판정 낱말 · 자동 이름 꼴(D72 C)', () => {
+  const T = JSON.parse(readFileSync(new URL('../data/balance/breed_slots.json', import.meta.url), 'utf8'));
+  assert.deepEqual(T.slots.map(s => s.id), ['monstera_halfmoon', 'monstera_fullmoon', 'al_marble', 'al_sector', 'pp_heavy']);
+  const OUT = { monstera: ['halfmoon', 'fullmoon'], al: ['marble', 'sector'], pp: ['heavy'] };
+  const COND = { monstera: 'rootBand', al: 'varieMotherKind', pp: 'ppLineRun' };
+  for (const s of T.slots) {
+    assert.ok(OUT[s.line] && OUT[s.line].includes(s.outcome), `'${s.id}' 줄·결과가 안 맞습니다`);
+    assert.equal(s.cond, COND[s.line], `'${s.id}' 조건 낱말`);
+    assert.ok(s.ko && s.short && s.desc && s.teaches, `'${s.id}' 글 칸이 비었습니다`);
+    assert.ok(T._labels[s.line].out[s.outcome], `'${s.id}' 결과 낱말이 _labels 에 없습니다`);
+  }
+  assert.ok(/\{short\}/.test(T.autoName) && /\{n\}/.test(T.autoName), '자동 이름 꼴에 {short}·{n} 이 없습니다');
+  assert.equal(T.autoName.replace('{short}', '하프문').replace('{n}', '1'), '볕 하프문 1호');   /* D74 ④ 예시 그대로 */
+  for (const k of ['tab', 'empty', 'slotRow', 'slotRegistered', 'nameTitle', 'nameSub', 'nameButton', 'nameHint', 'logSample', 'logRegister'])
+    assert.ok(T._ui[k], `화면 글 '${k}' 이 없습니다`);
+});
+check('대사 — 육종 사건이 제 대사로 갈린다 · 첫 표본만 말한다(D72 C)', () => {
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start', job: 'breed' }]), ['jobStartBreed']);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_sample', line: 'monstera', first: true }]), ['breedFirstMonstera']);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_sample', line: 'al', first: true }]), ['breedFirstAl']);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_sample', line: 'pp', first: true }]), ['breedFirstPp']);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_sample', line: 'monstera', first: false }]), []);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_sample', line: 'monstera' }]), []);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_candidate', slot: 'al_marble' }]), ['breedCandidate']);
+  /* 첫 등록 날: 등록 → (이정표 1 은 퀘스트 끝과 겹쳐 걸러짐) → 퀘스트 끝 */
+  assert.deepEqual(scriptsForEvents([{ id: 'quest_done', questId: 'breed_first_variety' }, { id: 'breed_milestone', n: 1 }, { id: 'breed_register', slot: 'pp_heavy' }]),
+    ['breedRegister', 'questDoneBreedFirstVariety']);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_milestone', n: 3 }, { id: 'quest_done', questId: 'breed_three' }]), ['questDoneBreedThree']);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_milestone', n: 5 }]), ['breedMilestone5']);
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_ending' }]), ['breedEnding']);
+  assert.equal(SCRIPTS.breedEnding.length, 6);
+  /* 첫날 차례: 진로 → 기록장 */
+  assert.deepEqual(scriptsForEvents([{ id: 'breed_open' }, { id: 'job_start', job: 'breed' }]), ['jobStartBreed', 'breedOpen']);
+  const ids = ['jobStartBreed', 'breedOpen', 'breedFirstMonstera', 'breedFirstAl', 'breedFirstPp', 'breedCandidate', 'breedRegister',
+               'breedMilestone1', 'breedMilestone3', 'breedMilestone5', 'breedEnding'];
+  for (const id of ids) for (const l of SCRIPTS[id]) {
+    if (l.who === 'jachwi') assert.ok(['beam', 'think', 'surprise', 'happy'].includes(l.face), `'${id}' 앞치마 낯 밖 '${l.face}'`);
+    if (l.who === 'moni') assert.ok(!/[0-9]|셋|넷|다섯|여섯|일곱|여덟|아홉|서른|퍼센트|할/.test(l.text.replace(/할 /g, '')), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+  }
+});
+check('잡담 — 육종 비교 잡담은 기록이 참일 때만(D72 C)', () => {
+  const row = id => CHATTER.find(r => r.id === id);
+  for (const id of ['chatBreedMorning', 'chatBreedBright', 'chatBreedPlainMother', 'chatBreedPinkCut']) assert.ok(row(id) && SCRIPTS[id], `'${id}' 가 없습니다`);
+  const base = (tally) => ({ ...chatterContextOf({ day: 1400 }, { story: { job: { id: 'breed' } }, home: { room: 'tworoom' }, jobBreed: { tally } }),
+                             movedHome: true, jobId: 'breed' });
+  /* 밝은 쪽 하프문 몫이 더 큼(양쪽 무늬 잎 다섯 이상) */
+  const t1 = { monstera: { bright: { plain: 1, sanban: 2, halfmoon: 5, fullmoon: 1 }, mid: { plain: 0, sanban: 4, halfmoon: 2, fullmoon: 0 } } };
+  assert.equal(row('chatBreedBright').when(base(t1)), true, '밝은 쪽이 하프문이 많은데 안 섭니다');
+  const t2 = { monstera: { bright: { sanban: 4, halfmoon: 1, fullmoon: 0 }, mid: { sanban: 1, halfmoon: 4, fullmoon: 0 } } };
+  assert.equal(row('chatBreedBright').when(base(t2)), false, '기록이 거꾸로인데 섭니다(거짓말)');
+  const t3 = { monstera: { bright: { sanban: 1, halfmoon: 2 }, mid: { sanban: 1 } } };
+  assert.equal(row('chatBreedBright').when(base(t3)), false, '표본이 적은데 섭니다');
+  /* 무지 어미 구근 둘 이상 · 무늬 0 */
+  assert.equal(row('chatBreedPlainMother').when(base({ al: { plain_mother: { plain: 2, marble: 0, sector: 0 } } })), true);
+  assert.equal(row('chatBreedPlainMother').when(base({ al: { plain_mother: { plain: 1 } } })), false);
+  assert.equal(row('chatBreedPinkCut').when(base({ pp: { L1: { marble: 2 } } })), true);
+  assert.equal(row('chatBreedPinkCut').when(base({})), false);
+  /* 육종 판이 아니면 null — 0 을 지어내지 않는다 */
+  const c = chatterContextOf({ day: 1400 }, { story: { job: { id: 'shop' } } });
+  assert.equal(c.breedBrightHalfMore, null); assert.equal(c.breedPpLines, null);
+  assert.equal(row('chatBreedMorning').when({ movedHome: true, jobId: 'care' }), false, '돌봄 판에 육종 잡담');
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

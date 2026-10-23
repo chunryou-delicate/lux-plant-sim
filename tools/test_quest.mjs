@@ -216,6 +216,10 @@ const HM = (day, o = {}) => OR(day, { ...END_SPEC, movedHome: true, job: 'shop',
 const CM = (day, o = {}) => OR(day, { ...END_SPEC, movedHome: true, job: 'care', bagPlants: 0,
                                      scPlants: 1, scLongVine: 1, caCareOpen: false, caSaved: true,
                                      careOpen: 0, careReady: 0, careSaved: 0, careKinds: 0, careDueSoonest: null, ...o });
+/* ★ 2026-10-24 [plan] D72 C — 진로 «무늬 육종» 걸음(돌봄 걸음 뒤 진로만 'breed' · 판정만 잰다) */
+const BM = (day, o = {}) => OR(day, { ...END_SPEC, movedHome: true, job: 'breed', bagPlants: 0,
+                                     scPlants: 1, scLongVine: 1, caCareOpen: false, caSaved: true,
+                                     breedSamples: 0, breedLines: 0, breedVarieties: 0, breedBest: null, ...o });
 const steps = [
   /* ─ 초반 사슬 ─────────────────────────────────────────────────────── */
   /* 1  ★★ 켠 그 순간 — **여기서 ①이 열려야 한다**(예전엔 0줄이었다) */
@@ -338,7 +342,19 @@ const steps = [
   CM(941, { careSaved: 3, careKinds: 3 }),
   CM(1000, { careSaved: 10, careKinds: 5 }),
   CM(1001, { careSaved: 10, careKinds: 5 }),
-  CM(1200, { careSaved: 30, careKinds: 8 })
+  CM(1200, { careSaved: 30, careKinds: 8 }),
+
+  /* ─ 진로 «무늬 육종»(D72 C · D74) — 사슬 넷 + 곁줄 «세 줄» + 느린 곁줄 «다섯 칸» ─────────── */
+  BM(1300, { bagPlants: 1 }),
+  BM(1301),
+  BM(1320, { breedSamples: 1, breedLines: 1 }),
+  BM(1321, { breedSamples: 1, breedLines: 1 }),
+  BM(1360, { breedSamples: 9, breedLines: 2, breedBest: { slot: 'monstera_halfmoon', ko: '하프문 몬스테라', n: 2 } }),
+  BM(1400, { breedSamples: 14, breedLines: 3, breedVarieties: 1 }),
+  BM(1401, { breedSamples: 14, breedLines: 3, breedVarieties: 1 }),
+  BM(1550, { breedSamples: 40, breedLines: 3, breedVarieties: 3 }),
+  BM(1551, { breedSamples: 40, breedLines: 3, breedVarieties: 3 }),
+  BM(1800, { breedSamples: 80, breedLines: 3, breedVarieties: 5 })
 ];
 steps.forEach((s, i) => step(i + 1, s));
 

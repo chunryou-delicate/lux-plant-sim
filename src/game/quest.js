@@ -242,6 +242,9 @@ export function emptySnapshot() {
            /* ★ 2026-10-23 [plan] D72 B «식물 돌봄»([core] · null = 모른다) — careOpen 열린 맡김 수 · careReady 나아서 돌려줄 수 있는 수 ·
               careSaved 살린 수(돌려준 것) · careKinds 살려 본 고장 갈래 수 · careDueSoonest 가장 급한 맡김 남은 날 */
            careOpen: null, careReady: null, careSaved: null, careKinds: null, careDueSoonest: null,
+           /* ★ 2026-10-24 [plan] D72 C «무늬 육종»([core] · null = 모른다) — breedSamples 적은 표본 수 · breedLines 표본이 있는 줄 수(0~3) ·
+              breedVarieties 등록한 품종 수 · breedBest { slot, ko, n } 등록 안 된 칸 중 같은 조건이 가장 많이 쌓인 것(n 0~2 · 칩 글) */
+           breedSamples: null, breedLines: null, breedVarieties: null, breedBest: null,
            alDormantNow: null, alWokeCount: null, alCormsFound: null, alFoundCormsPlanted: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
@@ -1179,6 +1182,100 @@ const CARE_QUESTS = Object.freeze([
   })
 ]);
 
+/* ══ ★★ 2026-10-24 [plan] D72 C 판 «무늬 육종» 사슬 (명세 docs/handoff/plan-breed-career-spec-20261023.md §5 · 총괄 D74) ══
+   짐 풀기 → 첫 표본 → 첫 품종 → 품종 셋(끝맺음 자리 · «무늬 육종가») · 곁줄 «세 줄을 다 적는다»(환경·유전·선발) · 느린 곁줄 «다섯 칸».
+   ★ 명세 §5 의 «세 줄»을 사슬 «안»이 아니라 곁줄로 뺐다(plan 판단) — 알로카시아·핑크프린세스가 없는 판도 몬스테라만으로 품종을 낼 수 있는데,
+     사슬에 두면 그 판의 사슬이 «구근·PP 를 사 오라»에 막힌다. 곁줄은 사슬 뒤라 칩을 안 쥔다.
+   칩 글(D51 결): 가장 가까운 칸이 있으면 «{칸} 같은 조건 n/3» · 없으면 «품종 r — {다음}까지 k». 몬이는 수를 안 말한다 — 수는 칩·화면 글만.
+   ⚠ 칸이 null 이면(배선 전) 안 열린다. 진로는 한 판에 하나(D73) — job === 'breed' 일 때만. */
+const isBreed = s => !!s && s.movedHome === true && s.job === 'breed';
+const breedChipTodo = (s, goal, label) => {
+  const b = s && s.breedBest;
+  if (b && typeof b.ko === 'string' && Number.isFinite(b.n) && b.n >= 1) return `${b.ko} 같은 조건 ${b.n}/3`;
+  const r = (s && Number.isFinite(s.breedVarieties)) ? s.breedVarieties : 0;
+  return `품종 ${r} — ${label}까지 ${Math.max(0, goal - r)}`;
+};
+const BREED_QUESTS = Object.freeze([
+  Object.freeze({
+    id: 'breed_unpack',
+    room: 'tworoom',
+    ko: '짐을 풀고 기록장을 편다',
+    reward: '투룸이 육종 자리가 됩니다',
+    teaches: ['기록도 자리에서 시작한다'],
+    why: '들고 온 것은 가방에서 아무 일도 안 합니다. 자리를 잡아야 새 잎이 나고, 새 잎이 나야 적을 것이 생깁니다.',
+    todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
+      ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
+    opens: s => isBreed(s),
+    done:  s => isBreed(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
+  }),
+  Object.freeze({
+    id: 'breed_first_sample',
+    room: 'tworoom',
+    ko: '첫 표본을 적는다',
+    reward: '기록장에 첫 줄이 섭니다',
+    teaches: ['하나 나온 건 우연이다'],
+    why: '무늬 마디 삽수의 새 잎 · 구근의 싹 · 핑크프린세스의 새 잎이 나면 기록장에 저절로 적힙니다.',
+    todo: () => '새 잎이나 싹이 나면 저절로 적힙니다',
+    after: 'breed_unpack',
+    opens: (s, ctx) => isBreed(s) && !!(ctx && ctx.doneIds.includes('breed_unpack')),
+    done:  s => isBreed(s) && Number.isFinite(s.breedSamples) && s.breedSamples >= 1
+  }),
+  Object.freeze({
+    id: 'breed_first_variety',
+    room: 'tworoom',
+    ko: '첫 품종을 등록한다',
+    reward: '내 이름이 붙은 품종이 생깁니다',
+    teaches: ['같은 조건에서 거듭 나야 내 것이다'],
+    why: '같은 조건에서 같은 무늬가 세 번 나면 우연이 아니라 품종입니다. 이름을 붙여 등록합니다.',
+    need: Object.freeze({ varieties: 1 }),
+    todo: (q, s) => breedChipTodo(s, q.need.varieties, '첫 품종'),
+    after: 'breed_first_sample',
+    opens: (s, ctx) => isBreed(s) && !!(ctx && ctx.doneIds.includes('breed_first_sample')),
+    done:  (s, ctx) => isBreed(s) && Number.isFinite(s.breedVarieties) && s.breedVarieties >= ctx.q.need.varieties
+  }),
+  Object.freeze({
+    id: 'breed_three',
+    room: 'tworoom',
+    ko: '무늬 육종가',
+    reward: '무늬 육종가라고 불립니다',
+    teaches: ['기록이 쌓이면 이름이 된다'],
+    why: '품종이 셋이면 무늬 육종가라고 해도 됩니다.',
+    need: Object.freeze({ varieties: 3 }),
+    todo: (q, s) => breedChipTodo(s, q.need.varieties, '셋'),
+    after: 'breed_first_variety',
+    opens: (s, ctx) => isBreed(s) && !!(ctx && ctx.doneIds.includes('breed_first_variety')),
+    done:  (s, ctx) => isBreed(s) && Number.isFinite(s.breedVarieties) && s.breedVarieties >= ctx.q.need.varieties
+  }),
+  /* 곁줄 — 확률의 꼴 셋(환경 · 유전 · 선발)을 다 본다. 사슬 뒤라 칩을 안 쥔다 */
+  Object.freeze({
+    id: 'breed_three_lines',
+    room: 'tworoom',
+    ko: '세 줄을 다 적는다',
+    reward: '환경 · 유전 · 선발을 다 봅니다',
+    teaches: ['확률에는 꼴이 여럿 있다'],
+    why: '몬스테라는 뿌리 낸 자리가, 알로카시아는 어미가, 핑크프린세스는 자르는 손이 무늬를 정합니다.',
+    need: Object.freeze({ lines: 3 }),
+    todo: (q, s) => `표본 줄 ${(s && Number.isFinite(s.breedLines)) ? s.breedLines : 0}/3 — 세 종을 다 적어 보세요`,
+    after: 'breed_first_sample',
+    opens: (s, ctx) => isBreed(s) && !!(ctx && ctx.doneIds.includes('breed_first_sample')),
+    done:  (s, ctx) => isBreed(s) && Number.isFinite(s.breedLines) && s.breedLines >= ctx.q.need.lines
+  }),
+  /* 느린 곁줄 — 기록장 칸 다섯(D74 ①) */
+  Object.freeze({
+    id: 'breed_all',
+    room: 'tworoom',
+    ko: '다섯 칸을 다 채운다',
+    reward: '기록장이 다 찹니다',
+    teaches: ['자리도 어미도 가위도 내 손에'],
+    why: '하프문·풀문 몬스테라 · 마블·반달 알로카시아 · 분홍 많은 핑크프린세스 — 다섯 칸을 다 등록합니다.',
+    need: Object.freeze({ varieties: 5 }),
+    todo: (q, s) => breedChipTodo(s, q.need.varieties, '다섯'),
+    after: 'breed_three',
+    opens: (s, ctx) => isBreed(s) && !!(ctx && ctx.doneIds.includes('breed_three')),
+    done:  (s, ctx) => isBreed(s) && Number.isFinite(s.breedVarieties) && s.breedVarieties >= ctx.q.need.varieties
+  })
+]);
+
 /* ══ ★★ 2026-10-09 [plan] D45(총괄) — 새 식물 두 종의 곁줄 셋 (명세 docs/handoff/plan-newspecies-20261009.md) ══
    몬스테라 «자리» · 핑크프린세스 «가위» · 알로카시아 «철». 셋 다 곁줄이다 — 원룸 사슬(배열 앞)이 열려 있는 동안
    「지금 할 일」 칩을 안 잡는다(questView 는 정의 순서에서 첫째를 뽑는다 · 이 묶음은 맨 끝).
@@ -1263,7 +1360,9 @@ const SPECIES_QUESTS = Object.freeze([
      ①②의 어떤 줄도 「지금 할 일」이 못 된다 — 박사님이 짚으신 그 구멍이 거기서 났다. */
 /* ★ 2026-10-07 — 원룸 다섯 줄은 «느린 줄 앞»이다. 맨 뒤면 잎 줄이 영영 안 끝나는 판(그루째 판 판)에서
      원룸 줄이 「지금 할 일」이 못 된다 — 위 ③ 을 맨 뒤로 옮긴 것과 같은 까닭이다. 반지하에서는 방이 걸러 안 보인다. */
-export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SHOP_QUESTS, ...CARE_QUESTS, ...SPECIES_QUESTS, ...SPECIES2_QUESTS]);
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SHOP_QUESTS, ...CARE_QUESTS, ...BREED_QUESTS, ...SPECIES_QUESTS, ...SPECIES2_QUESTS]);
+/* ★ 2026-10-24 [plan] D72 C — 육종 사슬(§BREED_QUESTS) */
+export const BREED_QUEST_IDS = Object.freeze(BREED_QUESTS.map(q => q.id));
 /* ★ 2026-10-23 [plan] D72 B — 돌봄 사슬(§CARE_QUESTS) */
 export const CARE_QUEST_IDS = Object.freeze(CARE_QUESTS.map(q => q.id));
 /* ★ 2026-10-23 D71 — 새 두 종 곁줄(§SPECIES2_QUESTS) */
