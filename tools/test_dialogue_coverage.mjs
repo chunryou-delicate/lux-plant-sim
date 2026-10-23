@@ -1061,6 +1061,9 @@ check('잡담 — 마지막 귀띔 둘(뿌리 자리 · AL 갈래)은 때가 참
       assert.ok(l.who === 'moni' && !/[0-9]|세 |셋|넷|다섯|여섯|일곱|여덟|아홉|서른|퍼센트|반드시|꼭 나/.test(l.text), `'${id}' 수·장담 낱말: ${l.text}`);
   }
   assert.ok(!SCRIPTS.hintBreedRootSpot.some(l => /가장 밝은/.test(l.text)), '뿌리 자리 귀띔이 풀문 귀띔(«가장 밝은 자리»)과 같은 말을 합니다');
+  /* ✎ 총괄 정정 — 뿌리 뒤 옮김은 «자랄 만큼 밝은 데»라야 참(무늬 삽수는 문턱 밑이면 안 자람) — «옮겨도 돼»만 남기지 않는다 */
+  assert.ok(SCRIPTS.hintBreedRootSpot.some(l => /자랄 만큼/.test(l.text)) && !SCRIPTS.hintBreedRootSpot.some(l => /옮겨도 돼/.test(l.text)),
+    '뿌리 뒤 옮김 줄에 «자랄 만큼 밝은 데»가 없습니다');
   const at = id => CHATTER.findIndex(r => r.id === id);
   assert.ok(at('hintBreedRootSpot') < at('chatBreedMorning') && at('hintBreedAlKinds') < at('chatBreedMorning'), '귀띔이 육종 잡담 뒤에 있습니다');
   const ctx = jb => ({ ...chatterContextOf({ day: 1400 }, { story: { job: { id: 'breed' } }, home: { room: 'tworoom' }, jobBreed: { varieties: [], pending: [], ...jb } }),
