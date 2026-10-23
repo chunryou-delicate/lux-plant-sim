@@ -328,6 +328,10 @@
   #homeScene.on{display:flex}
   #homeScene img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
   #homeScene #homeCard{position:relative;z-index:1;width:min(360px,88%)}
+  /* ★ 2026-10-23 D75 — 가게 끝맺음 카드 · 칭호 칩(plan-career-endings-spec §10-3 · §10-4) */
+  #shopEndFaces{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0 2px}
+  #shopEndFaces img{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#2a2a35;border:2px solid #f0c674}
+  .titleChip{display:inline-block;padding:1px 9px;border-radius:10px;background:#f0c674;color:#2b2112;font-weight:700;font-size:.92em}
   @keyframes homeIn{from{opacity:0;filter:brightness(.4)}to{opacity:1;filter:none}}
   html.homescene #next,html.homescene #resow,html.homescene #waterCrop,html.homescene #waterPot,html.homescene #harvestCrop,
   html.homescene #hint,html.homescene #hintDim,html.homescene #marks,html.homescene #questChip,html.homescene #coach{visibility:hidden!important}
@@ -2266,6 +2270,16 @@
   </div>
 </div>
 <!-- ★ 2026-10-08 ④ 내 집 마련 되묻기(plan-ending-home ②-B) — 이사와 같은 결 -->
+<!-- ★ 2026-10-23 D75 — 가게 끝맺음 카드(plan-career-endings-spec §10-3 · #homeCard 결) · 대사(shopEnding)가 끝난 뒤 뜬다 · 단추 하나([다른 진로]는 D 나머지) -->
+<div id="shopEndPanel" class="pop" aria-hidden="true">
+  <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="shopEndTitle">
+    <div class="ptitle" id="shopEndTitle">동네 식물 가게</div>
+    <div class="psub" id="shopEndSub">단골 서른 — 가게 끝맺음</div>
+    <div class="plots" id="shopEndRows"></div>
+    <div id="shopEndFaces"></div>
+    <div class="pbtns"><button id="shopEndGo" class="go" type="button">계속 산다</button></div>
+  </div>
+</div>
 <div id="homePanel" class="pop" aria-hidden="true">
   <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="homeTitle">
     <div class="ptitle" id="homeTitle">내 집 마련</div>
@@ -3508,8 +3522,10 @@ let lastTurn = null;
      `fedDays` 의 뜻을 바꾸면 DLI 이력·생장일이 함께 흔들린다.
    ⚠ 세이브에 안 실린다. 앱을 껐다 켜면 0 부터 다시 센다(§판단 필요). */
 let stuckDays = 0;
+let shopEndPending = false;   /* ★ D75 — 가게 끝맺음 카드(§openShopEndWhenQuiet) */
 function noteTurn(t) {
   lastTurn = t;
+  if (t && Array.isArray(t.events) && t.events.some(e => e && e.id === 'shop_ending')) shopEndPending = true;
   stuckDays = (t && (t.growthBlocked || t.headroomBlocked)) ? stuckDays + 1 : 0;
   if (!t) resetStageMemo();   /* 새 판(같은 쪽에서 S = newState → noteTurn(null)) — 어제 값이 남으면 첫 배너가 빠지거나 거짓으로 뜬다 */
   noteLeafGrades(t);
@@ -10009,11 +10025,17 @@ function drawQuestPanel() {
   const total = v.all.length, done = v.done.length;
   $('questTitle').textContent = `할 일 ${done}/${total}`;
   /* D50 — 머리는 칩과 같은 줄(기다리지 않는 첫 줄)을 말한다 */
-  $('questSub').textContent = v.chip
+  const subKo = v.chip
     ? (questChipIsWait(v) ? `기다리는 중 — ${v.chip.waitWhat || v.chip.ko}` : `지금 할 것 — ${v.chip.ko}`)
     /* ⚠ 수를 글자로 박지 마라 — 2026-08-16 에 줄이 다섯에서 여섯이 됐고 이 줄만 낡았다.
        `total` 은 `quest.QUESTS` 에서 오므로 줄이 늘면 저절로 따라온다(§2.8). */
     : (done >= total ? `${total}가지를 다 배웠습니다` : questEmptyKo());
+  /* ★ D75(plan §10-4) — 진로를 연 판은 머리 첫 줄이 진로 머리(«식물 가게 · 단골 r명» · 끝맺음 뒤 칭호 칩) · 할 것은 둘째 줄 */
+  let jh = null; try { jh = JOB.jobHeadOf(S); } catch { jh = null; }
+  if (jh) {
+    const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    $('questSub').innerHTML = (jh.title ? `<span class="titleChip">${esc(jh.title)}</span> · 단골 ${jh.regulars}명` : esc(jh.ko)) + (subKo ? `<br>${esc(subKo)}` : '');
+  } else $('questSub').textContent = subKo;
   /* 띠와 수는 **같은 값**을 말한다. 다르면 어느 쪽이 참인지 물어야 한다 */
   $('questBar').firstElementChild.style.width = `${total ? Math.round(done / total * 100) : 0}%`;
 
@@ -10142,7 +10164,12 @@ function homeGoalOf() {
   try { const v = endingView(S, io, endingOptNow()); return v.visible ? v : null; } catch { return null; }
 }
 function homeGoalHtml(v) {
-  if (v.done) return '내 집을 마련했습니다';
+  /* ★ D75(plan §10-4) — 진로를 연 뒤엔 «내 집을 마련했습니다» 대신 진로 머리: «식물 가게 · 단골 r명» · 끝맺음 뒤 칭호 칩 «동네 식물 가게» */
+  if (v.done) {
+    let h = null; try { h = JOB.jobHeadOf(S); } catch { h = null; }
+    if (h) return h.title ? `<span class="titleChip">${h.title}</span> · 단골 ${h.regulars}명` : h.ko;
+    return '내 집을 마련했습니다';
+  }
   const why = String(v.why || '').replace(/"/g, '&quot;');
   const btn = `<button type="button" class="${v.ok ? 'go' : 'ghost'}" data-act="homeAsk"${v.ok ? '' : ' disabled'}` +
               ` title="${why}" style="width:auto;margin-top:6px">${v.buttonKo}</button>`;
@@ -10194,6 +10221,24 @@ function openHomeCardWhenQuiet() {
   $('homeCard').style.display = '';
   return true;
 }
+/* ══ ★ 2026-10-23 D75 — 가게 끝맺음 카드 ══ 수는 전부 상태에서(카드에만 · 몬이는 수를 안 말함) · 초상 = 단골이 된 손님 group(최대 여섯) */
+function openShopEndWhenQuiet() {
+  if (!shopEndPending) return false;
+  const st = $('stage'); if (st && st.classList.contains('talking')) return false;
+  shopEndPending = false;
+  const J = JOB.jobShopOf(S);
+  const rows = [`처음 그 방에서 ${S.day}일`];
+  if (Number.isInteger(J.openedOn)) rows.push(`가게를 연 지 ${S.day - J.openedOn}일`);
+  rows.push(`단골 ${J.regulars.length}명 · 맞춘 주문 ${J.done}건`);
+  $('shopEndRows').innerHTML = rows.map(r => `<div>${r}</div>`).join('');
+  const groups = [];
+  for (const id of J.regulars) { const c = JOB.shopCustomers().find(x => x && x.id === id); if (c && c.group && !groups.includes(c.group)) groups.push(c.group); if (groups.length >= 6) break; }
+  $('shopEndFaces').innerHTML = groups.map(g => npcFaceHTML({ group: g }, 'face')).join('');
+  $('shopEndPanel').classList.add('on'); $('shopEndPanel').setAttribute('aria-hidden', 'false');
+  return true;
+}
+function closeShopEnd() { $('shopEndPanel').classList.remove('on'); $('shopEndPanel').setAttribute('aria-hidden', 'true'); draw(); }
+window.__byeotShopEnd = () => ({ pending: shopEndPending, open: $('shopEndPanel').classList.contains('on'), rows: $('shopEndRows').textContent, faces: $('shopEndFaces').querySelectorAll('img').length });   /* 재는 손잡이 */
 function closeHomeScene() {
   const sc = $('homeScene'); sc.classList.remove('on'); sc.setAttribute('aria-hidden', 'true');
   document.documentElement.classList.remove('homescene');
@@ -10322,6 +10367,8 @@ window.__byeotChapterEnd = () => ({ done: endingDoneNow(), on: !!($('chapterEnd'
 /* ★ 2026-10-08 [plan] 갈래 지도 50 — 열린 줄이 없을 때의 한 줄. «기다리면 열립니다»는 반지하 사슬 사이(진짜로 열리는 판)에서만 참이다.
      원룸은 endingGoal 의 글(목표 미정 · 마련할 수 있음 · 얼마 모자람)을 쓴다 — 거기선 기다려도 안 열린다. 할 일 창·탭 두 곳이 같은 함수 */
 function questEmptyKo() {
+  /* ★ D75 — 진로를 연 판은 머리 첫 줄이 진로 머리라 «내 집을 마련했습니다»를 또 말하지 않는다 */
+  try { if (JOB.isShopJob(S)) return ''; } catch { }
   try { if (S.tutorial && S.tutorial.movedOut) { const g = endingGoal(S, io, endingOptNow()); if (g && g.ko) return g.ko; } } catch { }
   return '지금 열린 것이 없습니다 — 기다리면 열립니다';
 }
@@ -12871,6 +12918,7 @@ const commitNextDay = guard(() => {
        그래서 「오늘 무슨 일이 났나」 다음에 「그래서 이제 뭘 해라」가 온다. */
   checkQuests(lastTurn);
   draw();
+  setTimeout(() => { try { openShopEndWhenQuiet(); } catch (e) { console.warn('[끝맺음]', e && e.message); } }, 50);   /* D75 */
   /* 대사가 안 떴으면 여기서 바로 뜬다. 떴으면 마지막 대사를 넘길 때 뜬다 */
   try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
 });
@@ -13151,6 +13199,7 @@ function dlgPaint() {
        가계부는 창이고 대사는 이야기다. 이야기를 창 뒤로 미루면 순서가 뒤집힌다. */
     try { if (dlgFlushHeld()) return; } catch (e) { console.warn('[대화]', e && e.message); }
     try { if (openHomeCardWhenQuiet()) return; } catch (e) { console.warn('[엔딩]', e && e.message); }   /* ④ 열세 줄이 끝났다 → 마무리 카드 */
+    try { if (openShopEndWhenQuiet()) return; } catch (e) { console.warn('[끝맺음]', e && e.message); }   /* D75 shopEnding 여섯 줄이 끝났다 → 끝맺음 카드 */
     try { if (openMoveAskWhenQuiet()) return; } catch (e) { console.warn('[D27]', e && e.message); }       /* D27 몬이 한 줄 뒤 → 이사 되묻기 창 */
     try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
     return;
@@ -18487,6 +18536,7 @@ document.addEventListener('click', (e) => {
   if (b && !b.disabled) { try { openHomeAsk(); } catch (err) { console.warn('[엔딩]', err && err.message); } }
 });
 $('homeGo').onclick = guard(() => { doFinishHome(); });
+$('shopEndGo').onclick = guard(() => { closeShopEnd(); });   /* D75 [계속 산다] */
 $('homeCancel').onclick = guard(() => { closeHomeAsk(); });
 $('homeNext').onclick = guard(() => { closeHomeScene(); });
 /* ★★ 2026-10-08 D27 (총괄 14:00 결정 · [plan] 19419589 · 갈래 지도 7) — **이사 되묻기 창**

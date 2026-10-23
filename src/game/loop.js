@@ -1259,8 +1259,8 @@ function nextDayBody(S, io) {
     let spotsMemo;
     jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn,
                                get spots() { if (spotsMemo === undefined) spotsMemo = shopSpotsOf(S, io, report && report.sky); return spotsMemo; } });
-    for (const e of (jobShop && jobShop.events) || []) if (e && e.ko && (e.id === 'order_new' || e.id === 'order_expired' || e.id === 'shop_open'))
-      pushLog(S, (e.id === 'order_new' ? '📋 ' : e.id === 'order_expired' ? '⌛ ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
+    for (const e of (jobShop && jobShop.events) || []) if (e && e.ko && (e.id === 'order_new' || e.id === 'order_expired' || e.id === 'shop_open' || e.id === 'shop_ending'))
+      pushLog(S, (e.id === 'order_new' ? '📋 ' : e.id === 'order_expired' ? '⌛ ' : e.id === 'shop_ending' ? '🏅 ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
   } catch (e) { pushLog(S, '⚠ 가게 하루 실패 — ' + e.message); jobShop = { error: e.message, events: [] }; }
 
   /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다.

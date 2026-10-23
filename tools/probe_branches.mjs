@@ -726,10 +726,10 @@ export async function play(name, seed, opt = {}) {
         if (e && e.id === 'order_new') { const k = `${e.kind}/${e.tier}`; (out.shop.newKinds = out.shop.newKinds || {})[k] = (out.shop.newKinds[k] || 0) + 1; shopMonth().newN = (shopMonth().newN || 0) + 1; }
         if (e && e.id === 'order_expired') shopMonth().expN = (shopMonth().expN || 0) + 1;
         /* ★ D71 — 둘째 두 종 사건 날(연 날부터) · 사진 단계(sc5 · ca8 · caSaved) */
-        if (e && /^(sc_ask|sc_rooted|ca_care|ca_saved)$/.test(e.id)) {
+        if (e && /^(sc_ask|sc_rooted|ca_care|ca_saved|shop_ending)$/.test(e.id)) {
           const ev2 = out.shop.ev2 = out.shop.ev2 || {};
           if (ev2[e.id] == null) ev2[e.id] = S.day - out.shop.openDay;
-          const st = e.id === 'sc_ask' ? 'sc5' : e.id === 'ca_care' ? 'ca8' : e.id === 'ca_saved' ? 'caSaved' : null;
+          const st = e.id === 'sc_ask' ? 'sc5' : e.id === 'ca_care' ? 'ca8' : e.id === 'ca_saved' ? 'caSaved' : e.id === 'shop_ending' ? 'end30' : null;
           if (st) { dump(st); if (preSave && !dumped.has(st + '_pre')) { dumped.add(st + '_pre'); try { fs.writeFileSync(path.join(opt.dump, `${name}_${seed}_${st}_pre.json`), preSave); (out.dumps = out.dumps || {})[st + '_pre'] = { day: S.day - 1 }; } catch (er) { (out.dumpErr = out.dumpErr || {})[st + '_pre'] = String(er && er.message || er).slice(0, 200); } } }
         }
       }
@@ -915,7 +915,7 @@ for (const name of NAMES) {
         const sm = k => s2.reduce((a, r) => a + ((r.sp2 || {})[k] || 0), 0);
         console.log(`    ◈ 둘째 두 종 — 단골 5 ${med(s2.map(r => r.shop.reg5).filter(x => x != null)) ?? '—'}일 · 단골 8 ${med(s2.map(r => r.shop.reg8).filter(x => x != null)) ?? '—'}일 · ` +
                     `sc_ask ${ev('sc_ask')} · 첫 뿌리 ${ev('sc_rooted')} · sc_ask→첫 뿌리 ${gap('sc_ask', 'sc_rooted')} · 곁줄 sc_hang 끝(높은 자리 줄기 ≥ longVineM) ${med(s2.map(r => r.shop.longVineOn).filter(x => x != null)) ?? '—'}(${s2.filter(r => r.shop.longVineOn != null).length}) · ` +
-                    `ca_care ${ev('ca_care')} · ca_saved ${ev('ca_saved')} · 맡김→펴짐 ${gap('ca_care', 'ca_saved')}`);
+                    `ca_care ${ev('ca_care')} · ca_saved ${ev('ca_saved')} · 맡김→펴짐 ${gap('ca_care', 'ca_saved')} · 가게 끝맺음(D75) ${ev('shop_ending')}`);
         console.log(`      SC 자름(주문) 판당 ${(sm('cuts') / s2.length).toFixed(1)} · 둘째 그루로 자름 ${(sm('grow2') / s2.length).toFixed(1)} · 높은 자리 없어 낮게 놓음 ${sm('noHigh')} · SC 그루-날 높은 ${sm('scHighDays')}/낮은 ${sm('scLowDays')} · ` +
                     `CA 옮김 ${sm('caMoves')} · CA 그루-날 알맞음 ${sm('caFitDays')}/벗어남 ${sm('caOffDays')} · 알맞은 빈 자리 없음 ${sm('caNoFit')}` +
                     ` · 산 날 ${s2.filter(r => r.sp2 && r.sp2.scBuy != null).length}/${s2.length}` +

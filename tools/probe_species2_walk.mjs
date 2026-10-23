@@ -148,6 +148,31 @@ try {
     } else ok(false, '[caSaved] 놓인 스킨답서스가 없다');
     await roundTrip('caSaved');
     const ne = exc.slice(e0); ok(ne.length === 0, '[caSaved] 처리 안 된 예외 0', ne.slice(0, 2).join(' / ')); }
+  /* ── end30 · 가게 끝맺음(D75 · plan-career-endings-spec §10) — 단골 30 다음 날 아침 · 장면 대사 · 카드 · 칭호 칩 ── */
+  if (fs.existsSync(path.join(DUMP, `${PFX}_end30_pre.json`))) {
+    const e0 = exc.length;
+    await load('end30_pre');
+    const nd = await nextDayTalk(/둘러봤다|늘린 그루|무엇부터 늘릴까|동네 식물 가게/, 'end30_talk');
+    console.log('  대사 —', nd.lines.slice(0, 8).join(' / '));
+    ok(nd.d1 === nd.d0 + 1, `[end30] [다음 날](${nd.d0} → ${nd.d1})`);
+    const st = await J(`(()=>{ const S=window.__S(); return { ended: S.story.jobs && S.story.jobs.shop ? S.story.jobs.shop.endedOn : null, day: S.day, reg: S.jobShop.regulars.length }; })()`);
+    ok(st.ended === st.day, `[end30] 끝맺음이 그날 아침(${JSON.stringify(st)})`);
+    ok(nd.shotTaken, '[end30] shopEnding 대사가 화면에 떴다', nd.lines.slice(0, 3).join(' / '));
+    await sleep(600);
+    const c = await J(`(()=>window.__byeotShopEnd())()`);
+    ok(c.open && /단골 \d+명 · 맞춘 주문 \d+건/.test(c.rows) && /가게를 연 지 \d+일/.test(c.rows) && c.faces >= 1, `[end30] 끝맺음 카드(${JSON.stringify(c)})`);
+    await shot('end30_card');
+    await page.eval(`(()=>{ const b=document.getElementById('shopEndGo'); if(b) b.click(); })()`, false); await sleep(800);
+    ok(!(await J(`(()=>window.__byeotShopEnd().open)()`)), '[end30] [계속 산다]로 닫힌다');
+    await page.eval(`(()=>{ const b=document.getElementById('navQuest'); if(b) b.click(); })()`, false); await sleep(1200);
+    const head = await J(`(()=>({ tab: ((document.getElementById('questGoalTab')||{}).textContent||'').trim(), sub: ((document.getElementById('questSub')||{}).textContent||'').trim() }))()`);
+    ok(/동네 식물 가게/.test(head.tab) && /단골 \d+명/.test(head.tab), `[end30] 할 일 탭 머리 칭호(${head.tab})`);
+    ok(/동네 식물 가게/.test(head.sub) && !/내 집을 마련했습니다/.test(head.sub), `[end30] 할 일 창 머리 칭호(${head.sub})`);
+    await shot('end30_quest');
+    await roundTrip('end30');
+    ok(!(await J(`(()=>window.__byeotShopEnd().open)()`)), '[end30] 다시 켜도 카드가 또 안 뜬다');
+    const ne = exc.slice(e0); ok(ne.length === 0, '[end30] 처리 안 된 예외 0', ne.slice(0, 2).join(' / '));
+  } else console.log('  · end30 — 끝맺음 전날 세이브가 없다(하네스 판이 단골 30 에 못 닿음) · 건너뜀');
 } catch (e) { console.log('  FAIL 탈 —', e && e.message); bad++; }
 finally { await page.close(); }
 console.log(bad ? `probe_species2_walk: FAIL (${bad})` : 'probe_species2_walk: PASS');

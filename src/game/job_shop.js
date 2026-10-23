@@ -37,6 +37,9 @@ export const SHOP_JOB = Object.freeze({
   /* ★ 2026-10-23 D71(박사님 «추천대로») — 새 두 종이 들어오는 때 = 단골 수(날짜가 아니라 — 가게를 잘하면 빨리 온다 · 명세 §0)
        단골 5 → 스킨답서스 «찾는 손님»(sc_ask · 상점 진열) · 단골 8 → 칼라테아 «맡기는 손님»(ca_care · 가방에 맡은 그루) */
   species2: Object.freeze({ scAt: 5, caAt: 8 }),
+  /* ★ 2026-10-23 D75 ⑤(총괄) — 가게 끝맺음(plan-career-endings-spec §10): 단골 30 이 된 «다음 날 아침» 한 번 · 칭호 «동네 식물 가게»
+       fewPlants ⚖ — 방에 놓인 그루가 이 밑이면 장면 둘째 줄 갈래(«오늘은 무엇부터 늘릴까.» · 빈 선반을 «내가 늘린 그루»라 안 한다) */
+  ending: Object.freeze({ regulars: 30, fewPlants: 3, titleKo: '동네 식물 가게' }),
   /* 산 투룸 — 월세 0 · 관리비 한 달 8만(⚖ D59 · homes.json «산 집» 줄 대신 여기 한 곳 · core 판단) */
   ownedHome: Object.freeze({ roomId: 'tworoom', rentWon: 0, utilityWon: 80_000 })
 });
@@ -86,8 +89,46 @@ export function startShopJob(S) {
   if (!S.story) throw new Error('[가게] 스토리 상태가 없습니다');
   if (isShopJob(S)) { const e = new Error('[가게] 이미 가게를 열었습니다'); e.tutorialInput = true; throw e; }
   S.story.job = { id: 'shop', since: S.day ?? 0 };
+  jobHistoryOf(S);   /* D75 — 진로 이력(story.jobs.shop = { since, endedOn }) */
   jobShopOf(S);
   return { events: [{ id: 'job_start', ko: '진로 — 식물 가게를 열기로 했습니다' }] };
+}
+
+/* ── ★ 2026-10-23 D75 진로 이력 · 끝맺음 · 칭호 ─────────────────────────────── plan-career-endings-spec §10 · §7(core)
+   story.jobs = { shop: { since, endedOn } } — 진로마다 한 줄(D 나머지 «바꾸기»가 같은 칸을 쓴다 · 옛 세이브는 가게를 연 판이면 story.job.since 로 채움) */
+export function jobHistoryOf(S) {
+  const st = S && S.story;
+  if (!st) return {};
+  if (!st.jobs || typeof st.jobs !== 'object') st.jobs = {};
+  if (isShopJob(S) && !st.jobs.shop) st.jobs.shop = { since: Number.isFinite(st.job.since) ? st.job.since : null, endedOn: null };
+  return st.jobs;
+}
+export const shopEndedOn = S => { const h = S && S.story && S.story.jobs && S.story.jobs.shop; return h && Number.isFinite(h.endedOn) ? h.endedOn : null; };
+/* 칭호 — 이름뿐(돈·물건·능력 없음 · D59 결) */
+export const jobTitlesOf = S => (shopEndedOn(S) != null ? [SJ.ending.titleKo] : []);
+/* 할 일 탭 머리(§10-4) — 가게를 연 뒤: «식물 가게 · 단골 r명» · 끝맺음 뒤: «동네 식물 가게 · 단골 r명»(칭호 칩) */
+export function jobHeadOf(S) {
+  if (!isShopJob(S)) return null;
+  const J = jobShopOf(S), title = shopEndedOn(S) != null ? SJ.ending.titleKo : null;
+  return { title, regulars: J.regulars.length, ko: `${title || '식물 가게'} · 단골 ${J.regulars.length}명` };
+}
+/* 방에 놓인 그루 수 — 몬스테라 화분 + 놓인 삽수(죽지 않은) + 놓인 새 종 */
+function placedPlantsOf(S) {
+  const placed = x => !!(x && (x.slotId || x.at));
+  return (S.pots || []).filter(placed).length
+       + (S.cuttings || []).filter(c => c && c.status !== 'dead' && placed(c)).length
+       + speciesPotsOf(S).filter(placed).length;
+}
+/* 끝맺음 — 단골 30 이 된 날(이정표 날) 뒤 첫 하루 넘김에서 한 번(옛 세이브가 이미 넘었으면 불러온 뒤 첫 하루 넘김) */
+function shopEndingStep(S, J, day) {
+  const E = SJ.ending, at = J.milestones[E.regulars];
+  if (at == null || !(day > at)) return null;
+  const h = jobHistoryOf(S).shop;
+  if (!h || h.endedOn != null) return null;
+  h.endedOn = day;
+  const plantsPlaced = placedPlantsOf(S);
+  return { id: 'shop_ending', ko: `칭호 — ${E.titleKo}`, title: E.titleKo, regulars: J.regulars.length, done: J.done,
+           plantsPlaced, fewPlants: plantsPlaced < E.fewPlants, openedOn: J.openedOn };
 }
 
 /* ── 원천 — «할 수 없는 주문을 안 낸다»(plan §2-3) · 이 판단은 여기 한 곳 ─────────────────────────────── */
@@ -369,6 +410,7 @@ export function stepShopJob(S, ctx = {}) {
   if (!isShopJob(S) || !movedHome(S)) return out;
   const J = jobShopOf(S), day = S.day ?? 0;
   if (J.openedOn == null) return { events: openShop(S, ctx).events };
+  { const end = shopEndingStep(S, J, day); if (end) out.events.push(end); }   /* D75 — 아침 먼저 */
   out.events.push(...species2Step(S, J, day));
   /* 기한 지난 주문 — 조용히 사라진다(벌 없음 · 단골 안 셈) · 기록 줄 */
   for (const o of [...J.orders]) if (day > o.dueOn) {
@@ -517,7 +559,10 @@ export function jobShopSnapshot(S) {
     shopDueSoonest: open.length ? Math.min(...open.map(o => o.dueOn - day)) : null,
     /* ★ D71 곁줄 ca_unfurl 칸(plan) — 맡은 칼라테아가 있고 아직 안 펴짐 · 잎이 다 펴져 가게 것이 됐다(가게 판이 아니면 null) */
     caCareOpen: J ? (J.caPotId != null && J.caSavedOn == null) : null,
-    caSaved: J ? J.caSavedOn != null : null
+    caSaved: J ? J.caSavedOn != null : null,
+    /* ★ D75(plan 명세 §5) — 진로 끝맺음 날(없으면 null) · 지금 진로 */
+    jobsEnded: { shop: shopEndedOn(S), care: null, breed: null },
+    jobActive: job ? job.id : null
   };
 }
 

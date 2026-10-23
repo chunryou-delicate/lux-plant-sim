@@ -117,7 +117,8 @@ T('E 납품 — 값 · 단골 · 이정표 · 간판 · 다시 온 손님', () =
 T('F 스냅샷 · G 세이브', () => {
   const S = openS({ cuttings: [cut('c1')] });
   const s = JS.jobShopSnapshot(S);
-  assert.deepStrictEqual(Object.keys(s).sort(), ['caCareOpen', 'caSaved', 'job', 'movedHome', 'shopDone', 'shopDueSoonest', 'shopOpenOrders', 'shopRegulars']);   /* D71 — 곁줄 ca_unfurl 칸 둘 */
+  assert.deepStrictEqual(Object.keys(s).sort(), ['caCareOpen', 'caSaved', 'job', 'jobActive', 'jobsEnded', 'movedHome', 'shopDone', 'shopDueSoonest', 'shopOpenOrders', 'shopRegulars']);   /* D71 — 곁줄 ca_unfurl 칸 둘 · D75 진로 끝맺음 칸 둘 */
+  assert.deepStrictEqual(s.jobsEnded, { shop: null, care: null, breed: null }); assert.strictEqual(s.jobActive, 'shop');
   assert.strictEqual(s.caCareOpen, false); assert.strictEqual(s.caSaved, false);
   assert.strictEqual(s.job, 'shop'); assert.strictEqual(s.movedHome, true); assert.strictEqual(s.shopOpenOrders, 1);
   assert.strictEqual(s.shopDueSoonest, JS.SHOP_JOB.tiers.easy.days);
@@ -125,6 +126,31 @@ T('F 스냅샷 · G 세이브', () => {
   assert.deepStrictEqual(back, S.jobShop);
   const none = JS.jobShopSnapshot({ day: 1, story: {}, home: { room: 'oneroom' } });
   assert.strictEqual(none.movedHome, false); assert.strictEqual(none.job, null); assert.strictEqual(none.shopDone, null);
+});
+
+T('M 가게 끝맺음(D75 · plan-career-endings §10) — 단골 30 다음 날 아침 한 번 · 칭호 · 머리 글 · 갈래 · 옛 세이브', () => {
+  const S = openS({ cuttings: [cut('c1'), cut('c2'), cut('c3')] });   /* 놓인 그루 셋 — 갈래 문턱(3) 그대로 */
+  assert.deepStrictEqual(JS.jobHeadOf(S), { title: null, regulars: 0, ko: '식물 가게 · 단골 0명' });
+  assert.deepStrictEqual(S.story.jobs.shop, { since: 300, endedOn: null }, '가게를 연 날 진로 이력');
+  S.jobShop.regulars = Array.from({ length: 30 }, (_, i) => 'r' + i); S.jobShop.milestones[30] = S.day;   /* 오늘 단골 30(납품 이정표와 같은 칸) */
+  assert.ok(!JS.stepShopJob(S, {}).events.some(e => e.id === 'shop_ending'), '이정표 그날에 끝맺음(다음 날 아침이어야)');
+  S.day += 1;
+  const ev = days(S, 1).find(e => e.id === 'shop_ending');
+  assert.ok(ev && ev.title === '동네 식물 가게' && ev.regulars === 30 && ev.fewPlants === false, JSON.stringify(ev));
+  assert.strictEqual(JS.shopEndedOn(S), ev.day); assert.deepStrictEqual(JS.jobTitlesOf(S), ['동네 식물 가게']);
+  assert.strictEqual(JS.jobHeadOf(S).ko, '동네 식물 가게 · 단골 30명');
+  assert.ok(!days(S, 30).some(e => e.id === 'shop_ending'), '끝맺음이 두 번');
+  assert.strictEqual(JS.jobShopSnapshot(S).jobsEnded.shop, ev.day);
+  /* 빈 선반 갈래 — 놓인 그루가 셋 밑 */
+  const S2 = openS({ cuttings: [] }); S2.pots = [];
+  S2.jobShop.regulars = Array.from({ length: 30 }, (_, i) => 'r' + i); S2.jobShop.milestones[30] = S2.day;
+  const e2 = days(S2, 1).find(e => e.id === 'shop_ending');
+  assert.ok(e2 && e2.fewPlants === true && e2.plantsPlaced === 0, JSON.stringify(e2));
+  /* 옛 세이브 — 진로 이력 칸 없이 단골 30 을 이미 넘음 → 불러온 뒤 첫 하루 넘김에 한 번 */
+  const S3 = newS({ story: { job: { id: 'shop', since: 280 } }, jobShop: JS.unpackJobShop({ orders: [], regulars: Array.from({ length: 31 }, (_, i) => 'r' + i), openedOn: 280, milestones: { 3: 290, 10: 300, 30: 330 } }) });
+  S3.day = 400;
+  const e3 = days(S3, 1).find(e => e.id === 'shop_ending');
+  assert.ok(e3 && S3.story.jobs.shop.since === 280 && S3.story.jobs.shop.endedOn === 401, JSON.stringify(S3.story.jobs));
 });
 
 T('I 주문 가드 넷(plan §11) — 겨울·하프문 등 2 · PP 맨 위 분홍 0.5 · AL 가을 등 1 · 이미 갖춘 그루는 가드 밖', () => {

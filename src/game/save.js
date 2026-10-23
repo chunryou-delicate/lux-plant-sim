@@ -978,6 +978,16 @@ function packStory(story) {
     job: story.job && typeof story.job === 'object' && story.job.id
       ? { id: needStr(story.job.id, 'story.job.id'), since: story.job.since == null ? null : needInt(story.job.since, 'story.job.since', { min: 0 }) } : null,
     homeOnDay: optDay(story.homeOnDay, 'story.homeOnDay'),
+    /* ★ 2026-10-23 D75 — 진로 이력({ shop: { since, endedOn } } · 진로 끝맺음 날 · plan-career-endings-spec §7). 옛 세이브는 {} — 가게 판이면 job_shop §jobHistoryOf 가 채운다 */
+    jobs: (() => {
+      const raw = story.jobs && typeof story.jobs === 'object' ? story.jobs : {};
+      const out = {};
+      for (const [id, h] of Object.entries(raw)) {
+        if (!/^[a-z_]+$/.test(id) || !h || typeof h !== 'object') continue;
+        out[id] = { since: optDay(h.since, `story.jobs.${id}.since`), endedOn: optDay(h.endedOn, `story.jobs.${id}.endedOn`) };
+      }
+      return out;
+    })(),
     ending: {
       reachedOnDay: optDay(end.reachedOnDay, 'story.ending.reachedOnDay'),
       doneOnDay: optDay(end.doneOnDay, 'story.ending.doneOnDay'),
