@@ -7,9 +7,9 @@
    ★ 브라우저가 필요 없다. `vendor/three/three.min.js` 를 node 에서 그대로 불러
      **가구 빌더를 실제로 돌린다** — 그것이 §A 의 요점이다.
 
-     A 크기   143개를 빌더로 다시 지어 `size_m` 과 **한 톨이라도 다르면 깨진다**
+     A 크기   144개를 빌더로 다시 지어 `size_m` 과 **한 톨이라도 다르면 깨진다**
               ⇒ 「값 매기기가 쓴 크기」와 「빌더가 내는 크기」가 두 벌이 될 수 없다
-     B 거르기 가구 103 · 안 내는 가구 4 · 걸러 낸 것 36. 걸러 낸 것이 정말 가구가 아닌가
+     B 거르기 가구 103 · 안 내는 가구 5 · 걸러 낸 것 36. 걸러 낸 것이 정말 가구가 아닌가
      C 값     규칙대로 나오나 · 제일 싼 것~제일 비싼 것 · 되사는 값
      D 문     등 해금 **전에는 목록에 없고** 주문도 막힌다 · 해금 뒤에는 있다
      E 사기   재고가 늘고 돈이 그만큼 나간다
@@ -63,8 +63,8 @@ console.log('\nA. 크기 — 빌더가 내는 값과 size_m 이 같은가');
       bad.push(`${id}: 빌더 ${r4(s.w)}×${r4(s.d)}×${r4(s.h)} ≠ size_m ${p.size_m.w}×${p.size_m.d}×${p.size_m.h}`);
   }
   ok(`size_m 이 없는 프리셋 0개`, missing.length === 0, missing.join(', '));
-  ok(`143개 전부 빌더와 같다`, bad.length === 0, bad.slice(0, 8).join(' | '));
-  ok(`프리셋이 143개다`, Object.keys(PRESETS.presets).length === 143,
+  ok(`144개 전부 빌더와 같다`, bad.length === 0, bad.slice(0, 8).join(' | '));
+  ok(`프리셋이 144개다`, Object.keys(PRESETS.presets).length === 144,
      String(Object.keys(PRESETS.presets).length));
 
   /* ⚠ `w`·`d`·`h` 를 그대로 믿으면 안 된다는 증거를 검사로 남긴다 —
@@ -103,8 +103,9 @@ console.log('\nB. 거르기 — 가구가 아닌 것이 안 들어왔나');
      2026-10-10 [house] 벽 걸이 v1 열다섯(포스터·액자·엽서·달력 · mount wall-hang · 총괄) + 가게 주문판(안 냄): 125 → 141 · 가구점 87 → 102(core 2ca46715 가 걸이 자리 고르기를 붙인 뒤 켬) · 안 내는 가구 2 → 3
      2026-10-23 [house] D71 벽 화분걸이(wall_planter · unlock 'sc_ask' · core 가 해금 거르기를 넣는 날 켠다): 141 → 142 · 안 내는 가구 3 → 4 · 가구점 102 그대로
      2026-10-23 [core] 해금 거르기(shop §FURNITURE_UNLOCKS · 가게 sc_ask 날부터)를 넣고 켬: 가구 102 → 103 · 안 내는 가구 4 → 3 · 가구점 «열리면» 줄은 sc_ask 전엔 102 그대로
-     2026-10-23 [house] D73 돌봄 맡김판(care_board · 주문판 모델 · 이름만 · 가구점에 안 냄): 142 → 143 · 안 내는 가구 3 → 4 · 가구 103 그대로 */
-  ok('가구 103 · 안 내는 가구 4 · 전체 143', listedN === 103 && unlistedN === 4 && all.length === 143,
+     2026-10-23 [house] D73 돌봄 맡김판(care_board · 주문판 모델 · 이름만 · 가구점에 안 냄): 142 → 143 · 안 내는 가구 3 → 4 · 가구 103 그대로
+     2026-10-24 [house] D83 육종 메모판(memo_board · 주문판 모델 · 진로를 바꾸면 받은 판을 이 이름으로 부름 · 가구점에 안 냄): 143 → 144 · 안 내는 가구 4 → 5 · 가구 103 그대로 */
+  ok('가구 103 · 안 내는 가구 5 · 전체 144', listedN === 103 && unlistedN === 5 && all.length === 144,
      `가구 ${listedN} · 안 내는 가구 ${unlistedN} / 전체 ${all.length}`);
 
   /* ★ 조명은 **`lighting_presets.fixtures` 로 되짚어 확인한다** — 규칙이 코드에 있으므로

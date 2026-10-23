@@ -2325,6 +2325,26 @@
       "room": "벽(걸이 자리)",
       "shop_listed": false,
       "_shop": "★ 돌봄 진로(투룸)에 딸린 것 — 가구점에 안 낸다(가게 주문판과 같은 결). 투룸 판 자리(tworoom-hang-order)에만 건다. v2 옷 order_board.glb 그대로(furniture_dress FURN care_board)."
+    },
+    "memo_board": {
+      "type": "bulletin_board",
+      "name_ko": "메모판",
+      "intro_ko": "무늬가 난 날을 적어 붙여 두는 쪽지",
+      "_wall": "★ 2026-10-24 [house] D83 · D75(plan-career-endings-spec §2-3) — 육종 진로의 판 이름. 주문판(order_board)·맡김판(care_board)과 같은 모델·크기·자리(투룸 판 자리 only:order_board · hang_spots BOARD_KIND). 받은 판은 진로를 바꿔도 그대로 두고 육종일 때 이 이름·소개로 부른다(hang_spots boardAs). 이름은 명세 «메모판» · 소개 글은 house 초안(plan 이 고칠 수 있음).",
+      "mount": "wall-hang",
+      "size_m": {
+        "w": 0.6,
+        "d": 0.04,
+        "h": 0.45
+      },
+      "w": 0.6,
+      "d": 0.04,
+      "h": 0.45,
+      "color": "#c9a77c",
+      "accent": "#d8c3a0",
+      "room": "벽(걸이 자리)",
+      "shop_listed": false,
+      "_shop": "★ 육종 진로(투룸)의 판 이름 — 가구점에 안 낸다(주문판·맡김판과 같은 결). 투룸 판 자리(tworoom-hang-order)에만 건다. v2 옷 order_board.glb 그대로(furniture_dress FURN memo_board)."
     }
   },
   "_slots": "가구 userData.slots=[{x,y,z}](로컬 m, y=화분 밑면), tier_heights=[y..], size_m={w,d,h}. 에셋창 GLB 선반과 동일 스키마.",
