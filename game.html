@@ -3333,6 +3333,7 @@ import { useStock as shopUseStock, creditSpeciesSale } from './src/game/shop.js'
 import { resolvePlacement } from './src/game/place.js';
 /* ★ 2026-10-10 D59 — 진로 «식물 가게»(주문판 · 납품 · 단골) · 산 집(투룸) 이사 */
 import * as JOB from './src/game/job_shop.js';
+import * as CARE from './src/game/job_care.js';   /* ★ 2026-10-24 B 판 «식물 돌봄»(plan-care-career-spec · D73 · D80) */
 import { creditShopOrder } from './src/game/shop.js';
 import { moveIntoOwnedHome } from './src/game/oneroom.js';
 /* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
@@ -3353,7 +3354,7 @@ const endingOn = () => !!(ENDING_NOW && Number.isFinite(ENDING_NOW.targetWon));
    걷었다). loop.js 에는 그대로 있다 — 헤드리스 재현·밸런스 측정이 그 길로 돈다.
    ⚠ `runDays` 는 **빨리감기가 아니다.** 타이머 없이 `nextDay` 를 n번 도는 동기 함수이고,
      [검수]의 [30일 자동] 하나가 쓴다(플레이어 화면에 없다). 그래서 남긴다. */
-import { nextDay, runDays, avg, rollingAvg, harvestCrop, lightOptsOf, NO_GROW_BANDS, speciesDropInfoOf } from './src/game/loop.js';
+import { nextDay, runDays, avg, rollingAvg, harvestCrop, lightOptsOf, NO_GROW_BANDS, speciesDropInfoOf, careSpotsOf } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 /* 체력 — 값만 읽는다. 규칙도 문구도 여기서 짓지 않는다(docs/stamina.md) */
 import { staminaView, staminaRulesFrom, takeLevelUps, xpNeededAt,
@@ -3523,10 +3524,14 @@ let lastTurn = null;
      `fedDays` 의 뜻을 바꾸면 DLI 이력·생장일이 함께 흔들린다.
    ⚠ 세이브에 안 실린다. 앱을 껐다 켜면 0 부터 다시 센다(§판단 필요). */
 let stuckDays = 0;
-let shopEndPending = false;   /* ★ D75 — 가게 끝맺음 카드(§openShopEndWhenQuiet) */
+let shopEndPending = false;   /* ★ D75 — 진로 끝맺음 카드(§openShopEndWhenQuiet) · 갈래는 shopEndKind('shop' | 'care') */
+var shopEndKind = 'shop';
 function noteTurn(t) {
   lastTurn = t;
-  if (t && Array.isArray(t.events) && t.events.some(e => e && e.id === 'shop_ending')) shopEndPending = true;
+  if (t && Array.isArray(t.events)) {
+    if (t.events.some(e => e && e.id === 'shop_ending')) { shopEndPending = true; shopEndKind = 'shop'; }
+    else if (t.events.some(e => e && e.id === 'care_ending')) { shopEndPending = true; shopEndKind = 'care'; }   /* B 돌봄 끝맺음(살린 30) */
+  }
   stuckDays = (t && (t.growthBlocked || t.headroomBlocked)) ? stuckDays + 1 : 0;
   if (!t) resetStageMemo();   /* 새 판(같은 쪽에서 S = newState → noteTurn(null)) — 어제 값이 남으면 첫 배너가 빠지거나 거짓으로 뜬다 */
   noteLeafGrades(t);
@@ -4228,7 +4233,7 @@ const HINT_DIM_ALPHA = 0.28;              /* 「약간」 — 딴 데가 안 보
 let hintNoDim = false;
 let oneroomShadeSaid = false;   /* 원룸 첫 장면 ③ 「선반 아래가 어두워졌습니다」 — 이 판에서 한 번 */
 let oneroomFurnSeen = null;
-const GIVEN_FURNITURE = Object.freeze(['order_board']);   /* ★ 10-10 [plan] 받은 물건 — «첫 가구»·«놓은 가구» 셈에서 뺀다(가게 첫날 주문판) */     /* ★ 10-10 — 이 켬에서 처음 본 «놓인 가구 수»(0 에서 1 이 되는 «순간»만 ③ 을 띄운다) */
+const GIVEN_FURNITURE = Object.freeze(['order_board', 'care_board']);   /* ★ 10-24 B — 돌봄 첫날 맡김판(house 0ddf6061 care_board)도 받은 물건 */   /* ★ 10-10 [plan] 받은 물건 — «첫 가구»·«놓은 가구» 셈에서 뺀다(가게 첫날 주문판) */     /* ★ 10-10 — 이 켬에서 처음 본 «놓인 가구 수»(0 에서 1 이 되는 «순간»만 ③ 을 띄운다) */
 /* ★★ 2026-09-04 — **「놓임」은 «확정된 것»만이다.** 놓는 순간 그루에 slotId/at 가 «먼저» 들어가고 [취소]가 되돌리므로(§placeConfirmCancel)
    `cropPotPlaced` 는 「여기에 둘까요?」 단계의 임시 자리도 놓임으로 센다. 그래서 둘째 시루가 [확인] «전»에 세팅 끝이 서서
    [확인] 손가락이 죽었다(총괄 걸음 f56). ⇒ 확정 대기(picked.before · 무대 confirming)인 그루는 안 센다. 세팅 끝·둘째 시루 갈래·퀘스트 스냅샷이 «이 한 자»를 쓴다. */
@@ -5005,10 +5010,16 @@ const detail = {
       : !s2 ? r2('잎', `${rows.length}장`)
       : q.species === 'scindapsus'
         ? r2('마디', `${s2.nodes}개`) + (s2.phase === 'cutting' ? r2('뿌리', '물꽂이 — 놓인 날을 셉니다') : r2('줄기', `${Math.round(s2.lengthM * 100)}cm${s2.atFloor ? ' · 바닥에 닿음' : ''}`))
-        : r2('잎', `${s2.leaves}장`) + r2('말린 잎', `${s2.curled}장${s2.tooBright ? ' · 너무 밝음' : ''}`) + (q.care ? r2('맡음', '손님 것 — 잎이 다 펴지면 가게 것') : '');
+        : r2('잎', `${s2.leaves}장`) + r2('말린 잎', `${s2.curled}장${s2.tooBright ? ' · 너무 밝음' : ''}`) + (q.care && !q.care.requestId ? r2('맡음', '손님 것 — 잎이 다 펴지면 가게 것') : '');
+    /* ★ B 돌봄 — 맡은 화분 줄(고장 한 마디 · 남은 날 · 나음/아직) · 손님 것이라 값은 수고비 글로 */
+    let careRow = '';
+    if (q.care && q.care.requestId) {
+      try { const req = CARE.jobCareOf(S).requests.find(x => x.id === q.care.requestId); const pr = req && CARE.careProblemOf(req.problem);
+            if (req) careRow = r2('맡음', `${pr ? pr.ko : req.problem} · ${Math.max(0, req.dueOn - S.day)}일 남음 · ${req.savedOn != null ? '나음 — 맡김판에서 [돌려준다]' : '아직'}`); } catch { careRow = ''; }
+    }
     return {
       art: SPECIES_ART[q.species], title: ko, sub: `${brief} · ${where}`,
-      body: rowsHTML + (why ? r2('값', why) : r2('값', `${price.won.toLocaleString()}원`)) + teach,
+      body: rowsHTML + careRow + (why ? r2('값', why) : r2('값', `${price.won.toLocaleString()}원`)) + teach,
       btns
     };
   },
@@ -9952,7 +9963,8 @@ function questSnapshotNow(turn) {
     /* ★ 2026-10-09 D45 — 새 두 종 곁줄 셋(plan SPECIES_QUESTS)이 읽는 칸 — 코어 §speciesSnapshot 그대로(harness 와 같은 자) */
     ...(() => { try { return speciesSnapshot(S); } catch { return {}; } })(),
     /* ★ 2026-10-10 D59 — 가게 칸(plan SHOP_QUESTS) — harness 와 같은 함수 */
-    ...(() => { try { return JOB.jobShopSnapshot(S); } catch { return {}; } })()
+    ...(() => { try { return JOB.jobShopSnapshot(S); } catch { return {}; } })(),
+    ...(() => { try { return CARE.jobCareSnapshot(S); } catch { return {}; } })()   /* B 돌봄 사슬 칸 */
   };
 }
 
@@ -10033,9 +10045,12 @@ function drawQuestPanel() {
     : (done >= total ? `${total}가지를 다 배웠습니다` : questEmptyKo());
   /* ★ D75(plan §10-4) — 진로를 연 판은 머리 첫 줄이 진로 머리(«식물 가게 · 단골 r명» · 끝맺음 뒤 칭호 칩) · 할 것은 둘째 줄 */
   let jh = null; try { jh = JOB.jobHeadOf(S); } catch { jh = null; }
-  if (jh) {
+  let jc = null; try { jc = CARE.careHeadOf(S); } catch { jc = null; }
+  if (jh || jc) {
     const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    $('questSub').innerHTML = (jh.title ? `<span class="titleChip">${esc(jh.title)}</span> · 단골 ${jh.regulars}명` : esc(jh.ko)) + (subKo ? `<br>${esc(subKo)}` : '');
+    const headHTML = jh ? (jh.title ? `<span class="titleChip">${esc(jh.title)}</span> · 단골 ${jh.regulars}명` : esc(jh.ko))
+                        : (jc.title ? `<span class="titleChip">${esc(jc.title)}</span> · 살린 화분 ${jc.saved}` : esc(jc.ko));
+    $('questSub').innerHTML = headHTML + (subKo ? `<br>${esc(subKo)}` : '');
   } else $('questSub').textContent = subKo;
   /* 띠와 수는 **같은 값**을 말한다. 다르면 어느 쪽이 참인지 물어야 한다 */
   $('questBar').firstElementChild.style.width = `${total ? Math.round(done / total * 100) : 0}%`;
@@ -10169,6 +10184,8 @@ function homeGoalHtml(v) {
   if (v.done) {
     let h = null; try { h = JOB.jobHeadOf(S); } catch { h = null; }
     if (h) return h.title ? `<span class="titleChip">${h.title}</span> · 단골 ${h.regulars}명` : h.ko;
+    let hc = null; try { hc = CARE.careHeadOf(S); } catch { hc = null; }
+    if (hc) return hc.title ? `<span class="titleChip">${hc.title}</span> · 살린 화분 ${hc.saved}` : hc.ko;
     return '내 집을 마련했습니다';
   }
   const why = String(v.why || '').replace(/"/g, '&quot;');
@@ -10227,13 +10244,16 @@ function openShopEndWhenQuiet() {
   if (!shopEndPending) return false;
   const st = $('stage'); if (st && st.classList.contains('talking')) return false;
   shopEndPending = false;
-  const J = JOB.jobShopOf(S);
+  const care = shopEndKind === 'care';
+  const J = care ? CARE.jobCareOf(S) : JOB.jobShopOf(S);
+  $('shopEndTitle').textContent = care ? CARE.CARE_JOB.ending.titleKo : '동네 식물 가게';
+  $('shopEndSub').textContent = care ? '살린 화분 서른 — 돌봄 끝맺음' : '단골 서른 — 가게 끝맺음';
   const rows = [`처음 그 방에서 ${S.day}일`];
-  if (Number.isInteger(J.openedOn)) rows.push(`가게를 연 지 ${S.day - J.openedOn}일`);
-  rows.push(`단골 ${J.regulars.length}명 · 맞춘 주문 ${J.done}건`);
+  if (Number.isInteger(J.openedOn)) rows.push(`${care ? '돌봄을 시작한' : '가게를 연'} 지 ${S.day - J.openedOn}일`);
+  rows.push(care ? `살린 화분 ${J.saved} · 고쳐 본 고장 ${Object.keys(J.kinds || {}).length}/${CARE.careProblems().length || 8}` : `단골 ${J.regulars.length}명 · 맞춘 주문 ${J.done}건`);
   $('shopEndRows').innerHTML = rows.map(r => `<div>${r}</div>`).join('');
   const groups = [];
-  for (const id of J.regulars) { const c = JOB.shopCustomers().find(x => x && x.id === id); if (c && c.group && !groups.includes(c.group)) groups.push(c.group); if (groups.length >= 6) break; }
+  for (const id of (care ? J.served : J.regulars) || []) { const c = JOB.shopCustomers().find(x => x && x.id === id); if (c && c.group && !groups.includes(c.group)) groups.push(c.group); if (groups.length >= 6) break; }
   $('shopEndFaces').innerHTML = groups.map(g => npcFaceHTML({ group: g }, 'face')).join('');
   $('shopEndPanel').classList.add('on'); $('shopEndPanel').setAttribute('aria-hidden', 'false');
   return true;
@@ -10271,6 +10291,7 @@ function drawOrderBoard() {
   const box = $('orderBoard'); if (!box) return;
   if (!JOB.movedHome(S)) { box.style.display = 'none'; return; }
   box.style.display = '';
+  if (CARE.isCareJob(S)) { drawCareBoard(box); return; }   /* B — 돌봄 판은 같은 자리에 맡김판 */
   const J = JOB.jobShopOf(S);
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const cust = id => JOB.shopCustomers().find(c => c.id === id) || { ko: id };
@@ -10303,14 +10324,14 @@ function deliverNow(orderId, ref) {
 window.__byeotDeliver = (orderId, ref) => deliverNow(orderId, ref);   /* 재는 손잡이 */
 
 /* ★ 2026-10-10 D59 — 시간 잠금은 «엔딩을 냈고 아직 진로를 안 고른» 동안만(가게를 열면 하루가 다시 간다) */
-function endingLockedNow() { try { return endingDoneNow() && !JOB.isShopJob(S); } catch { return endingDoneNow(); } }
+function endingLockedNow() { try { return endingDoneNow() && !JOB.hasJob(S); } catch { return endingDoneNow(); } }   /* B — 진로 공통 */
 /* ★ 2026-10-10 D59(plan-shop-spec §1·§6) — 엔딩 [다음] 뒤 «진로 고르기». 식물 가게만 열림 · 돌봄·육종은 «준비 중» */
 const JOB_KO = Object.freeze({
   title: '다음 장 — 무엇을 하며 살까',
   sub: '이어받는 것 — 키운 그루·삽수·가구·남은 돈',
   cards: [
     { id: 'shop', ko: '식물 가게', sub: '손님이 원하는 식물을 기한 안에 키워 맞춥니다', go: '가게를 연다' },
-    { id: 'care', ko: '식물 돌봄', sub: '남의 화분을 맡아 살립니다 · 준비 중' },
+    { id: 'care', ko: '식물 돌봄', sub: '남의 화분을 맡아 살립니다', go: '돌봄을 시작한다' },   /* B(plan 55edc62e) */
     { id: 'breed', ko: '무늬 육종', sub: '무늬를 대대로 이어 기록합니다 · 준비 중' }
   ]
 });
@@ -10318,13 +10339,13 @@ function openChapterEnd() {
   const el = $('chapterEnd'); if (!el) return;
   $('chapterEndAsk').style.display = 'none'; $('chapterAgain').textContent = CHAPTER_KO.again; chapterAgainArmed = false;
   const jc = $('jobCards');
-  if (jc && endingDoneNow() && !JOB.isShopJob(S)) {
+  if (jc && endingDoneNow() && !JOB.hasJob(S)) {
     $('chapterEndTitle').textContent = JOB_KO.title;
     $('chapterEndSub').textContent = JOB_KO.sub;
     jc.innerHTML = JOB_KO.cards.map(c => `<div class="job${c.go ? '' : ' soon'}"><b>${c.ko}</b><span>${c.sub}</span>` +
       (c.go ? `<button class="primary" type="button" data-job="${c.id}">${c.go}</button>` : '') + `</div>`).join('');
     jc.style.display = 'flex';
-    for (const b of jc.querySelectorAll('[data-job]')) b.onclick = guard(() => startShopNow());
+    for (const b of jc.querySelectorAll('[data-job]')) b.onclick = guard(() => (b.dataset.job === 'care' ? startCareNow() : startShopNow()));
   } else if (jc) jc.style.display = 'none';
   el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
 }
@@ -10334,21 +10355,21 @@ function startShopNow() {
   evs.push(...JOB.startShopJob(S).events);
   const r = moveIntoOwnedHome(S, io, { carry: carryFurnitureListNow() });
   evs.push(...r.events);
-  /* ★ 2026-10-10 D59(house d46f4d91) — «문 앞에 작은 주문판을 걸었다»(shopOpen 대사)가 방에도 선다: 주문판 자리(only order_board)에 재고 없이 */
+  /* ★ 2026-10-10 D59(house d46f4d91) — «창 옆에 작은 주문판을 걸었다»(shopOpen 대사)가 방에도 선다: 주문판 자리(only order_board)에 재고 없이 */
   try {
     const def = houseRooms.rooms && houseRooms.rooms[S.home.room];
     const sp = hangSpotsOf(def).find(x => x.only === 'order_board');
     if (sp) {
       const pose = hangPoseOf(sp, (def && def.size) || houseRooms.size, (furnPresets.order_board || {}).size_m || {});
       const row = giveFurniture(S, 'order_board', pose, { size: io.light.room.size });
-      if (row) { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); pushLog(S, '🪧 문 옆 벽에 주문판을 걸었습니다'); }
+      if (row) io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S));   /* 기록 줄은 shop_open 한 줄(10-24 — «…주문판을 걸었습니다»가 두 번 찍혔다) */
     }
   } catch (e) { console.warn('[주문판]', e && e.message); }
   const o = JOB.openShop(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0 });
   for (const e of o.events) if (e.ko) pushLog(S, (e.id === 'order_new' ? '📋 ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
   evs.push(...o.events);
   closeChapterEnd();
-  banners([{ title: '🪴 식물 가게를 열었습니다', sub: '문 앞 주문판은 [상점]에 있습니다' }]);
+  banners([{ title: '🪴 식물 가게를 열었습니다', sub: '창 옆 주문판은 [상점]에 있습니다' }]);   /* 10-24 plan c02bb033 — 판 자리는 가게 방 뒷벽 창 옆 */
   try { dlgOpen(story.events(evs, S)); } catch (e) { console.warn('[가게]', e && e.message); }
   $('room').value = S.home.room;
   fillLamps(); fillSlots(false);
@@ -10356,6 +10377,67 @@ function startShopNow() {
   if (r.roomChanged) remountRoomView();
 }
 window.__byeotStartShop = () => startShopNow();   /* 재는 손잡이 */
+/* ══ ★ 2026-10-24 B 판 «식물 돌봄» — [돌봄을 시작한다]: 진로 · 산 투룸(가게와 같은 이사) · 맡김판(주문판 모델 · 창 옆) · 첫 맡김 ══ */
+function startCareNow() {
+  const evs = [];
+  evs.push(...CARE.startCareJob(S).events);
+  const r = moveIntoOwnedHome(S, io, { carry: carryFurnitureListNow() });
+  evs.push(...r.events);
+  try {
+    const def = houseRooms.rooms && houseRooms.rooms[S.home.room];
+    const sp = hangSpotsOf(def).find(x => x.only === 'order_board');
+    if (sp) {
+      const pose = hangPoseOf(sp, (def && def.size) || houseRooms.size, (furnPresets.care_board || furnPresets.order_board || {}).size_m || {});
+      const row = giveFurniture(S, furnPresets.care_board ? 'care_board' : 'order_board', pose, { size: io.light.room.size });   /* house 0ddf6061 맡김판 */
+      if (row) io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S));   /* 기록 줄은 care_open 한 줄 */
+    }
+  } catch (e) { console.warn('[맡김판]', e && e.message); }
+  let spots7 = null; try { spots7 = careSpotsOf(S, io); } catch { spots7 = null; }
+  const o = CARE.openCare(S, { spots7, lamps: (S.lamps && S.lamps.count) || 0 });
+  for (const e of o.events) if (e.ko) pushLog(S, (e.id === 'care_new' ? '🩺 ' : '🪧 ') + e.ko);
+  evs.push(...o.events);
+  closeChapterEnd();
+  banners([{ title: '🩺 식물 돌봄을 시작했습니다', sub: '창 옆 맡김판은 [상점]에 있습니다' }]);
+  try { dlgOpen(story.events(evs, S)); } catch (e) { console.warn('[돌봄]', e && e.message); }
+  $('room').value = S.home.room;
+  fillLamps(); fillSlots(false);
+  draw();
+  if (r.roomChanged) remountRoomView();
+}
+window.__byeotStartCare = () => startCareNow();   /* 재는 손잡이 */
+/* 맡김판(상점 탭 맨 위 · 주문판 자리) — 줄: 손님 · 종 · 고장 한 마디 · 남은 날 · 나음/아직 · [돌려준다] */
+function drawCareBoard(box) {
+  const J = CARE.jobCareOf(S);
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const cust = id => JOB.shopCustomers().find(c => c.id === id) || { ko: id };
+  const head = `<h4>🩺 맡김판 · 살린 화분 ${J.saved}</h4>`;
+  if (!J.requests.length) { box.innerHTML = head + `<div class="empty">지금 맡은 화분이 없습니다 — 손님이 곧 옵니다</div>`; return; }
+  box.innerHTML = head + J.requests.map(r => {
+    const left = Math.max(0, r.dueOn - S.day), pr = CARE.careProblemOf(r.problem) || { ko: r.problem };
+    const ko = SPC.SPECIES_KO[(CARE.careProblemOf(r.problem) || {}).species] || '';
+    const ok = r.savedOn != null;
+    const share = Math.round((CARE.CARE_JOB.feeShare[r.tier] ?? 0.45) * 10);
+    return `<div class="orow">${npcFaceHTML(cust(r.customerId), 'oface')}<div class="otxt">${esc(cust(r.customerId).ko)} · ${esc(ko)} · ${esc(pr.ko)} · ${left}일 남음` +
+           `<i>${ok ? '나음 — 돌려줄 수 있습니다' : '아직'} · 수고비 — 나은 그루 시세의 ${share}할</i></div>` +
+           `<button class="${ok ? 'primary' : 'ghost'}" type="button" data-careret="${esc(r.id)}" ${ok ? '' : 'disabled title="아직 낫지 않았습니다"'}>돌려준다</button></div>`;
+  }).join('');
+  for (const b of box.querySelectorAll('[data-careret]')) b.onclick = guard(() => returnCareNow(b.dataset.careret));
+}
+function returnCareNow(requestId) {
+  let r = null;
+  try { r = CARE.returnCare(S, requestId); }
+  catch (e) { banner('돌려주지 못했습니다', (e && e.message) || ''); return; }
+  try { creditShopOrder(S, r.won, { ko: '돌봄 수고비', log: m => pushLog(S, m) }); } catch (e) { banner('수고비를 못 받았습니다', (e && e.message) || ''); }
+  for (const e of r.events) if (e && e.id === 'care_return') pushLog(S, '🤝 ' + e.ko);
+  if ((r.events || []).some(e => e && e.id === 'care_milestone' && e.n === CARE.CARE_JOB.signAt)) { try { roomView && roomView.setShopSign && roomView.setShopSign(true); } catch (e) { console.warn('[칠판 간판]', e && e.message); } pushLog(S, '🪧 진열대 옆에 칠판 간판을 세웠습니다'); }   /* plan a3638d7f — 글자 없는 바닥 칠판(가게 간판 모형) */
+  banner('🤝 돌려줬습니다', `수고비 ${r.won.toLocaleString()}원`);
+  try { dlgOpen(story.events(r.events, S)); } catch (e) { console.warn('[돌려줌]', e && e.message); }
+  try { sfx.thud(); } catch (e) { console.warn('[돌려줌 소리]', e && e.message); }
+  try { syncRoom(); } catch (e) { console.warn('[돌려줌 방]', e && e.message); }
+  try { checkQuests(lastTurn); } catch (e) { console.warn('[돌려줌 할 일]', e && e.message); }
+  fillSlots(); draw();
+}
+window.__byeotReturnCare = (id) => returnCareNow(id);   /* 재는 손잡이 */
 function closeChapterEnd() { const el = $('chapterEnd'); if (!el) return; el.classList.remove('on'); el.setAttribute('aria-hidden', 'true'); }
 let chapterAgainArmed = false;
 if ($('chapterLook')) $('chapterLook').onclick = () => { closeChapterEnd(); try { draw(); } catch { } };
@@ -10370,7 +10452,7 @@ window.__byeotChapterEnd = () => ({ done: endingDoneNow(), on: !!($('chapterEnd'
      원룸은 endingGoal 의 글(목표 미정 · 마련할 수 있음 · 얼마 모자람)을 쓴다 — 거기선 기다려도 안 열린다. 할 일 창·탭 두 곳이 같은 함수 */
 function questEmptyKo() {
   /* ★ D75 — 진로를 연 판은 머리 첫 줄이 진로 머리라 «내 집을 마련했습니다»를 또 말하지 않는다 */
-  try { if (JOB.isShopJob(S)) return ''; } catch { }
+  try { if (JOB.hasJob(S)) return ''; } catch (e) { console.warn('[진로]', e && e.message); }
   try { if (S.tutorial && S.tutorial.movedOut) { const g = endingGoal(S, io, endingOptNow()); if (g && g.ko) return g.ko; } } catch { }
   return '지금 열린 것이 없습니다 — 기다리면 열립니다';
 }
@@ -12197,11 +12279,12 @@ var heroOutfitAsked = null;
 /* ★ 2026-10-09 [house] B — 가구점 줄 그림 목록(열쇠 = 프리셋 id). 부팅을 안 막는다(받으면 다음 그리기부터) · 못 받으면 글만 */
 var FURN_THUMBS = {};   /* var — 부팅 중 이 줄보다 먼저 가방·상점이 그려져도 TDZ 로 안 던지게 */
 fetch('./assets/v2/thumbs/furn/index.json').then(r => (r.ok ? r.json() : null)).then(j => { if (j && typeof j === 'object') FURN_THUMBS = j; }).catch(() => { });
-/* ★ 2026-10-10 D59 — 진로를 연 판은 초보 보호 끝: 낙엽·고사 켬(growth 9d43a106 setHealthDrop · growth 는 저장 안 함 → 켤 때마다 부른다) */
+/* ★ 2026-10-10 D59 — 진로를 연 판은 초보 보호 끝: 몬스테라 낙엽만 켬(마지막 한 장은 안 떨어짐 · 고사 규칙은 없다 — 10-23 plan 교차검사로 낱말을 코드대로)
+   (growth 9d43a106 setHealthDrop · growth 는 저장 안 함 → 켤 때마다 부른다) */
 let healthDropOn = false;
 function syncHealthDrop() {
   if (healthDropOn) return;
-  try { if (!JOB.isShopJob(S) || !io.growth || typeof io.growth.setHealthDrop !== 'function') return;
+  try { if (!JOB.hasJob(S) || !io.growth || typeof io.growth.setHealthDrop !== 'function') return;   /* B — 진로 공통 */
         const r = io.growth.setHealthDrop(true); if (r !== null) healthDropOn = true; } catch { }
 }
 function syncHeroOutfit() {
@@ -12209,7 +12292,7 @@ function syncHeroOutfit() {
   if (!roomView || typeof roomView.setHeroOutfit !== 'function') return;
   let want = 'summer';
   try { if (S.tutorial && S.tutorial.movedOut) { const sky = io.light.skyFor(S.day, S.sim); if (sky && ['spring', 'summer', 'autumn', 'winter'].includes(sky.season)) want = sky.season; } } catch { }
-  try { if (JOB.isShopJob(S)) want = 'apron'; } catch { }   /* ★ 2026-10-10 D59(char 9273792a) — 가게 판은 앞치마(잠옷은 room_view 가 눕는 동안 따로) */
+  try { if (JOB.hasJob(S)) want = 'apron'; } catch (e) { console.warn('[앞치마]', e && e.message); }   /* B — 돌봄도 앞치마(plan §10 ⑧) */   /* ★ 2026-10-10 D59(char 9273792a) — 가게 판은 앞치마(잠옷은 room_view 가 눕는 동안 따로) */
   if (want === heroOutfitAsked) return;
   heroOutfitAsked = want;
   try { roomView.setHeroOutfit(want); } catch (e) { console.warn('[옷]', e && e.message); }
@@ -13225,7 +13308,7 @@ function dlgPaint() {
     /* 표정이 없으면 기본으로 떨어진다 — 없는 그림 하나에 대화가 멈추면 안 된다 */
     const gender = heroGenderNow();
     let apron = false;
-    try { apron = line.who === 'jachwi' && gender === 'f' && APRON_FACES.has(file) && JOB.isShopJob(S); } catch { apron = false; }   /* 앞치마 낯은 'f' 판만 있다 */
+    try { apron = line.who === 'jachwi' && gender === 'f' && APRON_FACES.has(file) && JOB.hasJob(S); } catch { apron = false; }   /* 앞치마 낯은 'f' 판만 있다 */
     const name = portraitNameOf(line.who, file, gender), base = portraitNameOf(line.who, 'neutral', gender);   /* 'f' 면 예전과 같은 이름 */
     $('dlgFace').style.backgroundImage = apron
       ? `url(${dir}/portrait_jachwi_${file}_apron.png)`     /* 한 겹 — 앞치마 몸 밑에 다른 옷 몸이 비치지 않게 */
@@ -13780,15 +13863,15 @@ async function bootRoomView() {
 const SHOP_FRAME_UIDS = Object.freeze(['tworoom-shop-display', 'tworoom-shelf-etagere-3tier']);
 function syncShopRoomView() {
   if (!roomView) return;
-  let shop = false; try { shop = JOB.isShopJob(S) && JOB.movedHome(S); } catch { shop = false; }
+  let shop = false; try { shop = JOB.hasJob(S) && JOB.movedHome(S); } catch { shop = false; }   /* B — 돌봄 판도 같은 투룸 카메라 */
   if (!shop) return;
   /* ★ 10-10 한 판 걸음 — 가게를 연 그날 첫 화면이 여름옷이었다: 여는 순간 옛 방뷰에 앞치마를 청하고, 다시 지으며 그 기억(heroOutfitAsked)을 비운 뒤
        다음 draw 까지 새 방뷰에 안 청했다. 방뷰가 선 «지금» 청한다(몸이 늦게 서도 room_view 가 기억했다가 입힌다 · §setHeroOutfit) */
   try { syncHeroOutfit(); } catch (e) { console.warn('[옷]', e && e.message); }
-  try { if (roomView.setShopSign) roomView.setShopSign(JOB.jobShopOf(S).signOnDay != null); } catch (e) { console.warn('[입간판]', e && e.message); }
+  try { if (roomView.setShopSign) roomView.setShopSign(CARE.isCareJob(S) ? CARE.jobCareOf(S).signOnDay != null : JOB.jobShopOf(S).signOnDay != null); } catch (e) { console.warn('[입간판]', e && e.message); }   /* B — 돌봄 10 «문패»는 간판 모형 그대로(D73 ③ · house 글자 없음 확인) */
   try {
     if (roomView.setHomeFrame) {
-      const board = addedFurniture(S).filter(f => f.preset === 'order_board').map(f => f.uid);
+      const board = addedFurniture(S).filter(f => f.preset === 'order_board' || f.preset === 'care_board').map(f => f.uid);   /* B — 맡김판도 판 자리 */
       roomView.setHomeFrame({ uids: [...SHOP_FRAME_UIDS, ...board], pad: 0.7 }, true);   /* pad — 가게 방 바닥 둘레까지(0.25 면 진열대 모서리가 잘렸다 · 사진으로 잼) */
     }
   } catch (e) { console.warn('[가게 카메라]', e && e.message); }
@@ -15842,6 +15925,8 @@ function cutSpeciesNow(id, nodeNo) {
   try { r = SPC.cutSpecies(S, id, nodeNo); }
   catch (e) { banner('자르지 못했습니다', (e && e.message) || ''); return; }
   const cutKo = (r.cutting && SPC.SPECIES_KO[r.cutting.species]) || '핑크프린세스';
+  if (r.careCut) { try { const q0 = SPC.speciesPotOf(S, id); const req = q0 && q0.care && CARE.jobCareOf(S).requests.find(x => x.id === q0.care.requestId);
+                         const c = req && JOB.shopCustomers().find(x => x.id === req.customerId); if (c) pushLog(S, `✂ ${c.ko} — ${CARE.careLines().cutGift || '잘라 낸 건 가져도 된대.'}`); } catch (e) { console.warn('[맡은 그루 자르기]', e && e.message); } }
   pushLog(S, `✂ ${cutKo} ${nodeNo}번 마디 위를 잘랐습니다 — ${r.cutting && r.cutting.species === 'scindapsus' ? '잘린 줄기는 가방에 있습니다(놓으면 물꽂이)' : '윗부분은 가방에 있습니다'}`);
   banner('✂ 잘랐습니다', r.saved ? '시드는 줄기 끝을 살렸습니다 — 윗부분은 가방에 있습니다'
                                  : (r.grade === 'marble' || r.grade === 'heavy') ? '좋은 마디 위에서 잘랐습니다 — 다음 잎이 이 마디에서 납니다'
@@ -16004,7 +16089,7 @@ async function startPhonePlaceFurnitureBag(uid, hangAt = null) {
    ⚠ 걸 수 있나는 3D 가 안다(hangPose 가 크기·전용 자리·찬 자리에서 던진다 · furnitureFit {hang}) — 여기서 다시 가르지 않는다 */
 /* none* — «다 찼다»가 거짓이 되는 경우를 까닭으로 가른다(plan a2ccb0c9 · plan-furniture-texts 셋째 표). 셋째 줄은 앞 둘로 못 가를 때만 */
 const HANG_KO = Object.freeze({ pick: '벽에 걸 자리를 골라 주세요', full: '벽에 걸 자리가 다 찼습니다', fullTail: ' — 걸린 것을 하나 내리면 걸 수 있습니다',
-                               noneShop: '주문판은 가게 방 문 옆에 겁니다', noneSize: '이 방엔 이만큼 큰 것을 걸 자리가 없습니다', none: '이 방엔 이걸 걸 자리가 없습니다' });
+                               noneShop: '주문판은 가게 방 창 옆에 겁니다', noneSize: '이 방엔 이만큼 큰 것을 걸 자리가 없습니다', none: '이 방엔 이걸 걸 자리가 없습니다' });
 function isHangPreset(preset) { try { return !!(preset && furnPresets[preset] && furnPresets[preset].mount === 'wall-hang'); } catch { return false; } }
 /* 지금 걸 수 있는 자리 — 산 그림이면 hangPose 가 받는 자리 · 걸린 그림을 옮기면 furnitureFit {hang} 이 받는 자리(제 자리 빼고) */
 function hangChoices(want) {
@@ -16020,7 +16105,7 @@ function hangChoices(want) {
     let f = null; try { f = hangFits(sp, want.preset, size_m); } catch { f = { ok: false, reason: '' }; }
     if (f.ok) { if (sp.free) return true; busyFit++; return false; }
     const m = f.reason || '';
-    if (/주문판은 주문판 자리에만/.test(m)) shopOnly++;
+    if (/(주문판|맡김판)은  자리에만/.test(m)) shopOnly++;   /* B — 맡김판(house 0ddf6061 BOARD_KIND) */
     else if (/자리보다 (넓|큽)니다/.test(m)) size++;
     else if (!/다른 것을 거는 자리/.test(m)) other++;          /* 남의 전용 자리(주문판 자리)는 까닭에 안 센다 */
     return false;

@@ -374,7 +374,9 @@ export function furnitureShopOptsOf(presetId, p) {
 /* ★ D71 — 가구 해금 때(프리셋 unlock 칸이 고르는 이름 → 그 판에서 열렸나). 벽 화분걸이(wall_planter) = 가게 판 sc_ask(단골 5 «찾는 손님») 날부터(plan 권함)
      ⚠ 첫 플레이가 꺼진 판(검수)에서도 «그 때»를 본다 — 상점 «줄기 삽수»(species §speciesShopOpen)와 같은 자 */
 export const FURNITURE_UNLOCKS = Object.freeze({
-  sc_ask: S => !!(S && S.jobShop && S.jobShop.scAskOn != null)
+  /* 덩굴을 걸 때 — 가게 판은 sc_ask(단골 5 «찾는 손님») 날부터 · 돌봄 판은 첫날부터(sc_floor 의 고칠 자리 · plan-care §4).
+     ⚠ 때 이름은 «무엇이 열리나»로 짓는다(10-24 house 권함) — sc_ask 는 가게 사건 이름으로만 둔다(한 낱말이 판마다 다른 때를 가리키지 않게) */
+  vine_hang: S => !!(S && ((S.jobShop && S.jobShop.scAskOn != null) || (S.story && S.story.job && S.story.job.id === 'care')))
 });
 const furnitureUnlocked = (S, it) => !it || !it.unlock || FURNITURE_UNLOCKS[it.unlock](S);
 

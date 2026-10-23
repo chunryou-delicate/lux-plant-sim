@@ -2303,7 +2303,7 @@
       "accent": "#857d74",
       "room": "벽(걸이 자리)",
       "shop_listed": true,
-      "unlock": "sc_ask",
+      "unlock": "vine_hang",
       "_shop": "★ plan 권함: 가구점에 sc_ask(단골 5) 날부터. core 가 furnitureCatalogList 에서 unlock 을 거르는 날 shop_listed 를 true 로 켠다(그전엔 안 뜬다 · test_furnishop 수 그대로)."
     },
     "care_board": {

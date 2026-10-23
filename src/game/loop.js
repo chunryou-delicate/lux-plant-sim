@@ -70,6 +70,8 @@ import { rehomeCuttings, stepCuttings, cuttableNow, cutBlockedReason } from './p
 import { stepShop, stepMarket } from './shop.js';
 import { stepSpecies, speciesKnown, speciesRules } from './species.js';   /* ★ 2026-10-09 D45 — 새 두 종의 하루(§stepSpeciesOfTurn) */
 import { stepShopJob } from './job_shop.js';   /* ★ 2026-10-10 D59 — 식물 가게 하루(주문 · 기한) */
+import { stepCareJob } from './job_care.js';   /* ★ 2026-10-24 B — 식물 돌봄 하루(맡김 · 나음 · 기한) */
+import { creditShopOrder } from './shop.js';
 /* ★ 2026-10-08 [plan] 지도 13 — turn.cropNow(콩 씨앗 재고 · 빈 시루)를 짓는 데 쓴다(§attachEvents) */
 import { stockOf as shopStockOf } from './shop.js';
 import { cropPotList as cropPotListNow } from './first_play.js';
@@ -425,6 +427,33 @@ function shopSpotsOf(S, io, sky) {
     let dli = null;
     try { dli = L.dliOfSlot(x.slotId, o); } catch { dli = null; }
     return { slotId: x.slotId, dropM: x.dropM, dli: Number.isFinite(dli) ? dli : null };
+  });
+}
+
+/* plan §11 «등 n개» = 등 자리에 «켜진» 식물등 — 빛 계산(light_adapter §rigsOn)과 같은 자: 세운 수를 방 등 자리 수에서 자른다(가게 · 돌봄 같은 자).
+   못 세면 세운 수 그대로 + 기록 줄(삼키지 않는다 · 10-24) */
+function lampsOnOf(S, io) {
+  let n = (S.lamps && S.lamps.count) || 0;
+  if (io && io.light && typeof io.light.growLampCount === 'function') {
+    try { const rigs = io.light.growLampCount(); if (Number.isFinite(rigs)) n = Math.min(n, rigs); }
+    catch (e) { pushLog(S, '⚠ 등 자리 수를 못 셌습니다 — ' + ((e && e.message) || e)); }
+  }
+  return n;
+}
+
+/* ★ 2026-10-24 B(총괄 D80 ①) — 방 자리 [{ slotId, dropM, dli }] · dli = 그 자리 «오늘부터 7일» 평균(같은 날씨 달력 skyFor · 규칙 avg7 과 같은 자 —
+     growth 1584판: 그날 DLI 면 맡김 헛열림 20 · 놓침 174 → 7일 평균 6 · 66). 맡김 굴리는 날에만 센다(getter). 못 세면 null */
+export function careSpotsOf(S, io) {
+  const L = io && io.light;
+  const slots = (L && L.room && L.room.slots) || [];
+  if (!slots.length || !L || typeof L.dliOfSlot !== 'function' || typeof L.skyFor !== 'function') return null;
+  const opts = [];
+  for (let k = 0; k < 7; k++) { let sky = null; try { sky = L.skyFor((S.day ?? 0) + k, S.sim); } catch { sky = null; } if (sky) opts.push(lightOptsOf(S, sky)); }
+  if (!opts.length) return null;
+  return slots.map(x => {
+    let sum = 0, n = 0;
+    for (const o of opts) { let d = null; try { d = L.dliOfSlot(x.slotId, o); } catch { d = null; } if (Number.isFinite(d)) { sum += d; n++; } }
+    return { slotId: x.slotId, dropM: Number.isFinite(x.dropM) ? x.dropM : null, dli: n ? sum / n : null };
   });
 }
 
@@ -809,6 +838,7 @@ function attachEvents(S, turn, fpBefore) {
   if (turn.species && !turn.species.error) push(turn.species.events);
   /* ★ 2026-10-10 D59 — 가게 사건(shop_open · order_new · order_expired · …) · 대사는 plan dialogue(이름 그대로) */
   if (turn.jobShop && !turn.jobShop.error) push(turn.jobShop.events);
+  if (turn.jobCare && !turn.jobCare.error) push(turn.jobCare.events);   /* B 돌봄 */
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
@@ -1256,9 +1286,7 @@ function nextDayBody(S, io) {
   /* ★ 2026-10-10 D59 — 가게(진로 shop · 산 집)의 하루: 기한 지난 주문 · 새 주문 — 손님 이름이 드는 줄은 기록 줄(plan) */
   let jobShop = null;
   try {
-    /* plan §11 «등 n개» = 등 자리에 «켜진» 식물등 — 빛 계산(light_adapter §rigsOn)과 같은 자: 세운 수를 방 등 자리 수에서 자른다 */
-    let lampsOn = (S.lamps && S.lamps.count) || 0;
-    try { const rigs = io.light && typeof io.light.growLampCount === 'function' ? io.light.growLampCount() : null; if (Number.isFinite(rigs)) lampsOn = Math.min(lampsOn, rigs); } catch { }
+    const lampsOn = lampsOnOf(S, io);
     /* ★ D71 — 방 자리는 주문을 굴리는 날에만 센다(getter · 하루 한 번) */
     let spotsMemo;
     jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn,
@@ -1266,6 +1294,17 @@ function nextDayBody(S, io) {
     for (const e of (jobShop && jobShop.events) || []) if (e && e.ko && (e.id === 'order_new' || e.id === 'order_expired' || e.id === 'shop_open' || e.id === 'shop_ending'))
       pushLog(S, (e.id === 'order_new' ? '📋 ' : e.id === 'order_expired' ? '⌛ ' : e.id === 'shop_ending' ? '🏅 ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
   } catch (e) { pushLog(S, '⚠ 가게 하루 실패 — ' + e.message); jobShop = { error: e.message, events: [] }; }
+  /* ★ 2026-10-24 B 판 «식물 돌봄»(plan-care-career-spec · 총괄 D73 · D80) — 맡김 · 나음 · 기한 · 손님 말은 기록 줄 */
+  let jobCare = null;
+  try {
+    let spots7Memo;
+    jobCare = stepCareJob(S, { lamps: lampsOnOf(S, io), get spots7() { if (spots7Memo === undefined) spots7Memo = careSpotsOf(S, io); return spots7Memo; } });
+    for (const e of (jobCare && jobCare.events) || []) {
+      if (e && e.id === 'care_return' && e.auto && e.won > 0) creditShopOrder(S, e.won, { ko: '돌봄 수고비', log: m => pushLog(S, m) });   /* 기한 날 손님이 수고비를 내고 받아 감 */
+      if (e && e.ko && ['care_open', 'care_new', 'care_saved', 'care_return', 'care_expired', 'care_ending'].includes(e.id))
+        pushLog(S, (e.id === 'care_new' ? '🩺 ' : e.id === 'care_saved' ? '🌱 ' : e.id === 'care_return' ? '🤝 ' : e.id === 'care_ending' ? '🏅 ' : '🪧 ') + e.ko);
+    }
+  } catch (e) { pushLog(S, '⚠ 돌봄 하루 실패 — ' + e.message); jobCare = { error: e.message, events: [] }; }
 
   /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다.
      ★ 2026-08-04 — 도착은 이제 **턴 안에서 안 일어난다**(harvestCrop 이 준다). 그래서 이 경로에
@@ -1295,7 +1334,7 @@ function nextDayBody(S, io) {
       cropHarvest: beansproutHarvestStatus(S.firstPlay),
       cropWater: beansproutWaterStatus(S.firstPlay, S.day),
       cuttings, shop, market,
-      species, alDormantNow: !!(species && species.alDormantNow), jobShop
+      species, alDormantNow: !!(species && species.alDormantNow), jobShop, jobCare
     };
     /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
        몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
@@ -1399,7 +1438,7 @@ function nextDayBody(S, io) {
     cropHarvest: beansproutHarvestStatus(S.firstPlay),
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
     cuttings, shop, market,
-    species, alDormantNow: !!(species && species.alDormantNow), jobShop
+    species, alDormantNow: !!(species && species.alDormantNow), jobShop, jobCare
   };
   /* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸([plan] plan-leafwait ③). 실패 판정(위) «뒤»라 무른 턴은 안 센다.
      ⚠ 이 경로(몬스테라가 온 뒤)에만 있다 — 앞 반환구(earlyTurn)는 몬스테라 전이라 칸이 없다(= 모른다 · 줄이 안 뜬다). */

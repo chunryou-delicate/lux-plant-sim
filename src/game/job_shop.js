@@ -1,6 +1,6 @@
 /* src/game/job_shop.js — **진로 «식물 가게»** (core · 2026-10-10 · 총괄 D59 · plan-shop-spec-20261010 §2~§4·§7)
    ------------------------------------------------------------------
-   엔딩(집을 샀다) 뒤 진로 고르기 → [가게를 연다] → 산 투룸으로 이사 → 문 앞 주문판.
+   엔딩(집을 샀다) 뒤 진로 고르기 → [가게를 연다] → 산 투룸으로 이사 → 창 옆 주문판.
    손님이 «이런 식물»을 기한 안에 찾고, 맞추면 시세 × 웃돈을 받고 그 손님은 단골이 된다. 단골 3 · 10(간판) · 30 이 이정표(돈 없음).
    ★ 원칙(plan §0): **새 값표를 안 만든다**(값 = 그것의 지금 시세 × 웃돈 — 판매 함수 그대로) · **할 수 없는 주문을 안 낸다**(그 판이 가진 원천으로만).
    ★ 상태는 둘로 갈린다(이름 충돌 — S.shop 은 이미 «상점»(재고·주문·판 돈)이다):
@@ -82,12 +82,15 @@ export function jobShopOf(S) {
   return J;
 }
 export const isShopJob = S => !!(jobOf(S) && jobOf(S).id === 'shop');
-export const movedHome = S => !!(S && S.home && S.home.room === SJ.ownedHome.roomId && isShopJob(S));
+/* ★ 2026-10-24 B 판(plan-care-career-spec §4) — 진로가 하나라도(가게 · 돌봄 …) · 산 투룸으로 옮긴 판은 진로 공통 */
+export const hasJob = S => !!(jobOf(S) && jobOf(S).id);
+export const movedHome = S => !!(S && S.home && S.home.room === SJ.ownedHome.roomId && hasJob(S));
 
 /* ── 진로 고르기 ─────────────────────────────── 엔딩 뒤 [가게를 연다] · 이사(투룸)는 부르는 쪽(oneroom §moveIntoHome) */
 export function startShopJob(S) {
   if (!S.story) throw new Error('[가게] 스토리 상태가 없습니다');
   if (isShopJob(S)) { const e = new Error('[가게] 이미 가게를 열었습니다'); e.tutorialInput = true; throw e; }
+  if (jobOf(S)) { const e = new Error('[가게] 이미 다른 진로를 골랐습니다'); e.tutorialInput = true; throw e; }   /* B · D73 ① 한 판에 하나(바꾸기는 D 판) */
   S.story.job = { id: 'shop', since: S.day ?? 0 };
   jobHistoryOf(S);   /* D75 — 진로 이력(story.jobs.shop = { since, endedOn }) */
   jobShopOf(S);
@@ -100,7 +103,8 @@ export function jobHistoryOf(S) {
   const st = S && S.story;
   if (!st) return {};
   if (!st.jobs || typeof st.jobs !== 'object') st.jobs = {};
-  if (isShopJob(S) && !st.jobs.shop) st.jobs.shop = { since: Number.isFinite(st.job.since) ? st.job.since : null, endedOn: null };
+  const j = st.job;   /* 지금 진로 줄(가게 · 돌봄) — 옛 세이브는 story.job.since 로 채움 */
+  if (j && j.id && !st.jobs[j.id]) st.jobs[j.id] = { since: Number.isFinite(j.since) ? j.since : null, endedOn: null };
   return st.jobs;
 }
 export const shopEndedOn = S => { const h = S && S.story && S.story.jobs && S.story.jobs.shop; return h && Number.isFinite(h.endedOn) ? h.endedOn : null; };
@@ -157,7 +161,7 @@ function species2Sources(S, sp, ctx, openOf) {
   const spots = Array.isArray(ctx.spots) ? ctx.spots.filter(s => s && Number.isFinite(s.dropM)) : null;
   if (speciesKnown(SCI)) {
     const R = speciesRules(), sum = q => R.summary(q.plant);
-    const all = sp.filter(q => q.species === SCI && !q.listing);
+    const all = sp.filter(q => q.species === SCI && !q.listing && !q.care);   /* 맡은 그루(돌봄 · B)는 손님 것 */
     const cuts = all.filter(scRooting), grown = all.filter(q => !scRooting(q));
     const cutOpen = grown.some(q => scCuttableNodes(q).length > 0);
     out.sc_cutting = cuts.length + (cutOpen ? 1 : 0) - openOf('sc_cutting') > 0;
@@ -220,8 +224,8 @@ export function shopSources(S, ctx = {}) {
   const cutCap = cutReady.length + (cutOpen > 0 ? 1 : 0) - openOf('monstera_cutting');
   const potCap = est.filter(c => !c.listing).length - openOf('monstera_pot');
   /* 새 두 종도 같은 자 — 지금 보낼 수 있는 그루(잎 있음 · 살 수 있음) − 걸린 주문 · 구근은 손에 든 것(찾은 구근 + 산 재고) − 걸린 주문 */
-  const ppReady = sp.filter(q => q.species === 'pink_princess' && q.plant && q.plant.viable !== false && (q.plant.leaves || []).length > 0);
-  const alReady = sp.filter(alAwake);
+  const ppReady = sp.filter(q => q.species === 'pink_princess' && !q.care && q.plant && q.plant.viable !== false && (q.plant.leaves || []).length > 0);
+  const alReady = sp.filter(q => alAwake(q) && !q.care);
   const cormHeld = ((S.species && S.species.corms) || []).length + ((S.shop && S.shop.stock && S.shop.stock.al_corm) || 0);
   const s2 = species2Sources(S, sp, ctx, openOf);
   return {
@@ -388,7 +392,7 @@ export function openShop(S, ctx = {}) {
   const J = jobShopOf(S), day = S.day ?? 0;
   if (J.openedOn != null) return { events: [] };
   J.openedOn = day;
-  const ev = [{ id: 'shop_open', ko: '문 앞에 작은 주문판을 걸었습니다' }];
+  const ev = [{ id: 'shop_open', ko: '창 옆에 작은 주문판을 걸었습니다' }];   /* 10-24 plan(c02bb033) — 판 자리 tworoom-hang-order 는 뒷벽 창 옆(game.html 기록 줄과 같은 말) */
   /* ★ 10-10 총괄 (가) «가게는 새 두 종과 함께» — 가진 새 종(PP·AL 그루 · 심은 구근 · 가방 구근 · 산 재고)이 0 이면 몬이가 구근을 권한다(plan shopNoSpecies · 말만) */
   /* ppInShop — PP 어린 그루가 지금 상점에 있나(교환을 두 번 거절한 판 · species §speciesShopOpen) — 있으면 plan 이 둘 다 권하는 줄(shopNoSpeciesPP)로 간다 */
   if (speciesHeldCount(S) === 0) { let ppInShop = false; try { ppInShop = !!speciesShopOpen(S, 'pp_young'); } catch { ppInShop = false; } ev.push({ id: 'shop_no_species', ppInShop }); }
@@ -483,7 +487,7 @@ export function candidatesFor(S, o) {
   } else if (o.kind === 'pp' || o.kind === 'al') {
     const sp = o.kind === 'pp' ? 'pink_princess' : 'alocasia_frydek';
     for (const q of speciesPotsOf(S)) {
-      if (!q || q.species !== sp) continue;
+      if (!q || q.species !== sp || q.care) continue;   /* 맡은 그루(B)는 주문에 못 낸다 */
       if (q.plant && q.plant.viable === false) continue;
       const lv = (q.plant.leaves || []).length;
       if (!lv) continue;
@@ -496,7 +500,7 @@ export function candidatesFor(S, o) {
     const want = o.kind === 'ca_pot' ? SPECIES2.ca : SPECIES2.sc;
     const R = speciesKnown(want) ? speciesRules() : null, day = S.day ?? 0;
     for (const q of R ? speciesPotsOf(S) : []) {
-      if (!q || q.species !== want || q.listing || caInCare(q)) continue;
+      if (!q || q.species !== want || q.listing || q.care) continue;   /* 맡은 그루(A 칼라테아 · B 돌봄) */
       if (o.kind === 'sc_cutting' ? !scRooting(q) : scRooting(q)) continue;
       const s = R.summary(q.plant);
       if (need.nodes && !(s.nodes >= need.nodes)) continue;
@@ -561,7 +565,7 @@ export function jobShopSnapshot(S) {
     caCareOpen: J ? (J.caPotId != null && J.caSavedOn == null) : null,
     caSaved: J ? J.caSavedOn != null : null,
     /* ★ D75(plan 명세 §5) — 진로 끝맺음 날(없으면 null) · 지금 진로 */
-    jobsEnded: { shop: shopEndedOn(S), care: null, breed: null },
+    jobsEnded: { shop: shopEndedOn(S), care: (S && S.story && S.story.jobs && S.story.jobs.care && Number.isFinite(S.story.jobs.care.endedOn)) ? S.story.jobs.care.endedOn : null, breed: null },
     jobActive: job ? job.id : null
   };
 }

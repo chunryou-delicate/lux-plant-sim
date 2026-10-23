@@ -55,6 +55,8 @@ export const speciesKnown = id => !!(RULES && typeof RULES.species === 'function
 const sumOf = q => RULES.summary(q.plant);
 export const scRooting = q => !!(q && q.species === SC && q.plant && q.plant.phase === 'cutting');   /* 물꽂이 중 «줄기 삽수» */
 export const caInCare = q => !!(q && q.species === CA && q.care);                                     /* 아직 손님 것 */
+/* ★ 2026-10-24 B 판 돌봄 — 맡은 그루(종 넷 · q.care = { customerId, since, requestId }) — 못 판다 · 주문에 못 낸다 · 가위는 된다 */
+export const inCare = q => !!(q && q.care);
 
 export const SPECIES_GAME = Object.freeze({
   /* PP 교환(plan ①㉡ · §④): ③ «한 그루가 둘이 된다»(oneroom_settle_cutting) 끝 + 원룸 30일 뒤.
@@ -285,7 +287,7 @@ export function cutSpecies(S, potId, nodeNo) {
     if (scRooting(q)) { const e = new Error('아직 뿌리가 안 난 줄기는 못 자릅니다'); e.tutorialInput = true; throw e; }
     const r = speciesRules().cutAbove(q.plant, nodeNo);
     const top = addSpeciesPot(S, SC, { plant: r.cutting, origin: 'cut' });
-    return { cutting: top, saved: !!r.saved, grade: null };
+    return { cutting: top, saved: !!r.saved, grade: null, careCut: !!q.care };   /* B — 맡은 그루를 잘라도 끝은 자취생 것 */
   }
   if (!q || q.species !== 'pink_princess') throw new Error('[종] 핑크프린세스 · 스킨답서스만 자릅니다');
   const R = speciesRules();
@@ -294,7 +296,9 @@ export function cutSpecies(S, potId, nodeNo) {
   const r = R.cutAbove(q.plant, nodeNo);   /* 못 자르면 growth 가 제 말로 던진다 — 아무것도 안 바뀐다 */
   if (grade === 'marble' || grade === 'heavy') speciesOf(S).n.ppPinkHoldCuts += 1;
   const top = addSpeciesPot(S, 'pink_princess', { plant: r.cutting, origin: 'cut' });
-  return { cutting: top, saved: r.saved, grade };
+  /* ★ B 판 돌봄 pp_tip — 맡은 PP 의 시드는 끝을 이 자르기가 살렸다(job_care §careHealed 가 읽음) · 잘라 낸 끝은 자취생 것(care_cut_gift) */
+  if (q.care && r.saved) q.care.cutSaved = true;
+  return { cutting: top, saved: r.saved, grade, careCut: !!q.care };
 }
 /* 자를 수 있는 마디(잎이 난 마디 · 모주에 잎이 남고 윗부분에 잎이 한 장은 간다) — 화면 목록용 */
 export function ppCuttableNodes(q) {
@@ -338,7 +342,8 @@ export function speciesPriceOf(q) {
 }
 export function speciesSellBlockedReason(q) {
   if (!q) return '모르는 그루입니다';
-  if (caInCare(q)) return '맡은 칼라테아입니다 — 잎이 다 펴지면 가게 것이 됩니다';
+  if (caInCare(q) && !q.care.requestId) return '맡은 칼라테아입니다 — 잎이 다 펴지면 가게 것이 됩니다';
+  if (inCare(q)) return '맡은 화분입니다 — 손님 것이라 팔 수 없습니다 · 나으면 [돌려준다]';
   if (q.species === CA && RULES) { const s = sumOf(q); if (s.leaves > 0 && s.curled >= s.leaves) return '잎이 다 말려 값을 못 받습니다 — 너무 밝지 않은 데 두면 펴집니다'; }
   const n = q.plant && Array.isArray(q.plant.leaves) ? q.plant.leaves.length : 0;
   if (!n && q.species === 'alocasia_frydek')
