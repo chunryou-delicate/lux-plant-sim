@@ -21,18 +21,30 @@ const SHOT = process.env.SHOT || null;
 let pass = 0, fail = 0;
 const ok = (label, cond, extra = '') => { if (cond) { pass++; console.log(`PASS  ${label}`); } else { fail++; console.log(`FAIL  ${label}${extra ? '  — ' + extra : ''}`); } };
 
-const page = await launch({ width: 1100, height: 800, dpr: 1 });
+/* ★ 2026-10-24 — 던지면 «어느 단계에서 무엇을» 한 줄로 남긴다(FAIL 낱말과 함께). 묶음(run_house_checks)은 PASS/FAIL 없는 출력을
+   «출력 없음»으로만 적어, 다섯 판 중 한 판 붉었을 때 까닭을 못 잡았다 */
+let stage = '크롬 띄우기', page = null;
 try {
+  page = await launch({ width: 1100, height: 800, dpr: 1 });
+  stage = '방 뷰 열기';
   await page.goto(`${BASE}/tools/room_view_demo.html?room=tworoom&shot=wide&engine=1`);
-  for (let i = 0; i < 90; i++) { const t = await page.eval('document.title'); if (/DONE/.test(t)) break; await sleep(400); }
+  /* ★ 기다리는 고리 안의 eval 은 던져도 다시 기다린다 — goto 는 이동을 «시작»만 하고 돌아와, 옛 문서가 사라지는 순간의 eval 이
+       던질 수 있다(10-24 묶음 다섯 판 중 한 판이 첫 ok 앞에서 출력 없이 죽었다 · 그 뒤 열셋은 재현 못 함 · 가장 그럴듯한 자리).
+       삼키지 않는다 — 몇 번 · 첫 글을 남긴다(«던진 말을 세라»). 고리 밖에서 던지면 아래 catch 가 단계와 함께 FAIL 로 남긴다 */
+  const waitThrows = { n: 0, first: null };
+  const tryEval = async (expr) => { try { return await page.eval(expr); } catch (e) { waitThrows.n++; if (!waitThrows.first) waitThrows.first = String((e && e.message) || e).slice(0, 160); return undefined; } };
+  for (let i = 0; i < 90; i++) { const t = await tryEval('document.title'); if (/DONE/.test(String(t))) break; await sleep(400); }
+  stage = '옷 기다리기';
   /* 옷이 다 올 때까지(문 둘 · 진열대) */
   let ready = null;
   for (let i = 0; i < 60; i++) {
-    ready = JSON.parse(await page.eval(`JSON.stringify((() => { const r = window.__v2 && window.__v2.furn && window.__v2.furn.report();
-      if (!r) return null; const f = r.furniture || {}; return { doors: Object.keys(f).filter(k => /^(door|win):/.test(k)).length, display: !!f['tworoom-shop-display'] }; })())`));
+    const raw = await tryEval(`JSON.stringify((() => { const r = window.__v2 && window.__v2.furn && window.__v2.furn.report();
+      if (!r) return null; const f = r.furniture || {}; return { doors: Object.keys(f).filter(k => /^(door|win):/.test(k)).length, display: !!f['tworoom-shop-display'] }; })())`);
+    ready = typeof raw === 'string' ? JSON.parse(raw) : null;
     if (ready && ready.doors >= 2 && ready.display) break;
     await sleep(500);
   }
+  if (waitThrows.n) console.log(`  (기다리는 동안 던진 eval ${waitThrows.n}번 · 다시 기다림 — 첫 글: ${waitThrows.first})`);
   ok('옷이 섰다(문·창 옷 둘 이상 · 진열대)', ready && ready.doors >= 2 && ready.display, JSON.stringify(ready));
   await sleep(800);
 
@@ -76,12 +88,14 @@ try {
     ok(`${tag} C 벽 옷 colorWrite = 벽이 서 있나`, r.wrong.length === 0, r.wrong.join(' | '));
     ok(`${tag} D 벽 대리 숨김 재질 colorWrite 켜짐 (${r.shellHidden}개)`, r.shellHiddenOff.length === 0, '꺼진 벽 ' + [...new Set(r.shellHiddenOff)].join(','));
   };
+  stage = '기본 카메라 재기';
   const r1 = await measure();
   console.log('  벽 상태', JSON.stringify(r1.stubOf));
   check('기본 카메라 ·', r1);
   /* 다시 짓기 — 고장은 여기서 난다. 첫 빌드는 옷 GLB 가 늦게 와 컷어웨이가 먼저 돈다(숨김 재질이 아직 안 붙음).
      GLB 를 이미 받은 뒤 방을 다시 지으면(벽 걸이 하나 → 다음 날 · core b5d1885d) 옷이 곧바로 붙고 «그 뒤» 컷어웨이가
      새 벽을 처음 깎으며 문 대리의 숨김 재질을 끈다 — 가구 대리가 같은 한 벌이면 같이 꺼진다 */
+  stage = '다시 짓기';
   await page.eval(`(async () => { const v = window.view, e = window.engine;
     e.setFurnitureEdits([], [{ uid: 'add-poster_seaside-cut', preset: 'poster_seaside', ...v.hangPose('tworoom-hang-3', 'poster_seaside') },
                              { uid: 'add-poster_moon-cut', preset: 'poster_moon', ...v.hangPose('tworoom-hang-5', 'poster_moon') }]);
@@ -93,6 +107,7 @@ try {
   ok('다시 지은 뒤 · E 서 있는 왼벽 그림은 보이고 깎인 오른벽 그림은 숨는다', r1b.hang['add-poster_seaside-cut'] === true && r1b.hang['add-poster_moon-cut'] === false, JSON.stringify(r1b.hang));
   if (SHOT) { await page.shot(SHOT); console.log('  사진', SHOT); }
 
+  stage = '카메라 돌리기';
   /* 반대쪽으로 돈다 — 앞벽은 서고 뒤벽이 깎인다 · 칸막이는 늘 밑동 */
   await page.eval(`(() => { const v = window.view; const cur = v.camTo({}, 120); v.camTo({ az: cur.az + Math.PI }, 150); return 1;   /* camTo({}) = 지금 자리를 돌려준다 */ })()`);
   let r2 = null;
@@ -102,6 +117,9 @@ try {
   check('돈 카메라 ·', r2);
   ok('돈 카메라 · E 깎인 왼벽 그림은 숨고 선 오른벽 그림은 보인다', r2.hang['add-poster_seaside-cut'] === false && r2.hang['add-poster_moon-cut'] === true, JSON.stringify(r2.hang));
   if (SHOT) { const s2 = SHOT.replace(/\.png$/i, '_turned.png'); await page.shot(s2); console.log('  사진', s2); }
-} finally { await page.close(); }
+} catch (e) {
+  fail++; console.log(`FAIL  던짐 — ${stage} 단계: ${String((e && e.message) || e).slice(0, 300)}`);
+} finally { if (page) { try { await page.close(); } catch { /* 이미 닫힘 */ } } }
 console.log(`\n${fail ? '❌' : '✅'} 통과 ${pass} · 실패 ${fail}`);
+console.log(`cutaway_shared_mat: ${fail ? 'FAIL' : 'PASS'} (${pass}/${pass + fail})`);
 process.exit(fail ? 1 : 0);

@@ -129,6 +129,13 @@ for (const [file, why] of CHECKS) {
   const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', file)],
                       { cwd: ROOT, encoding: 'utf8', timeout: 600000 });
   const out = ((r.stdout || '') + (r.stderr || ''));
+  /* ★ 2026-10-24 — HOUSE_CHECKS_LOG=<폴더> 면 검사마다 출력 전체를 남긴다. 가끔만 붉은 검사는 «출력 없음» 한 줄로는
+     까닭을 못 잡는다(10-24 test_cutaway_shared_mat 다섯 판 중 한 판 · 던진 글이 묶음에서 버려졌다) */
+  if (process.env.HOUSE_CHECKS_LOG) {
+    try { fs.mkdirSync(process.env.HOUSE_CHECKS_LOG, { recursive: true });
+          fs.writeFileSync(path.join(process.env.HOUSE_CHECKS_LOG, file + '.log'),
+            `exit ${r.status} signal ${r.signal || '-'} error ${r.error ? r.error.message : '-'}\n` + out); } catch { /* 기록 실패는 검사 판정을 안 바꾼다 */ }
+  }
   const last = out.trim().split('\n').filter(l => /PASS|FAIL|SKIP/.test(l)).pop() || '(출력 없음)';
   const skipped = /SKIP/.test(out);
   const okRun = r.status === 0 && !r.error;

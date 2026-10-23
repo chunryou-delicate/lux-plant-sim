@@ -2309,8 +2309,8 @@
     "care_board": {
       "type": "bulletin_board",
       "name_ko": "맡김판",
-      "intro_ko": null,
-      "_wall": "★ 2026-10-23 [house] D73 돌봄 진로(plan-care-career-spec §8) — 가게 주문판(order_board)과 같은 모델·크기·자리(투룸 판 자리 only:order_board · hang_spots BOARD_KIND). 이름은 총괄 «맡김판» · 소개 글은 plan 이 준다(그때 채움).",
+      "intro_ko": "손님이 화분과 함께 남기고 간 쪽지",
+      "_wall": "★ 2026-10-23 [house] D73 돌봄 진로(plan-care-career-spec §8) — 가게 주문판(order_board)과 같은 모델·크기·자리(투룸 판 자리 only:order_board · hang_spots BOARD_KIND). 이름은 총괄 «맡김판» · 소개 글 plan a3638d7f.",
       "mount": "wall-hang",
       "size_m": {
         "w": 0.6,

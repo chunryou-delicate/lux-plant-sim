@@ -33,7 +33,7 @@ export function hangPoseOf(spot, roomSize, size = {}) {
            rot: ROT[spot.wall], y: +(+spot.cy).toFixed(4) };
 }
 
-/* ★ 2026-10-23 [house] D73 «판 갈래» — 진로마다 문 옆 판이 다르다(가게 주문판 · 돌봄 맡김판). 모델·자리는 하나라
+/* ★ 2026-10-23 [house] D73 «판 갈래» — 진로마다 판 자리(가게 방 뒷벽 창 옆)의 판이 다르다(가게 주문판 · 돌봄 맡김판). 모델·자리는 하나라
      자리 데이터는 그대로(only:'order_board' · game.html 이 그 값으로 판 자리를 찾는다) 두고, 어느 판이 그 갈래인지는 여기서 묶는다 */
 export const BOARD_KIND = Object.freeze({ order_board: 'order_board', care_board: 'order_board' });
 const BOARD_KO = Object.freeze({ order_board: '주문판', care_board: '맡김판' });
