@@ -14,7 +14,7 @@
 
 | # | 자리 | 무엇 | 임자 | 값이 바뀌나 | 나온 곳 |
 |---|---|---|---|---|---|
-| 1-1 | src/game/propagation.js:377 «천장이 80% 다» | D40 어린 그루 ×2(상한 .9)로 삽수 새 잎 무늬율이 **중간·밝음 둘 다 90%** — 주석의 천장을 넘는다 · 밝음의 이득은 등급(풀문 .05 → .15)에만 | core(QUESTION · 총괄이 C 짓기 전에 가름) | ? 의도면 주석만 ✕ · 아니면 ○ | C §12 |
+| 1-1 | src/game/propagation.js:377 «천장이 80% 다» | D40 어린 그루 ×2(상한 .9)로 삽수 새 잎 무늬율이 **중간·밝음 둘 다 90%** — 주석의 천장을 넘는다 · 밝음의 이득은 등급(풀문 .05 → .15)에만 | core(QUESTION · 총괄이 C 짓기 전에 가름) → **✔ D82: 값은 그대로 · 박사님 첫 플레이 뒤 다시 봄**(C① «밝은 자리의 이득은 등급뿐») | ✕ 지금은 안 바꿈 | C §12 · 총괄 10-24 |
 | 1-2 | src/game/state.js:404 · 726 `variegated: false` | 화분의 `variegated` 가 늘 false → 화분 어미 무지 마디 삽수는 영영 0% · `VARIE.variegatedMother 0.195` 안 쓰임 · job_shop `ctx.motherVarie` 넘기는 곳 없음 | core(QUESTION) | ? | C §12 |
 | 1-3 | game.html(등급 장부 `pots[0]` 만) → shop.js:1953 · 1671 | 무늬 등급 장부는 첫 화분만 — 씨앗 그루 무늬 잎은 값 매길 때 산반으로 떨어진다 | core(QUESTION) | ? | C §12 |
 | 1-4 | plant_grow.html:1859 «갈래 비율에는 빛 배율을 태우지 않는다(MAT_TREE)» | 게임은 등급(빛 밴드로 굴림)에서 뽑은 스킨으로 그림을 덮는다(shop.js `leafSkinsFor` → `setLeafSkins`) — 문서의 «빛은 나나 마나만»과 다름 | growth · core | ✕(글) · 판단 따라 ○ | C 지도 |
