@@ -1672,7 +1672,7 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'cheer',    text: '대신 이제 네 가게야.' }
   ],
   shopOpen: [
-    { who: 'jachwi', face: 'apron',    text: '문 앞에 작은 주문판을 걸었다.' },
+    { who: 'jachwi', face: 'apron',    text: '문 옆에 작은 주문판을 걸었다.' },
     { who: 'moni',   face: 'teach',    text: '손님이 원하는 걸 적어 두고 가. 기한 안에 맞추면 돼.' }
   ],
   /* ★ 2026-10-10 [plan] 총괄 (가) «가게는 새 두 종과 함께» — 가게 첫날, 가진 새 종(PP · AL)이 0 이면(사건 `shop_no_species` · [core]).
@@ -1775,7 +1775,7 @@ export const SCRIPTS = {
   ],
   questDoneShopSign: [
     { who: 'jachwi', face: 'beam',     text: '간판을 달았다.' },
-    { who: 'moni',   face: 'proud',    text: '이제 지나가는 사람도 알아.' }
+    { who: 'moni',   face: 'proud',    text: '이제 들어오는 손님마다 알아보겠다.' }
   ],
   questShopTown: [
     { who: 'moni',   face: 'calm',     text: '천천히 가자. 맞춘 손님이 다 이름이 돼.' }
@@ -1888,7 +1888,7 @@ export const SCRIPTS = {
   ],
   careMilestone10: [
     { who: 'jachwi', face: 'surprise', text: '돌려준 화분이 꽤 쌓였다.' },
-    { who: 'moni',   face: 'cheer',    text: '문 앞에 간판을 세우자!' }
+    { who: 'moni',   face: 'cheer',    text: '간판을 세우자!' }
   ],
   careMilestone30: [
     { who: 'jachwi', face: 'beam',     text: '동네에서 식물이 아프면 여기래.' },
@@ -1927,11 +1927,11 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'cheer',    text: '여러 가지를 고쳐 봤네. 이제 읽을 줄 알아.' }
   ],
   questCareSign: [
-    { who: 'moni',   face: 'teach',    text: '살린 화분이 쌓이면 문 앞에 간판을 세우자.' }
+    { who: 'moni',   face: 'teach',    text: '살린 화분이 쌓이면 간판을 세우자.' }
   ],
   questDoneCareSign: [
-    { who: 'jachwi', face: 'beam',     text: '문 앞에 칠판 간판을 세웠다.' },
-    { who: 'moni',   face: 'proud',    text: '이제 지나가는 사람도 알아.' }
+    { who: 'jachwi', face: 'beam',     text: '진열대 옆에 칠판 간판을 세웠다.' },
+    { who: 'moni',   face: 'proud',    text: '이제 들어오는 손님마다 알아보겠다.' }
   ],
   questCareTown: [
     { who: 'moni',   face: 'calm',     text: '천천히 가자. 살린 화분이 다 이름이 돼.' }
