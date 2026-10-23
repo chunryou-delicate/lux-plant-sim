@@ -38,6 +38,9 @@ import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { chatterContext as chatterContextOf } from '../src/game/dialogue.js';   /* ★ D78 귀띔 조건 */
 import { CARE_SCRIPT } from '../src/game/dialogue.js';                         /* ★ D72 B 돌봄 고장 대사 지도 */
+import { JOB_REST_TODO } from '../src/game/quest.js';                          /* ★ D72 D 나머지 쉬는 중 글 */
+import { SHOP_JOB } from '../src/game/job_shop.js';                            /* ★ D72 D 나머지 칭호(core 값과 같은 말) */
+import { CARE_JOB } from '../src/game/job_care.js';
 import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, pot0, setPotSlot, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
@@ -645,6 +648,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     'jobStartCare', 'careMilestone3', 'careMilestone10', 'careMilestone30',
     /* ★ 2026-10-24 [plan] D72 C — 육종 사건 갈림(scriptOf): 진로 첫날 · 줄마다 첫 표본 · 이정표 1/3/5 */
     'jobStartBreed', 'breedFirstMonstera', 'breedFirstAl', 'breedFirstPp', 'breedMilestone1', 'breedMilestone3', 'breedMilestone5',
+    /* ★ 2026-10-24 [plan] D72 D 나머지 — 바꾸기 갈림(scriptOf): 옮긴 날 · 돌아간 날 · 판을 이어 쓴 날 */
+    'jobSwitch', 'jobSwitchCare', 'jobSwitchBreed', 'jobBack', 'shopOpenKept', 'careOpenKept',
     ...Object.values(CARE_SCRIPT).flatMap(m => [m.new, m.stuck, m.saved])
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
@@ -874,6 +879,60 @@ check('잡담 — 육종 비교 잡담은 기록이 참일 때만(D72 C)', () =>
   const c = chatterContextOf({ day: 1400 }, { story: { job: { id: 'shop' } } });
   assert.equal(c.breedBrightHalfMore, null); assert.equal(c.breedPpLines, null);
   assert.equal(row('chatBreedMorning').when({ movedHome: true, jobId: 'care' }), false, '돌봄 판에 육종 잡담');
+});
+
+/* ★ 2026-10-24 [plan] D72 D 나머지 — 바꾸기 · 마지막 덮개: 글 표 · 사건 갈림 · 거짓 없는 말 */
+check('데이터 — career_switch.json 화면 글이 다 있고 칭호·이음 줄·쉬는 중 글이 다른 표와 같다(D72 D)', () => {
+  const T = JSON.parse(readFileSync(new URL('../data/balance/career_switch.json', import.meta.url), 'utf8'));
+  assert.deepEqual(Object.keys(T.jobs), ['shop', 'care', 'breed']);
+  for (const [id, j] of Object.entries(T.jobs)) {
+    for (const k of ['ko', 'ro', 'title', 'cardSub', 'go']) assert.ok(j[k], `jobs.${id}.${k} 가 비었습니다`);
+    /* 조사: 받침이 없거나 ㄹ 받침이면 «로», 그 밖의 받침이면 «으로» */
+    const jong = (j.ko.charCodeAt(j.ko.length - 1) - 0xAC00) % 28;
+    assert.equal(j.ro, j.ko + (jong === 0 || jong === 8 ? '로' : '으로'), `jobs.${id}.ro 조사`);
+    assert.equal(JOB_REST_TODO[id], `쉬는 중 — ${j.ro} 돌아가면 이어집니다`, `쉬는 중 글(quest.js)과 진로 이름이 어긋납니다 — ${id}`);
+  }
+  assert.equal(T.jobs.shop.title, SHOP_JOB.ending.titleKo, '가게 칭호가 core 값과 다릅니다');
+  assert.equal(T.jobs.care.title, CARE_JOB.ending.titleKo, '돌봄 칭호가 core 값과 다릅니다');
+  assert.equal(T.finalCover.sub, Object.values(T.jobs).map(j => j.title).join(' · '), '덮개 밑글이 칭호 셋이 아닙니다');
+  const care = JSON.parse(readFileSync(new URL('../data/balance/care_problems.json', import.meta.url), 'utf8'));
+  assert.equal(T.customerLink.toCare, care._lines.regularAsk, '손님 이음 줄이 돌봄 표(_lines.regularAsk)와 다릅니다');
+  assert.ok(T.customerLink.toShop);
+  assert.equal(T.endCard.stay, T.finalCover.stay);
+  assert.ok(T.endCard.switch && T.todoHead.switch && T.cards.title && T.cards.sub && T.cards.note && T.cards.back);
+  for (const k of ['ended', 'fresh', 'current']) assert.ok(T.cards.mark[k], `카드 표 '${k}' 가 없습니다`);
+  assert.ok(/\{title\}/.test(T.cards.mark.ended) && /\{title\}/.test(T.cards.mark.current), '카드 표에 {title} 이 없습니다');
+  for (const k of ['switched', 'back']) assert.ok(/\{ro\}/.test(T.banner[k].title) && /\{ro\}/.test(T.log[k]), `알림·기록 '${k}' 에 {ro} 가 없습니다`);
+  assert.ok(T.log.shopOpenKept && T.log.careOpenKept && !/걸었/.test(T.log.shopOpenKept + T.log.careOpenKept));
+  assert.equal(T.finalCover.title, '여기까지 — 이 집 이야기');
+  assert.ok(existsSync(new URL(`../assets/illust/${T.finalCover.art}.png`, import.meta.url)), `덮개 원화 ${T.finalCover.art} 가 없습니다`);
+});
+check('대사 — 옮긴 날 · 돌아간 날 · 판을 이어 쓴 날 · 마지막 덮개가 제 대사로 갈린다(D72 D)', () => {
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start', job: 'shop', switched: true }]), ['jobSwitch']);
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start', job: 'care', switched: true }]), ['jobSwitchCare']);
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start', job: 'breed', switched: true }]), ['jobSwitchBreed']);
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start', job: 'care', switched: true, back: true }]), ['jobBack']);
+  /* 첫 진로는 예전 그대로 */
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start' }]), ['jobStart']);
+  assert.deepEqual(scriptsForEvents([{ id: 'job_start', job: 'care' }]), ['jobStartCare']);
+  assert.deepEqual(scriptsForEvents([{ id: 'shop_open' }]), ['shopOpen']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_open' }]), ['careOpen']);
+  /* 옮긴 날 차례: 진로 → 판(이어 씀) */
+  assert.deepEqual(scriptsForEvents([{ id: 'care_open', boardKept: true }, { id: 'job_start', job: 'care', switched: true }]), ['jobSwitchCare', 'careOpenKept']);
+  assert.deepEqual(scriptsForEvents([{ id: 'shop_open', boardKept: true }, { id: 'job_start', job: 'shop', switched: true }]), ['jobSwitch', 'shopOpenKept']);
+  /* 셋째 끝맺음 장면 → 마지막 덮개 */
+  assert.deepEqual(scriptsForEvents([{ id: 'final_cover' }, { id: 'breed_ending' }]), ['breedEnding', 'finalCover']);
+  /* 거짓 없는 말: 옮긴 날엔 «이제부턴 진짜야»(초보 보호 끝)가 없다 · 판이 이미 걸린 날엔 «걸었다»가 없다 */
+  for (const id of ['jobSwitch', 'jobSwitchCare', 'jobSwitchBreed', 'jobBack'])
+    for (const l of SCRIPTS[id]) assert.ok(!/이제부턴 진짜/.test(l.text), `'${id}' 옮긴 날에 초보 보호 끝 말: ${l.text}`);
+  for (const id of ['shopOpenKept', 'careOpenKept']) assert.ok(!SCRIPTS[id].some(l => /걸었/.test(l.text)), `'${id}' 에 «걸었다»`);
+  assert.equal(SCRIPTS.finalCover.length, 2);
+  assert.ok(SCRIPTS.finalCover.every(l => l.who === 'moni'), '마지막 덮개는 몬이 두 줄');
+  const ids = ['jobSwitch', 'jobSwitchCare', 'jobSwitchBreed', 'jobBack', 'shopOpenKept', 'careOpenKept', 'finalCover'];
+  for (const id of ids) for (const l of SCRIPTS[id]) {
+    if (l.who === 'jachwi') assert.ok(['beam', 'think', 'surprise', 'happy'].includes(l.face), `'${id}' 앞치마 낯 밖 '${l.face}'`);
+    if (l.who === 'moni') assert.ok(!/[0-9]|세 |셋|넷|다섯|여섯|일곱|여덟|아홉|서른|퍼센트/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+  }
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

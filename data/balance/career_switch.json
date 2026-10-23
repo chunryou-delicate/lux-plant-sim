@@ -1,0 +1,52 @@
+{
+  "_doc": [
+    "★ 2026-10-24 [plan] D72 D 나머지 «다른 진로 열기(바꾸기) · 마지막 덮개»의 화면 글(명세 docs/handoff/plan-career-endings-spec-20261023.md §2 · §4 · §11 · 총괄 D75 · D83).",
+    "plan 이 쓰고 core 는 읽기만 한다. 판정(옮길 수 있나 · 끝맺음 날 · 손님 이음)은 core 한 곳 — 여기는 글만.",
+    "규칙(D75): 한 번에 한 진로만 돈다(바꾸기) · 지금 진로의 끝맺음을 본 뒤에만 옮긴다 · 끝맺음을 본 진로로는 돌아갈 수 있다 · 이사 없음 · 숨은 손해 없음.",
+    "{title} = 그 진로 칭호 · {ko} = 진로 이름 · {ro} = 진로 이름 + 조사 «로/으로»(조사를 코드에서 붙이지 않게 칸으로 둔다).",
+    "쉬는 중 글(할 일 줄)은 여기 두지 않는다 — quest.js JOB_REST_TODO 한 곳(questView 가 todo 칸에 싣는다).",
+    "대사(몬이 · 자취생)는 dialogue.js — jobSwitch · jobSwitchCare · jobSwitchBreed · jobBack · shopOpenKept · careOpenKept · finalCover."
+  ],
+  "jobs": {
+    "shop":  { "ko": "식물 가게", "ro": "식물 가게로", "title": "동네 식물 가게", "cardSub": "손님이 원하는 식물을 기한 안에 키워 맞춥니다", "go": "가게를 연다" },
+    "care":  { "ko": "식물 돌봄", "ro": "식물 돌봄으로", "title": "동네 식물 의사", "cardSub": "남의 화분을 맡아 살립니다", "go": "돌봄을 시작한다" },
+    "breed": { "ko": "무늬 육종", "ro": "무늬 육종으로", "title": "무늬 육종가", "cardSub": "무늬를 대대로 이어 기록합니다", "go": "육종을 시작한다" }
+  },
+  "_doc_cards": "진로 바꾸기 화면(D59 진로 카드 화면 다시 씀). 지금 진로의 끝맺음을 본 뒤에만 열린다 — 그래서 «지금 하는 중» 카드에도 칭호가 선다. 카드마다 표 하나 + 단추(해 볼 수 있음 = jobs.go · 끝맺음 봄 = back · 지금 하는 중 = 단추 없음).",
+  "cards": {
+    "title": "진로 바꾸기",
+    "sub": "그대로 가는 것 — 돈 · 그루 · 삽수 · 가구 · 칭호 · 기록 · 이사는 없습니다",
+    "note": "내려놓은 진로는 새 일을 안 받습니다. 걸린 주문·맡김은 기한까지 마칠 수 있습니다.",
+    "mark": { "ended": "끝맺음 봄 · {title}", "fresh": "해 볼 수 있음", "current": "지금 하는 중 · {title}" },
+    "back": "돌아간다"
+  },
+  "_doc_endCard": "끝맺음 카드(#homeCard 결) 단추. switch 는 아직 끝맺음을 안 본 진로가 있을 때만 선다 — 셋째 끝맺음이면 stay 뒤에 마지막 덮개가 뜬다.",
+  "endCard": { "stay": "계속 산다", "switch": "다른 진로도 해 본다" },
+  "_doc_todoHead": "할 일 탭 머리의 글자 단추 — 지금 진로의 끝맺음을 본 뒤에만 선다(명세 §2-1).",
+  "todoHead": { "switch": "진로 바꾸기" },
+  "_doc_banner": "옮긴 순간의 알림(가게 «🪴 식물 가게를 열었습니다» 결). switched = 처음 해 보는 진로 · back = 끝맺음을 본 진로로 돌아감.",
+  "banner": {
+    "switched": { "title": "🪴 {ro} 옮겼습니다", "sub": "키운 것은 다 그대로입니다 · 이사는 없습니다" },
+    "back":     { "title": "🪴 {ro} 돌아왔습니다", "sub": "하던 데서 이어집니다" }
+  },
+  "_doc_log": "기록 줄(대사 아님). shopOpenKept · careOpenKept = 창 옆 판이 이미 걸려 있어 이름만 바뀌는 날(shop_open · care_open 의 «…판을 걸었습니다» 대신).",
+  "log": {
+    "shopOpenKept": "창 옆 판을 이제 주문판으로 씁니다",
+    "careOpenKept": "창 옆 판을 이제 맡김판으로 씁니다",
+    "switched": "진로 — {ro} 옮겼습니다",
+    "back": "진로 — {ro} 돌아왔습니다"
+  },
+  "_doc_customerLink": "⚖ 손님 이음(명세 §2-2 · plan 권함): 가게 → 돌봄이면 첫 맡김 손님을 가게 단골 중에서 · 돌봄 → 가게면 첫 주문 손님을 맡겼던 손님 중에서. 기록 줄 «{손님 ko} — {줄}». toCare 는 care_problems.json _lines.regularAsk 와 같은 말(test_dialogue_coverage 가 묶는다).",
+  "customerLink": {
+    "toCare": "단골이 화분을 맡기러 왔다.",
+    "toShop": "화분을 맡겼던 손님이 주문하러 왔다."
+  },
+  "_doc_finalCover": "세 진로 다 끝맺음 — 셋째 끝맺음 카드를 닫은 뒤 한 번(명세 §2-4). 원화 ev_first_story_end 재사용(지금 한 번도 안 뜨는 «여기까지 — 첫 이야기» 자리 · 크레딧 0). newGame 단추는 E(새 판)가 선 뒤에만. 몬이 두 줄은 dialogue.js finalCover(사건 final_cover).",
+  "finalCover": {
+    "title": "여기까지 — 이 집 이야기",
+    "sub": "동네 식물 가게 · 동네 식물 의사 · 무늬 육종가",
+    "stay": "계속 산다",
+    "newGame": "새 판으로",
+    "art": "ev_first_story_end"
+  }
+}

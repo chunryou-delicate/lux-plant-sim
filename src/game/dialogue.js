@@ -2060,6 +2060,39 @@ export const SCRIPTS = {
   chatBreedPinkCut: [
     { who: 'moni',   face: 'teach',    text: '분홍 잎이 잇달면 그 아래를 잘라.' }
   ],
+  /* ═══ ★★ 2026-10-24 [plan] D72 D 나머지 «다른 진로 열기(바꾸기) · 마지막 덮개»(명세 plan-career-endings-spec-20261023 §2 · §4 · §11 · 총괄 D75 · D83) ═══
+     사건([core]): job_start{job, switched:true}(끝맺음 뒤 처음 해 보는 진로로 옮긴 날) · job_start{job, switched:true, back:true}(끝맺음을 본 진로로 돌아간 날) ·
+     shop_open{boardKept:true} · care_open{boardKept:true}(창 옆 판이 이미 걸려 있어 이름만 바뀌는 날) · final_cover(셋째 끝맺음 카드를 닫은 뒤 한 번).
+     ★ 옮긴 날엔 jobStart* 를 안 쓴다 — «이제부턴 진짜야»(초보 보호 끝)는 첫 진로 때 이미 끝났다. 그 진로가 가르치는 한 줄(남의 화분 · 하나는 우연)만 남긴다.
+     ★ «…판을 걸었다»는 판이 이미 걸린 날엔 거짓 — 판은 그대로 두고 이름만 진로를 따른다(명세 §2-3 · house) → «창 옆 판을 이제 …판으로 쓴다».
+     ★ 마지막 덮개 둘째 줄: 명세 첫 글 «내일 아침엔 또 물 줘야 해»는 거짓이 될 수 있다(물 주는 날은 자리·철마다 다르다 — state §potWaterStatus interval) → «물 주는 날은 또 와».
+     몬이는 수를 안 말한다(«세 가지» → «가게도, 돌봄도, 육종도»). 자취생 낯은 앞치마 낯 안에서만. 화면 글(카드 표 · 단추 · 덮개 제목)은 data/balance/career_switch.json. */
+  jobSwitch: [
+    { who: 'moni',   face: 'cheer',    text: '이번엔 다른 걸 해 보자. 키운 건 다 그대로야.' }
+  ],
+  jobSwitchCare: [
+    { who: 'moni',   face: 'cheer',    text: '이번엔 다른 걸 해 보자. 키운 건 다 그대로야.' },
+    { who: 'moni',   face: 'teach',    text: '남의 화분이니까 더 꼼꼼히 봐.' }
+  ],
+  jobSwitchBreed: [
+    { who: 'moni',   face: 'cheer',    text: '이번엔 다른 걸 해 보자. 키운 건 다 그대로야.' },
+    { who: 'moni',   face: 'teach',    text: '하나 나온 건 우연이야. 같은 게 거듭 나오면 그때 네 거야.' }
+  ],
+  jobBack: [
+    { who: 'moni',   face: 'calm',     text: '다시 이 일이네. 하던 데서 이어서 하자.' }
+  ],
+  shopOpenKept: [
+    { who: 'jachwi', face: 'think',    text: '창 옆 판을 이제 주문판으로 쓴다.' },
+    { who: 'moni',   face: 'teach',    text: '손님이 원하는 걸 적어 두고 가. 기한 안에 맞추면 돼.' }
+  ],
+  careOpenKept: [
+    { who: 'jachwi', face: 'think',    text: '창 옆 판을 이제 맡김판으로 쓴다.' },
+    { who: 'moni',   face: 'teach',    text: '아픈 화분이 오면 어디 있었는지부터 들어.' }
+  ],
+  finalCover: [
+    { who: 'moni',   face: 'proud',    text: '가게도, 돌봄도, 육종도 다 해 봤네.' },
+    { who: 'moni',   face: 'calm',     text: '그래도 물 주는 날은 또 와.' }
+  ],
   shopEndingFew: [
     { who: 'jachwi', face: 'think',    text: '문을 열기 전에 가게를 한 바퀴 둘러봤다.' },
     { who: 'jachwi', face: 'think',    text: '오늘은 무엇부터 늘릴까.' },
@@ -2818,6 +2851,8 @@ export const EVENT_SCRIPT = Object.freeze({
   breed_candidate:     'breedCandidate',
   breed_register:      'breedRegister',
   breed_ending:        'breedEnding',
+  /* ★ 2026-10-24 [plan] D72 D 나머지 — 마지막 덮개(옮긴 날 · 판을 이어 쓴 날 갈림은 §scriptOf) */
+  final_cover:         'finalCover',
   /* ★ 2026-10-23 [plan] D71 — 새 두 종 */
   sc_ask:              'scAsk',
   sc_rooted:           'scRooted',
@@ -3057,6 +3092,8 @@ const EVENT_ORDER = [
   /* ★ 2026-10-10 [plan] D59 — 진로 첫날은 «이제부턴 진짜야» → 주문판 → (퀘스트 열림). 납품 «단골 하나 늘었어»는 퀘스트 끝(«단골 셋» 등)보다 앞 */
   /* ★ 2026-10-23 [plan] D75 ⑤ — 끝맺음 아침 장면은 그날 가게 사건(새 주문 등 · 표 밖 999)보다 앞 */
   'shop_ending', 'care_ending', 'breed_ending',
+  /* ★ 2026-10-24 [plan] D72 D 나머지 — 마지막 덮개는 셋째 끝맺음 장면 뒤 */
+  'final_cover',
   'job_start', 'shop_open', 'shop_no_species', 'order_done', 'regulars_milestone',
   /* ★ 2026-10-23 [plan] D72 B — 돌봄 첫날: 진로 → 맡김판 → 첫 맡김 · 나은 날 «잎이 다 펴졌다»는 퀘스트 끝보다 앞 */
   'care_open', 'care_new', 'care_stuck', 'care_saved', 'care_milestone',
@@ -3150,7 +3187,14 @@ function scriptOf(ev, S = null) {
   /* ★ 2026-10-23 [plan] D75 ⑤ — 방에 놓인 그루가 적으면 둘째 줄이 «오늘은 무엇부터 늘릴까»([core] ev.fewPlants) */
   if (id === 'shop_ending') return ev && ev.fewPlants === true ? 'shopEndingFew' : 'shopEnding';
   /* ★ 2026-10-23 [plan] D72 B — 돌봄: 진로 첫날은 진로로 갈림 · 고장마다 세 줄(CARE_SCRIPT) · 이정표 3/10/30 · 돌려줌·기한은 대사 없음(기록 줄) */
-  if (id === 'job_start') return ev && ev.job === 'care' ? 'jobStartCare' : ev && ev.job === 'breed' ? 'jobStartBreed' : 'jobStart';
+  /* ★ 2026-10-24 [plan] D72 D 나머지 — 옮긴 날(ev.switched)은 «이제부턴 진짜야»(초보 보호 끝)를 안 쓴다 · 돌아간 날(ev.back)은 한 줄 */
+  if (id === 'job_start') {
+    if (ev && ev.switched === true) return ev.back === true ? 'jobBack' : ev.job === 'care' ? 'jobSwitchCare' : ev.job === 'breed' ? 'jobSwitchBreed' : 'jobSwitch';
+    return ev && ev.job === 'care' ? 'jobStartCare' : ev && ev.job === 'breed' ? 'jobStartBreed' : 'jobStart';
+  }
+  /* 창 옆 판이 이미 걸려 있던 날(ev.boardKept · 바꾸기 뒤) — «…판을 걸었다» 대신 «이제 …판으로 쓴다» */
+  if (id === 'shop_open') return ev && ev.boardKept === true ? 'shopOpenKept' : 'shopOpen';
+  if (id === 'care_open') return ev && ev.boardKept === true ? 'careOpenKept' : 'careOpen';
   /* ★ 2026-10-24 [plan] D72 C — 표본은 그 줄 첫 표본만 말한다(나머지는 기록 줄) · 이정표 1/3/5 */
   if (id === 'breed_sample') {
     if (!(ev && ev.first === true)) return null;

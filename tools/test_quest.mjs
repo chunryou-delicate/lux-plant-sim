@@ -26,7 +26,9 @@ import { QUESTS, QUEST_IDS, questOf, questTodo, questView, stepQuests,
          /* ★ 2026-08-17 — 느린 줄 둘(§긴 줄). 줄 수를 이 파일에 안 박는다 */
          SLOW_QUEST_IDS,
          /* ★ 2026-10-10 [plan] — 물린 줄(이름만 남김). 대사 지도에 남은 옛 열쇠를 «물린 줄»로 가른다 */
-         RETIRED_QUESTS } from '../src/game/quest.js';
+         RETIRED_QUESTS,
+         /* ★ 2026-10-24 [plan] D72 D 나머지 — 진로마다 줄 · 쉬는 중 글 */
+         JOB_QUEST_IDS, JOB_REST_TODO } from '../src/game/quest.js';
 import { QUEST_OPEN_SCRIPT, QUEST_DONE_SCRIPT, SCRIPTS, REPEATABLE,
          createStoryteller } from '../src/game/dialogue.js';
 import { STAMINA_RULES, createStaminaState, grantStaminaQuest, staminaView } from '../src/game/stamina.js';
@@ -636,6 +638,72 @@ check('화면 — ★ 셈이 스스로 안 어긋난다 (total = done + open + l
       `${c.done}+${c.open}+${c.locked} ≠ ${c.total}`);
     assert.equal(c.open, v.open.length);
     assert.equal(v.all.filter(a => a.state === 'locked').length, c.locked);
+  }
+});
+
+/* ══ ⑺ ★ 2026-10-24 [plan] D72 D 나머지 — 바꾸기 걸음(명세 plan-career-endings-spec §2 · §6 ② · 총괄 D75) ══════════
+   가게 끝맺음 → 돌봄(짐 풀기 건너뜀) → 돌봄 끝맺음 → 육종(짐 풀기 건너뜀 · 돌봄 곁줄 «쉬는 중») → 육종 끝맺음 → 돌봄으로 돌아가기(곁줄이 이어져 끝남).
+   «퀘스트 판정»만 잰다 — 진로 상태 · 이사 없음 · 걸린 일 기한까지 · 숨은 손해 0 은 core 하네스(명세 §6). jobsEnded 는 core 칸 이름 그대로. */
+check('⑺ 바꾸기 — 옮겨 들어간 진로는 짐 풀기를 건너뛰고 · 내려놓은 진로의 열린 줄은 «쉬는 중» · 돌아가면 이어진다(D72 D)', () => {
+  const b = newBoard(), sw = createStoryteller(), heard = [];
+  /* 진로 밖 줄은 다 끝낸 판(가게 사슬까지) — 걸음마다 진로 줄만 움직이게 */
+  b.stamina.questsTaken = QUEST_IDS.filter(id => !JOB_QUEST_IDS.care.includes(id) && !JOB_QUEST_IDS.breed.includes(id));
+  const go = snap => { const r = stepQuests(b, snap); for (const id of r.finished) grantStaminaQuest(b, id); heard.push(...sw.events(r.events)); return r; };
+  const E = (shop, care = null, breed = null) => ({ jobsEnded: { shop, care, breed } });
+  /* ① 가게 끝맺음 뒤 돌봄으로 — 짐 풀기는 안 열리고(가방에 그루가 있어도) 첫 돌봄이 바로 */
+  let r = go(CM(1300, { bagPlants: 1, ...E(1290) }));
+  assert.ok(!r.opened.includes('care_unpack'), `옮겨 들어간 판에 짐 풀기가 열렸습니다 — ${r.opened}`);
+  assert.ok(r.opened.includes('care_first'), `첫 돌봄이 안 열렸습니다 — ${r.opened}`);
+  let v = questView(b, CM(1300, { bagPlants: 1, ...E(1290) }));
+  const row = id => v.all.find(a => a.id === id);
+  assert.equal(row('care_unpack').skipped, true, 'care_unpack 이 skipped 가 아닙니다');
+  assert.ok(v.skippedIds.includes('care_unpack') && !v.upcoming.some(a => a.id === 'care_unpack'), '건너뛴 줄이 «다음에 올 것»에 있습니다');
+  go(CM(1310, { careSaved: 1, careKinds: 1, ...E(1290) }));
+  go(CM(1340, { careSaved: 3, careKinds: 3, ...E(1290) }));
+  go(CM(1341, { careSaved: 3, careKinds: 3, ...E(1290) }));
+  r = go(CM(1400, { careSaved: 30, careKinds: 5, ...E(1290) }));
+  assert.ok(doneIdsOf(b).includes('care_town'), `돌봄 끝맺음 줄이 안 끝났습니다 — ${doneIdsOf(b).filter(id => id.startsWith('care'))}`);
+  assert.ok(b._questOpen.includes('care_all_kinds') && !doneIdsOf(b).includes('care_all_kinds'), '느린 곁줄 «고장 여덟»이 열린 채가 아닙니다');
+  /* ② 돌봄 끝맺음 뒤 육종으로 — 짐 풀기 건너뜀 · 돌봄 곁줄은 «쉬는 중»(칩을 안 쥔다) */
+  const B1 = BM(1402, { bagPlants: 1, ...E(1290, 1401) });
+  r = go(B1);
+  assert.ok(!r.opened.includes('breed_unpack') && r.opened.includes('breed_first_sample'), `육종 첫 줄이 어긋납니다 — ${r.opened}`);
+  v = questView(b, B1);
+  assert.equal(row('care_all_kinds').state, 'locked');
+  assert.equal(row('care_all_kinds').resting, true, '내려놓은 돌봄 곁줄이 «쉬는 중»이 아닙니다');
+  assert.equal(row('care_all_kinds').todo, JOB_REST_TODO.care);
+  assert.ok(v.restingIds.includes('care_all_kinds'));
+  assert.ok(!v.open.includes('care_all_kinds') && (!v.chip || v.chip.id !== 'care_all_kinds'), '쉬는 줄이 칩을 쥡니다');
+  assert.equal(row('care_unpack').resting, false, '한 번도 안 열린 줄이 «쉬는 중»입니다');
+  go(BM(1420, { breedSamples: 1, breedLines: 1, ...E(1290, 1401) }));
+  go(BM(1421, { breedSamples: 1, breedLines: 1, ...E(1290, 1401) }));
+  go(BM(1500, { breedSamples: 30, breedLines: 3, breedVarieties: 3, ...E(1290, 1401) }));
+  go(BM(1501, { breedSamples: 30, breedLines: 3, breedVarieties: 3, ...E(1290, 1401) }));
+  assert.ok(doneIdsOf(b).includes('breed_three') && b._questOpen.includes('breed_all'), '육종 끝맺음 줄 · 다섯 칸 곁줄이 어긋납니다');
+  /* ③ 육종 끝맺음 뒤 돌봄으로 돌아가기 — 쉬던 곁줄이 이어져 그 걸음에 끝나고 · 짐 풀기는 여전히 안 열림 · 육종 곁줄이 쉼 */
+  const C2 = CM(1510, { careSaved: 30, careKinds: 8, ...E(1290, 1401, 1502) });
+  r = go(C2);
+  assert.ok(r.finished.includes('care_all_kinds'), `돌아갔는데 «고장 여덟»이 안 이어집니다 — finished ${r.finished}`);
+  assert.ok(!r.opened.includes('care_unpack'));
+  v = questView(b, C2);
+  assert.equal(row('breed_all').resting, true); assert.equal(row('breed_all').todo, JOB_REST_TODO.breed);
+  /* 짐 풀기 말이 한 번도 안 났다(옮긴 날 «…네 집이고 돌봄 자리야»가 다시 나면 거짓) */
+  for (const id of ['questCareUnpack', 'questDoneCareUnpack', 'questBreedUnpack', 'questDoneBreedUnpack'])
+    assert.ok(!heard.includes(id), `옮긴 판에 짐 풀기 대사 '${id}' 가 났습니다`);
+  info(`바꾸기 걸음 — 들린 대사 ${heard.length}가지 · 쉬는 줄 ${v.restingIds.join(', ')}`);
+});
+check('⑺ 바꾸기 — 첫 진로는 끝맺음을 봐도 «옮겨 들어간 판»이 아니다 · 칸이 없으면 예전 그대로(D72 D)', () => {
+  const b = newBoard();
+  b.stamina.questsTaken = QUEST_IDS.filter(id => !JOB_QUEST_IDS.care.includes(id) && !JOB_QUEST_IDS.breed.includes(id));
+  const own = stepQuests(b, CM(1300, { bagPlants: 1, jobsEnded: { shop: null, care: 1290, breed: null } }));
+  assert.ok(own.opened.includes('care_unpack'), `제 진로 끝맺음만 있는 판에서 짐 풀기가 안 열렸습니다 — ${own.opened}`);
+  const b2 = newBoard();
+  b2.stamina.questsTaken = [...b.stamina.questsTaken];
+  const old = stepQuests(b2, CM(1300, { bagPlants: 1 }));   /* jobsEnded 없음(옛 세이브 · 배선 전) */
+  assert.ok(old.opened.includes('care_unpack'));
+  for (const [j, t] of Object.entries(JOB_REST_TODO)) {
+    assert.ok(JOB_QUEST_IDS[j], `쉬는 중 글의 진로 '${j}' 가 없습니다`);
+    assert.ok([...t].length <= TODO_MAX, `쉬는 중 글이 ${TODO_MAX}자를 넘습니다 — ${t}`);
   }
 });
 

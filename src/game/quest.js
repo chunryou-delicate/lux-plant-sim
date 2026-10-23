@@ -245,6 +245,9 @@ export function emptySnapshot() {
            /* ★ 2026-10-24 [plan] D72 C «무늬 육종»([core] · null = 모른다) — breedSamples 적은 표본 수 · breedLines 표본이 있는 줄 수(0~3) ·
               breedVarieties 등록한 품종 수 · breedBest { slot, ko, n } 등록 안 된 칸 중 같은 조건이 가장 많이 쌓인 것(n 0~2 · 칩 글) */
            breedSamples: null, breedLines: null, breedVarieties: null, breedBest: null,
+           /* ★ 2026-10-24 [plan] D72 D 나머지 «바꾸기»([core] jobShopSnapshot · null = 모른다) — jobsEnded { shop, care, breed } 진로마다 끝맺음 날(안 봤으면 null) ·
+              jobActive 지금 진로 id(job 과 같은 자). 옮겨 들어간 판(§switchedIn)은 짐 풀기 줄을 건너뛰고 · 내려놓은 진로의 열렸던 줄은 «쉬는 중»(§questView resting) */
+           jobsEnded: null, jobActive: null,
            alDormantNow: null, alWokeCount: null, alCormsFound: null, alFoundCormsPlanted: null,
            /* ★ null = 「모른다」. false 로 두면 「아직 배선이 없다」와 「아니다」가 같아진다 */
            monsteraArrived: null, monsteraHomed: null,
@@ -1020,6 +1023,12 @@ const shopChipTodo = (s, goal, label) => {
   const r = (s && Number.isFinite(s.shopRegulars)) ? s.shopRegulars : 0;
   return `단골 ${r}명 — ${label}까지 ${Math.max(0, goal - r)}명`;
 };
+/* ★ 2026-10-24 [plan] D72 D 나머지(명세 plan-career-endings-spec §2 · §5 · §11 · 총괄 D75) — **옮겨 들어간 판**: 지금 진로가 아닌 진로에 끝맺음 날이 있다
+   (바꾸기는 지금 진로의 끝맺음 뒤에만 — 첫 진로 판에선 늘 거짓). 그 판에선 짐 풀기 줄(home_unpack · care_unpack · breed_unpack)을 건너뛰고
+   둘째 줄이 바로 열린다 — 이사가 없어 «짐 풀기»가 할 일이 아니고, 가방이 비어 있으면 그 자리에서 끝나며 «…네 가게야» 같은 첫 진로 말이 다시 난다.
+   ⚠ jobsEnded 가 null(배선 전 · 옛 세이브)이면 거짓 — 예전 그대로. */
+const switchedIn = s => !!s && typeof s.job === 'string' && !!s.jobsEnded && typeof s.jobsEnded === 'object' &&
+  Object.entries(s.jobsEnded).some(([k, v]) => k !== s.job && Number.isFinite(v));
 const isShop = s => !!s && s.movedHome === true && s.job === 'shop';
 const SHOP_QUESTS = Object.freeze([
   Object.freeze({
@@ -1031,7 +1040,8 @@ const SHOP_QUESTS = Object.freeze([
     why: '들고 온 것은 가방에서 아무 일도 안 합니다. 새 집 창가부터 자리를 정해 놓으세요.',
     todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
       ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
-    opens: s => isShop(s),
+    opens: s => isShop(s) && !switchedIn(s),
+    skips: s => isShop(s) && switchedIn(s),      /* ★ D 나머지 — 옮겨 들어간 판은 건너뜀(§switchedIn) */
     done:  s => isShop(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
   }),
   Object.freeze({
@@ -1044,7 +1054,7 @@ const SHOP_QUESTS = Object.freeze([
     todo: (q, s) => (s && Number.isFinite(s.shopOpenOrders) && s.shopOpenOrders > 0)
       ? '주문판의 주문 하나를 맞춰 납품하세요' : '주문판에 주문이 붙기를 기다리세요',
     after: 'home_unpack',
-    opens: (s, ctx) => isShop(s) && !!(ctx && ctx.doneIds.includes('home_unpack')),
+    opens: (s, ctx) => isShop(s) && !!(ctx && (ctx.doneIds.includes('home_unpack') || switchedIn(s))),
     done:  s => isShop(s) && Number.isFinite(s.shopDone) && s.shopDone >= 1
   }),
   Object.freeze({
@@ -1111,7 +1121,8 @@ const CARE_QUESTS = Object.freeze([
     why: '들고 온 것은 가방에서 아무 일도 안 합니다. 남의 화분을 받기 전에 내 것부터 자리를 잡습니다.',
     todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
       ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
-    opens: s => isCare(s),
+    opens: s => isCare(s) && !switchedIn(s),
+    skips: s => isCare(s) && switchedIn(s),      /* ★ D 나머지 — 옮겨 들어간 판은 건너뜀(§switchedIn) */
     done:  s => isCare(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
   }),
   Object.freeze({
@@ -1124,7 +1135,7 @@ const CARE_QUESTS = Object.freeze([
     todo: (q, s) => (s && Number.isFinite(s.careReady) && s.careReady > 0) ? '나은 화분을 돌려주세요'
       : (s && Number.isFinite(s.careOpen) && s.careOpen > 0) ? '맡은 화분이 어디가 아픈지 보세요' : '맡김판에 화분이 오기를 기다리세요',
     after: 'care_unpack',
-    opens: (s, ctx) => isCare(s) && !!(ctx && ctx.doneIds.includes('care_unpack')),
+    opens: (s, ctx) => isCare(s) && !!(ctx && (ctx.doneIds.includes('care_unpack') || switchedIn(s))),
     done:  s => isCare(s) && Number.isFinite(s.careSaved) && s.careSaved >= 1
   }),
   Object.freeze({
@@ -1205,7 +1216,8 @@ const BREED_QUESTS = Object.freeze([
     why: '들고 온 것은 가방에서 아무 일도 안 합니다. 자리를 잡아야 새 잎이 나고, 새 잎이 나야 적을 것이 생깁니다.',
     todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
       ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
-    opens: s => isBreed(s),
+    opens: s => isBreed(s) && !switchedIn(s),
+    skips: s => isBreed(s) && switchedIn(s),     /* ★ D 나머지 — 옮겨 들어간 판은 건너뜀(§switchedIn) */
     done:  s => isBreed(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
   }),
   Object.freeze({
@@ -1217,7 +1229,7 @@ const BREED_QUESTS = Object.freeze([
     why: '무늬 마디 삽수의 새 잎 · 구근의 싹 · 핑크프린세스의 새 잎이 나면 기록장에 저절로 적힙니다.',
     todo: () => '새 잎이나 싹이 나면 저절로 적힙니다',
     after: 'breed_unpack',
-    opens: (s, ctx) => isBreed(s) && !!(ctx && ctx.doneIds.includes('breed_unpack')),
+    opens: (s, ctx) => isBreed(s) && !!(ctx && (ctx.doneIds.includes('breed_unpack') || switchedIn(s))),
     done:  s => isBreed(s) && Number.isFinite(s.breedSamples) && s.breedSamples >= 1
   }),
   Object.freeze({
@@ -1369,6 +1381,14 @@ export const CARE_QUEST_IDS = Object.freeze(CARE_QUESTS.map(q => q.id));
 export const SPECIES2_QUEST_IDS = Object.freeze(SPECIES2_QUESTS.map(q => q.id));
 /* ★ 2026-10-10 D59 — 식물 가게 사슬(§SHOP_QUESTS) */
 export const SHOP_QUEST_IDS = Object.freeze(SHOP_QUESTS.map(q => q.id));
+/* ★ 2026-10-24 [plan] D72 D 나머지 — 진로마다 줄(쉬는 중을 가르는 자) · 쉬는 중 할 일 글(≤ 28자 · 진로 이름은 data/balance/career_switch.json jobs.ro 와 같다 — test_dialogue_coverage) */
+export const JOB_QUEST_IDS = Object.freeze({ shop: SHOP_QUEST_IDS, care: CARE_QUEST_IDS, breed: BREED_QUEST_IDS });
+export const JOB_REST_TODO = Object.freeze({
+  shop:  '쉬는 중 — 식물 가게로 돌아가면 이어집니다',
+  care:  '쉬는 중 — 식물 돌봄으로 돌아가면 이어집니다',
+  breed: '쉬는 중 — 무늬 육종으로 돌아가면 이어집니다'
+});
+export function jobOfQuest(id) { for (const [j, ids] of Object.entries(JOB_QUEST_IDS)) if (ids.includes(id)) return j; return null; }
 /* ★ 2026-10-09 D45 — 새 종 곁줄(§SPECIES_QUESTS) */
 export const SPECIES_QUEST_IDS = Object.freeze(SPECIES_QUESTS.map(q => q.id));
 export const ONEROOM_QUEST_IDS = Object.freeze(ONEROOM_QUESTS.map(q => q.id));
@@ -1473,6 +1493,10 @@ export function doneIdsOf(S) {
      id · ko · todo · why · teaches · reward · state('done'|'open'|'locked')  (예전 그대로)
      stage       'first_play' | 'main'
      index       정의 순서(0부터)
+     ★ 2026-10-24 [plan] D72 D 나머지 — 잠긴 줄에만 붙는 두 칸(보기에도 restingIds · skippedIds):
+     resting     내려놓은 진로의 줄인데 전에 열렸던 것(열린 날이 적힘) — todo 가 «쉬는 중 — {진로}로 돌아가면 이어집니다»(JOB_REST_TODO)로 바뀐다.
+                 칩은 원래 안 쥔다(opens 가 job 으로 막힌다) · 그 진로로 돌아가면 다시 열린다(열린 날이 있어 하루 몫을 안 씀 · D78)
+     skipped     옮겨 들어간 판의 짐 풀기 줄(§switchedIn) — 영영 안 열리므로 «다음에 올 것»(upcoming)에서 뺀다
      speaks      이 줄이 대사를 갖나 (2026-08-16 밤부터 **열여섯 줄 전부 true**)
    ══════════════════════════════════════════════════════════════════════ */
 /* ══ ★★ 2026-10-09 [plan] D50(총괄 · 값 0) — **칩은 «기다림» 줄을 건너뛰고 지금 할 수 있는 줄을 보인다** ══════════
@@ -1517,6 +1541,7 @@ export function questView(S, snapshot, opt = {}) {
   const doneIds = doneIdsOf(S);
   const ctx = { doneIds, S };
   const open = [], all = [];
+  const openedOnAll = (S && S.stamina && S.stamina.questsOpenedOn) || {};   /* ★ D 나머지 — 쉬는 줄(전에 열렸던 줄) */
   /* ★ D50 — 열린 줄의 기다림 열쇠(없으면 null = 할 수 있다 · 판정이 던지면 «할 수 있다» 쪽 — nudge_wait 의 안전한 쪽과 같다) */
   const waitKeyOf = id => {
     if (opt && typeof opt.waitReason === 'function') { try { const k = opt.waitReason(id); return k ? String(k) : null; } catch { return null; } }
@@ -1547,6 +1572,13 @@ export function questView(S, snapshot, opt = {}) {
     it.waiting = !!w;
     it.waitWhat = w ? (QUEST_WAIT_WHAT[w] || QUEST_WAIT_WHAT.grow) : null;
     it.waitDo = w ? (QUEST_WAIT_DO[w] || null) : null;
+    /* ★ 2026-10-24 [plan] D72 D 나머지 — 쉬는 줄 · 건너뛴 줄(잠긴 줄에만 · 열린 줄·끝낸 줄은 그대로) */
+    const qJob = !isDone && !isOpen ? jobOfQuest(q.id) : null;
+    it.resting = !!qJob && typeof s.job === 'string' && qJob !== s.job && openedOnAll[q.id] != null;
+    if (it.resting) it.todo = JOB_REST_TODO[qJob];
+    let skip = false;
+    if (!isDone && !isOpen && typeof q.skips === 'function') { try { skip = !!q.skips(s); } catch { skip = false; } }
+    it.skipped = skip;
   });
   /* ★ 「지금 할 일」은 **하나만** 보여 준다. 목록을 내면 심부름 목록이 된다.
      고르는 자는 정의 순서다 — 그 순서가 곧 배우는 순서라서. */
@@ -1557,7 +1589,7 @@ export function questView(S, snapshot, opt = {}) {
        들어간다 — 한 판에 둘이 같이 열리는 자리가 있고(예: `first_cut`+`buy_lamp`),
        그때 뒤엣것을 안 보여 주면 「다음에 올 것」이 거짓이 된다. */
   const from = next ? next.index + 1 : 0;
-  const upcoming = all.filter(a => a.index >= from && a.state !== 'done' && a.roomOk);   // ★ 10-07 다른 방 줄은 «다음에 올 것»이 아니다
+  const upcoming = all.filter(a => a.index >= from && a.state !== 'done' && a.roomOk && !a.skipped);   // ★ 10-24 D 나머지 — 건너뛴 짐 풀기 줄은 안 온다   // ★ 10-07 다른 방 줄은 «다음에 올 것»이 아니다
   const doneN = doneIds.length;
   const counts = { total: all.length, done: doneN, open: open.length,
                    locked: all.length - doneN - open.length };
@@ -1586,7 +1618,8 @@ export function questView(S, snapshot, opt = {}) {
   const chipId = open.find(id => !waitingIds.includes(id)) || open[0] || null;
   const chip = chipId ? all.find(a => a.id === chipId) : null;
   return { schema: QUEST_SCHEMA, done: doneIds, open, next, all,
-           current: next, upcoming, counts, stage, chain, fresh, chip, waitingIds };
+           current: next, upcoming, counts, stage, chain, fresh, chip, waitingIds,
+           restingIds: all.filter(a => a.resting).map(a => a.id), skippedIds: all.filter(a => a.skipped).map(a => a.id) };
 }
 
 /* 하루(또는 한 동작) 뒤에 판을 다시 본다. **사건을 낸다 — 보상은 안 준다.**

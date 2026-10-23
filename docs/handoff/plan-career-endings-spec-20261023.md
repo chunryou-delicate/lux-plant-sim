@@ -116,9 +116,9 @@
 | 육종 끝맺음 | 몬이 «품종이 셋. 이제 육종가라고 해도 돼.» → 자취생 «내가 이름 붙인 무늬가 셋.» · 몬이 «하나는 우연, 셋은 네 거야.» · 자취생 «다음엔 무엇이 날까.» |
 | 끝맺음 카드 단추 | «계속 산다» / «다른 진로도 해 본다» |
 | 진로 카드 표 | «끝맺음 봄 · {칭호}» / «해 볼 수 있음» / «지금 하는 중» |
-| 옮긴 첫날(돌봄·육종·가게) | 첫날 사건 글 그대로(B·C·가게 명세) + 몬이 «이번엔 다른 걸 해 보자. 키운 건 다 그대로야.» |
+| 옮긴 첫날(돌봄·육종·가게) | 첫날 사건 글 그대로(B·C·가게 명세) + 몬이 «이번엔 다른 걸 해 보자. 키운 건 다 그대로야.» — ✎ 10-24 지을 때 고침(§11-2 ①②): 진로 첫날 줄(jobStart*)은 안 쓰고 · 판이 이미 걸린 날은 «…판을 걸었다» 대신 «창 옆 판을 이제 …판으로 쓴다» |
 | 단골이 맡기러(옮긴 뒤 첫 맡김) | 기록 줄 «{손님} — 단골이 화분을 맡기러 왔다.» |
-| 마지막 덮개 | «여기까지 — 이 집 이야기» · 몬이 «세 가지를 다 해 봤네.» / «그래도 내일 아침엔 또 물 줘야 해.» |
+| 마지막 덮개 | «여기까지 — 이 집 이야기» · 몬이 «세 가지를 다 해 봤네.» / «그래도 내일 아침엔 또 물 줘야 해.» — ✎ 10-24 지을 때 고침(§11-2 ③④): «가게도, 돌봄도, 육종도 다 해 봤네.» / «그래도 물 주는 날은 또 와.» |
 - 끝맺음 대사의 첫 줄은 이미 있는 이정표 줄이다 — 그날 저녁 한 번 · 다음 날 아침 장면에서 다시 쓰지 않는다(core 가 끝맺음 장면에선 둘째 줄부터 · plan 이 지을 때 줄을 가른다).
 
 ## 5. 퀘스트 (plan · quest.js)
@@ -211,3 +211,30 @@
 ### 10-7. plan 이 지을 때 넣을 것(짓는 청이 오면)
 - dialogue.js `shopEnding` 여섯 줄 + 2 의 갈래 · EVENT_SCRIPT `shop_ending` · test_dialogue_coverage 손 목록.
 - 칭호·카드·할 일 탭 머리 글은 core 가 game.html 에 둔다(plan 글은 위 표 그대로).
+
+## 11. D 나머지(바꾸기 · 마지막 덮개) — 미리 지은 것 (plan · 10-24 · 총괄 D83 ②)
+
+> 청: 총괄 D83 ② — «C 때처럼 미리 지어 두라 · 사건·칸이 오기 전엔 조용». 키 이름은 짓기 전에 core 에 먼저 보냈다.
+> 이 판에서 plan 은 글·판정 줄만 짓는다. 옮기기 동작(진로 갈아 끼움 · 내려놓은 진로 새 일 멈춤 · 걸린 것 기한까지)과 화면은 core 가 짓는다(§7).
+
+### 11-1. 지은 것
+| 자리 | 무엇 | 언제 서나 |
+|---|---|---|
+| data/balance/career_switch.json(새 · plan 이 쓰고 core 는 읽기만) | 진로 셋 `jobs`(ko · ro(조사까지) · title · cardSub · go) · 진로 바꾸기 화면 `cards`(title «진로 바꾸기» · sub · note · 표 셋 «끝맺음 봄 · {title}» / «해 볼 수 있음» / «지금 하는 중 · {title}» · back «돌아간다») · 끝맺음 카드 단추 `endCard`(«계속 산다» / «다른 진로도 해 본다») · 할 일 탭 머리 `todoHead.switch` «진로 바꾸기» · 알림 `banner` · 기록 줄 `log` · 손님 이음 `customerLink` · 마지막 덮개 `finalCover`(«여기까지 — 이 집 이야기» · 밑글 칭호 셋 · «계속 산다» · «새 판으로»(E 뒤에만) · 원화 ev_first_story_end) | core 가 읽을 때 |
+| dialogue.js | `jobSwitch` · `jobSwitchCare` · `jobSwitchBreed` · `jobBack` · `shopOpenKept` · `careOpenKept` · `finalCover`(몬이 두 줄) · scriptOf 갈림 · EVENT_SCRIPT `final_cover` · EVENT_ORDER(셋째 끝맺음 뒤) | 사건 `job_start{switched}` · `job_start{switched, back}` · `shop_open{boardKept}` · `care_open{boardKept}` · `final_cover` |
+| quest.js | 스냅샷 칸 `jobsEnded` · `jobActive`(core jobShopSnapshot 이 이미 냄 · breed 칸은 C 에서) · `switchedIn`(옮겨 들어간 판 = 지금 아닌 진로에 끝맺음 날이 있음) · 짐 풀기 셋(`home_unpack` · `care_unpack` · `breed_unpack`)은 그 판에서 안 열리고 `skips` · 둘째 줄이 바로 엶 · `JOB_QUEST_IDS` · `JOB_REST_TODO`(쉬는 중 글) · `jobOfQuest` · questView 줄 칸 `resting`(내려놓은 진로의 전에 열렸던 줄 — todo 가 쉬는 중 글) · `skipped`(건너뛴 짐 풀기 — upcoming 에서 뺌) · 보기 `restingIds` · `skippedIds` | core 가 `jobsEnded` 를 이미 낸다 — 다만 첫 진로 판에선 `switchedIn` 이 늘 거짓이고 쉬는 줄도 없어, 옮기기가 서기 전엔 조용 |
+| tools/test_quest.mjs | ⑺ 바꾸기 걸음 둘 — 가게 끝 → 돌봄(짐 풀기 건너뜀) → 돌봄 끝 → 육종(돌봄 곁줄 쉼 · 칩 안 쥠) → 육종 끝 → 돌봄으로 돌아감(곁줄 이어져 끝남 · 육종 곁줄 쉼) · 짐 풀기 대사 0 / 첫 진로는 끝맺음을 봐도 옮긴 판 아님 · 칸 없으면 예전 그대로 · 쉬는 중 글 ≤ 28자 | — |
+| tools/test_dialogue_coverage.mjs | career_switch.json 글 칸 · 조사 · 칭호가 core 값(SHOP_JOB · CARE_JOB)과 같음 · 덮개 밑글 = 칭호 셋 · 손님 이음 toCare = care_problems `_lines.regularAsk` · 원화 파일 있음 / 사건 갈림 · 첫 진로는 예전 그대로 · 옮긴 날 «이제부턴 진짜» 없음 · 판 이어 쓴 날 «걸었» 없음 · 몬이 수 없음 · 앞치마 낯 | — |
+
+### 11-2. 명세와 다르게 한 것 (후보 · 고른 것 · 까닭)
+1. **옮긴 날 진로 첫날 줄** — 후보: ㉠ 첫날 줄(jobStart*) + 몬이 한 줄(§4 첫 글) · ㉡ 첫날 줄을 빼고 옮김 줄 + 그 진로가 가르치는 한 줄. 고른 것 ㉡. 까닭: 첫날 줄 머리 «이제부턴 진짜야»는 초보 보호가 끝나는 알림인데, 옮긴 판에선 첫 진로 때 이미 끝났다(거짓). 돌봄 «남의 화분이니까 더 꼼꼼히 봐» · 육종 «하나 나온 건 우연이야. 같은 게 거듭 나오면 그때 네 거야»는 그 진로의 첫 배움이라 남긴다.
+2. **판이 이미 걸린 날** — `shopOpen` «창 옆에 작은 주문판을 걸었다» · `careOpen` «창 옆에 맡김판을 걸었다»는 판을 그대로 두고 이름만 바꾸는 날(§2-3)엔 거짓이다. 사건에 `boardKept` 를 실어 «창 옆 판을 이제 주문판/맡김판으로 쓴다»로 간다. 육종 `breedOpen` «기록장을 새로 폈다»는 그날도 참이라 그대로다.
+3. **덮개 첫 줄** — «세 가지를 다 해 봤네»는 몬이가 수(«세»)를 말한다 → «가게도, 돌봄도, 육종도 다 해 봤네.»
+4. **덮개 둘째 줄** — «그래도 내일 아침엔 또 물 줘야 해»는 거짓이 될 수 있다(물 주는 날은 자리·철마다 다르다 — state §potWaterStatus interval) → «그래도 물 주는 날은 또 와.»
+5. **더한 것** — 돌아간 날 `jobBack`(몬이 «다시 이 일이네. 하던 데서 이어서 하자.») · 알림 `banner`·기록 줄 `log`(옮김 · 돌아옴) · 돌봄 → 가게 이음 줄 «화분을 맡겼던 손님이 주문하러 왔다.»(§2-2 «같은 결»을 글로) · 진로 카드 «지금 하는 중 · {title}»(이 화면은 지금 진로 끝맺음 뒤에만 열리므로 칭호가 늘 있다).
+6. **쉬는 줄의 자리** — 쉬는 줄은 «다음에 올 것»에 남긴다(글이 «…로 돌아가면 이어집니다»라 참) · 건너뛴 짐 풀기는 뺀다(영영 안 열림). 할 일 탭은 잠긴 줄을 «아직 열리지 않았습니다»로 그리므로, resting 이면 q.todo 를 그리고 skipped 면 줄을 빼는 쪽을 core 에 권했다(core 판단).
+
+### 11-3. core 가 지을 것 · 기다림
+- 사건 다섯(위 표) · `jobsEnded.breed`(C) · 진로 바꾸기 화면(career_switch.json `cards`) · 끝맺음 카드 [다른 진로도 해 본다](아직 끝맺음을 안 본 진로가 있을 때만) · 할 일 탭 «진로 바꾸기» · 옮기기 동작(§2-2) · 손님 이음(⚖) · 마지막 덮개 · 하네스(§6).
+- house: 판 이름이 진로를 따름(주문판/맡김판/메모판) · 간판 겹침 · 진로 카메라(§7).
+- 검사: node test_quest · test_dialogue_coverage PASS(exit=0) · 이웃 node 아홉(quest_chip · species_quests · job_shop · job_care · first_play · species2 · oneroom · tutorial · ending_flow) PASS. 브라우저 검사는 안 돌림(규칙·글만).
