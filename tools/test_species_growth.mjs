@@ -18,7 +18,7 @@
      L 잘못 부르면 던진다 · M 그림 판이 실제로 있다
      ★ D71(2026-10-23 · 총괄) — 두 종 더
      P SC 스킨답서스: 삽수(뿌리 없음) → 놓인 날 root_days 에 뿌리(빛 무관) · 뿌리 뒤엔 dropM 없으면 던짐 · 마디 간격 ·
-       줄기 길이는 날마다 이어서 늘고 상한(받침 높이 + 화분 넘는 몫)에서 바닥에 닿아 멈춤 · 높은 자리에서만 longVineM 에 닿음 ·
+       줄기 길이는 날마다 이어서 늘고 상한(떨어지는 높이 dropM + 화분 넘는 몫)에서 바닥에 닿아 멈춤 · longVineM(D76 0.5 · 곁줄은 높은 자리에 놓인 채로 셈) ·
        높은 데 → 낮은 데로 옮겨도 안 줆 · 다시 높이면 이어 자람 · 어두울 때 난 잎은 초록(그림만) · 마디 자르기 · 세이브 왕복
      Q CA 칼라테아: 맡은 그루(다 말림) · 너무 밝으면(avg7 > hi) 말리고 멎음 · 대역 안이면 새 잎부터 며칠에 걸쳐 펴짐 ·
        어둠(min 밑)에선 안 펴짐 · 느림(lo 밑)은 더 느림 · 말린 잎이 있으면 새 잎 없음 · 잎 간격 · 최대 장수 · tooBright/tooDark · bandOf · spotFit
@@ -312,12 +312,21 @@ ok(firstLeafDay(thPP.min - 0.1, 'summer') === null, `C PP 문턱(min ${thPP.min}
     const n0 = g.leaves.length; walkSC(g, 300, k(8), k('summer'), k(0.02));
     ok(g.leaves.length === n0 && g.lengthM === cap, `P5 바닥에 닿은 뒤 300일(밝음) — 마디 ${g.leaves.length} 그대로 · 길이 그대로`); }
 
-  /* P6 높은 자리 — 문턱 바로 밑은 3년이 가도 longVineM 에 못 닿음 · 문턱에서는 닿음 */
+  /* P6 높은 자리 · longVineM(D76 · 총괄 10-23 — 1.0 → 0.5 · 곁줄 끝 = «높은 자리에 놓인 SC 가운데 줄기 ≥ longVineM» · core 셈)
+     ① longVineM = 칸 long_vine_m 그대로 · 어느 높은 자리에서도 닿음(≤ 문턱 자리 상한) · 문턱 자리 줄기가 실제로 닿음
+     ② 바닥 자리(상한 0.27)는 못 닿음
+     ③ ⚠ 길이만으로는 «높은 자리에서만»이 아니다 — 문턱 바로 밑 낮은 자리도 닿는다(높은 자리 조건을 core 가 같이 봐야 하는 까닭 · 이 칸이 그것을 박아 둔다)
+     ④ 대조 — 칸이 없거나 높은 자리 상한보다 길면 던진다(옛 정의로 조용히 안 넘어감) */
   { const H = V.high_spot_min_m, L = R.longVineM();
-    const lo = R.newPlant('scindapsus', { seed: 6, form: 'rooted' }), hi = R.newPlant('scindapsus', { seed: 6, form: 'rooted' });
-    walkSC(lo, 1080, k(6), d => seasonOf(d), k(H - 0.01)); walkSC(hi, 1080, k(6), d => seasonOf(d), k(H));
-    ok(Math.abs(L - (H + V.pot_over_m)) < 1e-9 && R.isHighSpot(H) && !R.isHighSpot(H - 0.01) && lo.lengthM < L && hi.lengthM >= L && hi.lengthM === R.scStemCapM(H),
-      `P6 높은 자리 문턱 ${H}m — 바로 밑(${(H - 0.01).toFixed(2)}) 3년 줄기 ${lo.lengthM} < longVineM ${L} · 문턱 자리 ${hi.lengthM} ≥ ${L}(높은 자리에서만 닿는 길이)`); }
+    const lo = R.newPlant('scindapsus', { seed: 6, form: 'rooted' }), hi = R.newPlant('scindapsus', { seed: 6, form: 'rooted' }), fl = R.newPlant('scindapsus', { seed: 6, form: 'rooted' });
+    walkSC(lo, 1080, k(6), d => seasonOf(d), k(H - 0.01)); walkSC(hi, 1080, k(6), d => seasonOf(d), k(H)); walkSC(fl, 1080, k(6), d => seasonOf(d), k(0.02));
+    ok(L === V.long_vine_m && L <= R.scStemCapM(H) && R.isHighSpot(H) && !R.isHighSpot(H - 0.01) && hi.lengthM >= L && hi.lengthM === R.scStemCapM(H),
+      `P6 ① longVineM ${L}(칸 long_vine_m · D76) ≤ 높은 자리 문턱(${H}) 상한 ${R.scStemCapM(H)} · 문턱 자리 3년 줄기 ${hi.lengthM} ≥ ${L}`);
+    ok(fl.lengthM < L && R.scStemCapM(0.02) < L, `P6 ② 바닥 자리(0.02) 3년 줄기 ${fl.lengthM} < ${L} — 못 닿음`);
+    ok(lo.lengthM >= L, `P6 ③ 문턱 바로 밑 낮은 자리(${(H - 0.01).toFixed(2)})도 ${lo.lengthM} ≥ ${L} — 길이만으로는 높은 자리 가름이 아니다(곁줄은 «높은 자리에 놓인 채»로 셈)`);
+    const S2 = JSON.parse(JSON.stringify(SPEC)), S3 = JSON.parse(JSON.stringify(SPEC));
+    delete S2.species.scindapsus.vine.long_vine_m; S3.species.scindapsus.vine.long_vine_m = R.scStemCapM(H) + 0.01;
+    ok(throws(() => createSpeciesRules(S2, TH)) && throws(() => createSpeciesRules(S3, TH)), 'P6 ④ long_vine_m 이 없거나 높은 자리 상한보다 길면 던진다'); }
 
   /* P7 높은 데 → 낮은 데(줄기 안 줆 · 멎음 · 남는 몫은 바닥) → 다시 높은 데(이어 자람) */
   { const g = R.newPlant('scindapsus', { seed: 7, form: 'rooted' });

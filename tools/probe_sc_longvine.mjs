@@ -10,6 +10,8 @@
    ★ 판 = probe_tworoom_shop ④ 와 같은 판(real · 판 씨앗 SC_SEEDS · 철 첫날 + 7 에 «뿌리 낸» 마디 둘 · 판 씨앗마다 다른 해) · 가운데값은 판 씨앗(①은 윗단 셋 × 판 씨앗)
      node tools/probe_sc_longvine.mjs          (OUT=docs/handoff/growth-sc-longvine.json 이면 적는다)
    ⛔ 값·문턱·간격은 안 건드린다 — 후보 길이는 이 도구 안에서만 쓴다.
+   ★ D76(총괄 10-23): 이 표로 0.5 를 골랐다 — growth_species.json vine.long_vine_m = 0.5 · 곁줄 끝 = «높은 자리에 놓인 SC 가운데 줄기 ≥ 0.5»(core).
+     ⚠ 그래서 «낮은 자리도 닿나» 칸이 «예»여도 배움이 안 샌다 — 높은 자리 조건이 가른다(이 표를 길이만으로 읽지 말 것).
 ============================================================ */
 import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -94,5 +96,6 @@ for (const L of CANDS) {
   console.log(`          바닥 자리(dropM 0.02 · 상한 ${R.scStemCapM(0.02)}): ${R.scStemCapM(0.02) >= L ? '닿음' : '못 닿음'}`);
 }
 if (process.env.OUT) fs.writeFileSync(path.join(ROOT, process.env.OUT), JSON.stringify({ meta: { from: 'tools/probe_sc_longvine.mjs', profile: 'data/profiles/room_profile.tworoom.json', roomRev: P.roomRev || null,
+  decision: 'D76(총괄 10-23) — 0.5 고름 · vine.long_vine_m · 곁줄 끝 = 높은 자리(dropM ≥ high_spot_min_m)에 놓인 SC 가운데 줄기 ≥ longVineM(core 셈)',
   seeds: SC_SEEDS, maxDays: MAXD, cands: CANDS, potOverM: SPEC.species.scindapsus.vine.pot_over_m, highSpotMinM: H_MIN, longVineMNow: R.longVineM(), topSlots, planter: T.d71.planter.spot },
   rows: Object.fromEntries(CANDS.map(L => [L, { ...rows[L], low: { reachable: rows[L].low.reachable, fastest: rows[L].low.fastest } }])) }, null, 1));

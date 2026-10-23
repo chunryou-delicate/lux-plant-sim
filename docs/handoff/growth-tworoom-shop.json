@@ -8135,7 +8135,7 @@
  ],
  "d71": {
   "highSpotMinM": 0.75,
-  "longVineM": 1,
+  "longVineM": 0.5,
   "lowMaxDropM": 0.595,
   "dropSource": "house.js dropBelow(2b6cfc5a) — 노드에서 지은 투룸(light_adapter) · 빛 표는 얼린 프로필과 같음을 확인",
   "slots": [
@@ -9132,104 +9132,104 @@
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 162,
-      "maxDays": 166
+      "meanDays": 83,
+      "maxDays": 88
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 159,
-      "maxDays": 161
+      "meanDays": 79,
+      "maxDays": 81
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 158,
-      "maxDays": 158
+      "meanDays": 79,
+      "maxDays": 79
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 158,
-      "maxDays": 158
+      "meanDays": 79,
+      "maxDays": 79
      }
     },
     "summer": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 174,
-      "maxDays": 177
+      "meanDays": 72,
+      "maxDays": 74
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 166,
-      "maxDays": 167
+      "meanDays": 71,
+      "maxDays": 72
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 165,
-      "maxDays": 165
+      "meanDays": 71,
+      "maxDays": 72
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 165,
-      "maxDays": 165
+      "meanDays": 71,
+      "maxDays": 71
      }
     },
     "autumn": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 226,
-      "maxDays": 230
+      "meanDays": 103,
+      "maxDays": 109
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 207,
-      "maxDays": 208
+      "meanDays": 91,
+      "maxDays": 92
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 198,
-      "maxDays": 199
+      "meanDays": 88,
+      "maxDays": 88
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 196,
-      "maxDays": 196
+      "meanDays": 88,
+      "maxDays": 88
      }
     },
     "winter": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 210,
-      "maxDays": 216
+      "meanDays": 122,
+      "maxDays": 125
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 194,
-      "maxDays": 195
+      "meanDays": 108,
+      "maxDays": 109
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 187,
-      "maxDays": 187
+      "meanDays": 101,
+      "maxDays": 102
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 185,
-      "maxDays": 185
+      "meanDays": 99,
+      "maxDays": 100
      }
     }
    },
@@ -9238,104 +9238,104 @@
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 162,
-      "maxDays": 165
+      "meanDays": 82,
+      "maxDays": 87
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 159,
-      "maxDays": 160
+      "meanDays": 79,
+      "maxDays": 80
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 158,
-      "maxDays": 158
+      "meanDays": 78,
+      "maxDays": 78
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 158,
-      "maxDays": 158
+      "meanDays": 78,
+      "maxDays": 78
      }
     },
     "summer": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 173,
-      "maxDays": 177
+      "meanDays": 72,
+      "maxDays": 73
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 166,
-      "maxDays": 167
+      "meanDays": 71,
+      "maxDays": 72
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 165,
-      "maxDays": 165
+      "meanDays": 71,
+      "maxDays": 71
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 165,
-      "maxDays": 165
+      "meanDays": 71,
+      "maxDays": 71
      }
     },
     "autumn": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 225,
-      "maxDays": 229
+      "meanDays": 102,
+      "maxDays": 108
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 206,
-      "maxDays": 206
+      "meanDays": 90,
+      "maxDays": 90
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 196,
-      "maxDays": 196
+      "meanDays": 88,
+      "maxDays": 88
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 196,
-      "maxDays": 196
+      "meanDays": 88,
+      "maxDays": 88
      }
     },
     "winter": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 209,
-      "maxDays": 215
+      "meanDays": 121,
+      "maxDays": 124
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 194,
-      "maxDays": 194
+      "meanDays": 108,
+      "maxDays": 109
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 185,
-      "maxDays": 185
+      "meanDays": 99,
+      "maxDays": 99
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 185,
-      "maxDays": 185
+      "meanDays": 99,
+      "maxDays": 99
      }
     }
    },
@@ -9344,104 +9344,104 @@
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 162,
-      "maxDays": 166
+      "meanDays": 83,
+      "maxDays": 88
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 159,
-      "maxDays": 161
+      "meanDays": 79,
+      "maxDays": 81
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 158,
-      "maxDays": 158
+      "meanDays": 78,
+      "maxDays": 78
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 158,
-      "maxDays": 158
+      "meanDays": 78,
+      "maxDays": 78
      }
     },
     "summer": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 174,
-      "maxDays": 177
+      "meanDays": 72,
+      "maxDays": 74
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 166,
-      "maxDays": 167
+      "meanDays": 71,
+      "maxDays": 72
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 165,
-      "maxDays": 165
+      "meanDays": 71,
+      "maxDays": 71
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 165,
-      "maxDays": 165
+      "meanDays": 71,
+      "maxDays": 71
      }
     },
     "autumn": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 226,
-      "maxDays": 230
+      "meanDays": 103,
+      "maxDays": 109
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 207,
-      "maxDays": 208
+      "meanDays": 91,
+      "maxDays": 92
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 196,
-      "maxDays": 196
+      "meanDays": 88,
+      "maxDays": 88
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 196,
-      "maxDays": 196
+      "meanDays": 88,
+      "maxDays": 88
      }
     },
     "winter": {
      "0": {
       "reached": 4,
       "of": 4,
-      "meanDays": 210,
-      "maxDays": 216
+      "meanDays": 122,
+      "maxDays": 125
      },
      "1": {
       "reached": 4,
       "of": 4,
-      "meanDays": 194,
-      "maxDays": 195
+      "meanDays": 108,
+      "maxDays": 109
      },
      "2": {
       "reached": 4,
       "of": 4,
-      "meanDays": 185,
-      "maxDays": 185
+      "meanDays": 99,
+      "maxDays": 99
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 185,
-      "maxDays": 185
+      "meanDays": 99,
+      "maxDays": 99
      }
     }
    },
@@ -9460,16 +9460,16 @@
       "maxDays": null
      },
      "2": {
-      "reached": 0,
+      "reached": 4,
       "of": 4,
-      "meanDays": null,
-      "maxDays": null
+      "meanDays": 238,
+      "maxDays": 409
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 231,
-      "maxDays": 245
+      "meanDays": 111,
+      "maxDays": 121
      }
     },
     "summer": {
@@ -9486,16 +9486,16 @@
       "maxDays": null
      },
      "2": {
-      "reached": 0,
+      "reached": 4,
       "of": 4,
-      "meanDays": null,
-      "maxDays": null
+      "meanDays": 342,
+      "maxDays": 387
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 326,
-      "maxDays": 346
+      "meanDays": 94,
+      "maxDays": 99
      }
     },
     "autumn": {
@@ -9512,16 +9512,16 @@
       "maxDays": null
      },
      "2": {
-      "reached": 0,
+      "reached": 2,
       "of": 4,
-      "meanDays": null,
-      "maxDays": null
+      "meanDays": 384,
+      "maxDays": 418
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 336,
-      "maxDays": 354
+      "meanDays": 216,
+      "maxDays": 225
      }
     },
     "winter": {
@@ -9538,16 +9538,16 @@
       "maxDays": null
      },
      "2": {
-      "reached": 0,
+      "reached": 1,
       "of": 4,
-      "meanDays": null,
-      "maxDays": null
+      "meanDays": 266,
+      "maxDays": 266
      },
      "3": {
       "reached": 4,
       "of": 4,
-      "meanDays": 316,
-      "maxDays": 335
+      "meanDays": 195,
+      "maxDays": 208
      }
     }
    }

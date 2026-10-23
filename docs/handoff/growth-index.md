@@ -302,7 +302,7 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
   R.stepDay(p, { dli, season, dropM })     ★ SC growing 은 dropM 없으면 던짐 · dropM = house dropBelow «떨어지는 높이»(받침 높이 아님)
   R.cutAbove(p, nodeNo)                    SC 도 PP 와 같은 손 — 잘린 끝 = phase cutting
   R.summary   SC { phase, nodes, leaves, lengthM, capM, atFloor, rootDaysLeft } · CA { leaves, curled, tooBright, tooDark }(avg7 결 · 빛 전엔 null)
-  R.scStemCapM(dropM) = dropM + 0.25 · R.isHighSpot(dropM) = dropM ≥ 0.75 · R.longVineM() = 1.0 · R.scInternodeM(p) · R.bandOf · R.spotFit
+  R.scStemCapM(dropM) = dropM + 0.25 · R.isHighSpot(dropM) = dropM ≥ 0.75 · R.longVineM() = 0.5(★ D76 · 칸 vine.long_vine_m · 옛 1.0) · R.scInternodeM(p) · R.bandOf · R.spotFit
   사건  SC rooted · node · reached_floor / CA leaf · leaf_drop · curl · unfurl · unfurled_all
 뼈대   SC 뿌리 = «놓인 날» 12일(빛 무관 · 몬스테라 물꽂이와 같은 근거) → 마디 간격 13 걸음(봄 최적 10.4일 · 겨울 느림 17일)
        줄기는 «날마다 이어서» 늘고 상한에서 바닥(또는 아랫단)에 닿아 멈춤 · 높은 데 → 낮은 데로 옮겨도 안 줆(남는 몫은 바닥에 눕고 멎음) · 다시 높이면 이어 자람
@@ -319,7 +319,8 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 
 **잰 것 — 투룸(probe_tworoom_shop ④⑤ · `docs/handoff/growth-tworoom-shop.json` d71 · dropM 은 노드에서 지은 방의 house 값 · 빛 표가 얼린 프로필과 같음을 먼저 봄):**
 - ④ 높은 자리(dropM ≥ 0.75) — 기준 배치 **3 / 29**: 다단 선반 윗단 셋(0.794). 계단식 진열대 윗단(받침 0.815)은 아랫단에 닿아 0.25 → 낮은 자리. 낮은 자리 가운데 가장 큰 dropM 0.595 → 상한 0.845 < longVineM 1.0.
-  뿌리 낸 줄기(마디 2)가 longVineM 에 닿는 날(선반 윗단 · 판 씨앗 4): 봄 158~162 · 여름 165~174 · 가을 196~226 · 겨울 185~210(등 3 → 0).
+  뿌리 낸 줄기(마디 2)가 longVineM 에 닿는 날(선반 윗단 · 판 씨앗 4): 봄 158~162 · 여름 165~174 · 가을 196~226 · 겨울 185~210(등 3 → 0) — 옛 1.0 기준.
+  ★ D76 0.5 기준(probe_tworoom_shop 다시 잼): 선반 윗단 봄 78~83 · 여름 71~72 · 가을 88~103 · 겨울 99~122 · 창가 화분걸이 등 3 봄 111 · 여름 94 · 가을 216 · 겨울 195(등 2 는 238~384 · 다 닿지는 않음).
 - ⚠ **벽 화분걸이**: 걸이 자리 다섯(주문판 자리 빼고)에 하나씩 걸어 보면 dropM 은 다 1.432(높은 자리)인데 빛이 **0.01~0.66 DLI**(등 3 켜도) — SC 문턱(die 0.3 · survive 0.8 · min 1.5) 밑이라 자라지 못한다. 기준 배치(화분걸이 없음)의 표에는 영향 없음(걸어도 다른 자리 빛 0 칸 바뀜).
   → 총괄 10-23 **(ㄱ)+(ㄴ)**: house 가 창가 걸이 자리 `tworoom-hang-sun`(왼벽 · 가게 창 모서리 · cu 2.2 · cy 1.2 · 814a7456)을 더하고, 원래 다섯은 «높아도 어두우면 안 자람» 배움으로 둔다(문턱 낮춤 안 함).
   → 창가 자리 **(가) 이대로** — «등을 켜야 벽에서도 길게». 잰 것(probe_tworoom_shop · 기본 WALL_SPOT=tworoom-hang-sun · dropM 1.132 높음): 60일 평균 DLI 등 0/1/2/3 봄 0.74/1.22/1.40/1.70 · 여름 1.00/1.48/1.66/1.96 · 가을 0.64/1.12/1.30/1.60 · 겨울 0.36/0.84/1.02/1.32.
@@ -335,6 +336,8 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
   1.0   161/173/224/208    220/319/329/319     >720                아니오(지금 값 · 높이 배움 살아 있음)
   ```
   ⚠ 상한 규칙(dropM + 0.25) 그대로면 «높은 자리에서만 닿는 길이»는 0.845 이상이어야 선다(낮은 자리 가장 큰 dropM 0.595). 바닥 자리(상한 0.27)는 어느 후보에도 못 닿는다.
+  ★ **D76(총괄 10-23) · 0.5 고름** — growth_species.json vine.long_vine_m = 0.5(옛 정의 «상한(문턱) = 1.0» 걷음). 곁줄 sc_hang 끝 · sc_pot 길이 = «높은 자리(dropM ≥ 0.75)에 놓인 SC 가운데 줄기 ≥ 0.5»(core 셈) —
+    길이만으로는 낮은 자리 19칸도 닿으므로 높이 배움은 «높은 자리에 놓인 채» 조건이 지킨다(test_species_growth P6 ③ 이 그 사실을 박음 · ④ 칸이 없거나 높은 자리 상한보다 길면 던짐).
 - ⑤ 칼라테아 «알맞은 자리»(avg7 이 [3, 8] 인 날 몫 ≥ 0.5) / 29: 봄 3·6·6·9 · 여름 6·6·6·11 · 가을 3·4·6·9 · **겨울 0·0·5·6**(등 0·1·2·3). 너무 밝은 자리는 등 3 에서만 1~2.
   맡은 그루가 60일 안에 다 펴지는 자리(느림 포함): 겨울 3·6·7·14 — 겨울 등 0~1 이면 «알맞은 자리» 0 이라 ca_pot 가드가 닫히고 펴짐도 느린 자리뿐(등 1: 11~39일).
 - core test_species2(FAKE=0 · 진짜 규칙): 맡은 칼라테아 DLI 5 에서 8일에 다 펴짐 · 삽수 12일 뿌리 · 높은 자리(0.81 가정) longVineM 155일 — core 하네스 몫.

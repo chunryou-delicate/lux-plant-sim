@@ -210,10 +210,10 @@ const slots4 = [...slots, PL];
 const highSlots = slots4.filter(sid => R.isHighSpot(dropOf[sid]));
 const lowMax = Math.max(...slots.filter(sid => !R.isHighSpot(dropOf[sid])).map(sid => dropOf[sid]));
 const houseDisagree = slots4.filter(sid => (live.drops[sid] ? live.drops[sid].houseHigh : live.planter.houseHigh) !== R.isHighSpot(dropOf[sid]));
-console.log(`\n④ 스킨답서스 «높은 자리» — 떨어지는 높이(house dropM) ≥ ${J('data/growth_species.json').species.scindapsus.vine.high_spot_min_m}m · longVineM ${R.longVineM()}m(높은 자리에서만 닿는 길이)`);
+console.log(`\n④ 스킨답서스 «높은 자리» — 떨어지는 높이(house dropM) ≥ ${J('data/growth_species.json').species.scindapsus.vine.high_spot_min_m}m · longVineM ${R.longVineM()}m(D76 · 곁줄 끝 = 높은 자리에 놓인 채 줄기 ≥ 이것)`);
 console.log(`   기준 배치 높은 자리 ${highSlots.filter(s => s !== PL).length} / ${slots.length}: ${highSlots.filter(s => s !== PL).map(sid => `${sid.replace('tworoom-', '')}(${dropOf[sid]})`).join(' · ') || '없음'}`);
 console.log(`   + 벽 화분걸이(${live.planter.spot} 에 하나 건 사본) dropM ${live.planter.dropM} → ${R.isHighSpot(live.planter.dropM) ? '높은 자리' : '낮은 자리'} · 걸어서 빛이 바뀐 다른 자리 ${live.movedByPlanter.length}`);
-console.log(`   낮은 자리 가운데 가장 큰 dropM ${lowMax}m → 상한 ${R.scStemCapM(lowMax)}m < ${R.longVineM()}m · 받침 높이로는 높아 보이나 낮은 자리: ${slots.filter(sid => P.slots.find(x => x.slotId === sid).point.y >= 0.75 && !R.isHighSpot(dropOf[sid])).map(sid => `${sid.replace('tworoom-', '')}(받침 ${P.slots.find(x => x.slotId === sid).point.y} · 떨어짐 ${dropOf[sid]})`).join(' · ') || '없음'}`);
+console.log(`   낮은 자리 가운데 가장 큰 dropM ${lowMax}m → 상한 ${R.scStemCapM(lowMax)}m · 상한 ≥ longVineM 인 낮은 자리 ${slots.filter(sid => !R.isHighSpot(dropOf[sid]) && R.scStemCapM(dropOf[sid]) >= R.longVineM()).length}칸(길이만으로는 못 가름 — 곁줄은 높은 자리 조건으로) · 받침 높이로는 높아 보이나 낮은 자리: ${slots.filter(sid => P.slots.find(x => x.slotId === sid).point.y >= 0.75 && !R.isHighSpot(dropOf[sid])).map(sid => `${sid.replace('tworoom-', '')}(받침 ${P.slots.find(x => x.slotId === sid).point.y} · 떨어짐 ${dropOf[sid]})`).join(' · ') || '없음'}`);
 if (houseDisagree.length) console.log(`   ⚠ house 의 high(HIGH_DROP_M)와 growth 문턱이 다르게 가르는 자리 ${houseDisagree.length}: ${houseDisagree.join(' · ')}`);
 /* 벽 화분걸이 자리마다 — 그 자리에 하나 건 사본의 철 첫날부터 60일 평균 DLI(판 씨앗 SC_SEEDS 평균) · 스킨답서스 밴드 */
 const thSC = R.thresholdsOf(R.newPlant('scindapsus'));

@@ -67,6 +67,9 @@ export function createSpeciesRules(SPEC, TH) {
     if (id === 'scindapsus') {
       const V = S.vine;
       if (!V || !(V.pot_over_m >= 0) || !(V.high_spot_min_m > 0)) throw new Error('[종 생장] scindapsus: vine(pot_over_m · high_spot_min_m)이 없다');
+      /* D76 — long_vine_m 은 어느 높은 자리에서도 닿아야 한다(상한(문턱) 이하) · 칸이 없으면 조용히 옛 정의로 안 넘어간다 */
+      if (!(V.long_vine_m > 0) || V.long_vine_m > r4(V.high_spot_min_m + V.pot_over_m) + 1e-9)
+        throw new Error(`[종 생장] scindapsus: vine.long_vine_m(${V.long_vine_m})이 없거나 높은 자리 상한(${r4(V.high_spot_min_m + V.pot_over_m)})보다 길다`);
       for (const st of S.leaf_ladder) if (!(V.internode_m && V.internode_m[st] > 0)) throw new Error(`[종 생장] scindapsus: 단계 ${st} 의 마디 사이가 없다`);
       if (!(S.propagation && S.propagation.root_days > 0)) throw new Error('[종 생장] scindapsus: propagation.root_days 가 없다');
     }
@@ -482,8 +485,10 @@ export function createSpeciesRules(SPEC, TH) {
   /* 그 그루의 «한 칸» — 다음 마디 사이(m). 그루 없이 부르면 다 큰 줄기 값 */
   const scInternodeM = (p) => { const S = SCS(); return p ? interOf(S, p.nodes + 1) : S.vine.internode_m[S.leaf_ladder[S.leaf_ladder.length - 1]]; };
   const isHighSpot = (dropM) => Number.isFinite(dropM) && dropM >= SCS().vine.high_spot_min_m;
-  /* «높은 자리에서만 닿는 길이» — 낮은 자리(받침 < 문턱)의 상한은 다 이보다 짧다 */
-  const longVineM = () => capOf(SCS(), SCS().vine.high_spot_min_m);
+  /* «길게 늘어진 줄기» 길이 — ★ D76(총괄 10-23): 칸 long_vine_m(0.5). 곁줄 끝 = «높은 자리에 놓인 SC 가운데 줄기 ≥ 이것»(core 셈).
+     ⚠ 낮은 자리 상한(최대 0.845)보다 짧아 길이만으로는 «높은 자리에서만»이 아니다 — 높은 자리 조건을 같이 본다.
+     (옛 정의 D71: 상한(high_spot_min_m) = 1.0 — 길이만으로 높은 자리에서만 닿았으나 반년을 넘겨 줄였다) */
+  const longVineM = () => SCS().vine.long_vine_m;
   /* 빛 대역 [lo, hi] = 빛 줄 [best_lo, max] — 숫자 두 벌 없이 light_thresholds.json 을 읽는다 */
   function bandOf(species) { const th = thresholdsFor(TH, specOf(species).light_id); return { lo: th.best_lo, hi: th.max }; }
   /* 그 빛이 그 종에게 어떤 자리인가 — fit(best·good) · slow(lo 밑) · over(hi 위 · CA 는 말림) · dark(min 밑 · 멎음) */
