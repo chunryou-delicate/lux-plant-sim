@@ -290,6 +290,15 @@ export async function play(name, seed, opt = {}) {
     saidToday = 0;
     let saidIds = [];
     try { noteQuestWaits(S, S.day); turn.homeTarget = targets[0]; saidIds = story.turn(turn, S) || []; saidToday += saidIds.length; } catch { }
+    /* ★ 총괄 D88 ① 가름(육종 판) — 손이 심거나 팔기 «전»에 센다: 찾은 구근 출처 · AL 잠듦 · 싹(출처 × 무늬) · 늘 적는다(일꾼은 --one 만 받는다) */
+    if (out.breed) {
+      const B = out.breed; B.g = B.g || { cormFound: {}, cormSeen: {}, alSleeps: 0, alSleepCorms: 0, sprout: {} };
+      for (const c of ((S.species && S.species.corms) || [])) if (c && !B.g.cormSeen[c.id]) { B.g.cormSeen[c.id] = 1; const k = c.origin || '?'; B.g.cormFound[k] = (B.g.cormFound[k] || 0) + 1; }
+      for (const e of ((turn && turn.species && turn.species.events) || [])) {
+        if (e && e.id === 'al_asleep') { B.g.alSleeps++; B.g.alSleepCorms += e.corms || 0; }
+        if (e && e.id === 'al_sprout') { const q = SPM.speciesPotOf(S, e.potId); const k = `${(q && q.plant && q.plant.origin) || '?'}:${(q && q.plant && q.plant.varie) || 'plain'}`; B.g.sprout[k] = (B.g.sprout[k] || 0) + 1; }
+      }
+    }
     meals = ((turn && turn.firstPlayEvent && turn.firstPlayEvent.portions) || []).map(p => p && p.kind).filter(Boolean);
     try { if (S.pots && S.pots.length) marketGate(S, { leaves: io.growth.leafStats().leaves }); } catch { }
     if (!rest) {
@@ -982,6 +991,15 @@ export async function play(name, seed, opt = {}) {
       if (ts.cashWon < B.minCash) B.minCash = ts.cashWon;
       if (B.brokeOn == null && (ts.bankrupt || ts.cashWon <= 0)) B.brokeOn = S.day - B.openDay;
       B.samples = Jb.sampleCount; B.varieties = Jb.varieties.length;
+      /* ★ 총괄 D88 ① 가름 — 무늬 마디 삽수(산 것) 첫날 · 1년 · 2년 · 가장 많을 때 · 연 뒤 다시 자르기(삽수에서) · 몬스테라 칸 셈(밝기별 서로 다른 삽수) */
+      { const g = B.g = B.g || { cormFound: {}, cormSeen: {}, alSleeps: 0, alSleepCorms: 0, sprout: {} }, dd = S.day - B.openDay;
+        const live = cuttingsOf(S).filter(c => c && c.status !== 'dead' && c.varieFromCut);
+        g.vc = g.vc || {}; if (g.vc.d0 == null) g.vc.d0 = live.length; if (dd === 365) g.vc.d365 = live.length; if (dd === 729) g.vc.d730 = live.length;
+        g.vcMax = Math.max(g.vcMax || 0, live.length);
+        if (g.recut0 == null) g.recut0 = out.recut.ok; g.recut = out.recut.ok - g.recut0;
+        g.rootedBand = {}; for (const c of live) if (c.varieLightBand) g.rootedBand[c.varieLightBand] = (g.rootedBand[c.varieLightBand] || 0) + 1;
+        g.mRepro = {}; for (const id of ['monstera_halfmoon', 'monstera_fullmoon', 'al_marble', 'al_sector', 'pp_heavy']) { const box = Jb.repro[id] || {}; g.mRepro[id] = Object.fromEntries(Object.entries(box).map(([k, r]) => [k, (r && r.n) || 0])); }
+        if (B.knowShopCorm != null && S.day >= B.knowShopCorm) g.cormAfterHint = (B.shopCormsBought || 0); }
       B.tally = Jb.tally; B.lines = ['monstera', 'al', 'pp'].filter(k => Object.keys(Jb.tally[k] || {}).length).length;
       /* 가름 — 칸마다 같은 조건 셈(가장 큰 것) · 뿌리 밝기별 뿌리낸 무늬 삽수(서로 다른) · 무늬 AL(그 판에 있었던) · 그날 방에서 가장 밝은 자리 DLI */
       B.repro = Object.fromEntries(Object.entries(Jb.repro).map(([k, box]) => [k, Math.max(0, ...Object.values(box).map(r => (r && r.n) || 0))]));
@@ -1310,6 +1328,12 @@ for (const name of NAMES) {
                     `산 상점 구근 합 ${br.reduce((a, r) => a + (r.breed.shopCormsBought || 0), 0)} · 산 PP 합 ${br.reduce((a, r) => a + (r.breed.ppBought || 0), 0)} · PP 자름 합 ${br.reduce((a, r) => a + (r.breed.ppCuts || 0), 0)}`);
       }
       if (arg('breedlook', false)) for (const r of br) console.log(`      ${r.seed} AL 마지막 — ${r.breed.alLook || '—'}`);
+      if (arg('breedgap', false)) for (const r of br) { const B = r.breed, g = B.g || {};
+        const sp = Object.entries(g.sprout || {}).map(([k, v]) => `${k.replace('from_', '').replace('_mother', '어미')} ${v}`).join(' · ') || '—';
+        const cf = Object.entries(g.cormFound || {}).map(([k, v]) => `${k.replace('from_', '').replace('_mother', '어미')} ${v}`).join(' · ') || '—';
+        const rp = id => Object.entries((g.mRepro || {})[id] || {}).map(([k, v]) => `${k}:${v}`).join(' ') || '—';
+        console.log(`      ${r.seed} 품종 ${B.varieties} | AL 귀띔 뒤 산 구근 ${g.cormAfterHint ?? '—'} · 싹 ${sp} · 잠듦 ${g.alSleeps || 0}(찾은 구근 ${g.alSleepCorms || 0}) · 찾은 구근 출처 ${cf} · 셈 마블 ${rp('al_marble')} · 반달 ${rp('al_sector')}` +
+                    ` | 몬 무늬 삽수 첫날 ${g.vc ? g.vc.d0 : '—'} → 1년 ${g.vc && g.vc.d365 != null ? g.vc.d365 : '—'} → 2년 ${g.vc && g.vc.d730 != null ? g.vc.d730 : '—'}(최대 ${g.vcMax ?? '—'}) · 산 삽수 밝기 ${JSON.stringify(g.rootedBand || {})} · 연 뒤 다시 자르기 ${g.recut ?? '—'} · 하프문 셈 ${rp('monstera_halfmoon')} · 풀문 셈 ${rp('monstera_fullmoon')}`); }
       if (arg('breedtrace', false)) for (const r of br) for (const line of (r.breed.trace || [])) console.log(`      ${r.seed} ${line}`);
       console.log('    칸마다(한 해 안 등록 판 · 2년 안 등록 판 · 등록 날 중앙 · 후보 날 중앙) — ' + slots.map(id => {
         const d = br.map(r => (r.breed.slotDay || {})[id]).filter(x => x != null), c = br.map(r => (r.breed.cand || {})[id]).filter(x => x != null);
