@@ -126,6 +126,7 @@ export function addSpeciesPot(S, species, opt = {}) {
   const id = opt.id || nextId(S, 'sp');
   const plant = opt.plant || R.newPlant(species, { seed: seedFor(S, id), ...(opt.newPlant || {}) });
   const q = { id, species, plant, slotId: null, at: null, placedOnce: false, gotDay: S.day ?? 0, origin: opt.origin || 'shop' };
+  if (opt.motherId != null) q.motherId = String(opt.motherId);   /* ★ 2026-10-24 C 육종 — 잘라 낸 끝은 어미를 안다(PP 줄 lineId 계보 · job_breed §lineOf) */
   if (opt.care) q.care = { ...opt.care };       /* D71 — 맡은 그루(손님 것 · 못 판다 · 주문에 못 낸다) */
   speciesOf(S).pots.push(q);
   return q;
@@ -295,7 +296,7 @@ export function cutSpecies(S, potId, nodeNo) {
   const grade = leaf ? R.leafRows(q.plant).find(r => r.no === nodeNo).grade : null;
   const r = R.cutAbove(q.plant, nodeNo);   /* 못 자르면 growth 가 제 말로 던진다 — 아무것도 안 바뀐다 */
   if (grade === 'marble' || grade === 'heavy') speciesOf(S).n.ppPinkHoldCuts += 1;
-  const top = addSpeciesPot(S, 'pink_princess', { plant: r.cutting, origin: 'cut' });
+  const top = addSpeciesPot(S, 'pink_princess', { plant: r.cutting, origin: 'cut', motherId: q.id });   /* C — 어미 줄을 잇는다 */
   /* ★ B 판 돌봄 pp_tip — 맡은 PP 의 시드는 끝을 이 자르기가 살렸다(job_care §careHealed 가 읽음) · 잘라 낸 끝은 자취생 것(care_cut_gift) */
   if (q.care && r.saved) q.care.cutSaved = true;
   return { cutting: top, saved: r.saved, grade, careCut: !!q.care };
@@ -412,6 +413,9 @@ export function speciesShopOpen(S, itemId) {
     const st = S.story;
     return !!(ts.movedOut && st && Number.isFinite(st.movedInOnDay) && (S.day - st.movedInOnDay) >= SG.alShop.afterMoveDays);
   }
+  /* ★ 2026-10-24 C 육종(plan-breed-career-spec §5 «AL·PP 를 안 가진 판도 줄이 서야 한다») — 육종 판에서 PP 그루가 하나도 없으면 첫날부터 진열 */
+  if (itemId === 'pp_young' && S.story && S.story.job && S.story.job.id === 'breed' &&
+      !((S.species && S.species.pots) || []).some(q => q && q.species === 'pink_princess' && !q.care)) return true;
   if (itemId === 'pp_young') return !!(S.species && S.species.trade && S.species.trade.declined >= SG.ppTrade.maxAsks && !S.species.trade.done);
   return false;
 }
@@ -490,7 +494,8 @@ export function packSpecies(sp) {
     pots: (sp.pots || []).map(q => ({ id: q.id, species: q.species, plant: q.plant, slotId: q.slotId || null, at: q.at || null,
                                       placedOnce: !!q.placedOnce, gotDay: q.gotDay ?? null, origin: q.origin || null,
                                       ...(q.care ? { care: q.care } : {}), ...(q.flatSince != null ? { flatSince: q.flatSince } : {}),
-                                      ...(Number.isFinite(q.dropM) ? { dropM: q.dropM } : {}) })),   /* D71 · D76 */
+                                      ...(Number.isFinite(q.dropM) ? { dropM: q.dropM } : {}),   /* D71 · D76 */
+                                      ...(q.motherId != null ? { motherId: q.motherId } : {}) })),   /* C 육종 — PP 줄 계보 */
     corms: sp.corms || [], trade: sp.trade || null, n: sp.n || null, seq: sp.seq || 0
   }));
 }
@@ -503,7 +508,8 @@ export function unpackSpecies(raw) {
     sp.pots.push({ id: String(q.id), species: q.species, plant: q.plant, slotId: q.slotId || null, at: q.at || null,
                    placedOnce: !!q.placedOnce, gotDay: q.gotDay ?? null, origin: q.origin || null,
                    ...(q.care && typeof q.care === 'object' ? { care: { ...q.care } } : {}), ...(Number.isFinite(q.flatSince) ? { flatSince: q.flatSince } : {}),
-                   ...(Number.isFinite(q.dropM) ? { dropM: q.dropM } : {}) });
+                   ...(Number.isFinite(q.dropM) ? { dropM: q.dropM } : {}),
+                   ...(q.motherId != null ? { motherId: String(q.motherId) } : {}) });
   }
   for (const c of Array.isArray(raw.corms) ? raw.corms : [])
     if (c && c.id) sp.corms.push({ id: String(c.id), seed: c.seed >>> 0, origin: c.origin || 'from_plain_mother', motherKind: c.motherKind ?? null, foundDay: c.foundDay ?? null });

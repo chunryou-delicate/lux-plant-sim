@@ -62,6 +62,7 @@ import { packSpecies, unpackSpecies } from './species.js';
 /* ★ 2026-10-10 D59 — 진로 «식물 가게» 판(주문·단골) */
 import { packJobShop, unpackJobShop } from './job_shop.js';
 import { packJobCare, unpackJobCare } from './job_care.js';   /* ★ 2026-10-24 B 판 돌봄 */
+import { packJobBreed, unpackJobBreed } from './job_breed.js';   /* ★ 2026-10-24 C 판 육종 */
 import { packHero, unpackHero, packCharacter } from './hero_branch.js';
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
@@ -1288,6 +1289,7 @@ export function serialize(S, opt = {}) {
       species: S.species ? packSpecies(S.species) : null,
       jobShop: S.jobShop ? packJobShop(S.jobShop) : null,   /* D59 */
       jobCare: S.jobCare ? packJobCare(S.jobCare) : null,   /* B 돌봄 */
+      jobBreed: S.jobBreed ? packJobBreed(S.jobBreed) : null,   /* C 육종 */
       /* ★ 2026-10-10 남녀·캐릭터 «추후 분기»의 길(hero_branch) — 칸 없는 판(옛 세이브 · 지금 판)은 null = 'f' · 'jachwi' */
       hero: packHero(S.hero),
       character: packCharacter(S.character),
@@ -1760,6 +1762,7 @@ export function deserialize(raw, opt = {}) {
   S.species = st.species ? unpackSpecies(st.species) : null;
   S.jobShop = st.jobShop ? unpackJobShop(st.jobShop) : null;   /* D59 */
   S.jobCare = st.jobCare ? unpackJobCare(st.jobCare) : null;   /* B 돌봄 · 옛 세이브는 null */
+  S.jobBreed = st.jobBreed ? unpackJobBreed(st.jobBreed) : null;   /* C 육종 · 옛 세이브는 null */
   { const h = unpackHero(st.hero); if (h) S.hero = h; const c = packCharacter(st.character); if (c) S.character = c; }   /* 남녀·캐릭터 — 없으면 칸을 안 세운다(기본 'f' · 'jachwi') */
   if (S.species) for (const q of S.species.pots) q.at = q.at ? makeAt(q.at) : null;
   S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {

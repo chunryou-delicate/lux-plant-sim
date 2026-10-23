@@ -71,6 +71,7 @@ import { stepShop, stepMarket } from './shop.js';
 import { stepSpecies, speciesKnown, speciesRules } from './species.js';   /* ★ 2026-10-09 D45 — 새 두 종의 하루(§stepSpeciesOfTurn) */
 import { stepShopJob } from './job_shop.js';   /* ★ 2026-10-10 D59 — 식물 가게 하루(주문 · 기한) */
 import { stepCareJob } from './job_care.js';   /* ★ 2026-10-24 B — 식물 돌봄 하루(맡김 · 나음 · 기한) */
+import { stepBreedJob } from './job_breed.js';   /* ★ 2026-10-24 C — 무늬 육종 하루(표본 · 재현 · 끝맺음) */
 import { creditShopOrder } from './shop.js';
 /* ★ 2026-10-08 [plan] 지도 13 — turn.cropNow(콩 씨앗 재고 · 빈 시루)를 짓는 데 쓴다(§attachEvents) */
 import { stockOf as shopStockOf } from './shop.js';
@@ -858,6 +859,7 @@ function attachEvents(S, turn, fpBefore) {
   /* ★ 2026-10-10 D59 — 가게 사건(shop_open · order_new · order_expired · …) · 대사는 plan dialogue(이름 그대로) */
   if (turn.jobShop && !turn.jobShop.error) push(turn.jobShop.events);
   if (turn.jobCare && !turn.jobCare.error) push(turn.jobCare.events);   /* B 돌봄 */
+  if (turn.jobBreed && !turn.jobBreed.error) push(turn.jobBreed.events);   /* C 육종 */
   const t = turn.tutorial;
   if (t && !t.error) { push(t.events); push(t.storyEvents); }
   turn.events = out;
@@ -1324,6 +1326,15 @@ function nextDayBody(S, io) {
         pushLog(S, (e.id === 'care_new' ? '🩺 ' : e.id === 'care_saved' ? '🌱 ' : e.id === 'care_return' ? '🤝 ' : e.id === 'care_ending' ? '🏅 ' : '🪧 ') + e.ko);
     }
   } catch (e) { pushLog(S, '⚠ 돌봄 하루 실패 — ' + e.message); jobCare = { error: e.message, events: [] }; }
+  /* ★ 2026-10-24 C 판 «무늬 육종»(plan-breed-career-spec · 총괄 D74 · D83) — 삽수·새 종의 하루가 돈 뒤 새로 굴려진 것만 표본으로 · 등록은 이름 입력 뒤(registerBreed) */
+  let jobBreed = null;
+  try {
+    jobBreed = stepBreedJob(S);
+    for (const e of (jobBreed && jobBreed.events) || []) {
+      if (e && e.ko && e.id === 'breed_sample') pushLog(S, '📒 ' + e.ko);
+      else if (e && e.ko && (e.id === 'breed_candidate' || e.id === 'breed_ending')) pushLog(S, (e.id === 'breed_ending' ? '🏅 ' : '🔎 ') + e.ko);
+    }
+  } catch (e) { pushLog(S, '⚠ 육종 하루 실패 — ' + e.message); jobBreed = { error: e.message, events: [] }; }
 
   /* 몬스테라가 아직 도착하지 않았으면 콩나물만 진행하고 끝낸다.
      ★ 2026-08-04 — 도착은 이제 **턴 안에서 안 일어난다**(harvestCrop 이 준다). 그래서 이 경로에
@@ -1353,7 +1364,8 @@ function nextDayBody(S, io) {
       cropHarvest: beansproutHarvestStatus(S.firstPlay),
       cropWater: beansproutWaterStatus(S.firstPlay, S.day),
       cuttings, shop, market,
-      species, alDormantNow: !!(species && species.alDormantNow), jobShop, jobCare
+      species, alDormantNow: !!(species && species.alDormantNow), jobShop, jobCare, jobBreed,
+      breedAlCormWaitDays: (jobBreed && Number.isFinite(jobBreed.alCormWaitDays)) ? jobBreed.alCormWaitDays : null   /* C — plan f1dd0c27 */
     };
     /* ★이 경로도 튜토리얼을 돌려야 한다 (2026-08-03).
        몬스테라가 오기 전(그리고 도착하는 그 날)은 여기서 일찍 반환된다 —
@@ -1457,7 +1469,8 @@ function nextDayBody(S, io) {
     cropHarvest: beansproutHarvestStatus(S.firstPlay),
     cropWater: beansproutWaterStatus(S.firstPlay, S.day),
     cuttings, shop, market,
-    species, alDormantNow: !!(species && species.alDormantNow), jobShop, jobCare
+    species, alDormantNow: !!(species && species.alDormantNow), jobShop, jobCare, jobBreed,
+    breedAlCormWaitDays: (jobBreed && Number.isFinite(jobBreed.alCormWaitDays)) ? jobBreed.alCormWaitDays : null   /* C — plan f1dd0c27 */
   };
   /* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸([plan] plan-leafwait ③). 실패 판정(위) «뒤»라 무른 턴은 안 센다.
      ⚠ 이 경로(몬스테라가 온 뒤)에만 있다 — 앞 반환구(earlyTurn)는 몬스테라 전이라 칸이 없다(= 모른다 · 줄이 안 뜬다). */

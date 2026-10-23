@@ -331,7 +331,7 @@
   /* ★ 2026-10-23 D75 — 가게 끝맺음 카드 · 칭호 칩(plan-career-endings-spec §10-3 · §10-4) */
   #shopEndFaces{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0 2px}
   #shopEndFaces img{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#2a2a35;border:2px solid #f0c674}
-  #shopEndPanel .pbtns{margin-top:64px}   /* 손가락 «여기를 눌러 보세요»(§hintAt — 창의 .go 단추 위)가 초상 줄을 덮지 않을 자리 */
+  #shopEndPanel .pbtns, #breedNamePanel .pbtns{margin-top:64px}   /* C — 이름 칸도 손가락이 «비워 두면 …» 글을 안 덮게(10-24 사진) */   /* 손가락 «여기를 눌러 보세요»(§hintAt — 창의 .go 단추 위)가 초상 줄을 덮지 않을 자리 */
   .titleChip{display:inline-block;padding:1px 9px;border-radius:10px;background:#f0c674;color:#2b2112;font-weight:700;font-size:.92em}
   @keyframes homeIn{from{opacity:0;filter:brightness(.4)}to{opacity:1;filter:none}}
   html.homescene #next,html.homescene #resow,html.homescene #waterCrop,html.homescene #waterPot,html.homescene #harvestCrop,
@@ -1460,6 +1460,17 @@
   #orderBoard .otxt i{display:block;font-style:normal;color:var(--dim);font-size:11.5px}
   #orderBoard .orow button{flex:0 0 auto;width:auto;min-width:64px;min-height:36px;padding:0 12px;font-weight:800}
   #orderBoard .empty{font-size:12px;color:var(--dim)}
+  /* ★ 2026-10-24 C 육종 — 기록장(주문판 자리) · 줄마다 칸 머리 + 조건별 셈 막대(수만 · 확률 숫자 안 띄움 plan §2-4) */
+  #orderBoard .bline{padding:7px 0;border-top:1px solid rgba(255,255,255,.07)}
+  #orderBoard .bline:first-of-type{border-top:0}
+  #orderBoard .bslot{display:block;font-size:12.5px;line-height:1.45;word-break:keep-all}
+  #orderBoard .bslot.reg{color:var(--gold);font-weight:800}
+  #orderBoard .bcond{margin-top:5px;font-size:11.5px;line-height:1.4;color:var(--dim);word-break:keep-all}
+  #orderBoard .bbar{display:flex;height:6px;margin-top:3px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.06)}
+  #orderBoard .bbar i{display:block;height:100%;background:rgba(255,255,255,.22)}
+  #orderBoard .bbar i.hit{background:var(--gold)}
+  #breedNameInput{display:block;width:100%;box-sizing:border-box;min-height:44px;margin:10px 0 4px;padding:0 12px;font-size:16px;border-radius:10px;
+    border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:var(--ink)}
   /* ★ 2026-10-10 벽 걸이 v1 — 걸이 자리 원(house hangSpots · 화면 좌표는 캔버스 기준이라 무대 기준으로 옮겨 찍는다) */
   #hangPick{position:absolute;inset:0;z-index:31;display:none;pointer-events:none}
   #hangPick.on{display:block}
@@ -2279,6 +2290,16 @@
     <div class="plots" id="shopEndRows"></div>
     <div id="shopEndFaces"></div>
     <div class="pbtns"><button id="shopEndGo" class="go" type="button">계속 산다</button></div>
+  </div>
+</div>
+<!-- ★ 2026-10-24 C 육종 — 새 품종 이름(D74 ④ 입력 칸 + 자동 이름 미리 채움 · 비워 두면 자동 이름) -->
+<div id="breedNamePanel" class="pop" aria-hidden="true">
+  <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="breedNameTitle">
+    <div class="ptitle" id="breedNameTitle">새 품종 — 이름을 지어 주세요</div>
+    <div class="psub" id="breedNameSub"></div>
+    <input id="breedNameInput" type="text" maxlength="24" autocomplete="off" aria-label="품종 이름">
+    <div class="psub" id="breedNameHint"></div>
+    <div class="pbtns"><button id="breedNameGo" class="go" type="button">이 이름으로 등록</button></div>
   </div>
 </div>
 <div id="homePanel" class="pop" aria-hidden="true">
@@ -3259,7 +3280,7 @@ import { leafCardOf, bestLeafCardOf } from './src/game/shop.js';   /* ★ 10-10 
 /* ★ 2026-10-09 D47(총괄) — 가구점을 화면에 잇는다(줄 · 주문 · 가방 · 놓기). 셈·값·해금은 전부 코어(shop §furnitureCatalogList · state §placeBoughtFurniture) */
 import { furnitureCatalogList, isFurnitureItemId } from './src/game/shop.js';
 import { placeBoughtFurniture, giveFurniture } from './src/game/state.js';
-import { hangSpotsOf, hangPoseOf, hangFits } from './src/game/hang_spots.js';   /* ★ 10-10 D59 가게 첫날 주문판 자리(방뷰를 다시 짓기 전에 셈한다) */   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
+import { hangSpotsOf, hangPoseOf, hangFits, boardAs } from './src/game/hang_spots.js';   /* ★ 10-10 D59 가게 첫날 주문판 자리(방뷰를 다시 짓기 전에 셈한다) */   /* ★ 2026-10-09 사건 원화 — 처음 드러난 무늬 등급(§firstSeenGradeOf) */
 import { weatherE } from './src/engine/weather.js';
 import * as save from './src/game/save.js';
 import {
@@ -3335,6 +3356,7 @@ import { resolvePlacement } from './src/game/place.js';
 /* ★ 2026-10-10 D59 — 진로 «식물 가게»(주문판 · 납품 · 단골) · 산 집(투룸) 이사 */
 import * as JOB from './src/game/job_shop.js';
 import * as CARE from './src/game/job_care.js';   /* ★ 2026-10-24 B 판 «식물 돌봄»(plan-care-career-spec · D73 · D80) */
+import * as BREED from './src/game/job_breed.js';   /* ★ 2026-10-24 C 판 «무늬 육종»(plan-breed-career-spec · D74 · D83) */
 import { creditShopOrder } from './src/game/shop.js';
 import { moveIntoOwnedHome } from './src/game/oneroom.js';
 /* ★ 2026-10-08 — 확대창을 연 적(둘째 잎 기다림 «상태 줄» zoomOpenedSinceArrival · leaf_wait.js) */
@@ -3532,6 +3554,7 @@ function noteTurn(t) {
   if (t && Array.isArray(t.events)) {
     if (t.events.some(e => e && e.id === 'shop_ending')) { shopEndPending = true; shopEndKind = 'shop'; }
     else if (t.events.some(e => e && e.id === 'care_ending')) { shopEndPending = true; shopEndKind = 'care'; }   /* B 돌봄 끝맺음(살린 30) */
+    else if (t.events.some(e => e && e.id === 'breed_ending')) { shopEndPending = true; shopEndKind = 'breed'; }   /* C 육종 끝맺음(품종 3) */
   }
   stuckDays = (t && (t.growthBlocked || t.headroomBlocked)) ? stuckDays + 1 : 0;
   if (!t) resetStageMemo();   /* 새 판(같은 쪽에서 S = newState → noteTurn(null)) — 어제 값이 남으면 첫 배너가 빠지거나 거짓으로 뜬다 */
@@ -4269,7 +4292,7 @@ const HINT_DIM_ALPHA = 0.28;              /* 「약간」 — 딴 데가 안 보
 let hintNoDim = false;
 let oneroomShadeSaid = false;   /* 원룸 첫 장면 ③ 「선반 아래가 어두워졌습니다」 — 이 판에서 한 번 */
 let oneroomFurnSeen = null;
-const GIVEN_FURNITURE = Object.freeze(['order_board', 'care_board']);   /* ★ 10-24 B — 돌봄 첫날 맡김판(house 0ddf6061 care_board)도 받은 물건 */   /* ★ 10-10 [plan] 받은 물건 — «첫 가구»·«놓은 가구» 셈에서 뺀다(가게 첫날 주문판) */     /* ★ 10-10 — 이 켬에서 처음 본 «놓인 가구 수»(0 에서 1 이 되는 «순간»만 ③ 을 띄운다) */
+const GIVEN_FURNITURE = Object.freeze(['order_board', 'care_board', 'memo_board']);   /* C — 육종 첫날 메모판(house 3cda24bd)도 받은 물건 */   /* ★ 10-24 B — 돌봄 첫날 맡김판(house 0ddf6061 care_board)도 받은 물건 */   /* ★ 10-10 [plan] 받은 물건 — «첫 가구»·«놓은 가구» 셈에서 뺀다(가게 첫날 주문판) */     /* ★ 10-10 — 이 켬에서 처음 본 «놓인 가구 수»(0 에서 1 이 되는 «순간»만 ③ 을 띄운다) */
 /* ★★ 2026-09-04 — **「놓임」은 «확정된 것»만이다.** 놓는 순간 그루에 slotId/at 가 «먼저» 들어가고 [취소]가 되돌리므로(§placeConfirmCancel)
    `cropPotPlaced` 는 「여기에 둘까요?」 단계의 임시 자리도 놓임으로 센다. 그래서 둘째 시루가 [확인] «전»에 세팅 끝이 서서
    [확인] 손가락이 죽었다(총괄 걸음 f56). ⇒ 확정 대기(picked.before · 무대 confirming)인 그루는 안 센다. 세팅 끝·둘째 시루 갈래·퀘스트 스냅샷이 «이 한 자»를 쓴다. */
@@ -10007,7 +10030,8 @@ function questSnapshotNow(turn) {
     ...(() => { try { return speciesSnapshot(S); } catch { return {}; } })(),
     /* ★ 2026-10-10 D59 — 가게 칸(plan SHOP_QUESTS) — harness 와 같은 함수 */
     ...(() => { try { return JOB.jobShopSnapshot(S); } catch { return {}; } })(),
-    ...(() => { try { return CARE.jobCareSnapshot(S); } catch { return {}; } })()   /* B 돌봄 사슬 칸 */
+    ...(() => { try { return CARE.jobCareSnapshot(S); } catch { return {}; } })(),   /* B 돌봄 사슬 칸 */
+    ...(() => { try { return BREED.jobBreedSnapshot(S); } catch (e) { console.warn('[육종 칸]', e && e.message); return {}; } })()   /* C 육종 사슬 칸 */
   };
 }
 
@@ -10089,10 +10113,12 @@ function drawQuestPanel() {
   /* ★ D75(plan §10-4) — 진로를 연 판은 머리 첫 줄이 진로 머리(«식물 가게 · 단골 r명» · 끝맺음 뒤 칭호 칩) · 할 것은 둘째 줄 */
   let jh = null; try { jh = JOB.jobHeadOf(S); } catch { jh = null; }
   let jc = null; try { jc = CARE.careHeadOf(S); } catch { jc = null; }
-  if (jh || jc) {
+  let jb = null; try { jb = BREED.breedHeadOf(S); } catch (e) { jb = null; console.warn('[육종 머리]', e && e.message); }
+  if (jh || jc || jb) {
     const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const headHTML = jh ? (jh.title ? `<span class="titleChip">${esc(jh.title)}</span> · 단골 ${jh.regulars}명` : esc(jh.ko))
-                        : (jc.title ? `<span class="titleChip">${esc(jc.title)}</span> · 살린 화분 ${jc.saved}` : esc(jc.ko));
+                        : jc ? (jc.title ? `<span class="titleChip">${esc(jc.title)}</span> · 살린 화분 ${jc.saved}` : esc(jc.ko))
+                        : (jb.title ? `<span class="titleChip">${esc(jb.title)}</span> · 품종 ${jb.varieties}` : esc(jb.ko));
     $('questSub').innerHTML = headHTML + (subKo ? `<br>${esc(subKo)}` : '');
   } else $('questSub').textContent = subKo;
   /* 띠와 수는 **같은 값**을 말한다. 다르면 어느 쪽이 참인지 물어야 한다 */
@@ -10229,6 +10255,8 @@ function homeGoalHtml(v) {
     if (h) return h.title ? `<span class="titleChip">${h.title}</span> · 단골 ${h.regulars}명` : h.ko;
     let hc = null; try { hc = CARE.careHeadOf(S); } catch { hc = null; }
     if (hc) return hc.title ? `<span class="titleChip">${hc.title}</span> · 살린 화분 ${hc.saved}` : hc.ko;
+    let hb = null; try { hb = BREED.breedHeadOf(S); } catch (e) { hb = null; console.warn('[육종 머리]', e && e.message); }
+    if (hb) return hb.title ? `<span class="titleChip">${hb.title}</span> · 품종 ${hb.varieties}` : hb.ko;
     return '내 집을 마련했습니다';
   }
   const why = String(v.why || '').replace(/"/g, '&quot;');
@@ -10287,16 +10315,19 @@ function openShopEndWhenQuiet() {
   if (!shopEndPending) return false;
   const st = $('stage'); if (st && st.classList.contains('talking')) return false;
   shopEndPending = false;
-  const care = shopEndKind === 'care';
-  const J = care ? CARE.jobCareOf(S) : JOB.jobShopOf(S);
-  $('shopEndTitle').textContent = care ? CARE.CARE_JOB.ending.titleKo : '동네 식물 가게';
-  $('shopEndSub').textContent = care ? '살린 화분 서른 — 돌봄 끝맺음' : '단골 서른 — 가게 끝맺음';
+  const care = shopEndKind === 'care', breed = shopEndKind === 'breed';
+  const J = breed ? BREED.jobBreedOf(S) : care ? CARE.jobCareOf(S) : JOB.jobShopOf(S);
+  $('shopEndTitle').textContent = breed ? BREED.BREED_JOB.ending.titleKo : care ? CARE.CARE_JOB.ending.titleKo : '동네 식물 가게';
+  $('shopEndSub').textContent = breed ? '이름 붙인 품종 셋 — 육종 끝맺음' : care ? '살린 화분 서른 — 돌봄 끝맺음' : '단골 서른 — 가게 끝맺음';
   const rows = [`처음 그 방에서 ${S.day}일`];
-  if (Number.isInteger(J.openedOn)) rows.push(`${care ? '돌봄을 시작한' : '가게를 연'} 지 ${S.day - J.openedOn}일`);
-  rows.push(care ? `살린 화분 ${J.saved} · 고쳐 본 고장 ${Object.keys(J.kinds || {}).length}/${CARE.careProblems().length || 8}` : `단골 ${J.regulars.length}명 · 맞춘 주문 ${J.done}건`);
+  if (Number.isInteger(J.openedOn)) rows.push(`${breed ? '육종을 시작한' : care ? '돌봄을 시작한' : '가게를 연'} 지 ${S.day - J.openedOn}일`);
+  const escE = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  rows.push(breed ? `품종 ${J.varieties.length} · 적은 표본 ${J.sampleCount}`
+            : care ? `살린 화분 ${J.saved} · 고쳐 본 고장 ${Object.keys(J.kinds || {}).length}/${CARE.careProblems().length || 8}` : `단골 ${J.regulars.length}명 · 맞춘 주문 ${J.done}건`);
+  if (breed && J.varieties.length) rows.push(J.varieties.map(v => `«${escE(v.name)}»`).join(' · '));   /* 이름 붙인 품종(플레이어 글 — 막아 넣음) */
   $('shopEndRows').innerHTML = rows.map(r => `<div>${r}</div>`).join('');
   const groups = [];
-  for (const id of (care ? J.served : J.regulars) || []) { const c = JOB.shopCustomers().find(x => x && x.id === id); if (c && c.group && !groups.includes(c.group)) groups.push(c.group); if (groups.length >= 6) break; }
+  for (const id of (breed ? [] : care ? J.served : J.regulars) || []) { const c = JOB.shopCustomers().find(x => x && x.id === id); if (c && c.group && !groups.includes(c.group)) groups.push(c.group); if (groups.length >= 6) break; }
   $('shopEndFaces').innerHTML = groups.map(g => npcFaceHTML({ group: g }, 'face')).join('');
   $('shopEndPanel').classList.add('on'); $('shopEndPanel').setAttribute('aria-hidden', 'false');
   return true;
@@ -10335,6 +10366,7 @@ function drawOrderBoard() {
   if (!JOB.movedHome(S)) { box.style.display = 'none'; return; }
   box.style.display = '';
   if (CARE.isCareJob(S)) { drawCareBoard(box); return; }   /* B — 돌봄 판은 같은 자리에 맡김판 */
+  if (BREED.isBreedJob(S)) { drawBreedBoard(box); return; }   /* C — 육종 판은 같은 자리에 기록장 */
   const J = JOB.jobShopOf(S);
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const cust = id => JOB.shopCustomers().find(c => c.id === id) || { ko: id };
@@ -10375,7 +10407,7 @@ const JOB_KO = Object.freeze({
   cards: [
     { id: 'shop', ko: '식물 가게', sub: '손님이 원하는 식물을 기한 안에 키워 맞춥니다', go: '가게를 연다' },
     { id: 'care', ko: '식물 돌봄', sub: '남의 화분을 맡아 살립니다', go: '돌봄을 시작한다' },   /* B(plan 55edc62e) */
-    { id: 'breed', ko: '무늬 육종', sub: '무늬를 대대로 이어 기록합니다 · 준비 중' }
+    { id: 'breed', ko: '무늬 육종', sub: '무늬를 대대로 이어 기록합니다', go: '육종을 시작한다' }   /* C(plan 177364ed) */
   ]
 });
 function openChapterEnd() {
@@ -10388,7 +10420,7 @@ function openChapterEnd() {
     jc.innerHTML = JOB_KO.cards.map(c => `<div class="job${c.go ? '' : ' soon'}"><b>${c.ko}</b><span>${c.sub}</span>` +
       (c.go ? `<button class="primary" type="button" data-job="${c.id}">${c.go}</button>` : '') + `</div>`).join('');
     jc.style.display = 'flex';
-    for (const b of jc.querySelectorAll('[data-job]')) b.onclick = guard(() => (b.dataset.job === 'care' ? startCareNow() : startShopNow()));
+    for (const b of jc.querySelectorAll('[data-job]')) b.onclick = guard(() => (b.dataset.job === 'care' ? startCareNow() : b.dataset.job === 'breed' ? startBreedNow() : startShopNow()));
   } else if (jc) jc.style.display = 'none';
   el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
 }
@@ -10481,6 +10513,98 @@ function returnCareNow(requestId) {
   fillSlots(); draw();
 }
 window.__byeotReturnCare = (id) => returnCareNow(id);   /* 재는 손잡이 */
+/* ══ ★ 2026-10-24 C 판 «무늬 육종» — [육종을 시작한다]: 진로 · 산 투룸(가게·돌봄과 같은 이사) · 기록장(상점 탭 맨 위 · 새 3D 없음) ══
+   표본은 저절로(loop §stepBreedJob · 하루 한 기록 줄) · 같은 조건 셋이면 이름 입력 칸(자동 이름 미리 채움) → [이 이름으로 등록] → 상금 */
+function startBreedNow() {
+  const evs = [];
+  evs.push(...BREED.startBreedJob(S).events);
+  const r = moveIntoOwnedHome(S, io, { carry: carryFurnitureListNow() });
+  evs.push(...r.events);
+  /* ★ 총괄 D85 ① — 판 자리에 메모판(house 3cda24bd memo_board · 이름은 boardAs(preset, 'breed'))을 건다 — 판이 아직 없을 때만(진로를 바꿔 온 판은 그 판을 둔다 · D).
+       누름 길은 아직 없다 — 소품만(기록장은 상점 탭 맨 위) */
+  try {
+    const hasBoard = addedFurniture(S).some(f => f && ['order_board', 'care_board', 'memo_board'].includes(f.preset));
+    const def = houseRooms.rooms && houseRooms.rooms[S.home.room];
+    const sp = hasBoard ? null : hangSpotsOf(def).find(x => x.only === 'order_board');
+    const preset = boardAs('order_board', 'breed');
+    if (sp && furnPresets[preset]) {
+      const pose = hangPoseOf(sp, (def && def.size) || houseRooms.size, (furnPresets[preset] || {}).size_m || {});
+      const row = giveFurniture(S, preset, pose, { size: io.light.room.size });
+      if (row) io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S));
+    }
+  } catch (e) { console.warn('[메모판]', e && e.message); }
+  const o = BREED.openBreed(S);
+  for (const e of o.events) if (e.ko) pushLog(S, '📒 ' + e.ko);
+  evs.push(...o.events);
+  closeChapterEnd();
+  banners([{ title: '📒 무늬 육종을 시작했습니다', sub: '기록장은 [상점] 맨 위에 있습니다' }]);
+  try { dlgOpen(story.events(evs, S)); } catch (e) { console.warn('[육종]', e && e.message); }
+  $('room').value = S.home.room;
+  fillLamps(); fillSlots(false);
+  draw();
+  if (r.roomChanged) remountRoomView();
+}
+window.__byeotStartBreed = () => startBreedNow();   /* 재는 손잡이 */
+/* 기록장(상점 탭 맨 위 · 주문판 자리) — 대기 중인 품종(이름 짓기) · 줄마다(몬스테라 · AL · PP) 칸 머리 + 조건별 셈 막대(막대의 금빛 = 그 칸의 결과) */
+function drawBreedBoard(box) {
+  const J = BREED.jobBreedOf(S), ui = BREED.breedUi();
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const head = `<h4>📒 ${esc(ui.tab || '기록장')} · 품종 ${J.varieties.length}</h4>`;
+  const pend = BREED.pendingBreed(S);
+  const pendRow = pend ? `<div class="orow"><div class="otxt">${esc((BREED.breedSlotOf(pend.slot) || {}).ko || pend.slot)} — 같은 조건에서 거듭 났습니다` +
+    `<i>이름을 지으면 품종으로 등록됩니다</i></div><button class="primary" type="button" data-breedname="${esc(pend.slot)}">이름 짓기</button></div>` : '';
+  if (!J.sampleCount && !pend) { box.innerHTML = head + `<div class="empty">${esc(ui.empty || '아직 적은 것이 없습니다 — 새 잎이 나면 저절로 적힙니다')}</div>`; return; }
+  const rows = BREED.breedBoardRows(S), byLine = new Map();
+  for (const r of rows) { const slot = BREED.breedSlotOf(r.slot) || {}; if (!byLine.has(slot.line)) byLine.set(slot.line, []); byLine.get(slot.line).push({ r, slot }); }
+  const html = [...byLine.values()].map(list => {
+    const heads = list.map(({ r }) => `<span class="bslot${r.registered ? ' reg' : ''}">${esc(r.head)}</span>`).join('');
+    const hits = new Set(list.map(({ slot }) => slot.outcome));
+    const bars = (list[0].r.bars || []).map(b => `<div class="bcond">${esc(b.condKo)} — ${b.parts.map(p => `${esc(p.ko)} ${p.n}`).join(' · ')}</div>` +
+      `<div class="bbar">${b.parts.map(p => `<i class="${hits.has(p.out) ? 'hit' : ''}" style="flex:${p.n} 0 0"></i>`).join('')}</div>`).join('');
+    return `<div class="bline">${heads}${bars}</div>`;
+  }).join('');
+  box.innerHTML = head + pendRow + html;
+  for (const b of box.querySelectorAll('[data-breedname]')) b.onclick = guard(() => openBreedName(b.dataset.breedname));
+}
+let breedNameSlot = null;
+function openBreedName(slotId) {
+  const J = BREED.jobBreedOf(S), p = J.pending.find(x => x.slot === slotId) || J.pending[0];
+  if (!p) return false;
+  const slot = BREED.breedSlotOf(p.slot) || { ko: p.slot }, ui = BREED.breedUi();
+  breedNameSlot = p.slot;
+  $('breedNameTitle').textContent = ui.nameTitle || '새 품종 — 이름을 지어 주세요';
+  $('breedNameSub').textContent = String(ui.nameSub || '같은 조건에서 거듭 났습니다 — {ko}').replace('{ko}', slot.ko);
+  $('breedNameHint').textContent = String(ui.nameHint || '비워 두면 «{auto}»로 등록됩니다').replace('{auto}', p.auto);
+  $('breedNameGo').textContent = ui.nameButton || '이 이름으로 등록';
+  $('breedNameInput').value = p.auto;   /* D74 ④ 자동 이름을 미리 채운다 — 그냥 넘겨도 된다 */
+  $('breedNamePanel').classList.add('on'); $('breedNamePanel').setAttribute('aria-hidden', 'false');
+  return true;
+}
+/* 하루 뒤 · 대사가 다 끝난 뒤 — 대기 중인 품종이 있고 다른 창이 없을 때만(끝맺음 카드와 같은 손) */
+function openBreedNameWhenQuiet() {
+  if (!BREED.isBreedJob(S) || !BREED.pendingBreed(S)) return false;
+  if ($('breedNamePanel').classList.contains('on')) return false;
+  const st = $('stage'); if (st && st.classList.contains('talking')) return false;
+  if (document.querySelector('.pop.on')) return false;
+  return openBreedName(BREED.pendingBreed(S).slot);
+}
+function registerBreedNow() {
+  const slot = breedNameSlot; if (!slot) return;
+  let r = null;
+  try { r = BREED.registerBreed(S, slot, $('breedNameInput').value); }
+  catch (e) { banner('등록하지 못했습니다', (e && e.message) || ''); return; }
+  breedNameSlot = null;
+  $('breedNamePanel').classList.remove('on'); $('breedNamePanel').setAttribute('aria-hidden', 'true');
+  if (r.won > 0) { try { creditShopOrder(S, r.won, { ko: '품종 등록 상금', log: m => pushLog(S, m) }); } catch (e) { banner('상금을 못 받았습니다', (e && e.message) || ''); } }
+  for (const e of r.events) if (e && e.id === 'breed_register' && e.ko) pushLog(S, e.ko);
+  banner('🏷 새 품종', `«${r.events[0].name}» · 상금 ${r.won.toLocaleString()}원`);
+  try { dlgOpen(story.events(r.events, S)); } catch (e) { console.warn('[품종 등록]', e && e.message); }
+  try { checkQuests(lastTurn); } catch (e) { console.warn('[품종 등록 할 일]', e && e.message); }
+  fillSlots(); draw();
+}
+window.__byeotBreedName = () => ({ open: $('breedNamePanel').classList.contains('on'), slot: breedNameSlot, value: $('breedNameInput').value,
+  title: $('breedNameTitle').textContent, sub: $('breedNameSub').textContent, hint: $('breedNameHint').textContent });   /* 재는 손잡이 */
+window.__byeotRegisterBreed = (name) => { if (name != null) $('breedNameInput').value = name; registerBreedNow(); };   /* 재는 손잡이 */
 function closeChapterEnd() { const el = $('chapterEnd'); if (!el) return; el.classList.remove('on'); el.setAttribute('aria-hidden', 'true'); }
 let chapterAgainArmed = false;
 if ($('chapterLook')) $('chapterLook').onclick = () => { closeChapterEnd(); try { draw(); } catch { } };
@@ -13046,7 +13170,7 @@ const commitNextDay = guard(() => {
        그래서 「오늘 무슨 일이 났나」 다음에 「그래서 이제 뭘 해라」가 온다. */
   checkQuests(lastTurn);
   draw();
-  setTimeout(() => { try { openShopEndWhenQuiet(); } catch (e) { console.warn('[끝맺음]', e && e.message); } }, 50);   /* D75 */
+  setTimeout(() => { try { openShopEndWhenQuiet() || openBreedNameWhenQuiet(); } catch (e) { console.warn('[끝맺음]', e && e.message); } }, 50);   /* D75 · C 품종 이름 */
   /* 대사가 안 떴으면 여기서 바로 뜬다. 떴으면 마지막 대사를 넘길 때 뜬다 */
   try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
 });
@@ -13328,6 +13452,7 @@ function dlgPaint() {
     try { if (dlgFlushHeld()) return; } catch (e) { console.warn('[대화]', e && e.message); }
     try { if (openHomeCardWhenQuiet()) return; } catch (e) { console.warn('[엔딩]', e && e.message); }   /* ④ 열세 줄이 끝났다 → 마무리 카드 */
     try { if (openShopEndWhenQuiet()) return; } catch (e) { console.warn('[끝맺음]', e && e.message); }   /* D75 shopEnding 여섯 줄이 끝났다 → 끝맺음 카드 */
+    try { if (openBreedNameWhenQuiet()) return; } catch (e) { console.warn('[품종 이름]', e && e.message); }   /* C — 같은 조건 셋 → 이름 칸 */
     try { if (openMoveAskWhenQuiet()) return; } catch (e) { console.warn('[D27]', e && e.message); }       /* D27 몬이 한 줄 뒤 → 이사 되묻기 창 */
     try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
     return;
@@ -13914,7 +14039,7 @@ function syncShopRoomView() {
   try { if (roomView.setShopSign) roomView.setShopSign(CARE.isCareJob(S) ? CARE.jobCareOf(S).signOnDay != null : JOB.jobShopOf(S).signOnDay != null); } catch (e) { console.warn('[입간판]', e && e.message); }   /* B — 돌봄 10 «문패»는 간판 모형 그대로(D73 ③ · house 글자 없음 확인) */
   try {
     if (roomView.setHomeFrame) {
-      const board = addedFurniture(S).filter(f => f.preset === 'order_board' || f.preset === 'care_board').map(f => f.uid);   /* B — 맡김판도 판 자리 */
+      const board = addedFurniture(S).filter(f => f.preset === 'order_board' || f.preset === 'care_board' || f.preset === 'memo_board').map(f => f.uid);   /* C — 메모판도 판 자리 */   /* B — 맡김판도 판 자리 */
       roomView.setHomeFrame({ uids: [...SHOP_FRAME_UIDS, ...board], pad: 0.7 }, true);   /* pad — 가게 방 바닥 둘레까지(0.25 면 진열대 모서리가 잘렸다 · 사진으로 잼) */
     }
   } catch (e) { console.warn('[가게 카메라]', e && e.message); }
@@ -16148,7 +16273,7 @@ function hangChoices(want) {
     let f = null; try { f = hangFits(sp, want.preset, size_m); } catch { f = { ok: false, reason: '' }; }
     if (f.ok) { if (sp.free) return true; busyFit++; return false; }
     const m = f.reason || '';
-    if (/(주문판|맡김판)은  자리에만/.test(m)) shopOnly++;   /* B — 맡김판(house 0ddf6061 BOARD_KIND) */
+    if (f.code === 'board_only' || /(주문판|맡김판|메모판)은 \1 자리에만/.test(m)) shopOnly++;   /* B — 맡김판(house 0ddf6061 BOARD_KIND) · 10-24 house 지적: \1 이 제어 문자로 박혀 늘 안 맞았다 · code 가 오면 code 로 */
     else if (/자리보다 (넓|큽)니다/.test(m)) size++;
     else if (!/다른 것을 거는 자리/.test(m)) other++;          /* 남의 전용 자리(주문판 자리)는 까닭에 안 센다 */
     return false;
@@ -18667,6 +18792,8 @@ document.addEventListener('click', (e) => {
 });
 $('homeGo').onclick = guard(() => { doFinishHome(); });
 $('shopEndGo').onclick = guard(() => { closeShopEnd(); });   /* D75 [계속 산다] */
+$('breedNameGo').onclick = guard(() => registerBreedNow());   /* C [이 이름으로 등록] */
+$('breedNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('breedNameGo').click(); } });
 $('homeCancel').onclick = guard(() => { closeHomeAsk(); });
 $('homeNext').onclick = guard(() => { closeHomeScene(); });
 /* ★★ 2026-10-08 D27 (총괄 14:00 결정 · [plan] 19419589 · 갈래 지도 7) — **이사 되묻기 창**

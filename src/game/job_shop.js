@@ -567,7 +567,8 @@ export function jobShopSnapshot(S) {
     caCareOpen: J ? (J.caPotId != null && J.caSavedOn == null) : null,
     caSaved: J ? J.caSavedOn != null : null,
     /* ★ D75(plan 명세 §5) — 진로 끝맺음 날(없으면 null) · 지금 진로 */
-    jobsEnded: { shop: shopEndedOn(S), care: (S && S.story && S.story.jobs && S.story.jobs.care && Number.isFinite(S.story.jobs.care.endedOn)) ? S.story.jobs.care.endedOn : null, breed: null },
+    jobsEnded: { shop: shopEndedOn(S), care: (S && S.story && S.story.jobs && S.story.jobs.care && Number.isFinite(S.story.jobs.care.endedOn)) ? S.story.jobs.care.endedOn : null,
+                 breed: (S && S.story && S.story.jobs && S.story.jobs.breed && Number.isFinite(S.story.jobs.breed.endedOn)) ? S.story.jobs.breed.endedOn : null },   /* C 육종 */
     jobActive: job ? job.id : null
   };
 }
