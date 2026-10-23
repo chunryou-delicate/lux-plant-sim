@@ -1290,9 +1290,10 @@ export function updateShellVisibility(shells, cam, mode='auto', trims=null){
      옷 층이 숨긴 대리(visible:false 재질)는 면으로 본다 — 짓는 때와 옷 입은 뒤 값이 같게(core rayIgnores 와 같은 결).
      숨긴 가구(조상 visible false · 안 산 식물등)는 뺀다.
    반환 { dropM, edgeM(판 끝까지 수평 거리 · 줄기가 먼저 기어갈 길), landY, dir:[x,z](떨어지는 쪽), high(dropM ≥ HIGH_DROP_M) }
-   ⚖ HIGH_DROP_M 은 후보다 — «높은 자리에서만 닿는 길이»(sc_pot 어려움 · sc_hang)의 정본 문턱은 growth 줄기 상한 규칙이 정한다.
-     0.7 은 투룸 가게 배치에서 창턱(≈0.78)·다단 선반 윗단(0.79)·벽 화분걸이(≈1.4)는 넘고, 계단 단(≤0.3)·낮은 선반 윗판은 못 넘게 고른 값. */
-export const HIGH_DROP_M = 0.7;
+   ★ HIGH_DROP_M 의 정본은 data/growth_species.json species.scindapsus.vine.high_spot_min_m 하나다(총괄 10-23 · growth 2601aea8 · ⚖ 첫 판 0.75).
+     house.js 는 데이터를 안 들고 다니는 그림 모듈이라 같은 수를 여기 적고, 둘이 같은지를 tools/test_wall_hang.mjs I 가 지킨다(바뀌면 거기가 운다).
+     높은 자리 가름은 growth 규칙(R.isHighSpot)이 정본이고, 이 high 는 같은 문턱으로 미리 적어 둔 표지다(화면·검사용). */
+export const HIGH_DROP_M = 0.75;
 let _dropRay = null;
 function dropMeshesOf(furnGroup){
   const out = [];

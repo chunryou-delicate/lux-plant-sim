@@ -11,7 +11,8 @@
      F 그림 면 — 옷 층 report.faceTex · 달력은 setSeason 으로 쪽이 바뀜
      G 전용 자리 — 투룸 주문판 자리에 포스터는 안 됨 · 주문판은 됨
      H 벽 화분걸이(D71) — 화분 자리 하나 · 조도 엔진 자리 목록에 듦 · 깎인 벽에서도 안 숨음
-     I «위» 자리 — dropM · high(다단 선반 윗단 · 화분걸이는 높음 · 계단 진열대 윗단은 아님) · 자유 좌표 dropBelow
+     I «위» 자리 — dropM · high(다단 선반 윗단 · 화분걸이는 높음 · 계단 진열대 윗단은 아님) · 자유 좌표 dropBelow · 문턱 = growth 정본
+     J 창가 걸이 자리(D71 · tworoom-hang-sun) — 화분걸이가 걸리고 높은 자리 · 창틀·유리·뒷벽에 안 닿는다
    ⚠ 가방·가구점 화면 흐름은 core 몫(여기서는 안 본다).
 ============================================================ */
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
@@ -95,7 +96,7 @@ try {
     try { b = v.hangPose('tworoom-hang-order', 'order_board'); } catch (e) { b = 'ERR ' + e.message; }
     let c = null; try { v.hangPose('tworoom-hang-1', 'order_board'); } catch (e) { c = e.message; }
     return { n: s.length, order: s.filter(x => x.only === 'order_board').length, a, b, c }; })()`);
-  ok('G 투룸 걸이 자리 여섯 · 주문판 자리 하나', G.n === 6 && G.order === 1, JSON.stringify(G));
+  ok('G 투룸 걸이 자리 일곱(D71 창가 하나 더함) · 주문판 자리 하나', G.n === 7 && G.order === 1, JSON.stringify(G));
   ok('G 주문판 자리에 포스터는 안 된다 · 주문판은 된다 · 주문판은 다른 자리에 안 된다', !!G.a && G.b && typeof G.b === 'object' && !!G.c, JSON.stringify(G));
   if (SHOT) await page.shot(SHOT.replace(/\.png$/, '_tworoom.png'));
 
@@ -104,10 +105,18 @@ try {
   const H = JSON.parse(await page.eval(`(async () => { const v = window.view, e = window.engine;
     let order = null; try { v.hangPose('tworoom-hang-order', 'wall_planter'); } catch (err) { order = err.message; }
     e.setFurnitureEdits([], [{ uid: 'add-wall_planter-1', preset: 'wall_planter', ...v.hangPose('tworoom-hang-3', 'wall_planter') },
-                             { uid: 'add-wall_planter-2', preset: 'wall_planter', ...v.hangPose('tworoom-hang-5', 'wall_planter') }]);
+                             { uid: 'add-wall_planter-2', preset: 'wall_planter', ...v.hangPose('tworoom-hang-5', 'wall_planter') },
+                             { uid: 'add-wall_planter-3', preset: 'wall_planter', ...v.hangPose('tworoom-hang-sun', 'wall_planter') }]);
     await v.refreshFurniture();
     const b = e.room.built, S = id => b.plantSlots.find(s => s.slotId === id) || null;
     const p1 = S('add-wall_planter-1:0'), p2 = S('add-wall_planter-2:0');
+    const p3 = S('add-wall_planter-3:0');
+    const sun = v.hangSpots().find(x => x.id === 'tworoom-hang-sun') || null;
+    const g3 = b.furniture.children.find(g => g.userData.uid === 'add-wall_planter-3');
+    const bb3 = g3 ? new THREE.Box3().setFromObject(g3) : null;
+    /* 창(뒷벽 · 가게 창 cu −2.2 · 폭 1.6 → x −3.0~−1.4 · 창틀 바깥 6cm)·뒷벽 안쪽 면(z −2.4)과 안 겹치나 */
+    const win = (e.room.def.windows || []).find(w => w.wall === 'back' && w.preset === 'win_studio_cross');
+    const sunClear = bb3 && win ? { xMax: +bb3.max.x.toFixed(3), winX0: +(win.cu - win.w / 2 - 0.06).toFixed(3), zMin: +bb3.min.z.toFixed(3) } : null;
     const H3 = await import('/src/render3d/house.js');
     const free = p1 && typeof H3.dropBelow === 'function' ? H3.dropBelow(b, { x: p1.x, y: p1.y, z: p1.z }) : null;   // 대조 판(dropBelow 없음)에서도 칸마다 빨강이 찍히게
     const ioHas = (e.room.slots || []).some(s => s.slotId === 'add-wall_planter-1:0');
@@ -124,7 +133,7 @@ try {
     const et = b.plantSlots.filter(s => s.slotId.startsWith('tworoom-shelf-etagere-3tier:'));
     const etTop = et.filter(s => s.y > 0.7), dsp = b.plantSlots.filter(s => s.slotId.startsWith('tworoom-shop-display:') && s.y > 0.7);
     const right = b.shells.right && b.shells.right.userData._stub;
-    return JSON.stringify({ order, p1, p2, free, ioHas, put, shown2, right, colN, occN, colEt, HIGH: H3.HIGH_DROP_M,
+    return JSON.stringify({ order, p1, p2, p3, sun, sunClear, free, ioHas, put, shown2, right, colN, occN, colEt, HIGH: H3.HIGH_DROP_M,
       etTop: etTop.map(s => [s.dropM, s.high]), dsp: dsp.map(s => [s.dropM, s.high]),
       highIds: b.plantSlots.filter(s => s.high).map(s => s.slotId) });
   })()`, true, 120000));
@@ -138,8 +147,12 @@ try {
   ok('I 자유 좌표 자(dropBelow)가 자리 값과 같다', H.free && Math.abs(H.free.dropM - H.p1.dropM) < 1e-3 && H.free.high === H.p1.high, JSON.stringify(H.free));
   ok('I 다단 선반 윗단 셋은 바닥까지(0.794 · 높은 자리)', H.etTop.length === 3 && H.etTop.every(([d, h]) => h && Math.abs(d - 0.794) < 0.01), JSON.stringify(H.etTop));
   ok('I 계단식 진열대 윗단(0.815)은 바로 아랫단에 닿는다(0.25 · 높은 자리 아님)', H.dsp.length === 3 && H.dsp.every(([d, h]) => !h && Math.abs(d - 0.25) < 0.03), JSON.stringify(H.dsp));
+  const GROWTH_HIGH = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/growth_species.json'), 'utf8')).species.scindapsus.vine.high_spot_min_m;
+  ok(`I 높은 자리 문턱 house HIGH_DROP_M ${H.HIGH} = growth 정본 high_spot_min_m ${GROWTH_HIGH}`, H.HIGH === GROWTH_HIGH, String([H.HIGH, GROWTH_HIGH]));
+  ok('J 창가 걸이 자리(tworoom-hang-sun) — 왼벽 · 화분걸이가 걸리고 높은 자리', !!H.sun && H.sun.wall === 'left' && H.p3 && H.p3.high, JSON.stringify([H.sun, H.p3 && [H.p3.dropM, H.p3.high]]));
+  ok('J 창가 화분걸이가 창틀·유리(x ≤ −3.06)와 뒷벽 안쪽 면(z −2.4)에 안 닿는다', !!H.sunClear && H.sunClear.xMax < H.sunClear.winX0 && H.sunClear.zMin > -2.4, JSON.stringify(H.sunClear));
   console.log('  높은 자리', H.highIds.join(' · '));
-  if (SHOT) { await page.eval(`(() => { window.view.setHomeFrame({ uids: ['tworoom-shop-display', 'tworoom-shelf-etagere-3tier', 'add-wall_planter-1'], pad: 0.7 }, true); return 1; })()`);
+  if (SHOT) { await page.eval(`(() => { window.view.setHomeFrame({ uids: ['tworoom-shop-display', 'tworoom-shelf-etagere-3tier', 'add-wall_planter-1', 'add-wall_planter-3'], pad: 0.7 }, true); return 1; })()`);
               await sleep(3000); await page.shot(SHOT.replace(/\.png$/, '_planter.png')); }
 } finally { await page.close(); }
 console.log(`\nwall_hang: ${fail ? 'FAIL' : 'PASS'} (${pass}/${pass + fail})`);
