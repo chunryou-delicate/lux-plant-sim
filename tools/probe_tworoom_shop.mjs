@@ -154,9 +154,10 @@ console.log('   (몬스테라 화분 주문 — 보통 «가진 그루 중 가�
    ★ 떨어지는 높이(dropM) = house 가 지은 방의 자리 값(house.js dropBelow · 2b6cfc5a): 자리에서 판 끝까지 나가 아래 «첫 면»(없으면 바닥)까지.
      받침 높이(point.y)가 아니다 — 계단식 진열대 윗단(0.815)은 바로 아랫단에 닿아 0.25 다(총괄 10-23 정정). core 가 stepDay 에 넘기는 그 수.
      방은 노드에서 짓는다(gen_room_profile 과 같은 하네스 · light_adapter) — 지은 방의 빛 표가 얼린 프로필과 다르면 멈춘다(낡은 표로 안 잰다).
-   ★ 벽 화분걸이(새 가구 · 가게에서 산다)는 기준 배치에 없다 — 왼벽 걸이 자리(WALL_SPOT · 기본 tworoom-hang-3)에 하나 건 방을 «사본으로» 지어
-     그 자리의 dropM 과 빛 줄을 얻는다(얼린 표는 안 고친다 · 걸어도 다른 자리 빛이 안 바뀌는지 본다). */
-const SC_SEEDS = Number(process.env.SC_SEEDS || 4), SC_H = Number(process.env.SC_H || 420), WALL_SPOT = process.env.WALL_SPOT || 'tworoom-hang-3';
+   ★ 벽 화분걸이(새 가구 · 가게에서 산다)는 기준 배치에 없다 — 걸이 자리마다(주문판 전용 자리 빼고) 하나씩 건 방을 «사본으로» 지어
+     그 자리의 dropM 과 빛 줄을 얻는다(얼린 표는 안 고친다 · 걸어도 다른 자리 빛이 안 바뀌는지 본다). 자리마다 철별 60일 평균 DLI 표를 내고,
+     longVineM 닿는 날은 WALL_SPOT(기본 tworoom-hang-sun — 총괄 10-23 (ㄱ) 창가 자리 · house 814a7456) 하나만 걷는다. */
+const SC_SEEDS = Number(process.env.SC_SEEDS || 4), SC_H = Number(process.env.SC_H || 420), WALL_SPOT = process.env.WALL_SPOT || 'tworoom-hang-sun';
 const live = await (async () => {
   const vm = await import('node:vm');
   const toUrl = (rel) => 'file:///' + path.join(ROOT, rel).split(path.sep).join('/');
@@ -186,15 +187,21 @@ const live = await (async () => {
   if (stale.length || prof0.slots.length !== P.slots.length) throw new Error(`[투룸] 지은 방의 빛 표가 얼린 프로필과 다르다(${stale.length}칸 · ${stale.slice(0, 3).join(' · ')}) — gen_room_profile --rooms=tworoom 로 먼저 맞출 것`);
   const preset = FP.wall_planter;
   if (!preset) throw new Error('[투룸] 가구 프리셋 wall_planter 가 없다(house D71)');
-  const spot = hangSpotsOf(HR.rooms.tworoom).find(s => s.id === WALL_SPOT);
-  if (!spot) throw new Error(`[투룸] 걸이 자리 ${WALL_SPOT} 가 없다`);
-  eng.setFurnitureEdits([], [{ uid: 'probe-wall_planter', preset: 'wall_planter', ...hangPoseOf(spot, eng.room.built.size, preset.size_m || {}) }]);
-  eng.build('tworoom');
-  const ps = eng.room.built.plantSlots.find(s => s.slotId.startsWith('probe-wall_planter'));
-  const prof1 = eng.profile(LAMPS), row = prof1.slots.find(s => s.slotId === (ps && ps.slotId));
-  if (!ps || !row) throw new Error('[투룸] 건 화분걸이 자리를 못 찾았다');
-  const moved = prof1.slots.filter(s => s !== row && !rowsSame(s, P.slots.find(x => x.slotId === s.slotId))).map(s => s.slotId);
-  return { drops, planter: { slotId: ps.slotId, spot: WALL_SPOT, dropM: ps.dropM, edgeM: ps.dropEdgeM, dir: ps.dropDir, houseHigh: ps.high, row }, movedByPlanter: moved };
+  const spots = hangSpotsOf(HR.rooms.tworoom).filter(s => !s.only);
+  if (!spots.some(s => s.id === WALL_SPOT)) throw new Error(`[투룸] 걸이 자리 ${WALL_SPOT} 가 없다(있는 자리: ${spots.map(s => s.id).join(' · ')})`);
+  const planters = [];
+  for (const spot of spots) {
+    eng.setFurnitureEdits([], [{ uid: 'probe-wall_planter', preset: 'wall_planter', ...hangPoseOf(spot, eng.room.built.size, preset.size_m || {}) }]);
+    eng.build('tworoom');
+    const ps = eng.room.built.plantSlots.find(s => s.slotId.startsWith('probe-wall_planter'));
+    const prof1 = eng.profile(LAMPS), row = prof1.slots.find(s => s.slotId === (ps && ps.slotId));
+    if (!ps || !row) throw new Error(`[투룸] ${spot.id} 에 건 화분걸이 자리를 못 찾았다`);
+    const moved = prof1.slots.filter(s => s !== row && !rowsSame(s, P.slots.find(x => x.slotId === s.slotId))).map(s => s.slotId);
+    planters.push({ slotId: ps.slotId, spot: spot.id, wall: spot.wall, cu: spot.cu, cy: spot.cy, dropM: ps.dropM, edgeM: ps.dropEdgeM, dir: ps.dropDir, houseHigh: ps.high, row, moved });
+  }
+  eng.setFurnitureEdits([], []);
+  const planter = planters.find(x => x.spot === WALL_SPOT);
+  return { drops, planters, planter, movedByPlanter: planter.moved };
 })();
 const PL = live.planter.slotId;
 const dropOf = Object.fromEntries([...Object.entries(live.drops).map(([k, v]) => [k, v.dropM]), [PL, live.planter.dropM]]);
@@ -208,6 +215,30 @@ console.log(`   기준 배치 높은 자리 ${highSlots.filter(s => s !== PL).le
 console.log(`   + 벽 화분걸이(${live.planter.spot} 에 하나 건 사본) dropM ${live.planter.dropM} → ${R.isHighSpot(live.planter.dropM) ? '높은 자리' : '낮은 자리'} · 걸어서 빛이 바뀐 다른 자리 ${live.movedByPlanter.length}`);
 console.log(`   낮은 자리 가운데 가장 큰 dropM ${lowMax}m → 상한 ${R.scStemCapM(lowMax)}m < ${R.longVineM()}m · 받침 높이로는 높아 보이나 낮은 자리: ${slots.filter(sid => P.slots.find(x => x.slotId === sid).point.y >= 0.75 && !R.isHighSpot(dropOf[sid])).map(sid => `${sid.replace('tworoom-', '')}(받침 ${P.slots.find(x => x.slotId === sid).point.y} · 떨어짐 ${dropOf[sid]})`).join(' · ') || '없음'}`);
 if (houseDisagree.length) console.log(`   ⚠ house 의 high(HIGH_DROP_M)와 growth 문턱이 다르게 가르는 자리 ${houseDisagree.length}: ${houseDisagree.join(' · ')}`);
+/* 벽 화분걸이 자리마다 — 그 자리에 하나 건 사본의 철 첫날부터 60일 평균 DLI(판 씨앗 SC_SEEDS 평균) · 스킨답서스 밴드 */
+const thSC = R.thresholdsOf(R.newPlant('scindapsus'));
+const wallTable = live.planters.map(pw => {
+  const PW = { ...P, slots: [...P.slots, pw.row] }, seasons = {};
+  for (const open of ['spring', 'summer', 'autumn', 'winter']) {
+    seasons[open] = {};
+    for (const l of LAMPS) {
+      const v = [];
+      for (let seed = 1; seed <= SC_SEEDS; seed++) {
+        const light = createProfileLight({ ...PW, uidStable: true }, { thresholds: TH, weather: W, electricity: E });
+        const y0 = SEASON_START[open] + (seed - 1) * 360; let acc = 0;
+        for (let d = 1; d <= H; d++) acc += light.daily(d, { sim: { mode: 'real', yearDay0: y0 - 1, seed }, lamps: { count: l, litHours: 12 }, pots: [], placedItems: [] }).report.slots.find(s => s.slotId === pw.slotId).dli;
+        v.push(acc / H);
+      }
+      const m = mean(v), j = judgeDLI(m, thSC);
+      seasons[open][l] = { dli: +m.toFixed(2), band: j.band, ko: j.ko };
+    }
+  }
+  return { spot: pw.spot, wall: pw.wall, cu: pw.cu, cy: pw.cy, dropM: pw.dropM, high: R.isHighSpot(pw.dropM), movedOthers: pw.moved.length, seasons };
+});
+console.log(`   벽 화분걸이 자리마다(하나씩 건 사본) — 철 첫날부터 ${H}일 평균 DLI · 등 ${LAMPS.join('/')} · [스킨답서스 밴드: 문턱 die ${thSC.die} · survive ${thSC.survive} · min ${thSC.min} · best ${thSC.best_lo}]`);
+for (const w of wallTable)
+  console.log(`      ${w.spot.replace('tworoom-', '').padEnd(9)} ${w.wall.padEnd(5)} cu ${String(w.cu).padEnd(5)} cy ${w.cy} dropM ${w.dropM}${w.high ? '(높음)' : ''} · ` +
+    ['spring', 'summer', 'autumn', 'winter'].map(o => `${o.slice(0, 2)} ` + LAMPS.map(l => w.seasons[o][l].dli).join('/') + `(${w.seasons[o][LAMPS[LAMPS.length - 1]].ko})`).join('  '));
 /* 높은 자리에서 뿌리 낸 줄기(마디 둘)가 longVineM 에 닿는 날 — 그 자리 빛(real · 등 0~N) · 철 첫날에 뿌리 */
 const scReach = {};
 for (const sid of highSlots) scReach[sid] = {};
@@ -277,7 +308,7 @@ const d71 = { highSpotMinM: J('data/growth_species.json').species.scindapsus.vin
   dropSource: 'house.js dropBelow(2b6cfc5a) — 노드에서 지은 투룸(light_adapter) · 빛 표는 얼린 프로필과 같음을 확인',
   slots: slots4.map(sid => ({ slot: sid, baseY: (P4.slots.find(x => x.slotId === sid) || {}).point.y, dropM: dropOf[sid],
     edgeM: (live.drops[sid] || live.planter).edgeM, dir: (live.drops[sid] || live.planter).dir, high: R.isHighSpot(dropOf[sid]), capM: R.scStemCapM(dropOf[sid]) })),
-  planter: { spot: live.planter.spot, slot: PL, dropM: live.planter.dropM, row: live.planter.row, movedOthers: live.movedByPlanter },
+  planter: { spot: live.planter.spot, slot: PL, dropM: live.planter.dropM, row: live.planter.row, movedOthers: live.movedByPlanter }, wallTable,
   highSlots, houseDisagree, scReach, scSeeds: SC_SEEDS, scWindow: SC_H, caBand: CB, caFit,
   note: '⑤ 칼라테아 표는 기준 배치(화분걸이 없음)만 · ④ 는 화분걸이 하나 건 사본까지' };
 if (process.env.OUT) fs.writeFileSync(path.join(ROOT, process.env.OUT), JSON.stringify({ meta: { profile: FILE, roomRev: P.roomRev || null, generatedAt: P.generatedAt || null,
