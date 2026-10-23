@@ -2746,7 +2746,9 @@ function fitCam(target){
   const b=new THREE.Box3().setFromObject(T);
   if(!isFinite(b.max.y)||b.isEmpty()) return;
   const topY=b.max.y, halfW=Math.max(Math.abs(b.min.x),Math.abs(b.max.x),Math.abs(b.min.z),Math.abs(b.max.z));
-  FRUSTUM=Math.max(1.5, Math.min(4.2, Math.max(topY*0.62+0.32, halfW*1.15+0.5)));
+  /* ★ D71 — 새 종 보기에서 받침 위로 올린 늘어진 줄기(벽 화분걸이 1.4m 등)는 몬스테라 상한(4.2)보다 크다 — 그때만 넓힌다 */
+  const fMax=(T===SPECIES_ROOT && SPECIES_ROOT && SPECIES_ROOT.position.y>0)? 8 : 4.2;
+  FRUSTUM=Math.max(1.5, Math.min(fMax, Math.max(topY*0.62+0.32, halfW*1.15+0.5)));
   orbit.ty=topY*0.5+0.15;                       // 밑동~꼭대기 중간을 봄
   const a=(W||innerWidth)/(H||innerHeight);     // 투영만 갱신(렌더러 크기는 resize가 담당)
   cam.left=-FRUSTUM*a; cam.right=FRUSTUM*a; cam.top=FRUSTUM; cam.bottom=-FRUSTUM;
@@ -3979,7 +3981,8 @@ function renderPaused(){ return RENDER_PAUSED; }
      제 그룹(SPECIES_ROOT = 같은 화분 + 새 종 그루)을 무대에 얹는다. 끄면(null) 예전 그대로 돌아온다.
      ⚠ 이 창은 엔진이기도 하다 — 새 종을 보는 동안에도 코어가 몬스테라를 굴린다(그리기는 가려진 채 돈다).
    쓰는 법(호스트가 iframe 으로):
-       win.setSpeciesView({ species:'pink_princess'|'alocasia_frydek', plant:<species_growth 그루 상태>, seed?, lightAz?, potD? })
+       win.setSpeciesView({ species:'pink_princess'|'alocasia_frydek'|'scindapsus'|'calathea', plant:<species_growth 그루 상태>, seed?, lightAz?, potD?,
+                            hang?:{ dropM, potH, az?, edgeM? }(스킨답서스 늘어뜨림 · D71), night?(칼라테아 잎 세움 · D71) })
        win.setSpeciesView(null)      // 몬스테라로 돌아간다
        win.speciesViewInfo()         // 읽기 — 무엇을 그렸나(검사·방=확대 견줌용)
    크기: 그리개는 실측 미터로 그린다. 이 창의 화분(지름 약 1 단위)이 potD[m](기본 0.14)가 되게 같은 배율로 키운다 — 그루:화분 비가 방과 같다.
@@ -4018,13 +4021,28 @@ function _drawSpeciesView(){
     let g=null;
     /* ⚠ lightAz 는 받은 그대로 넘긴다 — 안 받았다고 이 창의 LIGHT_AZ 로 메우면 방(안 넘김 → 씨앗 방위)과 덩굴이 기우는 쪽이 갈린다
          (2026-10-09 core 가 방을 이을 때 lightAz 를 안 넘겨 드러났다 · test_species_room_zoom «빛 방향 안 줌» 판이 지킨다) */
-    if(D) g=D.draw({ species:o.species, plant:o.plant, rows:o.rows, seed:o.seed, lightAz:o.lightAz });
-    let k=1;
+    /* ★ D71 — 늘어지는 줄기(SC)는 화분 지름·늘어뜨릴 자리(hang)를, 칼라테아는 밤(night)을 받는다. potD 는 이 창에 실제로 그린 화분 지름(안 받으면 기본 화분) */
+    const pb=new THREE.Box3().setFromObject(root), potW=Math.max(pb.max.x-pb.min.x, pb.max.z-pb.min.z);
+    const k=(potW>1e-6? potW : 1)/(o.potD||SPECIES_POT_D);
+    /* hang 에 potH(흙 → 받침)가 없으면 이 창 화분의 흙 높이로(이 창에서만 · 그루 그림의 다른 칸은 받은 그대로) */
+    const hang=o.hang && typeof o.hang==='object'? Object.assign({}, o.hang, Number.isFinite(o.hang.potH)? {} : { potH:SOIL_Y/k }) : o.hang;
+    if(D) g=D.draw({ species:o.species, plant:o.plant, rows:o.rows, seed:o.seed, lightAz:o.lightAz,
+                     potD:o.potD||SPECIES_POT_D, hang, night:o.night });
     if(g){
-      const pb=new THREE.Box3().setFromObject(root), potW=Math.max(pb.max.x-pb.min.x, pb.max.z-pb.min.z);
-      k=(potW>1e-6? potW : 1)/(o.potD||SPECIES_POT_D);
       g.scale.setScalar(k); g.position.y=SOIL_Y;
       root.add(g);
+      /* ★ D71 늘어진 줄기 — 이 창의 바닥(격자)이 «바닥»이 되게 화분째 받침 위로 올린다: 받침 높이 = dropM · 앞 끝 = 늘어뜨린 쪽 화분 끝(edgeM).
+           그루 그림은 방과 한 톨도 안 다르다(올리는 것은 root) — 방 = 확대 견줌은 그루 그룹 안에서 그대로 선다 */
+      const hu=g.userData.hang;
+      if(hu && hu.given && hu.dropM>0.01){
+        const lift=(hu.potH+hu.dropM)*k-SOIL_Y, h=hu.dropM*k, az=hu.az, ux=Math.sin(az), uz=Math.cos(az);
+        const edge=Math.max(potW/2, (hu.edgeDrawnM-0.006)*k), dep=Math.max(potW*1.3, edge+potW*0.8), wid=potW*1.7;
+        const stand=new THREE.Mesh(new THREE.BoxGeometry(wid, h, dep), new THREE.MeshStandardMaterial({ color:0xd8ccb8, roughness:0.9 }));
+        stand.material.userData={ cloned:true };
+        stand.position.set(ux*(edge-dep/2), -lift+h/2, uz*(edge-dep/2)); stand.rotation.y=az;
+        stand.castShadow=true; stand.receiveShadow=true; stand.name='speciesStand';
+        root.add(stand); root.position.y=lift;
+      }
     }
     scene.add(root); SPECIES_ROOT=root;
     _speciesHideOthers();
@@ -4032,8 +4050,10 @@ function _drawSpeciesView(){
     SPECIES_INFO={ on:true, species:o.species, drawn:!!g, scale:k, err:_speciesErr? String(_speciesErr.message||_speciesErr) : null,
       leafCount:u? u.leafCount : 0, leafCountWanted:u? u.leafCountWanted : 0, skinsPending:u? u.skinsPending : 0,
       leaves:u? u.leafPivots.map(p=>({ asset:p.userData.asset, stage:p.userData.stage, grade:p.userData.grade, tilt:p.userData.tilt,
-                                       scale:p.userData.scale, x:p.position.x, y:p.position.y, z:p.position.z, ry:p.rotation.y })) : [],
-      varieLeafKeys:u? u.varieLeafKeys : [] };
+                                       scale:p.userData.scale, x:p.position.x, y:p.position.y, z:p.position.z, ry:p.rotation.y,
+                                       pose:p.userData.pose||null, curl:p.userData.curl??null,
+                                       qx:p.quaternion.x, qy:p.quaternion.y, qz:p.quaternion.z, qw:p.quaternion.w })) : [],
+      varieLeafKeys:u? u.varieLeafKeys : [], hang:u&&u.hang? Object.assign({}, u.hang) : null, night:!!(u&&u.night) };
     fitCam(); requestRender();
     return SPECIES_INFO;
   });

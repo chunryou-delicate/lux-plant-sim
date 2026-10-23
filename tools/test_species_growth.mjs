@@ -16,6 +16,12 @@
      N D49 잠든 구근(겨울에 심은 구근은 싹틀 때 구근 1~3알) · ★ D52 구근은 «잠에 들 때»(잎이 다 지는 날) 찾는다 · 봄 깸엔 없다
      O D56 구근 찾기는 평생 두 번(세 번째 잠부터 0 · 잠든 구근 싹틈도 한 번) · 칸을 빼면 세 번째에도 찾는 대조
      L 잘못 부르면 던진다 · M 그림 판이 실제로 있다
+     ★ D71(2026-10-23 · 총괄) — 두 종 더
+     P SC 스킨답서스: 삽수(뿌리 없음) → 놓인 날 root_days 에 뿌리(빛 무관) · 뿌리 뒤엔 dropM 없으면 던짐 · 마디 간격 ·
+       줄기 길이는 날마다 이어서 늘고 상한(받침 높이 + 화분 넘는 몫)에서 바닥에 닿아 멈춤 · 높은 자리에서만 longVineM 에 닿음 ·
+       높은 데 → 낮은 데로 옮겨도 안 줆 · 다시 높이면 이어 자람 · 어두울 때 난 잎은 초록(그림만) · 마디 자르기 · 세이브 왕복
+     Q CA 칼라테아: 맡은 그루(다 말림) · 너무 밝으면(avg7 > hi) 말리고 멎음 · 대역 안이면 새 잎부터 며칠에 걸쳐 펴짐 ·
+       어둠(min 밑)에선 안 펴짐 · 느림(lo 밑)은 더 느림 · 말린 잎이 있으면 새 잎 없음 · 잎 간격 · 최대 장수 · tooBright/tooDark · bandOf · spotFit
      node tools/test_species_growth.mjs
 ============================================================ */
 import fs from 'node:fs'; import path from 'node:path';
@@ -26,7 +32,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const J = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 const SPEC = J('data/growth_species.json'), TH = J('data/balance/light_thresholds.json');
 const R = createSpeciesRules(SPEC, TH);
-const PP = SPEC.species.pink_princess, AL = SPEC.species.alocasia_frydek;
+const PP = SPEC.species.pink_princess, AL = SPEC.species.alocasia_frydek, SC = SPEC.species.scindapsus, CA = SPEC.species.calathea;
 let fail = 0;
 const ok = (c, m) => { console.log((c ? '✅ ' : '⛔ ') + m); if (!c) fail++; };
 const throws = (f) => { try { f(); return false; } catch (e) { return true; } };
@@ -35,7 +41,10 @@ const walk = (p, days, dliOf, seasonOfDay) => { const ev = []; for (let d = 1; d
 const k = (v) => () => v;
 
 /* A */
-ok(R.species().join() === 'pink_princess,alocasia_frydek', 'A 정본 두 종이 실렸다');
+ok(R.species().join() === 'pink_princess,alocasia_frydek,scindapsus,calathea', `A 정본 네 종이 실렸다(${R.species().join(' · ')})`);
+for (const id of ['scindapsus', 'calathea']) {
+  const T2 = JSON.parse(JSON.stringify(TH)); delete T2.plants[SPEC.species[id].light_id];
+  ok(throws(() => createSpeciesRules(SPEC, T2)), `A ${id} 빛 줄(${SPEC.species[id].light_id})이 없으면 던진다`); }
 const TH2 = JSON.parse(JSON.stringify(TH)); delete TH2.plants.alocasia_frydek;
 ok(throws(() => createSpeciesRules(SPEC, TH2)), 'A 빛 줄(light_thresholds plants.alocasia_frydek)이 없으면 던진다 — 기본값으로 조용히 안 넘어간다');
 const thPP = R.thresholdsOf(R.newPlant('pink_princess')), thALv = R.thresholdsOf({ ...R.newPlant('alocasia_frydek'), varie: 'marble' });
@@ -255,6 +264,168 @@ ok(firstLeafDay(thPP.min - 0.1, 'summer') === null, `C PP 문턱(min ${thPP.min}
   const c = R2.newPlant('alocasia_frydek', { seed: 4111, origin: 'shop' });
   const fc = finds(R2, c, 360 * 4 + 20, d => seasonOf(90 + d)).filter(x => x.type === 'asleep');
   ok(fc.length >= 3 && fc[2].n > 0, `O 대조 — 칸을 빼면 세 번째 잠에도 구근 ${fc[2] && fc[2].n}알(검사가 문다)`); }
+
+/* ══ P — SC 스킨답서스(D71) ══════════════════════════════════════ */
+{ const thSC = R.thresholdsOf(R.newPlant('scindapsus'));
+  const V = SC.vine, inter = no => V.internode_m[SC.leaf_ladder[Math.min(SC.leaf_ladder.length - 1, no - 1)]];
+  const walkSC = (p, days, dliOf, seasonOfDay, dropOf) => { const ev = []; for (let d = 1; d <= days; d++) for (const e of R.stepDay(p, { dli: dliOf(d), season: seasonOfDay(d), dropM: dropOf(d) })) ev.push({ d, ...e }); return ev; };
+  const bandSC = (dli) => (dli < thSC.min ? null : dli < thSC.best_lo ? 'slow' : dli <= thSC.best_hi ? 'best' : dli <= thSC.max ? 'good' : 'over');
+
+  /* P1 상점 삽수 */
+  const c = R.newPlant('scindapsus', { seed: 21 });
+  const s0 = R.summary(c);
+  ok(c.phase === 'cutting' && s0.nodes === SC.propagation.start_nodes && Math.abs(c.lengthM - (inter(1) + inter(2))) < 1e-9 && c.leaves.every(l => l.marble) && s0.rootDaysLeft === SC.propagation.root_days,
+    `P1 상점 «줄기 삽수» — 마디 ${s0.nodes} · 줄기 ${s0.lengthM}m(= 마디 사이 ${inter(1)}+${inter(2)}) · 뿌리까지 ${s0.rootDaysLeft}일`);
+
+  /* P2 뿌리 — 빛 무관 · 놓인 날만 · 그동안 dropM 을 안 읽고 안 자람 */
+  { const a = R.newPlant('scindapsus', { seed: 21 }), b = R.newPlant('scindapsus', { seed: 21 });
+    const ea = walkSC(a, 30, k(0.05), k('winter'), d => d <= SC.propagation.root_days ? undefined : 0.79);
+    const eb = walkSC(b, SC.propagation.root_days, k(9), k('summer'), k(undefined));
+    const ra = ea.find(e => e.type === 'rooted'), rb = eb.find(e => e.type === 'rooted');
+    ok(ra && rb && ra.d === SC.propagation.root_days && rb.d === SC.propagation.root_days && ea.filter(e => e.type === 'rooted').length === 1 && a.phase === 'growing',
+      `P2 뿌리 — 어둠 0.05 겨울도 밝음 9 여름도 ${ra && ra.d}·${rb && rb.d}일째(root_days ${SC.propagation.root_days} · 빛 무관 · 한 번) · 삽수 동안 dropM 없어도 안 던짐`);
+    ok(!ea.some(e => e.type === 'node' && e.d <= SC.propagation.root_days), 'P2 뿌리 전에는 마디가 안 는다'); }
+
+  /* P3 뿌리 뒤엔 dropM 이 꼭 있어야 — 던지고 그루는 그대로 */
+  { const g = R.newPlant('scindapsus', { seed: 21, form: 'rooted' }), before = JSON.stringify(g);
+    ok(throws(() => R.stepDay(g, { dli: 5, season: 'spring' })) && throws(() => R.stepDay(g, { dli: 5, season: 'spring', dropM: NaN })) && JSON.stringify(g) === before,
+      'P3 뿌리 내린 SC 는 dropM 없이 하루를 넘기면 던진다 — 그루는 한 톨도 안 바뀜(조용히 안 메꿈)'); }
+
+  /* P4 마디 간격 = interval / (밴드 속도 × 계절) */
+  for (const [dli, se] of [[5, 'spring'], [5, 'summer'], [2, 'winter'], [12, 'autumn']]) {
+    const g = R.newPlant('scindapsus', { seed: 3, form: 'rooted' });
+    const f = walkSC(g, 60, k(dli), k(se), k(1.4)).find(e => e.type === 'node');
+    const want = Math.ceil(SC.interval_days / (SC.speed_by_band[bandSC(dli)] * SC.season_speed[se]) - 1e-9);
+    ok(f && f.d === want, `P4 SC 첫 새 마디 — DLI ${dli}(${bandSC(dli)}) · ${se} → ${f && f.d}일 (기대 ${want})`); }
+
+  /* P5 바닥 자리 — 상한에서 정확히 멈춤 · reached_floor 한 번 · 그 뒤 안 자람 · 길이는 날마다 이어서 늘었음 */
+  { const g = R.newPlant('scindapsus', { seed: 5, form: 'rooted' });
+    const lens = []; const ev = [];
+    for (let d = 1; d <= 400; d++) { for (const e of R.stepDay(g, { dli: 6, season: 'spring', dropM: 0.02 })) ev.push({ d, ...e }); lens.push(g.lengthM); }
+    const cap = R.scStemCapM(0.02), fl = ev.filter(e => e.type === 'reached_floor');
+    const mono = lens.every((v, i) => i === 0 || v >= lens[i - 1]);
+    const pre = fl[0] ? lens.slice(0, fl[0].d) : [];
+    const growDays = pre.filter((v, i) => i > 0 && v > pre[i - 1]).length;
+    ok(g.lengthM === cap && g.atFloor && fl.length === 1 && g.leaves.every(l => l.at <= cap + 1e-9) && mono,
+      `P5 바닥(받침 0.02m) — 줄기 ${g.lengthM}m = 상한 ${cap}(0.02 + ${V.pot_over_m}) · ${fl[0] && fl[0].d}일째 바닥 · 닿음 사건 ${fl.length}번 · 마디 ${g.leaves.length}`);
+    ok(fl[0] && growDays >= fl[0].d - 2, `P5 길이는 마디 사이가 아니라 날마다 이어서 는다(바닥까지 ${fl[0] && fl[0].d}일 가운데 ${growDays}일 늘음)`);
+    const n0 = g.leaves.length; walkSC(g, 300, k(8), k('summer'), k(0.02));
+    ok(g.leaves.length === n0 && g.lengthM === cap, `P5 바닥에 닿은 뒤 300일(밝음) — 마디 ${g.leaves.length} 그대로 · 길이 그대로`); }
+
+  /* P6 높은 자리 — 문턱 바로 밑은 3년이 가도 longVineM 에 못 닿음 · 문턱에서는 닿음 */
+  { const H = V.high_spot_min_m, L = R.longVineM();
+    const lo = R.newPlant('scindapsus', { seed: 6, form: 'rooted' }), hi = R.newPlant('scindapsus', { seed: 6, form: 'rooted' });
+    walkSC(lo, 1080, k(6), d => seasonOf(d), k(H - 0.01)); walkSC(hi, 1080, k(6), d => seasonOf(d), k(H));
+    ok(Math.abs(L - (H + V.pot_over_m)) < 1e-9 && R.isHighSpot(H) && !R.isHighSpot(H - 0.01) && lo.lengthM < L && hi.lengthM >= L && hi.lengthM === R.scStemCapM(H),
+      `P6 높은 자리 문턱 ${H}m — 바로 밑(${(H - 0.01).toFixed(2)}) 3년 줄기 ${lo.lengthM} < longVineM ${L} · 문턱 자리 ${hi.lengthM} ≥ ${L}(높은 자리에서만 닿는 길이)`); }
+
+  /* P7 높은 데 → 낮은 데(줄기 안 줆 · 멎음 · 남는 몫은 바닥) → 다시 높은 데(이어 자람) */
+  { const g = R.newPlant('scindapsus', { seed: 7, form: 'rooted' });
+    walkSC(g, 260, k(6), k('spring'), k(1.4));
+    const L1 = g.lengthM, n1 = g.leaves.length;
+    const e2 = walkSC(g, 120, k(6), k('spring'), k(0.02));
+    const L2 = g.lengthM, n2 = g.leaves.length;
+    const e3 = walkSC(g, 60, k(6), k('spring'), k(1.4));
+    ok(L1 > R.scStemCapM(0.02) && L2 === L1 && n2 === n1 && g.lengthM > L1 && g.leaves.length > n1 && e2.filter(e => e.type === 'reached_floor').length === 1 && !e2.some(e => e.type === 'node') && e3.some(e => e.type === 'node'),
+      `P7 1.4m 260일 줄기 ${L1}m(마디 ${n1}) → 바닥으로 옮김 120일: ${L2}m(안 줆 · 마디 ${n2} · 멎음) → 다시 1.4m 60일: ${g.lengthM}m(마디 ${g.leaves.length} · 이어 자람)`); }
+
+  /* P8 어두울 때 난 잎은 초록(그림만) — 마블 판 / 초록 판 · 등급(값) 칸 없음 */
+  { const g = R.newPlant('scindapsus', { seed: 8, form: 'rooted', nodes: 6 });
+    walkSC(g, 60, k(thSC.best_lo - 0.5), k('spring'), k(1.4));
+    const dark = g.leaves.filter(l => l.no > 6); const nd = dark.length;
+    walkSC(g, 60, k(6), k('spring'), k(1.4));
+    const bright = g.leaves.filter(l => l.no > 6 + nd);
+    const rows = R.leafRows(g), rd = rows.find(r => r.no === dark[0].no), rb = rows.find(r => r.no === bright[bright.length - 1].no);
+    ok(nd > 0 && dark.every(l => !l.marble) && bright.length > 1 && bright.slice(1).every(l => l.marble) && rd.grade === 'green' && rb.grade === 'marble' && rd.asset === SC.assets[rd.stage].green && rb.asset === SC.assets[rb.stage].marble,
+      `P8 avg7 < best_lo(${thSC.best_lo}) 에 난 잎 ${nd}장 초록 · 밝아진 뒤 마블(avg7 이 따라오는 첫 장 빼고) · 판 ${rd.asset.split('/').pop()} / ${rb.asset.split('/').pop()}`);
+    ok(!('value' in R.summary(g)) && !rows.some(r => 'won' in r), 'P8 SC 는 등급·값 칸이 없다(값 = 마디 수 × 마디값 · core)'); }
+
+  /* P9 마디 자르기 */
+  { const m = R.newPlant('scindapsus', { seed: 9, form: 'rooted', nodes: 2 });
+    walkSC(m, 200, k(6), k('spring'), k(1.4));
+    const N = m.leaves.length, L0 = m.lengthM, cutNo = m.leaves[2].no, cutAt = m.leaves[2].at;
+    const { cutting, saved } = R.cutAbove(m, cutNo);
+    const sm = R.summary(m), sc = R.summary(cutting);
+    ok(sm.nodes === 3 && m.lengthM === cutAt && sc.nodes === N - 3 && cutting.phase === 'cutting' && !saved && Math.abs(sc.lengthM - (L0 - cutAt)) < 1e-6 && cutting.leaves[0].at > 0 && cutting.leaves[0].no === cutNo + 1,
+      `P9 마디 ${cutNo} 위를 자름 — 모주 마디 ${sm.nodes} · ${sm.lengthM}m / 삽수 마디 ${sc.nodes} · ${sc.lengthM}m(뿌리 없음 · at 은 자른 자리부터 ${cutting.leaves[0].at})`);
+    const topNo = cutting.leaves[cutting.leaves.length - 1].no;
+    const e = walkSC(cutting, SC.propagation.root_days + 30, k(6), k('spring'), d => d <= SC.propagation.root_days ? undefined : 1.4);
+    const nn = e.find(x => x.type === 'node');
+    ok(e.some(x => x.type === 'rooted') && nn && nn.no === topNo + 1 && cutting.leaves[cutting.leaves.length - 1].stage === 'mature',
+      `P9 삽수가 뿌리 뒤 이어서 마디 ${nn && nn.no}(마디 번호 그대로 · ${cutting.leaves[cutting.leaves.length - 1].stage})`);
+    ok(R.scInternodeM(m) === inter(m.nodes + 1) && R.scInternodeM() === V.internode_m.mature, `P9 scInternodeM — 그 그루 다음 칸 ${R.scInternodeM(m)} · 그루 없이 ${R.scInternodeM()}`);
+    ok(throws(() => R.cutAbove(m, 99)) && throws(() => R.cutAbove(m, m.leaves[m.leaves.length - 1].no)), 'P9 없는 마디 · 삽수로 갈 마디가 없는 자르기는 던진다'); }
+
+  /* P10 같은 씨앗 = 같은 그루 · 세이브 왕복 */
+  { const dl = d => 2 + 5 * ((d * 31 % 13) / 12), dr = d => d <= 12 ? undefined : d < 150 ? 0.45 : 0.79;
+    const run = () => { const g = R.newPlant('scindapsus', { seed: 10 }); walkSC(g, 300, dl, d => seasonOf(d), dr); return g; };
+    const a = run(), b = JSON.parse(JSON.stringify(R.newPlant('scindapsus', { seed: 10 })));
+    walkSC(b, 300, dl, d => seasonOf(d), dr);
+    ok(JSON.stringify(a) === JSON.stringify(run()) && JSON.stringify(a) === JSON.stringify(b), 'P10 같은 씨앗 · 같은 빛 · 같은 자리 = 같은 그루 · JSON 왕복도 같은 길'); }
+}
+
+/* ══ Q — CA 칼라테아(D71) ══════════════════════════════════════ */
+{ const thCA = R.thresholdsOf(R.newPlant('calathea')), C = CA.curl;
+  const B = R.bandOf('calathea');
+  ok(B.lo === TH.plants.calathea_orbifolia.best_lo && B.hi === TH.plants.calathea_orbifolia.max && B.lo === 3 && B.hi === 8,
+    `Q bandOf('calathea') = [${B.lo}, ${B.hi}] — 빛 줄 [best_lo, max] 그대로(명세 후보 lo 3 · hi 8)`);
+  const fits = [1.5, 2.5, 5, 7.9, 8.5].map(x => R.spotFit('calathea', x));
+  ok(fits.join() === 'dark,slow,fit,fit,over', `Q spotFit('calathea') 1.5/2.5/5/7.9/8.5 → ${fits.join(' · ')}`);
+
+  /* Q1 맡은 그루 */
+  const g = R.newPlant('calathea', { seed: 31, leaves: 5, curled: 'all' }), s1 = R.summary(g);
+  ok(s1.leaves === 5 && s1.curled === 5 && s1.tooBright === null && g.leaves.every(l => l.stage === 'mature' && l.curl === 1),
+    `Q1 맡은 칼라테아 — 잎 ${s1.leaves} · 말린 잎 ${s1.curled} · 빛 보기 전 tooBright ${s1.tooBright}(모른다)`);
+
+  /* Q2 너무 밝음 — 대역 안이 되기 전엔 안 펴짐 · 잎도 안 남 */
+  const e2 = walk(g, 60, k(B.hi + 2), k('summer'));
+  ok(R.summary(g).curled === 5 && !e2.some(e => e.type === 'unfurl' || e.type === 'leaf') && R.summary(g).tooBright === true,
+    `Q2 너무 밝은 데(DLI ${B.hi + 2}) 60일 — 그대로 다 말림 · 새 잎 없음 · tooBright ${R.summary(g).tooBright}`);
+
+  /* Q3 알맞은 데 — 새 잎부터 며칠에 걸쳐 펴짐 · 다 펴짐 한 번 */
+  const e3 = walk(g, 40, k(5), k('summer'));
+  const uf = e3.filter(e => e.type === 'unfurl'), all = e3.filter(e => e.type === 'unfurled_all');
+  const span = uf.length ? uf[uf.length - 1].d - uf[0].d : null;
+  ok(uf.length === 5 && all.length === 1 && uf.map(e => e.no).join() === '5,4,3,2,1' && span >= 2 && R.summary(g).curled === 0 && R.summary(g).tooBright === false,
+    `Q3 DLI 5 로 옮김 — 펴짐 ${uf.map(e => `${e.d}일 #${e.no}`).join(' · ')} (새 잎부터 · ${span}일에 걸쳐) · 다 펴짐 ${all[0] && all[0].d}일째`);
+  /* avg7 이 hi 밑으로 내려오는 날 — 그날부터 펴지기 시작해 가장 새 잎이 unfurl_days 쯤에 다 펴진다 */
+  let down = 0; { const h = []; for (let d = 1; d <= 7; d++) h.push(B.hi + 2); for (let d = 1; d <= 40 && !down; d++) { h.push(5); h.shift(); if (h.reduce((x, y) => x + y, 0) / 7 <= B.hi) down = d; } }
+  ok(uf[0].d >= down + C.unfurl_days - 1 && uf[0].d <= down + C.unfurl_days, `Q3 첫 잎이 다 펴지는 날 ${uf[0].d} = avg7 이 hi 밑으로 온 날 ${down} + unfurl_days(${C.unfurl_days}) 쯤`);
+
+  /* Q4 어둠(min 밑)에선 안 펴짐 · 느림(lo 밑)은 알맞음보다 늦음 */
+  const dayAll = (dli) => { const h = R.newPlant('calathea', { seed: 32, leaves: 4, curled: 'all' }); const e = walk(h, 120, k(dli), k('spring')).find(x => x.type === 'unfurled_all'); return e ? e.d : null; };
+  const dDark = dayAll(thCA.min - 0.5), dSlow = dayAll((thCA.min + thCA.best_lo) / 2), dFit = dayAll(5);
+  ok(dDark === null && dSlow > dFit && dFit > 0, `Q4 다 펴지는 날 — 어둠(${thCA.min - 0.5}) 없음(120일) · 느림 ${dSlow}일 · 알맞음 ${dFit}일`);
+
+  /* Q5 말림 시작 — 펴진 그루를 너무 밝은 데로: 사건 curl 한 번 · curl_days 쯤에 다 말림 · 그동안 새 잎 없음 */
+  { const mk = () => { const t = R.newPlant('calathea', { seed: 33, leaves: 3, curled: 0 }); walk(t, 20, k(5), k('spring')); return t; };
+    const h = mk(), e = walk(h, 30, k(B.hi + 4), k('spring'));
+    const cu = e.filter(x => x.type === 'curl');
+    const t = mk(); let full = null; for (let d = 1; d <= 30 && full == null; d++) { R.stepDay(t, { dli: B.hi + 4, season: 'spring' }); if (t.leaves.every(l => l.curl === 1)) full = d; }
+    ok(cu.length === 1 && cu[0].curled === 3 && h.leaves.every(l => l.curl === 1) && full != null && full <= cu[0].d + C.curl_days && !e.some(x => x.type === 'leaf'),
+      `Q5 펴진 그루를 DLI ${B.hi + 4} 로 — ${cu[0] && cu[0].d}일째 말리기 시작(사건 1번) · ${full}일째 다 말림(curl_days ${C.curl_days}) · 새 잎 없음`); }
+
+  /* Q6 잎 간격 = interval / (밴드 속도 × 계절) · 최대 장수 */
+  for (const [dli, se, bd] of [[5, 'spring', 'best'], [7.5, 'summer', 'good'], [2.5, 'spring', 'slow']]) {
+    const h = R.newPlant('calathea', { seed: 34, leaves: 3, curled: 0 });
+    const f = walk(h, 120, k(dli), k(se)).find(x => x.type === 'leaf');
+    const want = Math.ceil(CA.interval_days / (CA.speed_by_band[bd] * CA.season_speed[se]) - 1e-9);
+    ok(f && f.d === want, `Q6 CA 첫 새 잎 — DLI ${dli}(${bd}) · ${se} → ${f && f.d}일 (기대 ${want})`); }
+  { const h = R.newPlant('calathea', { seed: 35, leaves: CA.max_leaves, curled: 0 });
+    const e = walk(h, 200, k(5), k('summer'));
+    ok(h.leaves.length === CA.max_leaves && e.filter(x => x.type === 'leaf').length === e.filter(x => x.type === 'leaf_drop').length && e.some(x => x.type === 'leaf_drop'),
+      `Q6 잎이 ${CA.max_leaves}장을 넘으면 가장 오래된 잎이 진다(낸 ${e.filter(x => x.type === 'leaf').length} · 진 ${e.filter(x => x.type === 'leaf_drop').length})`); }
+
+  /* Q7 그림 줄 · 세이브 왕복 */
+  { const h = R.newPlant('calathea', { seed: 36, leaves: 4, curled: 2 });
+    const rows = R.leafRows(h);
+    ok(rows.map(r => r.curl).join() === '1,1,0,0' && rows.every(r => r.grade === 'plain' && r.asset === CA.assets.mature.plain && r.size_m === CA.leaf_size_m.mature),
+      `Q7 그림 줄 — curl ${rows.map(r => r.curl).join(',')} · 판 ${rows[0].asset.split('/').pop()} · ${rows[0].size_m}m`);
+    const run = (p) => { walk(p, 240, d => 2 + 9 * ((d * 17 % 11) / 10), d => seasonOf(d)); return JSON.stringify(p); };
+    ok(run(R.newPlant('calathea', { seed: 37, curled: 'all' })) === run(JSON.parse(JSON.stringify(R.newPlant('calathea', { seed: 37, curled: 'all' })))), 'Q7 같은 그루 · 같은 빛 · JSON 왕복도 같은 길(말림·펴짐 오가는 빛 240일)'); }
+  ok(throws(() => R.cutAbove(R.newPlant('calathea'), 1)) && throws(() => R.newPlant('calathea', { leaves: CA.max_leaves + 1 })) && throws(() => R.newPlant('calathea', { leaves: 3, curled: 4 })),
+    'Q CA 는 자르지 않는다 · 잎 수·말린 잎 수가 틀리면 던진다');
+}
 
 /* L — 잘못 부르면 던진다 */
 const pp = R.newPlant('pink_princess');

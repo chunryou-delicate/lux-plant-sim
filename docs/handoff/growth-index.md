@@ -291,6 +291,43 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-10-23 · D71 새 두 종 — 스킨답서스(SC · 늘어지는 덩굴 · 배움 «높이») · 칼라테아(CA · 잎 말림 · 배움 «가운데») (총괄 · 박사님 «추천대로»)
+
+명세 `plan-species2-shop-spec-20261010.md` §3 · §D71. 함수 이름은 core 제안 꼴로 맞췄다(10-23 · core 가 그 이름으로 뼈대를 지음).
+
+```
+규칙   src/growth/species_growth.js (PP·AL 과 같은 길 · 그루 상태 JSON species/1)
+  R.newPlant('scindapsus', { seed, form:'cutting'|'rooted', nodes })   상점 «줄기 삽수» = phase cutting(뿌리 없음 · 마디 2)
+  R.newPlant('calathea', { seed, leaves, curled:'all'|n, stage })     맡은 칼라테아(ca_care · 다 큰 잎 · 다 말림)
+  R.stepDay(p, { dli, season, dropM })     ★ SC growing 은 dropM 없으면 던짐 · dropM = house dropBelow «떨어지는 높이»(받침 높이 아님)
+  R.cutAbove(p, nodeNo)                    SC 도 PP 와 같은 손 — 잘린 끝 = phase cutting
+  R.summary   SC { phase, nodes, leaves, lengthM, capM, atFloor, rootDaysLeft } · CA { leaves, curled, tooBright, tooDark }(avg7 결 · 빛 전엔 null)
+  R.scStemCapM(dropM) = dropM + 0.25 · R.isHighSpot(dropM) = dropM ≥ 0.75 · R.longVineM() = 1.0 · R.scInternodeM(p) · R.bandOf · R.spotFit
+  사건  SC rooted · node · reached_floor / CA leaf · leaf_drop · curl · unfurl · unfurled_all
+뼈대   SC 뿌리 = «놓인 날» 12일(빛 무관 · 몬스테라 물꽂이와 같은 근거) → 마디 간격 13 걸음(봄 최적 10.4일 · 겨울 느림 17일)
+       줄기는 «날마다 이어서» 늘고 상한에서 바닥(또는 아랫단)에 닿아 멈춤 · 높은 데 → 낮은 데로 옮겨도 안 줆(남는 몫은 바닥에 눕고 멎음) · 다시 높이면 이어 자람
+       어두울 때(avg7 < best_lo 3) 난 잎은 크림 마블 없이 초록 판(그림만 · 등급·값 없음)
+       CA 대역 [3, 8] = 빛 줄 [best_lo, max] · avg7 > 8 → 모든 잎 하루 1/4 씩 말림 · 자람 멎음 / 대역 안 → 새 잎부터 펴짐(5일 ÷ (1 + 0.12 × 순번) · 느림 ×0.6 · min 2 밑은 안 펴짐)
+       말린 잎이 있으면 새 잎 없음 · 잎 간격 35 걸음(봄 최적 30일 · 느림 44일) · 최대 9장
+값     ⚖ 첫 판(growth_species.json · light_thresholds.json 두 줄 scindapsus_marble_queen · calathea_orbifolia) — 총괄: 고치지 말고 core 하네스 숫자로 정함
+그림   src/render3d/species_draw.js — SC 꼴 trailing(흙 → 테두리 → 화분 옆면 → 받침 끝 → 아래 · 늘어진 잎은 끝이 아래·바깥 · 겉면 바깥·위 · 바닥 뚫는 잎은 눕힘)
+         youngPlantOf / setSpeciesView 에 hang:{ dropM, potH, az?, edgeM? } · sizeM 은 화분 위 몫만(늘어진 줄기는 D55 붐빔에 안 듦) · hang 없으면 hangGiven false
+       CA 말린 잎 = 잎몸을 가운데 맥 축으로 겉면 쪽으로 만다(기하만 휨 · 0.1 칸 캐시 · 원판 안 바뀜) · night:true 면 눕힘 ×0.3
+       확대: 늘어진 SC 는 화분째 받침(dropM) 위로 올려 격자 = 바닥 · 그루 그룹은 방과 같다
+       leaf 7513a0e5 (가) 다섯 판 자세 A — 넣는 것은 크기뿐 · 마블퀸 ×1.069 · 단계 실측 .105/.128(adj_by_asset)
+```
+
+**잰 것 — 투룸(probe_tworoom_shop ④⑤ · `docs/handoff/growth-tworoom-shop.json` d71 · dropM 은 노드에서 지은 방의 house 값 · 빛 표가 얼린 프로필과 같음을 먼저 봄):**
+- ④ 높은 자리(dropM ≥ 0.75) — 기준 배치 **3 / 29**: 다단 선반 윗단 셋(0.794). 계단식 진열대 윗단(받침 0.815)은 아랫단에 닿아 0.25 → 낮은 자리. 낮은 자리 가운데 가장 큰 dropM 0.595 → 상한 0.845 < longVineM 1.0.
+  뿌리 낸 줄기(마디 2)가 longVineM 에 닿는 날(선반 윗단 · 판 씨앗 4): 봄 158~162 · 여름 165~174 · 가을 196~226 · 겨울 185~210(등 3 → 0).
+- ⚠ **벽 화분걸이**: 걸이 자리 다섯(주문판 자리 빼고)에 하나씩 걸어 보면 dropM 은 다 1.432(높은 자리)인데 빛이 **0.01~0.66 DLI**(등 3 켜도) — SC 문턱(die 0.3 · survive 0.8 · min 1.5) 밑이라 자라지 못한다. 기준 배치(화분걸이 없음)의 표에는 영향 없음(걸어도 다른 자리 빛 0 칸 바뀜).
+- ⑤ 칼라테아 «알맞은 자리»(avg7 이 [3, 8] 인 날 몫 ≥ 0.5) / 29: 봄 3·6·6·9 · 여름 6·6·6·11 · 가을 3·4·6·9 · **겨울 0·0·5·6**(등 0·1·2·3). 너무 밝은 자리는 등 3 에서만 1~2.
+  맡은 그루가 60일 안에 다 펴지는 자리(느림 포함): 겨울 3·6·7·14 — 겨울 등 0~1 이면 «알맞은 자리» 0 이라 ca_pot 가드가 닫히고 펴짐도 느린 자리뿐(등 1: 11~39일).
+- core test_species2(FAKE=0 · 진짜 규칙): 맡은 칼라테아 DLI 5 에서 8일에 다 펴짐 · 삽수 12일 뿌리 · 높은 자리(0.81 가정) longVineM 155일 — core 하네스 몫.
+
+**검사**: test_species_growth P(10)·Q(9) · test_species_draw ⑨~⑬ · test_species_room_zoom scHang·scFloor·caCurl·caNight · test_young_plant · test_skin_room_matches_zoom · test_health_drop_switch.
+**사진**: `img/species2_sc_hang.png`(바닥 · 받침 0.45 · 선반 윗단 0.79 · 높은 데서 자라 바닥으로 옮긴 줄기 — 받침 상자는 사진용) · `img/species2_ca_curl.png`(말림 · 펴짐 · 밤) · `img/species_zoom_scHang.png` · `img/species_zoom_caCurl.png`.
+
 ### 2026-10-10 · D59 투룸 — 측정판 굽기 · 빛 표 · 가게 주문 기한이 «키워서 맞출 수 있는 길이»인가 (총괄)
 
 ```
@@ -636,12 +673,8 @@ novice 은 등 0·1·2 모두 bright 100%
 ## ⑤ ⏸ 대기
 
 ```
-스킨답서스·칼라데아   총괄 10-10: 그림·3D 만 갖춰 두고 게임에 안 들임(지금은 튜토→원룸→엔딩→가게 다듬기 차례) · plan «다음 종 후보»에 판단 거리 넷
-                    (늘어지는 덩굴 꼴 · 칼라데아 본 무늬 vs 화이트퓨전 · 실측 · 무늬판 뼈대가 판마다 다름 → 조정표 판마다 한 줄) · 들일 때 유력: 가게 «새 주문 종»
-                    잎 판은 준비됨 — leaf 996706f5 · e19124b5 · ★ 19f3876f «(A) 자세» 열 판(어린 스킨답서스 포함): 이 잎들은 PP·AL 처럼 휜 잎이 아니라
-                    «곧은 잎»이다 — 앞면을 줄기 쪽(−Z)으로 세웠다(자루 끝 맨 아래 · cz ≈ 0). 그리개가 바깥으로 눕히면 앞면이 위로 돈다
-                    (n=(0,0,−1) → θ 눕힘에 (0, sinθ, −cosθ)) · 곧은 잎은 눕혀도 흙 밑 막음이 안 걸린다. ⚠ 새 잎(눕힘 0)은 줄기 쪽을 보고 서므로
-                    들일 때 draw.adj[단계].tilt_deg(기본 눕힘)를 줘야 앞면이 보인다 · 스킨답서스 무늬판 둘은 잎몸이 휘어 일부 위를 본다(leaf 표)
+스킨답서스·칼라테아   ✅ D71(10-23) 규칙·그림·표 섰음 — 위 §D71. 남은 것: core 가 방·확대에 hang · night 를 넘기는 줄(core 차례) ·
+                    ⚠ 투룸 벽 화분걸이 다섯 자리가 다 어두움(SC 못 자람 · §D71 ④) — house·plan·총괄 판단 · 기준 배치·화분걸이 자리가 바뀌면 probe_tworoom_shop 다시
 새 종 확대 «게임이 여는» 한 줄   core 차례(setSpeciesView) — 이으면 test_skin_room_matches_zoom 새 두 종 단계를 «게임이 연 확대»를 읽게 바꾼다
 원룸 이사 계절(YD0)     총괄 봇 판(cut1008c)이 정하면 probe_seedplant_oneroom ①· probe_cutting_firstleaf_oneroom ③ · probe_species_oneroom 다시
 원룸 「기준 배치」   박사님 결정. 후보 A~D 의 real 400일 표는 §10.22 에 있다 — 고르시면 그 판이 정본이 된다

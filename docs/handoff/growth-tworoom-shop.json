@@ -8132,5 +8132,4728 @@
   "PP 어려움 새 잎 분홍 많음↑ · 45일(맨 위 분홍 0.35) · 겨울 첫날",
   "PP 어려움 새 잎 분홍 많음↑ · 45일(맨 위 분홍 0.35) · 가을 끝(겨울 낌)",
   "AL 보통 잎≥2(막 싹튼 1) · 30일 · 겨울 첫날"
- ]
+ ],
+ "d71": {
+  "highSpotMinM": 0.75,
+  "longVineM": 1,
+  "lowMaxDropM": 0.595,
+  "dropSource": "house.js dropBelow(2b6cfc5a) — 노드에서 지은 투룸(light_adapter) · 빛 표는 얼린 프로필과 같음을 확인",
+  "slots": [
+   {
+    "slot": "tworoom-nightstand:0",
+    "baseY": 0.48,
+    "dropM": 0.48,
+    "edgeM": 0.38,
+    "dir": [
+     0,
+     -1
+    ],
+    "high": false,
+    "capM": 0.73
+   },
+   {
+    "slot": "tworoom-table-round:0",
+    "baseY": 0.45,
+    "dropM": 0.434,
+    "edgeM": 0.38,
+    "dir": [
+     -1,
+     0
+    ],
+    "high": false,
+    "capM": 0.684
+   },
+   {
+    "slot": "tworoom-shelf-low:0",
+    "baseY": 0.018,
+    "dropM": 0.018,
+    "edgeM": 0,
+    "dir": [
+     -1,
+     0
+    ],
+    "high": false,
+    "capM": 0.268
+   },
+   {
+    "slot": "tworoom-shelf-low:1",
+    "baseY": 0.018,
+    "dropM": 0.018,
+    "edgeM": 0,
+    "dir": [
+     -1,
+     0
+    ],
+    "high": false,
+    "capM": 0.268
+   },
+   {
+    "slot": "tworoom-shelf-low:2",
+    "baseY": 0.018,
+    "dropM": 0.018,
+    "edgeM": 0,
+    "dir": [
+     -1,
+     0
+    ],
+    "high": false,
+    "capM": 0.268
+   },
+   {
+    "slot": "tworoom-shelf-low:3",
+    "baseY": 0.443,
+    "dropM": 0.443,
+    "edgeM": 0.16,
+    "dir": [
+     -1,
+     0
+    ],
+    "high": false,
+    "capM": 0.693
+   },
+   {
+    "slot": "tworoom-shelf-low:4",
+    "baseY": 0.443,
+    "dropM": 0.443,
+    "edgeM": 0.16,
+    "dir": [
+     -1,
+     0
+    ],
+    "high": false,
+    "capM": 0.693
+   },
+   {
+    "slot": "tworoom-shelf-low:5",
+    "baseY": 0.443,
+    "dropM": 0.443,
+    "edgeM": 0.16,
+    "dir": [
+     -1,
+     0
+    ],
+    "high": false,
+    "capM": 0.693
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:0",
+    "baseY": 0.03,
+    "dropM": 0.03,
+    "edgeM": 0,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.28
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:1",
+    "baseY": 0.03,
+    "dropM": 0.03,
+    "edgeM": 0,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.28
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:2",
+    "baseY": 0.03,
+    "dropM": 0.03,
+    "edgeM": 0,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.28
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:3",
+    "baseY": 0.412,
+    "dropM": 0.412,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.662
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:4",
+    "baseY": 0.412,
+    "dropM": 0.412,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.662
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:5",
+    "baseY": 0.412,
+    "dropM": 0.412,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.662
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:6",
+    "baseY": 0.794,
+    "dropM": 0.794,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": true,
+    "capM": 1.044
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:7",
+    "baseY": 0.794,
+    "dropM": 0.794,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": true,
+    "capM": 1.044
+   },
+   {
+    "slot": "tworoom-shelf-etagere-3tier:8",
+    "baseY": 0.794,
+    "dropM": 0.794,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": true,
+    "capM": 1.044
+   },
+   {
+    "slot": "tworoom-plant-step-3:0",
+    "baseY": 0.195,
+    "dropM": 0.195,
+    "edgeM": 0.16,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.445
+   },
+   {
+    "slot": "tworoom-plant-step-3:1",
+    "baseY": 0.395,
+    "dropM": 0.395,
+    "edgeM": 0.16,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.645
+   },
+   {
+    "slot": "tworoom-plant-step-3:2",
+    "baseY": 0.595,
+    "dropM": 0.595,
+    "edgeM": 0.16,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.845
+   },
+   {
+    "slot": "tworoom-shop-display:0",
+    "baseY": 0.315,
+    "dropM": 0.315,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.565
+   },
+   {
+    "slot": "tworoom-shop-display:1",
+    "baseY": 0.315,
+    "dropM": 0.315,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.565
+   },
+   {
+    "slot": "tworoom-shop-display:2",
+    "baseY": 0.315,
+    "dropM": 0.315,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.565
+   },
+   {
+    "slot": "tworoom-shop-display:3",
+    "baseY": 0.565,
+    "dropM": 0.25,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.5
+   },
+   {
+    "slot": "tworoom-shop-display:4",
+    "baseY": 0.565,
+    "dropM": 0.25,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.5
+   },
+   {
+    "slot": "tworoom-shop-display:5",
+    "baseY": 0.565,
+    "dropM": 0.25,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.5
+   },
+   {
+    "slot": "tworoom-shop-display:6",
+    "baseY": 0.815,
+    "dropM": 0.25,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.5
+   },
+   {
+    "slot": "tworoom-shop-display:7",
+    "baseY": 0.815,
+    "dropM": 0.25,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.5
+   },
+   {
+    "slot": "tworoom-shop-display:8",
+    "baseY": 0.815,
+    "dropM": 0.25,
+    "edgeM": 0.14,
+    "dir": [
+     0,
+     1
+    ],
+    "high": false,
+    "capM": 0.5
+   },
+   {
+    "slot": "probe-wall_planter:0",
+    "baseY": 1.432,
+    "dropM": 1.432,
+    "edgeM": 0.12,
+    "dir": [
+     1,
+     0
+    ],
+    "high": true,
+    "capM": 1.682
+   }
+  ],
+  "planter": {
+   "spot": "tworoom-hang-3",
+   "slot": "probe-wall_planter:0",
+   "dropM": 1.432,
+   "row": {
+    "slotId": "probe-wall_planter:0",
+    "owner": "wall_planter",
+    "point": {
+     "x": -3.265,
+     "y": 1.432,
+     "z": -1
+    },
+    "maxPotD": 0.2,
+    "ratio": 0.0246705,
+    "ppfd": [
+     0,
+     7.37,
+     7.93,
+     9.42
+    ]
+   },
+   "movedOthers": []
+  },
+  "highSlots": [
+   "tworoom-shelf-etagere-3tier:6",
+   "tworoom-shelf-etagere-3tier:7",
+   "tworoom-shelf-etagere-3tier:8",
+   "probe-wall_planter:0"
+  ],
+  "houseDisagree": [],
+  "scReach": {
+   "tworoom-shelf-etagere-3tier:6": {
+    "spring": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 162,
+      "maxDays": 166
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 159,
+      "maxDays": 161
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 158,
+      "maxDays": 158
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 158,
+      "maxDays": 158
+     }
+    },
+    "summer": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 174,
+      "maxDays": 177
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 166,
+      "maxDays": 167
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 165,
+      "maxDays": 165
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 165,
+      "maxDays": 165
+     }
+    },
+    "autumn": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 226,
+      "maxDays": 230
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 207,
+      "maxDays": 208
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 198,
+      "maxDays": 199
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 196,
+      "maxDays": 196
+     }
+    },
+    "winter": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 210,
+      "maxDays": 216
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 194,
+      "maxDays": 195
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 187,
+      "maxDays": 187
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 185,
+      "maxDays": 185
+     }
+    }
+   },
+   "tworoom-shelf-etagere-3tier:7": {
+    "spring": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 162,
+      "maxDays": 165
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 159,
+      "maxDays": 160
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 158,
+      "maxDays": 158
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 158,
+      "maxDays": 158
+     }
+    },
+    "summer": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 173,
+      "maxDays": 177
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 166,
+      "maxDays": 167
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 165,
+      "maxDays": 165
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 165,
+      "maxDays": 165
+     }
+    },
+    "autumn": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 225,
+      "maxDays": 229
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 206,
+      "maxDays": 206
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 196,
+      "maxDays": 196
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 196,
+      "maxDays": 196
+     }
+    },
+    "winter": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 209,
+      "maxDays": 215
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 194,
+      "maxDays": 194
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 185,
+      "maxDays": 185
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 185,
+      "maxDays": 185
+     }
+    }
+   },
+   "tworoom-shelf-etagere-3tier:8": {
+    "spring": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 162,
+      "maxDays": 166
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 159,
+      "maxDays": 161
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 158,
+      "maxDays": 158
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 158,
+      "maxDays": 158
+     }
+    },
+    "summer": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 174,
+      "maxDays": 177
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 166,
+      "maxDays": 167
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 165,
+      "maxDays": 165
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 165,
+      "maxDays": 165
+     }
+    },
+    "autumn": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 226,
+      "maxDays": 230
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 207,
+      "maxDays": 208
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 196,
+      "maxDays": 196
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 196,
+      "maxDays": 196
+     }
+    },
+    "winter": {
+     "0": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 210,
+      "maxDays": 216
+     },
+     "1": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 194,
+      "maxDays": 195
+     },
+     "2": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 185,
+      "maxDays": 185
+     },
+     "3": {
+      "reached": 4,
+      "of": 4,
+      "meanDays": 185,
+      "maxDays": 185
+     }
+    }
+   },
+   "probe-wall_planter:0": {
+    "spring": {
+     "0": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "1": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "2": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "3": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     }
+    },
+    "summer": {
+     "0": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "1": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "2": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "3": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     }
+    },
+    "autumn": {
+     "0": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "1": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "2": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "3": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     }
+    },
+    "winter": {
+     "0": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "1": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "2": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     },
+     "3": {
+      "reached": 0,
+      "of": 4,
+      "meanDays": null,
+      "maxDays": null
+     }
+    }
+   }
+  },
+  "scSeeds": 4,
+  "scWindow": 420,
+  "caBand": {
+   "lo": 3,
+   "hi": 8
+  },
+  "caFit": {
+   "spring": {
+    "0": {
+     "fitSlots": 3,
+     "overSlots": 0,
+     "saveSlots": 6,
+     "unfurlDaysAtFit": [
+      9,
+      10
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.81,
+       "over": 0,
+       "slow": 0.17,
+       "dark": 0.03,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.82,
+       "over": 0,
+       "slow": 0.16,
+       "dark": 0.03,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.81,
+       "over": 0,
+       "slow": 0.17,
+       "dark": 0.03,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.12,
+       "dark": 0.88,
+       "unfurlDays": 43,
+       "unfurledRuns": 1
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.12,
+       "dark": 0.88,
+       "unfurlDays": 42,
+       "unfurledRuns": 1
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.12,
+       "dark": 0.88,
+       "unfurlDays": 43,
+       "unfurledRuns": 1
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.12,
+       "over": 0,
+       "slow": 0.56,
+       "dark": 0.32,
+       "unfurlDays": 17,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.32,
+       "over": 0,
+       "slow": 0.49,
+       "dark": 0.19,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.12,
+       "over": 0,
+       "slow": 0.56,
+       "dark": 0.32,
+       "unfurlDays": 17,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "1": {
+     "fitSlots": 6,
+     "overSlots": 0,
+     "saveSlots": 10,
+     "unfurlDaysAtFit": [
+      9,
+      11
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.13,
+       "dark": 0.87,
+       "unfurlDays": 41,
+       "unfurledRuns": 1
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.32,
+       "dark": 0.68,
+       "unfurlDays": 37,
+       "unfurledRuns": 10
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.13,
+       "dark": 0.87,
+       "unfurlDays": 41,
+       "unfurledRuns": 1
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.94,
+       "over": 0,
+       "slow": 0.05,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.94,
+       "over": 0,
+       "slow": 0.05,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.94,
+       "over": 0,
+       "slow": 0.05,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.43,
+       "dark": 0.57,
+       "unfurlDays": 32,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.62,
+       "dark": 0.38,
+       "unfurlDays": 21,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.43,
+       "dark": 0.57,
+       "unfurlDays": 32,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.55,
+       "over": 0,
+       "slow": 0.4,
+       "dark": 0.06,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.74,
+       "over": 0,
+       "slow": 0.25,
+       "dark": 0.01,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.55,
+       "over": 0,
+       "slow": 0.4,
+       "dark": 0.06,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "2": {
+     "fitSlots": 6,
+     "overSlots": 0,
+     "saveSlots": 12,
+     "unfurlDaysAtFit": [
+      8,
+      14
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.74,
+       "dark": 0.26,
+       "unfurlDays": 18,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.86,
+       "dark": 0.11,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.89,
+       "dark": 0.07,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.99,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.92,
+       "over": 0.08,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.66,
+       "over": 0.34,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.08,
+       "dark": 0.92,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.74,
+       "dark": 0.22,
+       "unfurlDays": 17,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.13,
+       "over": 0,
+       "slow": 0.81,
+       "dark": 0.06,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0.12,
+       "over": 0,
+       "slow": 0.77,
+       "dark": 0.11,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.81,
+       "over": 0,
+       "slow": 0.19,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.99,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "3": {
+     "fitSlots": 9,
+     "overSlots": 1,
+     "saveSlots": 17,
+     "unfurlDaysAtFit": [
+      8,
+      13
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0.13,
+       "over": 0,
+       "slow": 0.86,
+       "dark": 0.01,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0.6,
+       "over": 0,
+       "slow": 0.4,
+       "dark": 0,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0.74,
+       "over": 0,
+       "slow": 0.26,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.96,
+       "over": 0.04,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.68,
+       "over": 0.32,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.32,
+       "over": 0.68,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 24,
+       "unfurledRuns": 7
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.68,
+       "dark": 0.32,
+       "unfurlDays": 19,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.34,
+       "dark": 0.66,
+       "unfurlDays": 36,
+       "unfurledRuns": 11
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.43,
+       "dark": 0.57,
+       "unfurlDays": 32,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.91,
+       "dark": 0.05,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0.12,
+       "over": 0,
+       "slow": 0.88,
+       "dark": 0,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0.34,
+       "over": 0,
+       "slow": 0.64,
+       "dark": 0.02,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.95,
+       "over": 0,
+       "slow": 0.05,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.95,
+       "over": 0,
+       "slow": 0.05,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      }
+     }
+    }
+   },
+   "summer": {
+    "0": {
+     "fitSlots": 6,
+     "overSlots": 0,
+     "saveSlots": 12,
+     "unfurlDaysAtFit": [
+      9,
+      11
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.33,
+       "dark": 0.67,
+       "unfurlDays": 38,
+       "unfurledRuns": 10
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.36,
+       "dark": 0.64,
+       "unfurlDays": 33,
+       "unfurledRuns": 10
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.33,
+       "dark": 0.67,
+       "unfurlDays": 38,
+       "unfurledRuns": 10
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.95,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.94,
+       "over": 0.01,
+       "slow": 0.04,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.95,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0.99,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0.99,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0.99,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0.01,
+       "over": 0,
+       "slow": 0.56,
+       "dark": 0.43,
+       "unfurlDays": 26,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.01,
+       "over": 0,
+       "slow": 0.64,
+       "dark": 0.35,
+       "unfurlDays": 21,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0.01,
+       "over": 0,
+       "slow": 0.56,
+       "dark": 0.43,
+       "unfurlDays": 26,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.63,
+       "over": 0,
+       "slow": 0.31,
+       "dark": 0.06,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.71,
+       "over": 0,
+       "slow": 0.24,
+       "dark": 0.05,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.63,
+       "over": 0,
+       "slow": 0.31,
+       "dark": 0.06,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "1": {
+     "fitSlots": 6,
+     "overSlots": 0,
+     "saveSlots": 12,
+     "unfurlDaysAtFit": [
+      9,
+      10
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0.01,
+       "over": 0,
+       "slow": 0.64,
+       "dark": 0.35,
+       "unfurlDays": 21,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0.01,
+       "over": 0,
+       "slow": 0.7,
+       "dark": 0.29,
+       "unfurlDays": 18,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0.01,
+       "over": 0,
+       "slow": 0.64,
+       "dark": 0.35,
+       "unfurlDays": 21,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.96,
+       "over": 0.01,
+       "slow": 0.02,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.91,
+       "over": 0.07,
+       "slow": 0.02,
+       "dark": 0,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.96,
+       "over": 0.01,
+       "slow": 0.02,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.09,
+       "dark": 0.91,
+       "unfurlDays": 47,
+       "unfurledRuns": 1
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.09,
+       "dark": 0.91,
+       "unfurlDays": 38,
+       "unfurledRuns": 1
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.09,
+       "dark": 0.91,
+       "unfurlDays": 47,
+       "unfurledRuns": 1
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0.09,
+       "over": 0,
+       "slow": 0.78,
+       "dark": 0.13,
+       "unfurlDays": 15,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.32,
+       "over": 0,
+       "slow": 0.57,
+       "dark": 0.11,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0.09,
+       "over": 0,
+       "slow": 0.78,
+       "dark": 0.13,
+       "unfurlDays": 15,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.87,
+       "over": 0,
+       "slow": 0.11,
+       "dark": 0.02,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.95,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.87,
+       "over": 0,
+       "slow": 0.11,
+       "dark": 0.02,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "2": {
+     "fitSlots": 6,
+     "overSlots": 2,
+     "saveSlots": 14,
+     "unfurlDaysAtFit": [
+      8,
+      11
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0.22,
+       "over": 0,
+       "slow": 0.72,
+       "dark": 0.06,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0.37,
+       "over": 0,
+       "slow": 0.61,
+       "dark": 0.03,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0.37,
+       "over": 0,
+       "slow": 0.61,
+       "dark": 0.03,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.91,
+       "over": 0.09,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.43,
+       "over": 0.57,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 28,
+       "unfurledRuns": 9
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.22,
+       "over": 0.78,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 29,
+       "unfurledRuns": 4
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.36,
+       "dark": 0.64,
+       "unfurlDays": 33,
+       "unfurledRuns": 10
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.46,
+       "dark": 0.54,
+       "unfurlDays": 29,
+       "unfurledRuns": 11
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.37,
+       "dark": 0.63,
+       "unfurlDays": 32,
+       "unfurledRuns": 10
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0.36,
+       "over": 0,
+       "slow": 0.59,
+       "dark": 0.05,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.65,
+       "over": 0,
+       "slow": 0.33,
+       "dark": 0.02,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0.57,
+       "over": 0,
+       "slow": 0.4,
+       "dark": 0.03,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.95,
+       "over": 0,
+       "slow": 0.05,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "3": {
+     "fitSlots": 11,
+     "overSlots": 2,
+     "saveSlots": 17,
+     "unfurlDaysAtFit": [
+      8,
+      16
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0.99,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0.99,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0.65,
+       "over": 0,
+       "slow": 0.34,
+       "dark": 0.01,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0.87,
+       "over": 0,
+       "slow": 0.13,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0.95,
+       "over": 0,
+       "slow": 0.05,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.64,
+       "over": 0.36,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 16,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.29,
+       "over": 0.71,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 29,
+       "unfurledRuns": 6
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.06,
+       "over": 0.94,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.36,
+       "dark": 0.64,
+       "unfurlDays": 33,
+       "unfurledRuns": 10
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.94,
+       "dark": 0.06,
+       "unfurlDays": 15,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.71,
+       "dark": 0.29,
+       "unfurlDays": 19,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0.01,
+       "over": 0,
+       "slow": 0.85,
+       "dark": 0.14,
+       "unfurlDays": 16,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0.36,
+       "over": 0,
+       "slow": 0.62,
+       "dark": 0.02,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0.63,
+       "over": 0,
+       "slow": 0.37,
+       "dark": 0,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0.78,
+       "over": 0,
+       "slow": 0.21,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.98,
+       "over": 0,
+       "slow": 0.02,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.98,
+       "over": 0,
+       "slow": 0.02,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.91,
+       "over": 0.09,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.91,
+       "over": 0.09,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      }
+     }
+    }
+   },
+   "autumn": {
+    "0": {
+     "fitSlots": 3,
+     "overSlots": 0,
+     "saveSlots": 6,
+     "unfurlDaysAtFit": [
+      12,
+      12
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.57,
+       "over": 0,
+       "slow": 0.38,
+       "dark": 0.06,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.62,
+       "over": 0,
+       "slow": 0.32,
+       "dark": 0.06,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.57,
+       "over": 0,
+       "slow": 0.38,
+       "dark": 0.06,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.46,
+       "dark": 0.51,
+       "unfurlDays": 26,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.09,
+       "over": 0,
+       "slow": 0.48,
+       "dark": 0.43,
+       "unfurlDays": 22,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.46,
+       "dark": 0.51,
+       "unfurlDays": 26,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "1": {
+     "fitSlots": 4,
+     "overSlots": 0,
+     "saveSlots": 9,
+     "unfurlDaysAtFit": [
+      9,
+      12
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.09,
+       "dark": 0.91,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.04,
+       "dark": 0.96,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.89,
+       "over": 0,
+       "slow": 0.1,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.93,
+       "over": 0,
+       "slow": 0.07,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.89,
+       "over": 0,
+       "slow": 0.1,
+       "dark": 0.01,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.26,
+       "dark": 0.74,
+       "unfurlDays": 40,
+       "unfurledRuns": 9
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.28,
+       "dark": 0.72,
+       "unfurlDays": 39,
+       "unfurledRuns": 10
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.26,
+       "dark": 0.74,
+       "unfurlDays": 40,
+       "unfurledRuns": 9
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.28,
+       "over": 0,
+       "slow": 0.65,
+       "dark": 0.07,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.56,
+       "over": 0,
+       "slow": 0.4,
+       "dark": 0.04,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.28,
+       "over": 0,
+       "slow": 0.65,
+       "dark": 0.07,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "2": {
+     "fitSlots": 6,
+     "overSlots": 0,
+     "saveSlots": 12,
+     "unfurlDaysAtFit": [
+      8,
+      11
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.54,
+       "dark": 0.46,
+       "unfurlDays": 28,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.79,
+       "dark": 0.21,
+       "unfurlDays": 19,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.8,
+       "dark": 0.2,
+       "unfurlDays": 18,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.98,
+       "over": 0,
+       "slow": 0.02,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.91,
+       "over": 0.09,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.56,
+       "dark": 0.44,
+       "unfurlDays": 27,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.85,
+       "dark": 0.11,
+       "unfurlDays": 15,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.76,
+       "dark": 0.2,
+       "unfurlDays": 17,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.56,
+       "over": 0,
+       "slow": 0.42,
+       "dark": 0.02,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.99,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.98,
+       "over": 0,
+       "slow": 0.02,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "3": {
+     "fitSlots": 9,
+     "overSlots": 0,
+     "saveSlots": 15,
+     "unfurlDaysAtFit": [
+      8,
+      19
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.92,
+       "dark": 0.05,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0.28,
+       "over": 0,
+       "slow": 0.71,
+       "dark": 0.01,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0.56,
+       "over": 0,
+       "slow": 0.44,
+       "dark": 0,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.99,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.91,
+       "over": 0.09,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 10,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.51,
+       "over": 0.49,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 19,
+       "unfurledRuns": 11
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.49,
+       "dark": 0.51,
+       "unfurlDays": 29,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.09,
+       "dark": 0.91,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.2,
+       "dark": 0.8,
+       "unfurlDays": 50,
+       "unfurledRuns": 5
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.94,
+       "dark": 0.06,
+       "unfurlDays": 15,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0.04,
+       "over": 0,
+       "slow": 0.96,
+       "dark": 0.01,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0.09,
+       "over": 0,
+       "slow": 0.86,
+       "dark": 0.05,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.94,
+       "over": 0,
+       "slow": 0.06,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0.99,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.94,
+       "over": 0,
+       "slow": 0.06,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      }
+     }
+    }
+   },
+   "winter": {
+    "0": {
+     "fitSlots": 0,
+     "overSlots": 0,
+     "saveSlots": 3,
+     "unfurlDaysAtFit": null,
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.39,
+       "dark": 0.61,
+       "unfurlDays": 36,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.03,
+       "over": 0,
+       "slow": 0.35,
+       "dark": 0.61,
+       "unfurlDays": 31,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.39,
+       "dark": 0.61,
+       "unfurlDays": 36,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      }
+     }
+    },
+    "1": {
+     "fitSlots": 0,
+     "overSlots": 0,
+     "saveSlots": 6,
+     "unfurlDaysAtFit": null,
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.3,
+       "over": 0,
+       "slow": 0.62,
+       "dark": 0.08,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 0.33,
+       "over": 0,
+       "slow": 0.61,
+       "dark": 0.06,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 0.3,
+       "over": 0,
+       "slow": 0.62,
+       "dark": 0.08,
+       "unfurlDays": 12,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.33,
+       "dark": 0.67,
+       "unfurlDays": 39,
+       "unfurledRuns": 10
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.64,
+       "dark": 0.36,
+       "unfurlDays": 21,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.33,
+       "dark": 0.67,
+       "unfurlDays": 39,
+       "unfurledRuns": 10
+      }
+     }
+    },
+    "2": {
+     "fitSlots": 5,
+     "overSlots": 0,
+     "saveSlots": 7,
+     "unfurlDaysAtFit": [
+      8,
+      9
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.12,
+       "dark": 0.88,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.13,
+       "dark": 0.87,
+       "unfurlDays": 50,
+       "unfurledRuns": 1
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.85,
+       "over": 0,
+       "slow": 0.15,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.31,
+       "dark": 0.69,
+       "unfurlDays": 44,
+       "unfurledRuns": 10
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.13,
+       "dark": 0.87,
+       "unfurlDays": 50,
+       "unfurledRuns": 1
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.85,
+       "dark": 0.15,
+       "unfurlDays": 15,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 0.99,
+       "over": 0,
+       "slow": 0.01,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 0.83,
+       "over": 0,
+       "slow": 0.17,
+       "dark": 0,
+       "unfurlDays": 9,
+       "unfurledRuns": 12
+      }
+     }
+    },
+    "3": {
+     "fitSlots": 6,
+     "overSlots": 0,
+     "saveSlots": 14,
+     "unfurlDaysAtFit": [
+      8,
+      8
+     ],
+     "per": {
+      "tworoom-nightstand:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-table-round:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-low:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shelf-etagere-3tier:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.58,
+       "dark": 0.42,
+       "unfurlDays": 23,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:4": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.98,
+       "dark": 0.02,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:5": {
+       "fit": 0,
+       "over": 0,
+       "slow": 1,
+       "dark": 0,
+       "unfurlDays": 13,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:6": {
+       "fit": 0.98,
+       "over": 0,
+       "slow": 0.02,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:7": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shelf-etagere-3tier:8": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-plant-step-3:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-plant-step-3:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:0": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0,
+       "dark": 1,
+       "unfurlDays": null,
+       "unfurledRuns": 0
+      },
+      "tworoom-shop-display:1": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.33,
+       "dark": 0.67,
+       "unfurlDays": 39,
+       "unfurledRuns": 10
+      },
+      "tworoom-shop-display:2": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.93,
+       "dark": 0.07,
+       "unfurlDays": 14,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:3": {
+       "fit": 0,
+       "over": 0,
+       "slow": 0.58,
+       "dark": 0.42,
+       "unfurlDays": 23,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:4": {
+       "fit": 0.33,
+       "over": 0,
+       "slow": 0.67,
+       "dark": 0,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:5": {
+       "fit": 0.94,
+       "over": 0,
+       "slow": 0.06,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:6": {
+       "fit": 0.33,
+       "over": 0,
+       "slow": 0.66,
+       "dark": 0,
+       "unfurlDays": 11,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:7": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      },
+      "tworoom-shop-display:8": {
+       "fit": 1,
+       "over": 0,
+       "slow": 0,
+       "dark": 0,
+       "unfurlDays": 8,
+       "unfurledRuns": 12
+      }
+     }
+    }
+   }
+  },
+  "note": "⑤ 칼라테아 표는 기준 배치(화분걸이 없음)만 · ④ 는 화분걸이 하나 건 사본까지"
+ }
 }

@@ -68,6 +68,18 @@
       "die": 0.5, "survive": 1.2, "min": 2.5,
       "fenestrate": null, "best_lo": 4.0, "best_hi": 8.0, "max": 12.0,
       "note": "★ 첫 판([growth] 2026-10-09 · 총괄 D45 · core 판으로 바로잡음). plants.json alocasia dli [4,8](직사 아님)을 best 대역으로. 무늬 그루는 그루마다 정해지므로(구근에서 싹틀 때) id 가 아니라 thresholdsFor(TH, id, true) 로 ×1.4 를 받는다."
+    },
+    "scindapsus_marble_queen": {
+      "ko": "스킨답서스 마블퀸",
+      "die": 0.3, "survive": 0.8, "min": 1.5,
+      "fenestrate": null, "best_lo": 3.0, "best_hi": 8.0, "max": 14.0,
+      "note": "★ 첫 판([growth] 2026-10-23 · 총괄 D71 · core 판으로 바로잡음). plants.json pothos_golden dli [3,7](저광 내성 low_light_tol)을 best 대역으로 받고 위를 8 로 조금 열었다 — 명세 «낮음~중간에서도 자람». 그래서 min 1.5 · die 0.3 로 몬스테라(2.7 · 0.5)보다 어두운 데서도 산다. 무늬가 이미 든 품종이라 need_mult(×1.4)를 곱하지 않는다(id 에 _varie 없음). best_lo 3 은 «무늬가 옅어짐» 문턱도 겸한다 — avg7 이 이 밑일 때 난 잎은 크림 마블 없이 초록으로 난다(그림만 · 값 없음 · data/growth_species.json scindapsus.marble)."
+    },
+    "calathea_orbifolia": {
+      "ko": "칼라테아 오비폴리아",
+      "die": 0.5, "survive": 1.0, "min": 2.0,
+      "fenestrate": null, "best_lo": 3.0, "best_hi": 6.5, "max": 8.0,
+      "note": "★ 첫 판([growth] 2026-10-23 · 총괄 D71 · 명세 plan-species2-shop-spec §3 후보 lo 3 · hi 8). plants.json calathea dli [3,6.5](직사 금지 direct_ok false · 저광 내성 아님)을 best 대역으로. ★ 이 종은 «위가 좁다» — max 8 을 넘는 avg7(밴드 over)이면 잎이 말리고 자람이 멎는다(data/growth_species.json calathea.curl). best_lo 3 밑(slow)은 느림 · min 2 밑은 멎음. 명세의 대역 [lo, hi] = [best_lo, max] 다(species_growth bandOf 가 이 두 칸을 읽는다 · 숫자 두 벌 없음)."
     }
   },
   "photoperiod": {

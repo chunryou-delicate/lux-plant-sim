@@ -11,6 +11,12 @@
      ⑤ 같은 값 = 같은 꼴 · 씨앗이 다르면 다른 꼴 · 한 그루 재질을 물들여도 다른 그루는 그대로(재질을 잎마다 뗐다)
      ⑥ 판이 늦게 오면 skinsPending → 도착 알림(onSkinChange)이 온다
      ⑦ 사진 docs/handoff/img/species_young_row.png — 색 가짓수로 까만 사진을 거른다
+     ★ D71(2026-10-23) — 두 종 더
+     ⑨ SC 늘어지는 줄기(높은 자리) — 잎 N = 그린 잎 · 늘어진 잎은 화분 밖 · 늘어뜨린 쪽(az) · 겉면이 바깥·위 · 바닥 밑으로 안 감 · 크기(sizeM)는 화분 위 몫만
+     ⑩ SC 바닥에 닿은 그루 — 줄기 끝이 바닥에 닿고 남는 몫은 바닥에 눕는다 · hang 이 없으면 hangGiven false(받침에 눕힘)
+     ⑪ SC 마블 — 어두울 때 난 잎은 초록 판 · 마블 판은 틴트 금지 표 · 마블퀸 판 크기 = leaf 넓이 맞춤(stage_real_m)
+     ⑫ CA 말린 잎 — 말린 잎은 옆 폭이 좁다 · 말린 판을 지어도 원판(펴진 잎)은 그대로 · 밤엔 잎을 세운다(바라는 눕힘 × night_tilt_mult)
+     ⑬ 사진 docs/handoff/img/species2_sc_hang.png(늘어진 SC — 바닥 · 진열대 · 높은 자리 · 바닥으로 옮긴 긴 줄기) · species2_ca_curl.png(말린 · 펴진 · 밤 CA)
      python tools/serve.py 8963
      BYEOT_URL=http://localhost:8963 node tools/test_species_draw.mjs
 ============================================================ */
@@ -61,7 +67,7 @@ const SETUP = `(async () => {
       p.traverse(o => { if (!o.isMesh || !o.geometry) return; const pos = o.geometry.attributes.position;
         for (let i = 0; i < pos.count; i += 3) { v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); if (v.distanceTo(base) > r && v.y < lo) lo = v.y; } });
       return lo; };
-    const piv = (u.leafPivots || []).map(p => ({ tilt: +p.rotation.x.toFixed(4), want: +p.userData.tiltWant.toFixed(4), scale: +p.userData.scale.toFixed(4), asset: p.userData.asset, stage: p.userData.stage, grade: p.userData.grade, low: +lowOf(p).toFixed(5) }));
+    const piv = (u.leafPivots || []).map(p => ({ tilt: p.userData.tilt == null ? null : +p.userData.tilt.toFixed(4), want: p.userData.tiltWant == null ? null : +p.userData.tiltWant.toFixed(4), scale: +p.userData.scale.toFixed(4), asset: p.userData.asset, stage: p.userData.stage, grade: p.userData.grade, low: +lowOf(p).toFixed(5), pose: p.userData.pose || null, curl: p.userData.curl ?? null }));
     let stems = 0, skinMesh = 0, plainMesh = 0;
     g.traverse(o => { if (o.isMesh && o.userData.part === 'stem') stems++; });
     for (const p of (u.leafPivots || [])) p.traverse(o => { if (!o.isMesh) return; if (o.userData.varieSkin) skinMesh++; else plainMesh++; });
@@ -123,7 +129,7 @@ try {
   const nulls = await page.eval(`JSON.stringify([
     window.__asm.youngPlantOf({ species: 'alocasia_frydek', plant: window.__al(5, 'shop', null, 0) }),
     window.__asm.youngPlantOf({ species: 'alocasia_frydek', rows: [] }),
-    window.__asm.youngPlantOf({ species: 'calathea', rows: [{ stage: 'young', asset: 'x', size_m: 0.1 }] }) ].map(x => x === null))`);
+    window.__asm.youngPlantOf({ species: 'monstera_adansonii', rows: [{ stage: 'young', asset: 'x', size_m: 0.1 }] }) ].map(x => x === null))`);
   ok(nulls === '[true,true,true]', `④ AL 구근(잎 0) · 빈 줄 · 모르는 종 → null ${nulls}`);
 
   /* ⑤ */
@@ -173,6 +179,138 @@ try {
   await page.shot(shot);
   const cc = colorCount(shot);
   ok(cc > 800, `⑦ 사진 ${path.relative(ROOT, shot)} — 색 ${cc}가지`);
+  /* ══ D71 — 스킨답서스 · 칼라테아 ══════════════════════════════════════ */
+  await page.eval(`(() => {
+    const R = window.__R;
+    /* SC — 뿌리 낸 마디 둘에서 dropM 자리로 days 일(dli · 봄) */
+    window.__sc = (seed, days, dropM, dli, then) => { const p = R.newPlant('scindapsus', { seed, form: 'rooted', nodes: 2 });
+      for (let d = 0; d < days; d++) R.stepDay(p, { dli: typeof dli === 'function' ? dli(d) : dli, season: 'spring', dropM });
+      if (then) for (let d = 0; d < then.days; d++) R.stepDay(p, { dli: then.dli, season: 'spring', dropM: then.dropM });
+      return p; };
+    window.__ca = (seed, leaves, curled) => R.newPlant('calathea', { seed, leaves, curled });
+    /* 그린 그루를 잰다 — 잎마다 세계 좌표 · 겉면(자세 A 의 −Z) · 줄기 맨 아래 · 전체 맨 아래 */
+    window.__scan = (g, az) => { g.updateMatrixWorld(true);
+      const u = new THREE.Vector3(Math.sin(az || 0), 0, Math.cos(az || 0)), v = new THREE.Vector3(), q = new THREE.Quaternion();
+      const leaves = g.userData.leafPivots.map(p => { const w = new THREE.Vector3().setFromMatrixPosition(p.matrixWorld); p.getWorldQuaternion(q);
+        const n = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
+        return { pose: p.userData.pose || 'tilt', r: Math.hypot(w.x, w.z), out: w.dot(u), y: w.y, nOut: n.dot(u), nY: n.y, scale: p.userData.scale, asset: p.userData.asset, stage: p.userData.stage }; });
+      let stemLo = Infinity, stemR = 0, lo = Infinity, hi = -Infinity;
+      g.traverse(o => { if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return; const pos = o.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i += 2) { v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); lo = Math.min(lo, v.y); hi = Math.max(hi, v.y);
+          if (o.userData.part === 'stem') { stemLo = Math.min(stemLo, v.y); stemR = Math.max(stemR, Math.hypot(v.x, v.z)); } } });
+      return { leaves, stemLo, stemR, lo, hi, u: g.userData };
+    };
+    /* 잎마다 옆 폭(잎 자리 좌표의 X 폭 ÷ 잎 크기) — 말린 잎은 좁다 */
+    window.__widths = (g) => { g.updateMatrixWorld(true); const v = new THREE.Vector3();
+      return g.userData.leafPivots.map(p => { const inv = new THREE.Matrix4().copy(p.matrixWorld).invert(); let a = Infinity, b = -Infinity;
+        p.traverse(o => { if (!o.isMesh || !o.geometry) return; const pos = o.geometry.attributes.position, m = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
+          for (let i = 0; i < pos.count; i += 2) { v.fromBufferAttribute(pos, i).applyMatrix4(m); a = Math.min(a, v.x); b = Math.max(b, v.x); } });
+        return +((b - a) / p.userData.scale).toFixed(4); }); };
+    return true; })()`);
+  const SCS = SPEC.species.scindapsus, CAS = SPEC.species.calathea;
+
+  /* ⑨ 높은 자리(진열대 윗단 0.79)에 늘어진 줄기 */
+  { const potD = 0.18, potH = 0.12, drop = 0.79;
+    const o = `{ species: 'scindapsus', plant: window.__sc(51, 120, ${drop}, 6), potD: ${potD}, hang: { dropM: ${drop}, potH: ${potH}, az: 0 } }`;
+    const d = await page.eval(`window.__drawReady(${o})`);
+    const s = await page.eval(`(() => { const g = window.__asm.youngPlantOf(${o}); const r = window.__scan(g, 0); r.u = { sizeM: r.u.sizeM, hang: r.u.hang, hangGiven: r.u.hangGiven }; return r; })()`);
+    const hang = s.leaves.filter(l => l.pose === 'hang'), outside = s.leaves.filter(l => l.pose !== 'tilt');
+    ok(d && !d.pending && d.leafCount === d.want && d.want >= 8 && hang.length >= 3 && outside.every(l => l.r >= potD / 2) && hang.every(l => l.out > 0),
+      `⑨ SC 높은 자리(받침 ${drop}m) 120일 — 잎 ${d && d.want} = 그린 잎 ${d && d.leafCount} · 늘어진 잎 ${hang.length} · 화분 밖(가장 안쪽 ${Math.min(...outside.map(l => l.r)).toFixed(3)} ≥ ${potD / 2}) · 늘어뜨린 쪽`);
+    ok(hang.every(l => l.nOut > 0.3 && l.nY > 0), `⑨ 늘어진 잎 겉면이 바깥·위를 본다 — 바깥 ${Math.min(...hang.map(l => l.nOut)).toFixed(2)}~ · 위 ${Math.min(...hang.map(l => l.nY)).toFixed(2)}~`);
+    ok(s.lo >= -(potH + drop) - 0.01 && s.stemLo < -potH - 0.2 && s.u.hang && s.u.hang.given && Math.abs(s.u.hang.lengthM - s.u.hang.plantLengthM) < 1e-9,
+      `⑨ 줄기 끝 ${s.stemLo.toFixed(3)}m(흙 기준) — 받침 밑으로 늘어졌고 바닥(${-(potH + drop)}) 밑으로는 안 감(전체 맨 아래 ${s.lo.toFixed(3)}) · 줄기 ${s.u.hang && s.u.hang.lengthM}m`);
+    ok(s.u.sizeM.h < 0.2 && s.hi - s.lo > 0.5 && s.u.sizeM.d < potD + 0.25,
+      `⑨ 크기(D55 칸 붐빔)는 화분 위 몫만 — 키 ${s.u.sizeM.h.toFixed(3)} · 폭 ${s.u.sizeM.d.toFixed(3)}m (늘어진 몫까지 ${(s.hi - s.lo).toFixed(2)}m 는 안 셈)`); }
+
+  /* ⑩ 바닥 자리 — 바닥에 닿은 그루 · 높은 데서 자란 그루를 바닥에 옮김 · hang 없음 */
+  { const potH = 0.12;
+    const of = (pl, drop, az) => `{ species: 'scindapsus', plant: ${pl}, potD: 0.18, hang: { dropM: ${drop}, potH: ${potH}, az: ${az} } }`;
+    const a = of(`window.__sc(52, 200, 0.02, 6)`, 0.02, 1.2);
+    await page.eval(`window.__drawReady(${a})`);
+    const sa = await page.eval(`(() => { const g = window.__asm.youngPlantOf(${a}); const r = window.__scan(g, 1.2); r.u = { hang: r.u.hang, atFloor: g.userData.hang.atFloor }; return r; })()`);
+    const floor = -(potH + 0.02);
+    ok(sa.u.atFloor && Math.abs(sa.stemLo - floor) < 0.012 && sa.lo >= floor - 0.012,
+      `⑩ 바닥 자리(받침 0.02) 200일 — 바닥에 닿음 · 줄기 맨 아래 ${sa.stemLo.toFixed(3)} ≈ 바닥 ${floor} · 전체 맨 아래 ${sa.lo.toFixed(3)}`);
+    const b = of(`window.__sc(53, 150, 1.4, 6, { days: 2, dli: 6, dropM: 0.02 })`, 0.02, 1.2);
+    await page.eval(`window.__drawReady(${b})`);
+    const sb = await page.eval(`(() => { const g = window.__asm.youngPlantOf(${b}); const r = window.__scan(g, 1.2); r.u = { hang: g.userData.hang }; return r; })()`);
+    ok(sb.u.hang.atFloor && sb.u.hang.lengthM > sb.u.hang.floorLenM + 0.2 && sb.leaves.some(l => l.pose === 'lie') && sb.stemR > 0.09 + 0.2 && sb.lo >= floor - 0.012,
+      `⑩ 높은 데서 ${sb.u.hang.lengthM}m 자란 줄기를 바닥 자리로 — 바닥까지 ${sb.u.hang.floorLenM.toFixed(2)}m · 남는 몫은 바닥에 누움(누운 잎 ${sb.leaves.filter(l => l.pose === 'lie').length} · 줄기가 ${sb.stemR.toFixed(2)}m 까지 뻗음)`);
+    const c = await page.eval(`(() => { const g = window.__asm.youngPlantOf({ species: 'scindapsus', plant: window.__sc(54, 60, 0.79, 6), potD: 0.18 }); return { given: g.userData.hangGiven, lo: window.__scan(g, 0).lo, potH: g.userData.hang.potH }; })()`);
+    ok(c.given === false && c.lo >= -c.potH - 0.012, `⑩ hang 없이 그리면 hangGiven ${c.given} · 받침(기본 화분 높이 ${c.potH})에 눕힘 — 메꾼 것을 숨기지 않음`); }
+
+  /* ⑪ 마블 — 어두울 때 난 잎은 초록 판 · 마블퀸 판 크기 */
+  { const o = `{ species: 'scindapsus', plant: window.__sc(55, 70, 1.4, d => d < 35 ? 2.5 : 6), potD: 0.18, hang: { dropM: 1.4, potH: 0.12, az: 0 } }`;
+    const d = await page.eval(`window.__drawReady(${o})`);
+    const green = d.rows.filter(r => r.grade === 'green'), marble = d.rows.filter(r => r.grade === 'marble' && r.stage !== 'young');
+    const mq = 'plants/scindapsus/skins/sc_leaf_mature_marblequeen.glb', sr = SCS.draw.adj_by_asset[mq].stage_real_m;
+    const sizeOk = d.piv.filter(p => p.asset === mq).every(p => Math.abs(p.scale - sr[p.stage] * ((SCS.draw.adj[p.stage] || {}).scale ?? 1)) < 1e-4);
+    ok(!d.pending && green.length > 0 && marble.length > 0 && JSON.stringify(d.piv.map(p => p.asset)) === JSON.stringify(d.rows.map(r => r.asset)) && d.varieKeys.includes(mq) && d.skinMesh > 0 && sizeOk,
+      `⑪ SC 어두울 때(2.5) 난 잎 ${green.length}장 초록 판 · 밝을 때 마블 ${marble.length}장(마블퀸 · 틴트 금지 표 ${d.skinMesh}) · 마블퀸 크기 = leaf 넓이 맞춤 ${JSON.stringify(sr)}`); }
+
+  /* ⑫ CA — 말린 잎 · 원판 그대로 · 밤 */
+  { const flat = `{ species: 'calathea', plant: window.__ca(61, 5, 0) }`, cur = `{ species: 'calathea', plant: window.__ca(61, 5, 'all') }`;
+    const f1 = await page.eval(`window.__drawReady(${flat})`);
+    const c1 = await page.eval(`window.__drawReady(${cur})`);
+    const f2 = await page.eval(`window.__drawReady(${flat})`);
+    const w = await page.eval(`({ f: window.__widths(window.__asm.youngPlantOf(${flat})), c: window.__widths(window.__asm.youngPlantOf(${cur})) })`);
+    const ratio = w.c.map((x, i) => x / w.f[i]);
+    ok(!c1.pending && c1.leafCount === 5 && c1.piv.every(p => p.curl === 1) && ratio.every(r => r < 0.6) && c1.hash.h !== f1.hash.h,
+      `⑫ CA 말린 잎 5장 — 옆 폭 ÷ 펴진 잎 ${ratio.map(r => r.toFixed(2)).join(' · ')} (< 0.6)`);
+    ok(f1.hash.h === f2.hash.h, `⑫ 말린 판을 지은 뒤에도 펴진 잎은 그대로(${f1.hash.h} = ${f2.hash.h} · 원판을 안 휨)`);
+    const sizeOk = f1.piv.every(p => Math.abs(p.scale - CAS.leaf_size_m[p.stage] * ((CAS.draw.adj[p.stage] || {}).scale ?? 1)) < 1e-4);
+    const n1 = await page.eval(`window.__drawReady({ species: 'calathea', plant: window.__ca(61, 5, 0), night: true })`);
+    const mult = CAS.draw.night_tilt_mult;
+    ok(sizeOk && n1.piv.every((p, i) => Math.abs(p.want - f1.piv[i].want * mult) < 1e-4) && n1.piv.some(p => p.want < f1.piv[0].want),
+      `⑫ 밤 — 바라는 눕힘 ${f1.piv.map(p => p.want).join('/')} → ×${mult} ${n1.piv.map(p => p.want).join('/')} · 크기 = 실측 ${f1.piv[0].scale}m`); }
+
+  /* ⑬ 사진 두 장 — 늘어진 SC(바닥 · 진열대 0.45 · 높은 자리 0.79 · 높은 데서 자라 바닥으로 옮긴 줄기) / CA 말림 · 펴짐 · 밤 */
+  const photo = async (file, which) => {
+    await page.eval(`(async () => {
+      for (const nm of ['__spRow', '__spRow2']) { const old = scene.getObjectByName(nm); if (old) old.parent.remove(old); }
+      plantGroup.visible = false;
+      const row = new THREE.Group(); row.name = '__spRow2';
+      const AZ = 0.35, potH = 0.12, potD = 0.18;
+      const all = {
+        sc: [ { species: 'scindapsus', plant: window.__sc(52, 200, 0.02, 6), drop: 0.02 },
+              { species: 'scindapsus', plant: window.__sc(56, 200, 0.45, 6), drop: 0.45 },
+              { species: 'scindapsus', plant: window.__sc(51, 160, 0.79, 6), drop: 0.79 },
+              { species: 'scindapsus', plant: window.__sc(53, 150, 1.4, 6, { days: 2, dli: 6, dropM: 0.02 }), drop: 0.02 } ],
+        ca: [ { species: 'calathea', plant: window.__ca(61, 5, 'all') },
+              { species: 'calathea', plant: window.__ca(61, 5, 0) },
+              { species: 'calathea', plant: window.__ca(61, 5, 0), night: true } ] };
+      const items = all['${which}'], gap = '${which}' === 'sc' ? 0.6 : 0.5;
+      const potMat = new THREE.MeshStandardMaterial({ color: 0xb98a6a, roughness: 0.9 }), woodMat = new THREE.MeshStandardMaterial({ color: 0xd9c6a5, roughness: 0.85 });
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0xe8e4dc, roughness: 1 });
+      if ('${which}' === 'sc') items[3].az = AZ - 1.3;   /* 바닥으로 옮긴 긴 줄기 — 옆으로 눕혀 보이게 */
+      for (const it of items) { const o = { ...it, potD }; if (it.species === 'scindapsus') o.hang = { dropM: it.drop, potH, az: it.az ?? AZ }; await window.__drawReady(o); it.o = o; }
+      const subj = new THREE.Group(); row.add(subj);
+      items.forEach((it, i) => {
+        const g = window.__asm.youngPlantOf(it.o); if (!g) return;
+        const cell = new THREE.Group(); cell.position.set((i - (items.length - 1) / 2) * gap, (it.drop ?? 0) + potH, 0); subj.add(cell);
+        cell.add(g);
+        const pot = new THREE.Mesh(new THREE.CylinderGeometry(potD / 2, potD * 0.4, potH, 20), potMat); pot.position.y = -potH / 2 + 0.005; cell.add(pot);
+        if (it.drop != null && it.drop > 0.05) {          /* 받침(가구) — 앞 끝이 화분 테두리에 붙는다 */
+          const dep = 0.34, box = new THREE.Mesh(new THREE.BoxGeometry(0.42, it.drop, dep), woodMat);
+          box.position.set(-Math.sin(AZ) * (dep / 2 - potD / 2), -potH - it.drop / 2, -Math.cos(AZ) * (dep / 2 - potD / 2)); box.rotation.y = AZ; cell.add(box);
+        }
+      });
+      const bb = new THREE.Box3().setFromObject(subj), c = bb.getCenter(new THREE.Vector3()), s = bb.getSize(new THREE.Vector3());
+      const fl = new THREE.Mesh(new THREE.BoxGeometry(s.x + 0.6, 0.01, 1.0), floorMat); fl.position.set(c.x, -0.005, c.z + 0.1); row.add(fl);
+      scene.add(row);
+      const a = innerWidth / innerHeight, F = Math.max(s.y * 0.58, s.x / (2 * a) * 1.08);
+      orbit.tx = c.x; orbit.ty = c.y; orbit.tz = c.z; orbit.az = AZ; orbit.el = 0.16; orbit.zoom = 1;
+      cam.left = -F * a; cam.right = F * a; cam.top = F; cam.bottom = -F;
+      updateCam(); renderer.render(scene, cam); return true; })()`);
+    await new Promise(r => setTimeout(r, 1500));
+    await page.shot(file);
+    return colorCount(file);
+  };
+  for (const [which, name] of [['sc', 'species2_sc_hang.png'], ['ca', 'species2_ca_curl.png']]) {
+    const f = path.join(ROOT, 'docs/handoff/img', name), cc = await photo(f, which);
+    ok(cc > 800, `⑬ 사진 ${path.relative(ROOT, f)} — 색 ${cc}가지`); }
+
   ok(errs.length === 0, `페이지 예외 ${errs.length}${errs.length ? ' — ' + errs.slice(0, 2).join(' · ') : ''}`);
 } finally { await page.close(); clearTimeout(_wd); }
 console.log('\nspecies_draw: ' + (fail ? 'FAIL' : 'PASS'));

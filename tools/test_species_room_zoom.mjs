@@ -11,6 +11,7 @@
      ① 잎이 0 장이면 견줄 것이 없다 → 잎 있는 판은 «그린 잎 = 바라는 잎 > 0» 을 먼저 본다(아니면 FAIL)
      ② 판이 덜 왔으면 빠진 잎끼리 «같다»가 된다 → 둘 다 받는 중 0 이 될 때까지 다시 그린 뒤 견준다
      ③ 확대가 정말 «새 종을» 보이나 — 몬스테라 그룹이 가려졌나 · 끄면 돌아오나 · 카메라가 새 종을 담나
+   ★ D71(2026-10-23) — 스킨답서스(늘어진 줄기 · hang) · 칼라테아(말린 잎 · 밤)도 같은 자로 — 축으로 세운 잎은 방위 대신 사원수(q)로 견준다
    python tools/serve.py 8963
    BYEOT_URL=http://localhost:8963 node tools/test_species_room_zoom.mjs
 ============================================================ */
@@ -47,14 +48,23 @@ const SETUP = `(async () => {
     alv: { species: 'alocasia_frydek', plant: (() => { const a = R.newPlant('alocasia_frydek', { seed: 77, origin: 'from_varie_mother', motherKind: 'sector' }); for (let d = 0; d < 160; d++) R.stepDay(a, { dli: 6, season: 'summer' }); return a; })(), lightAz: 2.0 },
     alSleep: { species: 'alocasia_frydek', plant: R.newPlant('alocasia_frydek', { seed: 5, origin: 'shop' }), lightAz: 2.0 },
     /* ★ 빛 방향을 «안 주는» 판 — core 의 방은 lightAz 를 안 넘긴다(2026-10-09). 확대가 제 LIGHT_AZ 로 메우면 덩굴이 기우는 쪽이 갈린다 */
-    ppNoAz: { species: 'pink_princess', plant: R.newPlant('pink_princess', { seed: 4242, pinks: [0, 0.3, 0.7, 0.95], nodes: 8 }), potD: 0.18 }
+    ppNoAz: { species: 'pink_princess', plant: R.newPlant('pink_princess', { seed: 4242, pinks: [0, 0.3, 0.7, 0.95], nodes: 8 }), potD: 0.18 },
+    /* ★ D71 */
+    scHang: { species: 'scindapsus', plant: (() => { const p = R.newPlant('scindapsus', { seed: 51, form: 'rooted' }); for (let d = 0; d < 120; d++) R.stepDay(p, { dli: 6, season: 'spring', dropM: 0.79 }); return p; })(),
+              potD: 0.18, hang: { dropM: 0.79, potH: 0.12, az: 0.5 } },
+    scFloor: { species: 'scindapsus', plant: (() => { const p = R.newPlant('scindapsus', { seed: 53, form: 'rooted' }); for (let d = 0; d < 150; d++) R.stepDay(p, { dli: 6, season: 'spring', dropM: 1.4 });
+                 for (let d = 0; d < 2; d++) R.stepDay(p, { dli: 6, season: 'spring', dropM: 0.02 }); return p; })(), potD: 0.18, hang: { dropM: 0.02, potH: 0.12, az: -0.8, edgeM: 0.2 } },
+    caCurl: { species: 'calathea', plant: R.newPlant('calathea', { seed: 61, leaves: 5, curled: 3 }), potD: 0.18 },
+    caNight: { species: 'calathea', plant: R.newPlant('calathea', { seed: 61, leaves: 5, curled: 0 }), potD: 0.18, night: true }
   };
   /* 방 — 받는 중이 0 이 될 때까지 다시 짓는다 */
   window.__room = async (k) => { const c = window.__cases[k]; let g = window.__asm.youngPlantOf(c);
     for (let i = 0; i < 80 && g && g.userData.skinsPending; i++) { await new Promise(z => setTimeout(z, 250)); g = window.__asm.youngPlantOf(c); }
     if (!g) return null; const u = g.userData; let skin = 0; g.traverse(o => { if (o.isMesh && o.userData.varieSkin) skin++; });
     return { leafCount: u.leafCount, want: u.leafCountWanted, pending: u.skinsPending, skin,
-      leaves: u.leafPivots.map(p => ({ asset: p.userData.asset, stage: p.userData.stage, grade: p.userData.grade, tilt: p.userData.tilt, scale: p.userData.scale, x: p.position.x, y: p.position.y, z: p.position.z, ry: p.rotation.y })) }; };
+      leaves: u.leafPivots.map(p => ({ asset: p.userData.asset, stage: p.userData.stage, grade: p.userData.grade, tilt: p.userData.tilt, scale: p.userData.scale, x: p.position.x, y: p.position.y, z: p.position.z, ry: p.rotation.y,
+        pose: p.userData.pose || null, curl: p.userData.curl ?? null, qx: p.quaternion.x, qy: p.quaternion.y, qz: p.quaternion.z, qw: p.quaternion.w })),
+      hang: u.hang ? { lengthM: u.hang.lengthM, floorLenM: u.hang.floorLenM, given: u.hang.given } : null, night: !!u.night }; };
   /* 확대 — 같은 것을 확대창 창구로 */
   window.__zoom = async (k) => { const c = window.__cases[k]; let r = await setSpeciesView(c);
     for (let i = 0; i < 80 && r && r.skinsPending; i++) { await new Promise(z => setTimeout(z, 250)); r = await setSpeciesView(c); }
@@ -72,7 +82,7 @@ try {
   await page.waitFor('typeof THREE!=="undefined" && typeof buildPlant==="function" && typeof setSpeciesView==="function" && typeof scene!=="undefined" && !!scene', 60000);
   await page.eval(SETUP);
   const near = (a, b) => Math.abs(a - b) < 1e-9;
-  for (const k of ['pp4', 'pp8', 'al', 'alv', 'ppNoAz']) {
+  for (const k of ['pp4', 'pp8', 'al', 'alv', 'ppNoAz', 'scHang', 'scFloor', 'caCurl', 'caNight']) {
     const room = await page.eval(`window.__room('${k}')`);
     const zoom = await page.eval(`window.__zoom('${k}')`);
     /* ★ 대조 — 씨앗을 하나 바꾼 확대는 «달라야» 한다(자가 늘 같다고만 말하는지 거른다) */
@@ -86,13 +96,16 @@ try {
     const diff = [];
     if (fence) room.leaves.forEach((r, i) => { const z = zoom.leaves[i];
       if (!z) { diff.push(`잎${i + 1} 확대에 없음`); return; }
-      for (const f of ['asset', 'stage', 'grade']) if (r[f] !== z[f]) diff.push(`잎${i + 1} ${f} ${r[f]}≠${z[f]}`);
-      for (const f of ['tilt', 'scale', 'x', 'y', 'z', 'ry']) if (!near(r[f], z[f])) diff.push(`잎${i + 1} ${f} ${r[f]}≠${z[f]}`); });
+      for (const f of ['asset', 'stage', 'grade', 'pose', 'curl']) if (r[f] !== z[f]) diff.push(`잎${i + 1} ${f} ${r[f]}≠${z[f]}`);
+      for (const f of ['tilt', 'scale', 'x', 'y', 'z', 'ry', 'qx', 'qy', 'qz', 'qw']) if (!near(r[f], z[f])) diff.push(`잎${i + 1} ${f} ${r[f]}≠${z[f]}`); });
+    if (fence && k.startsWith('sc')) { if (!room.hang || !zoom.hang || !near(room.hang.lengthM, zoom.hang.lengthM) || !near(room.hang.floorLenM, zoom.hang.floorLenM) || !room.hang.given) diff.push(`늘어뜨림 ${JSON.stringify(room.hang)}≠${JSON.stringify(zoom.hang)}`); }
+    if (fence && k === 'caNight' && !(room.night && zoom.night)) diff.push(`밤 방 ${room.night} · 확대 ${zoom.night}`);
+    if (fence && k === 'caCurl' && room.leaves.filter(l => l.curl > 0).length !== 3) diff.push('말린 잎 수');
     ok(fence && zoom.leafCount === n && diff.length === 0 && zoom.skin === room.skin,
       `${k}: 방 잎 ${n} · 확대 잎 ${zoom && zoom.leafCount} · 판·단계·등급·눕힘·자리·방위·크기 어긋남 ${diff.length}${diff.length ? ' — ' + diff.slice(0, 3).join(' · ') : ''} · 무늬 표 메시 방 ${room && room.skin} / 확대 ${zoom && zoom.skin}`);
     ok(zoom && zoom.on && zoom.monsteraHidden && Math.abs(zoom.camTy - (zoom.rootTop * 0.5 + 0.15)) < 1e-6,
       `${k}: 확대가 새 종을 보인다 — 몬스테라 가림 ${zoom && zoom.monsteraHidden} · 카메라가 새 종을 담음(ty ${zoom && zoom.camTy.toFixed(3)} = 꼭대기 ${zoom && zoom.rootTop.toFixed(3)}×0.5+0.15)`);
-    if (k === 'pp8' || k === 'alv') {
+    if (k === 'pp8' || k === 'alv' || k === 'scHang' || k === 'caCurl') {
       await new Promise(r => setTimeout(r, 900));
       const shot = path.join(ROOT, `docs/handoff/img/species_zoom_${k}.png`);
       await page.shot(shot);
