@@ -228,11 +228,13 @@ for (const W of WIDTHS) {
     if(!b) return null; b.click();
     return { title:(document.getElementById('dTitle').textContent||'').trim(),
       body:(document.getElementById('dBody').textContent||'').replace(/\\s+/g,' ').trim() };})()`);
+  /* ⚠ 2026-10-24 [core] D81 ⑦ — 못 찾으면 예전엔 ok(…, true)(건너뜀이 통과로 셌다). 이제 «칸이 있다»부터 잰다 */
+  ok('E-0 가방에 빈 시루 칸이 있어 카드가 열린다', !!bagCard, bagCard ? '' : '#bagGrid .bagslot .info 없음');
   if (bagCard) {
     ok('E-1 가방 칸 카드 제목이 「콩나물 시루」 그대로다', bagCard.title === '콩나물 시루', bagCard.title);
     ok('E-2 ★ 거기 「자란 날」이 없다', !/자란\s*날/.test(bagCard.body));
     ok('E-3 ★ 거기 「품질」이 없다', !/품질/.test(bagCard.body));
-  } else ok('E-0 가방 칸을 못 찾았다(건너뜀)', true, '없음');
+  }
   await page.eval(`(()=>{const b=document.getElementById('dClose'); if(b) b.click();})()`, false);
   await page.eval(`window.__byeotSheet.close()`, false); await sleep(400);
 

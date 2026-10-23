@@ -324,7 +324,10 @@ for (const w of [360, 390, 430]) {
 
   await freeHands();
   await click('next'); await sleep(1200);
-  if (await on('mealPanel')) {
+  /* ⚠ 2026-10-24 [core] D81 ⑦ — 안 뜨면 예전엔 ok(…, true)(건너뜀이 통과로 셌다). 곳간은 refill 로 채웠으니 «뜬다»를 잰다 */
+  const mealOn = await on('mealPanel');
+  ok(`  ${w}px — 밥상 팝업이 뜬다(곳간을 채운 판)`, mealOn, mealOn ? '' : '안 뜸');
+  if (mealOn) {
     const ms = await page.eval(`(()=>[...document.querySelectorAll('#mealPanel button')]
       .map(b=>{const r=b.getBoundingClientRect();
         return {t:(b.textContent||'').trim(), w:Math.round(r.width), h:Math.round(r.height)};}))()`);
@@ -332,8 +335,6 @@ for (const w of [360, 390, 430]) {
     ok(`★ ${w}px — 밥상 고르개 단추 ${ms.length}개가 다 44px 이상`,
        sm.length === 0, sm.length ? JSON.stringify(sm) : JSON.stringify(ms.map(b => `${b.w}×${b.h}`)));
     await click('mealCancel'); await sleep(300);
-  } else {
-    ok(`  ${w}px — 밥상 팝업(곳간이 남아 있으면 뜬다)`, true, '곳간이 비어 안 뜸');
   }
 }
 

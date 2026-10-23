@@ -697,9 +697,11 @@ async function main() {
     const freeAt = await page.eval(`(async () => {
       const sp = window.__sp(${setup.slotPos.x}, ${setup.slotPos.y} + 0.004, ${setup.slotPos.z});
       const s = window.view.surfaceAt(sp.x, sp.y, { potD: 0.18 });
-      if (!s.ok || s.onUid !== ${JSON.stringify(setup.uid)}) return null;
-      /* 자리 한가운데는 이미 찼으니 살짝 옆으로 */
-      for (const [dx, dz] of [[0.16,0],[0,0.16],[-0.16,0],[0,-0.16],[0.22,0.0],[0,0.22]]) {
+      /* ⚠ 2026-10-24 [core] D81 ⑦ — 한가운데는 위에서 놓은 추천 자리 화분이 차 있어 surfaceAt 이 ok=false(«다른 화분과 겹칩니다»)다.
+           예전엔 여기서 !s.ok 로 돌아가 F-4 가 한 번도 안 재어졌다(늘 «건너뜀» = 늘 참). 그 면이 이 가구인지만 본다 */
+      if (s.onUid !== ${JSON.stringify(setup.uid)}) return null;
+      /* 자리 한가운데는 이미 찼으니 살짝 옆으로(가까운 데부터 · 상판 1.25×0.5 안) */
+      for (const [dx, dz] of [[0.16,0],[0,0.16],[-0.16,0],[0,-0.16],[0.22,0.0],[0,0.22],[-0.22,0],[0,-0.22],[0.3,0],[-0.3,0],[0.3,-0.16],[-0.3,-0.16],[0.4,0],[-0.4,0]]) {
         const sp2 = window.__sp(${setup.slotPos.x} + dx, ${setup.slotPos.y} + 0.004, ${setup.slotPos.z} + dz);
         const s2 = window.view.surfaceAt(sp2.x, sp2.y, { potD: 0.14 });
         if (s2.ok && s2.onUid === ${JSON.stringify(setup.uid)}) {
@@ -749,8 +751,9 @@ async function main() {
          ? `Δ(${(after.slotPlant.pos.x - before.slotPlant.pos.x).toFixed(2)}, ${(after.slotPlant.pos.z - before.slotPlant.pos.z).toFixed(2)})`
          : `before=${!!before.slotPlant} after=${!!after.slotPlant}`));
 
+    /* ⚠ 2026-10-24 [core] D81 ⑦ — 자리를 못 찾으면 예전엔 ok(…, true)(건너뜀이 통과로 셌다). 이제 F-4 는 못 재면 떨어진다 */
     if (!freeAt) {
-      ok('F-4 가구 위 자유 좌표 화분이 같이 간다 (at.onUid 기준)', true, '상판에 여유가 없어 건너뜀');
+      ok('F-4 가구 위 자유 좌표 화분이 같이 간다 (at.onUid 기준)', false, `상판(${setup.uid})에 자유 좌표 화분 자리를 못 찾아 못 잼`);
     } else {
       ok('F-4 가구 위 자유 좌표 화분이 같이 간다 (at.onUid 기준)',
          before.freePlant && after.freePlant && after.groups.free === 1 &&

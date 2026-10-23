@@ -353,9 +353,11 @@ console.log('\nG. 세이브');
   delete old.state.shop.earnedBy;
   const S3 = save.deserialize(JSON.stringify(old), {});
   ok('옛 세이브(두 칸 없음)가 던지지 않고 열린다', !!S3);
-  assert.deepEqual(S3.home.furnitureSold, []);
-  assert.deepEqual(S3.home.furnitureAdded, []);
-  ok('옛 세이브는 「아무것도 안 팔았고 안 놓았다」로 열린다 — 방이 원래 그대로다', true);
+  /* ⚠ 2026-10-24 [core] D81 ⑦ — 이 줄은 늘 참(true)이었다(재는 것은 바로 위 deepEqual 둘). 그 둘을 이 줄의 조건으로 옮겼다 */
+  ok('옛 세이브는 「아무것도 안 팔았고 안 놓았다」로 열린다 — 방이 원래 그대로다',
+     Array.isArray(S3.home.furnitureSold) && S3.home.furnitureSold.length === 0 &&
+     Array.isArray(S3.home.furnitureAdded) && S3.home.furnitureAdded.length === 0,
+     JSON.stringify({ sold: S3.home.furnitureSold, added: S3.home.furnitureAdded }));
   ok('옛 세이브의 판 돈은 unknown 으로 옮겨져 합이 맞는다', shop.saleLedgerOf(S3).balanced);
 }
 

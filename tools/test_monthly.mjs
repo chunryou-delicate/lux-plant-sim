@@ -188,7 +188,7 @@ console.log('\n== B~G. ★★ 월세 낸 날 가계부가 뜬다 ==');
     ok('★★ 대사 중에는 **안 뜬다** (가계부가 대사를 안 덮는다)', !(await on('monthPanel')));
     await walk();
     await sleep(600);
-  } else ok('★★ 대사가 없어 바로 떴다', true);
+  } else console.log('      (대사가 없다 — G «대사 중엔 안 뜬다»는 이 판에선 못 잰다 · 뜬 것은 바로 아래 줄이 잰다)');   /* ⚠ 10-24 [core] D81 ⑦ — 늘 참 ok 를 지움 */
 
   ok('★★ 가계부 팝업이 떴다', await on('monthPanel'));
   const st = await core();
