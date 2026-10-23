@@ -1431,6 +1431,13 @@ export function stepQuests(S, snapshot) {
     return Object.entries(on).filter(([id, d]) => d === s.day && !FIRST_PLAY_CHAIN_IDS.includes(id)).length;
   } catch { return 0; } })();
   const deferred = new Set();               // 이 걸음에 미룬 줄 — 같은 걸음의 다음 바퀴에서도 안 연다
+  /* ★ 2026-10-23 [plan] D78(core 실측) — **이미 열렸던 줄을 «다시 여는» 것은 하루 몫을 안 쓴다.**
+       `_questOpen` 은 세이브에 안 실려 다시 켜면 빈다 → 전에 열린 곁줄이 «새 열림» 후보로 하루 하나 몫을 다퉜고,
+       그날 다른 줄이 먼저 열리면 미뤄져 «끝» 판정까지 하루씩 밀렸다(ca_unfurl 끝 2일 · __questSnap caSaved true 인데 finished [] ·
+       그날 shop_town 이 열려 openedFree 1). 같은 날 다시 켜면 오늘 연 줄이 «오늘 연 수»에 이미 들어 있어 제 몫에 밀려 사라지기도 했다.
+     ⇒ 열린 날(stamina.questsOpenedOn · 세이브에 실림)이 적힌 줄은 «다시 여는 것» — 몫을 안 쓰고 안 미룬다(차례는 처음 열 때 이미 지켰다).
+       «새로 여는» 줄의 하루 하나는 그대로다. */
+  const openedBefore = id => { try { const on = S.stamina && S.stamina.questsOpenedOn; return !!on && on[id] != null; } catch { return false; } };
   for (let round = 0; round <= QUESTS.length; round++) {
     let changed = false;
     const ctx2 = { doneIds: [...doneNow], S };
@@ -1446,7 +1453,7 @@ export function stepQuests(S, snapshot) {
     cands.sort((a, b) => rankOf(a.id) - rankOf(b.id));
     const allowed = new Set();
     for (const q of cands) {
-      if (FIRST_PLAY_CHAIN_IDS.includes(q.id)) { allowed.add(q.id); continue; }
+      if (FIRST_PLAY_CHAIN_IDS.includes(q.id) || openedBefore(q.id)) { allowed.add(q.id); continue; }
       if (openedFree < 1) { allowed.add(q.id); openedFree++; } else deferred.add(q.id);
     }
     for (const q of QUESTS) {

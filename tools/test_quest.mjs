@@ -472,6 +472,31 @@ check('⑸ 두 번 불러도 두 번 열리지 않는다', () => {
   assert.equal(r.finished.length, 0, `끝난 것을 또 냅니다: ${r.finished}`);
   assert.equal(openedAt.length, before);
 });
+/* ★ 2026-10-23 [plan] D78(core 실측) — 다시 켠 판(_questOpen 이 빔)에서 «전에 열렸던» 곁줄은 하루 몫을 안 쓴다 */
+check('⑸ ★ 다시 켠 판 — 전에 열린 곁줄의 «끝»이 그날 다른 줄 열림에 안 밀린다(D78)', () => {
+  const b = newBoard();
+  b.stamina.questsOpenedOn = { ca_unfurl: 898 };            // 이틀 전에 열렸다 · 다시 켜서 _questOpen 은 비었다
+  const s = { ...emptySnapshot(), day: 900, firstPlayDone: true, movedOut: true, movedHome: true,
+              scPlants: 1, scLongVine: 0, caCareOpen: false, caSaved: true };   // 오늘 sc_hang 이 새로 열리고 ca_unfurl 은 끝났다
+  const r = stepQuests(b, s);
+  assert.ok(r.finished.includes('ca_unfurl'), `ca_unfurl 끝이 밀렸습니다 — finished ${JSON.stringify(r.finished)}`);
+  assert.ok(r.opened.includes('sc_hang'), `새 줄 sc_hang 이 안 열렸습니다 — opened ${JSON.stringify(r.opened)}`);
+});
+check('⑸ ★ 같은 날 다시 켜도 오늘 연 줄이 제 몫에 밀려 사라지지 않는다(D78)', () => {
+  const b = newBoard();
+  b.stamina.questsOpenedOn = { sc_hang: 900 };              // 오늘 열었고 · 같은 날 다시 켰다
+  const s = { ...emptySnapshot(), day: 900, firstPlayDone: true, movedOut: true, movedHome: true, scPlants: 1, scLongVine: 0 };
+  const r = stepQuests(b, s);
+  assert.ok(b._questOpen.includes('sc_hang'), `오늘 연 sc_hang 이 다시 켠 뒤 사라졌습니다 — opened ${JSON.stringify(r.opened)}`);
+});
+check('⑸ ★ «새로 여는» 줄은 여전히 하루 하나(D78 이 몫을 넓히지 않았다)', () => {
+  const b = newBoard();
+  const s = { ...emptySnapshot(), day: 900, firstPlayDone: true, movedOut: true, movedHome: true,
+              scPlants: 1, scLongVine: 0, caCareOpen: true, caSaved: false };   // 둘 다 처음 열릴 수 있다
+  const r = stepQuests(b, s);
+  const fresh = r.opened.filter(id => !FIRST_PLAY_CHAIN_IDS.includes(id));
+  assert.equal(fresh.length, 1, `하루에 새 줄이 ${fresh.length}개 열렸습니다 — ${fresh}`);
+});
 check('⑸ 끝낸 것은 `stamina.questsTaken` 하나가 기억한다', () => {
   const taken = board.stamina.questsTaken;
   for (const id of QUEST_IDS) assert.ok(taken.includes(id), `'${id}' 가 안 적혔습니다`);

@@ -36,6 +36,7 @@
  */
 import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
+import { chatterContext as chatterContextOf } from '../src/game/dialogue.js';   /* ★ D78 귀띔 조건 */
 import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, pot0, setPotSlot, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
@@ -662,6 +663,21 @@ check('데이터 — 계절·월세는 같은 이벤트 안에서 갈린다', ()
   assert.deepEqual(scriptsForEvents([{ id: 'rent', first: false }]), ['rentAgain']);
   assert.deepEqual(scriptsForEvents([]), []);
   assert.deepEqual(scriptsForEvents(null), []);
+});
+
+/* ★ 2026-10-23 [plan] D78 — 스킨답서스 «높이» 귀띔은 sc_hang 이 열려 있고 이레 넘게 다 낮은 자리일 때만 */
+check('잡담 — hintScHang 는 sc_hang 열림 + 낮은 자리 이레일 때만(D78)', () => {
+  const row = CHATTER.find(r => r.id === 'hintScHang');
+  assert.ok(row && SCRIPTS.hintScHang, 'hintScHang 줄·대사가 없습니다');
+  assert.ok(!REPEATABLE.has('hintScHang'), '한 번만 하는 말인데 되풀이 목록에 있습니다');
+  const S = { stamina: { questsOpenedOn: { sc_hang: 880 }, questsTaken: [] } };
+  const ctxOf = (d) => chatterContextOf({ day: 900, scLowDays: d }, S);
+  assert.equal(row.when(ctxOf(7)), true, '이레째인데 안 섭니다');
+  assert.equal(row.when(ctxOf(6)), false, '엿새째에 섭니다');
+  assert.equal(row.when(ctxOf(null)), false, '모르는데(null) 섭니다');
+  const done = { stamina: { questsOpenedOn: { sc_hang: 880 }, questsTaken: ['sc_hang'] } };
+  assert.equal(row.when(chatterContextOf({ day: 900, scLowDays: 9 }, done)), false, 'sc_hang 을 끝냈는데 섭니다');
+  assert.equal(row.when(chatterContextOf({ day: 900, scLowDays: 9 }, { stamina: { questsOpenedOn: {}, questsTaken: [] } })), false, 'sc_hang 이 안 열렸는데 섭니다');
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

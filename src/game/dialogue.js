@@ -1699,6 +1699,12 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'curious', text: '칼라테아는 밤마다 잎을 세운다.' },
     { who: 'moni',   face: 'calm',    text: '기도하는 식물이라고도 해.' }
   ],
+  /* ★ 2026-10-23 [plan] D78(하네스 — 높은 자리를 삽수·AL 이 먼저 차지해 SC 가 낮은 데 오래 머묾) — sc_hang 이 열려 있고
+       놓인 스킨답서스가 다 낮은 자리에 이레 넘게 있으면 몬이 한 번. 벽 화분걸이는 안 가리킨다(등을 켜야 자란다 — 막다른 길을 권하지 않는다).
+       «선반 윗단»이 방에 있을 때만 참 — [core] turn.scLowDays 가 그 방에 높은 자리가 없으면 null. */
+  hintScHang: [
+    { who: 'moni',   face: 'teach',   text: '선반 윗단 하나를 비워 주면 스킨답서스를 늘어뜨릴 수 있어.' }
+  ],
   questScHang: [
     { who: 'moni',   face: 'teach', text: '선반 윗단이나 벽에 걸어 늘어뜨려 봐. 높을수록 길게 자라.' }
   ],
@@ -2885,6 +2891,8 @@ export const CHATTER = [
   /* ★ 2026-10-10 [plan] D59 — 가게 판 잡담(산 집 · 진로 가게) */
   /* ★ 2026-10-23 [plan] D71 — 칼라테아 잡담 · 너무 밝은 자리 상태 줄 */
   { id: 'chatCaNight',      gap: 28, when: c => fin(c.caPlants) && c.caPlants >= 1 },
+  /* ★ 2026-10-23 [plan] D78 — 한 번(chat 앞말이 아니라 REPEATABLE 에 안 듦 · gap 은 안전망) · 이레 = 대사 때(값 아님) */
+  { id: 'hintScHang',   gap: 9999, when: c => c.scHangOpen === true && fin(c.scLowDays) && c.scLowDays >= 7 },
   { id: 'statusCaTooBright', status: true, gap: 3, when: c => c.caTooBright === true },
   { id: 'chatShopMorning',  gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
   { id: 'chatShopWindow',   gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
@@ -3242,6 +3250,11 @@ export function chatterContext(turn = {}, S = null) {
     /* ★ 2026-10-23 [plan] D71 — 칼라테아([core] turn.caPlants · turn.caTooBright · 모르면 null) */
     caPlants: (turn && Number.isFinite(turn.caPlants)) ? turn.caPlants : null,
     caTooBright: (turn && typeof turn.caTooBright === 'boolean') ? turn.caTooBright : null,
+    /* ★ 2026-10-23 [plan] D78 — 스킨답서스 «높이» 귀띔. scLowDays = [core] 놓인 SC 가 하나 이상이고 그 모두가 높은 자리가 «아닌» 날이 며칠째 잇달았나
+         (하나라도 높은 자리면 0 · SC 가 없거나 그 방에 높은 자리가 없으면 null). scHangOpen = sc_hang 이 열렸고 안 끝났나(stamina 에서 읽음 · 새 칸 아님) */
+    scLowDays: (turn && Number.isFinite(turn.scLowDays)) ? turn.scLowDays : null,
+    scHangOpen: (() => { try { const stm = S && S.stamina; if (!stm || !stm.questsOpenedOn) return null;
+      return stm.questsOpenedOn.sc_hang != null && !(stm.questsTaken || []).includes('sc_hang'); } catch { return null; } })(),
     /* ★ 2026-10-09 [plan] D45 — 알로카시아 한 그루라도 자고 있나([core] turn.alDormantNow · 모르면 null) */
     alDormantNow: (turn && typeof turn.alDormantNow === 'boolean') ? turn.alDormantNow : null,
     /* ★ 2026-10-09 [plan] 원룸 후반 — 엔딩 목표 금액([core] turn.homeTarget · homes.json ending.targetWon). 모르면 null */
