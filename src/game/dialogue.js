@@ -1795,6 +1795,13 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think',    text: '오늘은 주문판이 비었다.' },
     { who: 'moni',   face: 'calm',     text: '그런 날엔 키워 두는 거야. 다음 손님이 뭘 찾을지 모르니까.' }
   ],
+  /* ★ 2026-10-23 [plan] D79(core 가게 2년 판 — 주문 수입이 반년 뒤 꺼짐 · 등 셋 판은 주문이 세 배) — 열린 주문 0건이 스무하루 넘게 이으면 몬이 한 번.
+       참인 까닭: 주문은 «그 판이 맞출 수 있는 것»으로만 붙는다(job_shop rollOrder · 원천이 없으면 안 냄) · 겨울 «자람이 드는» 주문은 등 둘 이상일 때만(가드 1).
+       «등을 더 사»라고 하지 않는다 — 등 자리가 다 찼으면 거짓이 된다. «등 아래가 길»은 늘 참이다. 수는 안 말한다. */
+  hintShopDry: [
+    { who: 'moni',   face: 'worry',   text: '주문판이 오래 비었네. 손님은 여기 있는 걸 보고 주문해.' },
+    { who: 'moni',   face: 'teach',   text: '그루를 늘려 보자. 겨울엔 등 아래 자리가 길이야.' }
+  ],
   chatShopApron: [
     { who: 'jachwi', face: 'apron',    text: '앞치마 주머니에 가위가 늘 들어 있다.' },
     { who: 'moni',   face: 'scissors', text: '가게 사람 다 됐네.' }
@@ -2893,6 +2900,8 @@ export const CHATTER = [
   { id: 'chatCaNight',      gap: 28, when: c => fin(c.caPlants) && c.caPlants >= 1 },
   /* ★ 2026-10-23 [plan] D78 — 한 번(chat 앞말이 아니라 REPEATABLE 에 안 듦 · gap 은 안전망) · 이레 = 대사 때(값 아님) */
   { id: 'hintScHang',   gap: 9999, when: c => c.scHangOpen === true && fin(c.scLowDays) && c.scLowDays >= 7 },
+  /* ★ 2026-10-23 [plan] D79 — 한 번(hint 앞말 · REPEATABLE 아님) · 스무하루 = 대사 때(값 아님) */
+  { id: 'hintShopDry',  gap: 9999, when: c => c.movedHome && c.jobId === 'shop' && fin(c.shopOrderDryDays) && c.shopOrderDryDays >= 21 },
   { id: 'statusCaTooBright', status: true, gap: 3, when: c => c.caTooBright === true },
   { id: 'chatShopMorning',  gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
   { id: 'chatShopWindow',   gap: 21, when: c => c.movedHome && c.jobId === 'shop' },
@@ -3247,6 +3256,8 @@ export function chatterContext(turn = {}, S = null) {
     jobId: (S && S.story && S.story.job && S.story.job.id) || null,
     shopRegulars: (S && S.jobShop && Array.isArray(S.jobShop.regulars)) ? S.jobShop.regulars.length : null,
     shopOpenOrders: (S && S.jobShop && Array.isArray(S.jobShop.orders)) ? S.jobShop.orders.length : null,
+    /* ★ 2026-10-23 [plan] D79 — [core] turn.shopOrderDryDays: 가게 판에서 «열린 주문 0건인 날»이 며칠째 이었나(걸린 주문이 있으면 0 · 가게 판이 아니면 null) */
+    shopOrderDryDays: (turn && Number.isFinite(turn.shopOrderDryDays)) ? turn.shopOrderDryDays : null,
     /* ★ 2026-10-23 [plan] D71 — 칼라테아([core] turn.caPlants · turn.caTooBright · 모르면 null) */
     caPlants: (turn && Number.isFinite(turn.caPlants)) ? turn.caPlants : null,
     caTooBright: (turn && typeof turn.caTooBright === 'boolean') ? turn.caTooBright : null,

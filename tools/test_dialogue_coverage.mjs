@@ -680,6 +680,20 @@ check('잡담 — hintScHang 는 sc_hang 열림 + 낮은 자리 이레일 때만
   assert.equal(row.when(chatterContextOf({ day: 900, scLowDays: 9 }, { stamina: { questsOpenedOn: {}, questsTaken: [] } })), false, 'sc_hang 이 안 열렸는데 섭니다');
 });
 
+/* ★ 2026-10-23 [plan] D79 — 주문 가뭄 귀띔은 가게 판 + 열린 주문 0건 스무하루일 때만 */
+check('잡담 — hintShopDry 는 가게 판 + 열린 주문 0건 스무하루일 때만(D79)', () => {
+  const row = CHATTER.find(r => r.id === 'hintShopDry');
+  assert.ok(row && SCRIPTS.hintShopDry, 'hintShopDry 줄·대사가 없습니다');
+  assert.ok(!REPEATABLE.has('hintShopDry'), '한 번만 하는 말인데 되풀이 목록에 있습니다');
+  const shopS = { story: { job: { id: 'shop', since: 600 } }, home: { room: 'tworoom' } };
+  const at = (d, S = shopS, extra = {}) => row.when({ ...chatterContextOf({ day: 900, shopOrderDryDays: d }, S), ...extra });
+  assert.equal(at(21, shopS, { movedHome: true, jobId: 'shop' }), true, '스무하루째인데 안 섭니다');
+  assert.equal(at(20, shopS, { movedHome: true, jobId: 'shop' }), false, '스무날째에 섭니다');
+  assert.equal(at(null, shopS, { movedHome: true, jobId: 'shop' }), false, '모르는데(null) 섭니다');
+  assert.equal(at(30, shopS, { movedHome: true, jobId: 'care' }), false, '가게 판이 아닌데 섭니다');
+  assert.equal(at(30, shopS, { movedHome: false, jobId: 'shop' }), false, '산 집이 아닌데 섭니다');
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {
