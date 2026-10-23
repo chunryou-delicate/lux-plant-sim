@@ -2079,6 +2079,32 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'bulb',     text: '알로카시아는 잠들면서 흙 속에 새끼 구근을 남겨. 무늬 어미 것은 무늬도 잘 나와.' },
     { who: 'moni',   face: 'teach',    text: '겨울이 아니어도 어두운 데 오래 두면 잠들어. 잎이 다 질 때까지 둬 봐.' }
   ],
+  /* ★ 2026-10-24 [plan] 총괄 D86 ①(core breedH — 귀띔을 듣는 사람 2년 품종 3 0/10 · 기준 5/10) — 빈 다리 둘을 메우는 귀띔(한 번씩 · 몬이는 수를 안 말한다).
+     hintBreedAlShopCorm — breedH 는 무늬 AL 을 거의 못 가졌다(1/10): 찾은 구근이 다 무지 어미 것이라 hintBreedAlSleep 이 참일 때가 안 왔다.
+       참인 조건: 상점 구근도 무늬 몫이 있다(growth_species.json alocasia_frydek varie_chance shop .25 → «가끔») · 무늬 그루가 잠들 때 찾은 구근은
+         «무늬 어미 구근»(from_varie_mother .75 · 갈래를 잇는다 — 마블·반달 칸의 «같은 조건») → «그 그루가 어미가 돼».
+       때: [core] turn.breedAlNoMotherDays ≥ 21(⚖ 대사 때) — 육종 판 · 마블·반달 칸 둘 다 빔 · 무늬 AL 그루 0 · 무늬 어미 구근 0 · 상점에 AL 구근이 있을 때만 수.
+     hintBreedPpHeavy — breedH 의 분홍 많은 PP 0/10: 따를 귀띔이 없었다(chatBreedPinkCut 은 비교 잡담 · questPpHoldPink 는 «분홍이 고운 잎» 원룸 곁줄).
+       참인 조건: 새 잎 분홍 몫 = 바로 아래 잎(맨 위 잎) 몫 + 흔들림(growth_species.json pink_princess · species_growth §PP) → «다음 잎은 맨 위 잎을 닮아» ·
+         분홍 많음이 아닌 잎(마블 · 분홍 잎 · 초록)이 끼면 줄 셈이 끊긴다(총괄 D86 ③ · core d24cd58a) → «줄은 처음부터야».
+       때: 기록장 PP 표본 셋 이상 · 분홍 많음 아닌 표본 둘 이상 · 분홍 많은 PP 칸이 아직 등록·대기 아님(§breedChatOf breedPpHeavyHint — S.jobBreed 만 읽음).
+       chatBreedPinkCut(«분홍 잎이 잇달면 그 아래를 잘라» — 너무 분홍)과 안 겹친다: 이 줄은 «분홍 많음을 맨 위에 붙잡기»다.
+     hintBreedPpShop — PP 가 없는 판(교환 거절)은 PP 칸 다리가 아예 없다(총괄 D87 ② «상점 PP 진열로 잇는 말»).
+       참인 조건: 육종 판에서 PP 그루(맡은 것 빼고)가 하나도 없으면 상점에 어린 그루가 첫날부터 진열된다(species §speciesShopOpen pp_young) ·
+         자르는 마디가 다음 잎의 어미를 고른다(위와 같은 규칙) → «자르는 손으로 분홍을 이어 갈 수 있어».
+       때: 육종 판 · 가진 PP 0(맡은 것 빼고 — 진열 규칙과 같은 셈) · 기록장 표본 셋 이상(§breedPpShopHint — S 만 읽음). */
+  hintBreedAlShopCorm: [
+    { who: 'moni',   face: 'bulb',     text: '무늬 어미 구근이 없으면 상점 구근을 들여 봐. 가끔 무늬 그루가 나와.' },
+    { who: 'moni',   face: 'teach',    text: '무늬 그루가 나오면 그 그루가 어미가 돼.' }
+  ],
+  hintBreedPpHeavy: [
+    { who: 'moni',   face: 'scissors', text: '다음 잎은 맨 위 잎을 닮아. 분홍 많은 잎이 맨 위에 오게 잘라.' },
+    { who: 'moni',   face: 'teach',    text: '분홍 많음이 아닌 잎이 끼면 줄은 처음부터야.' }
+  ],
+  hintBreedPpShop: [
+    { who: 'moni',   face: 'teach',    text: '핑크프린세스가 없으면 상점에서 어린 그루를 들여 봐.' },
+    { who: 'moni',   face: 'scissors', text: '자르는 손으로 분홍을 이어 갈 수 있어.' }
+  ],
   /* ═══ ★★ 2026-10-24 [plan] D72 D 나머지 «다른 진로 열기(바꾸기) · 마지막 덮개»(명세 plan-career-endings-spec-20261023 §2 · §4 · §11 · 총괄 D75 · D83) ═══
      사건([core]): job_start{job, switched:true}(끝맺음 뒤 처음 해 보는 진로로 옮긴 날) · job_start{job, switched:true, back:true}(끝맺음을 본 진로로 돌아간 날) ·
      shop_open{boardKept:true} · care_open{boardKept:true}(창 옆 판이 이미 걸려 있어 이름만 바뀌는 날) · final_cover(셋째 끝맺음 카드를 닫은 뒤 한 번).
@@ -3391,6 +3417,10 @@ export const CHATTER = [
   /* ★ 2026-10-24 [plan] 총괄 D84 — 육종 귀띔 둘(한 번 · gap 9999 · 잡담보다 앞 — 안 나온 것끼리는 표 앞이 이긴다). 참인 조건은 대사 위 주석 */
   { id: 'hintBreedFullmoon',    gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && c.breedFullmoonHint === true },
   { id: 'hintBreedAlSleep',     gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && fin(c.breedAlCormWaitDays) && c.breedAlCormWaitDays >= 60 },
+  /* ★ 2026-10-24 [plan] 총괄 D86 ① — breedH 빈 다리 둘(한 번 · 잡담보다 앞). 참인 조건은 대사 위 주석 */
+  { id: 'hintBreedAlShopCorm',  gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && fin(c.breedAlNoMotherDays) && c.breedAlNoMotherDays >= 21 },
+  { id: 'hintBreedPpHeavy',     gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && c.breedPpHeavyHint === true },
+  { id: 'hintBreedPpShop',      gap: 9999, when: c => c.movedHome && c.jobId === 'breed' && c.breedPpShopHint === true },
   { id: 'chatBreedMorning',     gap: 21, when: c => c.movedHome && c.jobId === 'breed' },
   { id: 'chatBreedBright',      gap: 21, when: c => c.movedHome && c.jobId === 'breed' && c.breedBrightHalfMore === true },
   { id: 'chatBreedPlainMother', gap: 21, when: c => c.movedHome && c.jobId === 'breed' && c.breedPlainMotherNone === true },
@@ -3683,7 +3713,7 @@ export function pickChatter(ctx = {}, recent = [], lastDay = {}) {
      breedPpLines: 핑크프린세스 줄 수 */
 function breedChatOf(S) {
   const T = S && S.jobBreed && S.jobBreed.tally;
-  if (!T || typeof T !== 'object') return { breedBrightHalfMore: null, breedPlainMotherNone: null, breedPpLines: null, breedFullmoonHint: null };
+  if (!T || typeof T !== 'object') return { breedBrightHalfMore: null, breedPlainMotherNone: null, breedPpLines: null, breedFullmoonHint: null, breedPpHeavyHint: null };
   const n = v => (Number.isFinite(v) ? v : 0);
   const varie = r => (r ? n(r.sanban) + n(r.halfmoon) + n(r.fullmoon) : 0);
   const M = T.monstera || {};
@@ -3699,7 +3729,13 @@ function breedChatOf(S) {
   const rows = ['dark', 'mid', 'bright'].map(b => M[b] || {});
   const all4 = r => n(r.plain) + n(r.sanban) + n(r.halfmoon) + n(r.fullmoon);
   const fullmoonHint = rows.reduce((a, r) => a + all4(r), 0) >= 5 && rows.reduce((a, r) => a + n(r.fullmoon), 0) === 0 && all4(M.bright || {}) === 0;
-  return { breedBrightHalfMore: brightMore, breedPlainMotherNone: plainNone, breedPpLines: pp, breedFullmoonHint: fullmoonHint };
+  /* ★ 2026-10-24 [plan] 총괄 D86 ① — PP 귀띔 때: PP 표본 셋 이상 · 분홍 많음 아닌 표본 둘 이상 · 분홍 많은 PP 칸이 아직 등록·대기 아님 */
+  const ppRows = T.pp && typeof T.pp === 'object' ? Object.values(T.pp).filter(r => r && typeof r === 'object') : [];
+  const ppAll = ppRows.reduce((a, r) => a + n(r.green) + n(r.marble) + n(r.heavy) + n(r.pink), 0);
+  const ppOff = ppRows.reduce((a, r) => a + n(r.green) + n(r.marble) + n(r.pink), 0);
+  const J = S.jobBreed, hasSlot = id => [...(Array.isArray(J.varieties) ? J.varieties : []), ...(Array.isArray(J.pending) ? J.pending : [])].some(v => v && v.slot === id);
+  const ppHeavyHint = ppAll >= 3 && ppOff >= 2 && !hasSlot('pp_heavy');
+  return { breedBrightHalfMore: brightMore, breedPlainMotherNone: plainNone, breedPpLines: pp, breedFullmoonHint: fullmoonHint, breedPpHeavyHint: ppHeavyHint };
 }
 export function chatterContext(turn = {}, S = null) {
   const ts = (S && S.tutorial) || null;
@@ -3777,6 +3813,16 @@ export function chatterContext(turn = {}, S = null) {
     /* ★ 2026-10-24 [plan] 총괄 D84 — [core] turn.breedAlCormWaitDays: 육종 판 · 마블·반달 AL 칸이 둘 다 비었고(등록·대기 없음) · 구근을 찾을 수 있는 무늬 AL
        (잠 안 듦 · 평생 찾음 < 2 · 지난 찾음 뒤 새 잎 ≥ 1)이 하나 이상일 때만 — 진로 연 날과 마지막 구근 찾은 날 중 늦은 날부터 지난 날. 아니면 null(= 모른다 → 안 뜬다) */
     breedAlCormWaitDays: (turn && Number.isFinite(turn.breedAlCormWaitDays)) ? turn.breedAlCormWaitDays : null,
+    /* ★ 2026-10-24 [plan] 총괄 D86 ① — [core] turn.breedAlNoMotherDays: 육종 판 · 마블·반달 AL 칸 둘 다 빔 · 무늬 AL 그루 0 · 무늬 어미 구근(가방) 0 · 상점에 AL 구근이 있을 때만 —
+       그 조건이 이어진 날 수(진로 연 날부터 · 깨지면 null). 아니면 null(= 모른다 → 안 뜬다) */
+    breedAlNoMotherDays: (turn && Number.isFinite(turn.breedAlNoMotherDays)) ? turn.breedAlNoMotherDays : null,
+    /* ★ 2026-10-24 [plan] 총괄 D87 ② — PP 없는 육종 판: 가진 PP(맡은 것 빼고 — species §speciesShopOpen pp_young 과 같은 셈) 0 · 기록장 표본 셋 이상. 육종 판이 아니면 null */
+    breedPpShopHint: (() => {
+      const J = S && S.jobBreed, job = S && S.story && S.story.job && S.story.job.id;
+      if (!J || job !== 'breed') return null;
+      const pots = (S.species && Array.isArray(S.species.pots)) ? S.species.pots : [];
+      return !pots.some(q => q && q.species === 'pink_princess' && !q.care) && Number.isFinite(J.sampleCount) && J.sampleCount >= 3;
+    })(),
     /* ★ 2026-10-23 [plan] D71 — 칼라테아([core] turn.caPlants · turn.caTooBright · 모르면 null) */
     caPlants: (turn && Number.isFinite(turn.caPlants)) ? turn.caPlants : null,
     caTooBright: (turn && typeof turn.caTooBright === 'boolean') ? turn.caTooBright : null,

@@ -1011,6 +1011,45 @@ check('대사·데이터 — 간판 한 자리: 다른 진로 간판이 서 있�
   assert.ok(/쪽지$/.test(F.memo_board.intro_ko) && !/무늬가 난 날/.test(F.memo_board.intro_ko), `메모판 소개 글: ${F.memo_board.intro_ko}`);
 });
 
+/* ★ 2026-10-24 [plan] 총괄 D86 ① — breedH 빈 다리 귀띔 둘(상점 구근 · PP 자르기): 때가 참일 때만 · 한 번 · 수·거짓 낱말 없음 */
+check('잡담 — breedH 빈 다리 귀띔 둘(상점 구근 · PP 자르기)은 때가 참일 때만 · 한 번(D86 ①)', () => {
+  const row = id => CHATTER.find(r => r.id === id);
+  for (const id of ['hintBreedAlShopCorm', 'hintBreedPpHeavy', 'hintBreedPpShop']) {
+    assert.ok(row(id) && SCRIPTS[id], `'${id}' 가 없습니다`);
+    assert.equal(row(id).gap, 9999, `'${id}' 는 한 번만`);
+    assert.ok(!REPEATABLE.has(id), `'${id}' 가 다시 나옵니다`);
+    for (const l of SCRIPTS[id])
+      assert.ok(l.who === 'moni' && !/[0-9]|세 |셋|넷|다섯|여섯|일곱|여덟|아홉|서른|퍼센트|반드시|꼭 나/.test(l.text), `'${id}' 수·장담 낱말: ${l.text}`);
+  }
+  const at = id => CHATTER.findIndex(r => r.id === id);
+  assert.ok(at('hintBreedAlShopCorm') < at('chatBreedMorning') && at('hintBreedPpHeavy') < at('chatBreedMorning'), '귀띔이 육종 잡담 뒤에 있습니다');
+  const ctx = (jb, turn = {}) => ({ ...chatterContextOf({ day: 1400, ...turn }, { story: { job: { id: 'breed' } }, home: { room: 'tworoom' }, jobBreed: jb }),
+                                    movedHome: true, jobId: 'breed' });
+  const S1 = row('hintBreedAlShopCorm').when;
+  assert.equal(S1(ctx({ tally: {} }, { breedAlNoMotherDays: 21 })), true);
+  assert.equal(S1(ctx({ tally: {} }, { breedAlNoMotherDays: 20 })), false);
+  assert.equal(S1(ctx({ tally: {} })), false, '칸이 없는데(모른다) 섭니다');
+  assert.equal(S1({ ...ctx({ tally: {} }, { breedAlNoMotherDays: 40 }), jobId: 'shop' }), false, '가게 판에 육종 귀띔');
+  const P = row('hintBreedPpHeavy').when;
+  assert.equal(P(ctx({ tally: { pp: { L1: { heavy: 1, marble: 2 } } }, varieties: [], pending: [] })), true, 'PP 줄이 끊기는데 안 섭니다');
+  assert.equal(P(ctx({ tally: { pp: { L1: { heavy: 2, marble: 1 } } }, varieties: [], pending: [] })), false, '끊긴 잎이 하나뿐인데 섭니다');
+  assert.equal(P(ctx({ tally: { pp: { L1: { marble: 2 } } }, varieties: [], pending: [] })), false, '표본이 적은데 섭니다');
+  assert.equal(P(ctx({ tally: { pp: { L1: { heavy: 3, green: 2 } } }, varieties: [{ slot: 'pp_heavy', name: '볕 분홍 1호' }], pending: [] })), false, '이미 등록한 칸인데 섭니다');
+  assert.equal(P(ctx({ tally: { pp: { L1: { heavy: 3, pink: 2 } } }, varieties: [], pending: [{ slot: 'pp_heavy' }] })), false, '이름 대기 중인데 섭니다');
+  assert.equal(chatterContextOf({ day: 1 }, { story: { job: { id: 'care' } } }).breedPpHeavyHint, null, '육종 판이 아닌데 참/거짓을 지어냅니다');
+  assert.equal(chatterContextOf({ day: 1 }, null).breedAlNoMotherDays, null);
+  /* PP 없는 판 — 가진 PP 0(맡은 것은 안 침) · 표본 셋 이상 */
+  const sp = (pots, n) => ({ ...chatterContextOf({ day: 1400 }, { story: { job: { id: 'breed' } }, home: { room: 'tworoom' },
+                                                                 jobBreed: { tally: {}, sampleCount: n }, species: { pots } }), movedHome: true, jobId: 'breed' });
+  const Q = row('hintBreedPpShop').when;
+  assert.equal(Q(sp([], 3)), true, 'PP 가 없는데 안 섭니다');
+  assert.equal(Q(sp([{ species: 'pink_princess', care: { id: 'r1' } }], 3)), true, '맡은 PP 를 내 것으로 칩니다(상점 진열 셈과 다름)');
+  assert.equal(Q(sp([{ species: 'pink_princess' }], 3)), false, 'PP 가 있는데 섭니다');
+  assert.equal(Q(sp([], 2)), false, '표본이 적은데 섭니다');
+  assert.equal(chatterContextOf({ day: 1 }, { story: { job: { id: 'shop' } }, jobBreed: { tally: {} } }).breedPpShopHint, null, '육종 판이 아닌데 참/거짓을 지어냅니다');
+  assert.ok(!SCRIPTS.hintBreedPpHeavy.some(l => /그 아래를 잘라/.test(l.text)), 'PP 귀띔이 chatBreedPinkCut 과 같은 말을 합니다');
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {
