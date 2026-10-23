@@ -1,0 +1,553 @@
+{
+ "_doc": "새 두 종 뼈대 조정표(leaf 10-23 · D71 · tools/leaf/skeleton_table.py → skeleton_doc.py) — normalizeAsset(anchorBottom) 과 같은 자: 자루 끝 = 원점 · 높이 1. *_frac · *_xyz 는 정규 단위 · *_m 은 manifest real_max_m(가장 긴 축) 기준 미터. 잎몸 길이·폭은 잎몸 «제 평면»(주성분)에서 잰다. 보정은 자루 끝 원점에서 안쪽부터 기울기(pitch_fix_deg · rotation.x) → 거울(mirror_x) → 배율(skin_scale). after_fix = 보정 뒤 값. 자세한 뜻은 docs/handoff/leaf-species2-skeleton-20261023.md",
+ "species": {
+  "scindapsus": {
+   "petiole_side_majority_x": 1,
+   "leaves": {
+    "sc_leaf_young": {
+     "petiole_frac": 0.41,
+     "blade_len_frac": 0.614,
+     "blade_width_frac": 0.811,
+     "junction_xyz": [
+      -0.216,
+      0.41,
+      -0.065
+     ],
+     "petiole_top_xyz": [
+      0.076,
+      0.383,
+      0.125
+     ],
+     "tip_xyz": [
+      -0.109,
+      0.976,
+      0.176
+     ],
+     "blade_centroid_xyz": [
+      -0.021,
+      0.701,
+      0.014
+     ],
+     "blade_axis": [
+      -0.27,
+      0.812,
+      0.517
+     ],
+     "blade_normal": [
+      0.151,
+      0.566,
+      -0.811
+     ],
+     "blade_pitch_deg": 32.5,
+     "blade_side_deg": -18.4,
+     "face_up_deg": 34.5,
+     "longest_axis_norm": 1.0,
+     "real_max_m": 0.08,
+     "height_m": 0.08,
+     "petiole_m": 0.033,
+     "blade_len_m": 0.049,
+     "blade_width_m": 0.065,
+     "stage": "young",
+     "pitch_fix_deg": -34.5,
+     "mirror_x": false,
+     "after_fix": {
+      "petiole_top_xyz": [
+       0.076,
+       0.386,
+       -0.114
+      ],
+      "blade_centroid_xyz": [
+       -0.021,
+       0.586,
+       -0.386
+      ],
+      "blade_centroid_m": [
+       -0.002,
+       0.047,
+       -0.031
+      ],
+      "petiole_lean_deg": 19.5
+     }
+    },
+    "sc_leaf_mid": {
+     "petiole_frac": 0.387,
+     "blade_len_frac": 0.609,
+     "blade_width_frac": 0.89,
+     "junction_xyz": [
+      -0.239,
+      0.39,
+      -0.095
+     ],
+     "petiole_top_xyz": [
+      0.069,
+      0.364,
+      0.111
+     ],
+     "tip_xyz": [
+      -0.132,
+      0.959,
+      0.185
+     ],
+     "blade_centroid_xyz": [
+      -0.021,
+      0.711,
+      0.006
+     ],
+     "blade_axis": [
+      -0.338,
+      0.774,
+      0.536
+     ],
+     "blade_normal": [
+      0.122,
+      0.601,
+      -0.79
+     ],
+     "blade_pitch_deg": 34.7,
+     "blade_side_deg": -23.6,
+     "face_up_deg": 36.9,
+     "longest_axis_norm": 1.0,
+     "real_max_m": 0.1,
+     "height_m": 0.1,
+     "petiole_m": 0.039,
+     "blade_len_m": 0.061,
+     "blade_width_m": 0.089,
+     "stage": "mid",
+     "pitch_fix_deg": -36.9,
+     "mirror_x": false,
+     "after_fix": {
+      "petiole_top_xyz": [
+       0.069,
+       0.358,
+       -0.13
+      ],
+      "blade_centroid_xyz": [
+       -0.021,
+       0.572,
+       -0.422
+      ],
+      "blade_centroid_m": [
+       -0.002,
+       0.057,
+       -0.042
+      ],
+      "petiole_lean_deg": 22.3
+     }
+    },
+    "sc_leaf_mature": {
+     "petiole_frac": 0.319,
+     "blade_len_frac": 0.67,
+     "blade_width_frac": 0.984,
+     "junction_xyz": [
+      0.277,
+      0.33,
+      0.188
+     ],
+     "petiole_top_xyz": [
+      -0.069,
+      0.303,
+      0.073
+     ],
+     "tip_xyz": [
+      0.107,
+      0.971,
+      0.332
+     ],
+     "blade_centroid_xyz": [
+      0.08,
+      0.621,
+      0.336
+     ],
+     "blade_axis": [
+      0.078,
+      0.997,
+      -0.021
+     ],
+     "blade_normal": [
+      -0.03,
+      -0.018,
+      -0.999
+     ],
+     "blade_pitch_deg": -1.2,
+     "blade_side_deg": 4.5,
+     "face_up_deg": -1.0,
+     "longest_axis_norm": 1.0,
+     "real_max_m": 0.12,
+     "height_m": 0.12,
+     "petiole_m": 0.038,
+     "blade_len_m": 0.08,
+     "blade_width_m": 0.118,
+     "stage": "mature",
+     "pitch_fix_deg": 0.0,
+     "mirror_x": true,
+     "after_fix": {
+      "petiole_top_xyz": [
+       0.069,
+       0.303,
+       0.073
+      ],
+      "blade_centroid_xyz": [
+       -0.08,
+       0.621,
+       0.336
+      ],
+      "blade_centroid_m": [
+       -0.01,
+       0.075,
+       0.04
+      ],
+      "petiole_lean_deg": 18.3
+     }
+    },
+    "sc_leaf_mature_marblequeen": {
+     "petiole_frac": 0.415,
+     "blade_len_frac": 0.975,
+     "blade_width_frac": 0.757,
+     "junction_xyz": [
+      -0.241,
+      0.42,
+      0.159
+     ],
+     "petiole_top_xyz": [
+      0.102,
+      0.388,
+      0.107
+     ],
+     "tip_xyz": [
+      -0.47,
+      0.425,
+      0.175
+     ],
+     "blade_centroid_xyz": [
+      -0.024,
+      0.771,
+      -0.0
+     ],
+     "blade_axis": [
+      -0.974,
+      0.167,
+      -0.153
+     ],
+     "blade_normal": [
+      0.221,
+      0.849,
+      -0.48
+     ],
+     "blade_pitch_deg": -42.4,
+     "blade_side_deg": -80.3,
+     "face_up_deg": 58.1,
+     "longest_axis_norm": 1.0,
+     "real_max_m": 0.12,
+     "height_m": 0.12,
+     "petiole_m": 0.05,
+     "blade_len_m": 0.117,
+     "blade_width_m": 0.091,
+     "stage": "mature",
+     "pitch_fix_deg": -58.1,
+     "mirror_x": false,
+     "skin_of": "sc_leaf_mature",
+     "skin_scale": 0.942,
+     "skin_scale_by_len": 0.684,
+     "skin_scale_by_width": 1.297,
+     "stage_real_m": {
+      "young": 0.066,
+      "mid": 0.086,
+      "mature": 0.113
+     },
+     "after_fix": {
+      "petiole_top_xyz": [
+       0.096,
+       0.279,
+       -0.257
+      ],
+      "blade_centroid_xyz": [
+       -0.023,
+       0.384,
+       -0.617
+      ],
+      "blade_centroid_m": [
+       -0.003,
+       0.046,
+       -0.074
+      ],
+      "petiole_lean_deg": 44.6
+     }
+    },
+    "sc_leaf_mature_njoy": {
+     "petiole_frac": 0.438,
+     "blade_len_frac": 1.169,
+     "blade_width_frac": 0.669,
+     "junction_xyz": [
+      -0.253,
+      0.41,
+      0.128
+     ],
+     "petiole_top_xyz": [
+      0.1,
+      0.386,
+      0.183
+     ],
+     "tip_xyz": [
+      -0.413,
+      0.683,
+      -0.492
+     ],
+     "blade_centroid_xyz": [
+      -0.023,
+      0.813,
+      0.063
+     ],
+     "blade_axis": [
+      -0.554,
+      -0.087,
+      -0.828
+     ],
+     "blade_normal": [
+      0.129,
+      0.974,
+      -0.188
+     ],
+     "blade_pitch_deg": -96.0,
+     "blade_side_deg": -98.9,
+     "face_up_deg": 76.8,
+     "longest_axis_norm": 1.0,
+     "real_max_m": 0.12,
+     "height_m": 0.12,
+     "petiole_m": 0.053,
+     "blade_len_m": 0.14,
+     "blade_width_m": 0.08,
+     "stage": "mature",
+     "pitch_fix_deg": -76.8,
+     "mirror_x": false,
+     "skin_of": "sc_leaf_mature",
+     "skin_scale": 0.918,
+     "skin_scale_by_len": 0.571,
+     "skin_scale_by_width": 1.475,
+     "stage_real_m": {
+      "young": 0.064,
+      "mid": 0.084,
+      "mature": 0.11
+     },
+     "after_fix": {
+      "petiole_top_xyz": [
+       0.092,
+       0.244,
+       -0.307
+      ],
+      "blade_centroid_xyz": [
+       -0.021,
+       0.227,
+       -0.713
+      ],
+      "blade_centroid_m": [
+       -0.003,
+       0.027,
+       -0.086
+      ],
+      "petiole_lean_deg": 52.6
+     }
+    }
+   }
+  },
+  "calathea": {
+   "petiole_side_majority_x": 0,
+   "leaves": {
+    "ca_leaf_young": {
+     "petiole_frac": 0.29,
+     "blade_len_frac": 0.773,
+     "blade_width_frac": 0.473,
+     "junction_xyz": [
+      -0.095,
+      0.29,
+      0.021
+     ],
+     "petiole_top_xyz": [
+      -0.092,
+      0.275,
+      0.019
+     ],
+     "tip_xyz": [
+      0.163,
+      0.994,
+      0.025
+     ],
+     "blade_centroid_xyz": [
+      0.006,
+      0.647,
+      0.028
+     ],
+     "blade_axis": [
+      0.414,
+      0.91,
+      0.008
+     ],
+     "blade_normal": [
+      0.0,
+      0.009,
+      -1.0
+     ],
+     "blade_pitch_deg": 0.5,
+     "blade_side_deg": 24.4,
+     "face_up_deg": 0.5,
+     "longest_axis_norm": 1.0,
+     "real_max_m": 0.12,
+     "height_m": 0.12,
+     "petiole_m": 0.035,
+     "blade_len_m": 0.093,
+     "blade_width_m": 0.057,
+     "stage": "young",
+     "pitch_fix_deg": 0.0,
+     "mirror_x": false,
+     "after_fix": {
+      "petiole_top_xyz": [
+       -0.092,
+       0.275,
+       0.019
+      ],
+      "blade_centroid_xyz": [
+       0.006,
+       0.647,
+       0.028
+      ],
+      "blade_centroid_m": [
+       0.001,
+       0.078,
+       0.003
+      ],
+      "petiole_lean_deg": 18.9
+     }
+    },
+    "ca_leaf_mid": {
+     "petiole_frac": 0.321,
+     "blade_len_frac": 0.664,
+     "blade_width_frac": 0.677,
+     "junction_xyz": [
+      -0.067,
+      0.34,
+      0.045
+     ],
+     "petiole_top_xyz": [
+      0.012,
+      0.318,
+      0.038
+     ],
+     "tip_xyz": [
+      -0.046,
+      1.0,
+      0.132
+     ],
+     "blade_centroid_xyz": [
+      -0.016,
+      0.651,
+      0.045
+     ],
+     "blade_axis": [
+      -0.081,
+      0.991,
+      0.105
+     ],
+     "blade_normal": [
+      0.033,
+      0.108,
+      -0.994
+     ],
+     "blade_pitch_deg": 6.1,
+     "blade_side_deg": -4.7,
+     "face_up_deg": 6.2,
+     "longest_axis_norm": 1.0,
+     "real_max_m": 0.22,
+     "height_m": 0.22,
+     "petiole_m": 0.071,
+     "blade_len_m": 0.146,
+     "blade_width_m": 0.149,
+     "stage": "mid",
+     "pitch_fix_deg": 0.0,
+     "mirror_x": false,
+     "after_fix": {
+      "petiole_top_xyz": [
+       0.012,
+       0.318,
+       0.038
+      ],
+      "blade_centroid_xyz": [
+       -0.016,
+       0.651,
+       0.045
+      ],
+      "blade_centroid_m": [
+       -0.004,
+       0.143,
+       0.01
+      ],
+      "petiole_lean_deg": 7.1
+     }
+    },
+    "ca_leaf_mature": {
+     "petiole_frac": 0.293,
+     "blade_len_frac": 0.685,
+     "blade_width_frac": 0.717,
+     "junction_xyz": [
+      -0.032,
+      0.32,
+      0.015
+     ],
+     "petiole_top_xyz": [
+      0.038,
+      0.291,
+      0.007
+     ],
+     "tip_xyz": [
+      -0.11,
+      0.991,
+      0.042
+     ],
+     "blade_centroid_xyz": [
+      -0.021,
+      0.633,
+      0.003
+     ],
+     "blade_axis": [
+      -0.24,
+      0.97,
+      0.031
+     ],
+     "blade_normal": [
+      0.011,
+      0.035,
+      -0.999
+     ],
+     "blade_pitch_deg": 1.8,
+     "blade_side_deg": -13.9,
+     "face_up_deg": 2.0,
+     "longest_axis_norm": 1.0,
+     "real_max_m": 0.3,
+     "height_m": 0.3,
+     "petiole_m": 0.088,
+     "blade_len_m": 0.205,
+     "blade_width_m": 0.215,
+     "stage": "mature",
+     "pitch_fix_deg": 0.0,
+     "mirror_x": false,
+     "after_fix": {
+      "petiole_top_xyz": [
+       0.038,
+       0.291,
+       0.007
+      ],
+      "blade_centroid_xyz": [
+       -0.021,
+       0.633,
+       0.003
+      ],
+      "blade_centroid_m": [
+       -0.006,
+       0.19,
+       0.001
+      ],
+      "petiole_lean_deg": 7.6
+     }
+    }
+   }
+  }
+ }
+}
