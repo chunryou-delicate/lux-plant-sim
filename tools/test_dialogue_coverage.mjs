@@ -968,6 +968,9 @@ check('잡담 — 육종 귀띔 둘(풀문 · AL 재우기)은 때가 참일 때
 });
 check('데이터 — 풀문 칸 설명이 «가장 밝은 자리»를 가리키고 조건 낱말 자가 코드대로 적혀 있다(D84)', () => {
   const T = JSON.parse(readFileSync(new URL('../data/balance/breed_slots.json', import.meta.url), 'utf8'));
+  /* ★ D86 ③ — PP «잇달아»는 분홍 많음이 아닌 잎이면 다 끊는다(마블까지) — 괄호가 끊는 것 일부만 늘어놓지 않게 */
+  const ph = T.slots.find(s => s.id === 'pp_heavy');
+  assert.ok(/잇달아\(사이에 다른 잎 없이\)/.test(ph.desc), `분홍 많은 PP 칸 설명이 «다른 잎 없이»가 아닙니다: ${ph.desc}`);
   const fm = T.slots.find(s => s.id === 'monstera_fullmoon');
   assert.ok(/가장 밝은 자리/.test(fm.desc) && !/[0-9]/.test(fm.desc), `풀문 칸 설명: ${fm.desc}`);
   assert.ok(/7\.0/.test(T._doc_labels) && /3\.78/.test(T._doc_labels) && !/avg ≥ 5/.test(T._doc_labels), '조건 낱말 자(밝음 7.0 · 중간 3.78)가 안 적혔습니다');
