@@ -9,7 +9,7 @@
      cu   벽을 따라간 거리(창·문 cu 와 같은 규약 — house.js wallPlacement · outside.js frameFor)
           back +x · front −x · left −z · right +z
      cy   그림 가운데 높이(m)
-     only 그 자리에만 걸 수 있는 프리셋(투룸 «주문판 자리» = 'order_board')
+     only 그 자리에만 걸 수 있는 «판 갈래»(투룸 «주문판 자리» = 'order_board') — 그 갈래의 판(BOARD_KIND)만 걸리고, 판은 그런 자리에만 걸린다
    ⚠ 벽 두께 0.2(house.js WT) — 안쪽 면은 방 반폭 − 0.10. 그림 뒷면이 그 면에 닿게 d/2 만큼 안으로.
 ============================================================ */
 const WT = 0.2;
@@ -33,11 +33,17 @@ export function hangPoseOf(spot, roomSize, size = {}) {
            rot: ROT[spot.wall], y: +(+spot.cy).toFixed(4) };
 }
 
+/* ★ 2026-10-23 [house] D73 «판 갈래» — 진로마다 문 옆 판이 다르다(가게 주문판 · 돌봄 맡김판). 모델·자리는 하나라
+     자리 데이터는 그대로(only:'order_board' · game.html 이 그 값으로 판 자리를 찾는다) 두고, 어느 판이 그 갈래인지는 여기서 묶는다 */
+export const BOARD_KIND = Object.freeze({ order_board: 'order_board', care_board: 'order_board' });
+const BOARD_KO = Object.freeze({ order_board: '주문판', care_board: '맡김판' });
+
 /* 그 그림이 그 자리에 걸릴 수 있나(크기 · 전용 자리). 비었나는 부르는 쪽이 본다. */
 export function hangFits(spot, preset, size = {}) {
   if (!spot) return { ok: false, reason: '걸이 자리가 없습니다' };
-  if (spot.only && spot.only !== preset) return { ok: false, reason: '이 자리는 다른 것을 거는 자리입니다' };
-  if (!spot.only && preset === 'order_board') return { ok: false, reason: '주문판은 주문판 자리에만 겁니다' };
+  const kind = BOARD_KIND[preset] || null;
+  if (spot.only && spot.only !== (kind || preset)) return { ok: false, reason: '이 자리는 다른 것을 거는 자리입니다' };
+  if (!spot.only && kind) { const ko = BOARD_KO[preset] || '판'; return { ok: false, reason: `${ko}은 ${ko} 자리에만 겁니다` }; }   // 글 꼴 그대로 — game.html hangChoices 가 «주문판은 주문판 자리에만» 으로 센다
   if (spot.maxW > 0 && size.w > spot.maxW + 1e-6) return { ok: false, reason: `자리보다 넓습니다 (${size.w}m > ${spot.maxW}m)` };
   if (spot.maxH > 0 && size.h > spot.maxH + 1e-6) return { ok: false, reason: `자리보다 큽니다 (${size.h}m > ${spot.maxH}m)` };
   return { ok: true, reason: null };

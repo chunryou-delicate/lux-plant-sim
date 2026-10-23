@@ -9,7 +9,7 @@
      D 옮기기 — 빈 자리는 됨 · 찬 자리는 «이미 걸려» · 걸이 자리 밖은 안 됨 · commitFurnitureAt {hang}
      E 부딪힘·빛 차폐에 안 든다(colliders · occluders)
      F 그림 면 — 옷 층 report.faceTex · 달력은 setSeason 으로 쪽이 바뀜
-     G 전용 자리 — 투룸 주문판 자리에 포스터는 안 됨 · 주문판은 됨
+     G 전용 자리 — 투룸 주문판 자리에 포스터는 안 됨 · 주문판은 됨 · 돌봄 맡김판(D73)도 그 판 자리에만
      H 벽 화분걸이(D71) — 화분 자리 하나 · 조도 엔진 자리 목록에 듦 · 깎인 벽에서도 안 숨음
      I «위» 자리 — dropM · high(다단 선반 윗단 · 화분걸이는 높음 · 계단 진열대 윗단은 아님) · 자유 좌표 dropBelow · 문턱 = growth 정본
      J 창가 걸이 자리(D71 · tworoom-hang-sun) — 화분걸이가 걸리고 높은 자리 · 창틀·유리·뒷벽에 안 닿는다
@@ -95,9 +95,12 @@ try {
     try { v.hangPose('tworoom-hang-order', 'poster_moon'); } catch (e) { a = e.message; }
     try { b = v.hangPose('tworoom-hang-order', 'order_board'); } catch (e) { b = 'ERR ' + e.message; }
     let c = null; try { v.hangPose('tworoom-hang-1', 'order_board'); } catch (e) { c = e.message; }
-    return { n: s.length, order: s.filter(x => x.only === 'order_board').length, a, b, c }; })()`);
+    let d = null; try { d = v.hangPose('tworoom-hang-order', 'care_board'); } catch (e) { d = 'ERR ' + e.message; }
+    let f = null; try { v.hangPose('tworoom-hang-1', 'care_board'); } catch (e) { f = e.message; }
+    return { n: s.length, order: s.filter(x => x.only === 'order_board').length, a, b, c, d, f }; })()`);
   ok('G 투룸 걸이 자리 일곱(D71 창가 하나 더함) · 주문판 자리 하나', G.n === 7 && G.order === 1, JSON.stringify(G));
   ok('G 주문판 자리에 포스터는 안 된다 · 주문판은 된다 · 주문판은 다른 자리에 안 된다', !!G.a && G.b && typeof G.b === 'object' && !!G.c, JSON.stringify(G));
+  ok('G 돌봄 맡김판(D73 · 주문판 모델)은 판 자리에 걸리고 다른 자리에는 안 걸린다', G.d && typeof G.d === 'object' && /맡김판은 맡김판 자리에만/.test(G.f || ''), JSON.stringify([G.d, G.f]));
   if (SHOT) await page.shot(SHOT.replace(/\.png$/, '_tworoom.png'));
 
   /* H 벽 화분걸이(D71 · 10-23) — 걸이 자리에 걸리고 화분 하나를 받는다 · 깎인 벽에서도 안 숨는다(화분이 허공에 안 뜨게)

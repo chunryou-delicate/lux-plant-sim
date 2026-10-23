@@ -2305,6 +2305,26 @@
       "shop_listed": true,
       "unlock": "sc_ask",
       "_shop": "★ plan 권함: 가구점에 sc_ask(단골 5) 날부터. core 가 furnitureCatalogList 에서 unlock 을 거르는 날 shop_listed 를 true 로 켠다(그전엔 안 뜬다 · test_furnishop 수 그대로)."
+    },
+    "care_board": {
+      "type": "bulletin_board",
+      "name_ko": "맡김판",
+      "intro_ko": null,
+      "_wall": "★ 2026-10-23 [house] D73 돌봄 진로(plan-care-career-spec §8) — 가게 주문판(order_board)과 같은 모델·크기·자리(투룸 판 자리 only:order_board · hang_spots BOARD_KIND). 이름은 총괄 «맡김판» · 소개 글은 plan 이 준다(그때 채움).",
+      "mount": "wall-hang",
+      "size_m": {
+        "w": 0.6,
+        "d": 0.04,
+        "h": 0.45
+      },
+      "w": 0.6,
+      "d": 0.04,
+      "h": 0.45,
+      "color": "#c9a77c",
+      "accent": "#d8c3a0",
+      "room": "벽(걸이 자리)",
+      "shop_listed": false,
+      "_shop": "★ 돌봄 진로(투룸)에 딸린 것 — 가구점에 안 낸다(가게 주문판과 같은 결). 투룸 판 자리(tworoom-hang-order)에만 건다. v2 옷 order_board.glb 그대로(furniture_dress FURN care_board)."
     }
   },
   "_slots": "가구 userData.slots=[{x,y,z}](로컬 m, y=화분 밑면), tier_heights=[y..], size_m={w,d,h}. 에셋창 GLB 선반과 동일 스키마.",
