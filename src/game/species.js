@@ -90,7 +90,7 @@ const isSp = id => SPECIES_IDS.includes(id);
 export function createSpeciesState() {
   return { pots: [], corms: [],
            trade: { asks: 0, declined: 0, done: false, pendingDay: null, lastAskDay: null, doneDay: null },
-           n: { ppPinkHoldCuts: 0, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0, cormsSold: 0, scRooted: 0 },
+           n: { ppPinkHoldCuts: 0, alWokeCount: 0, alCormsFound: 0, alFoundCormsPlanted: 0, cormsSold: 0, scRooted: 0, scLowRun: 0 },
            seq: 0 };
 }
 /* 없으면 만든다(옛 세이브가 이 칸 없이 열린다) */
@@ -140,6 +140,17 @@ export function setSpeciesAt(S, id, spot) {
   q.dropM = spot && Number.isFinite(spot.dropM) ? spot.dropM : null;
   return q;
 }
+/* ★ D78(총괄 · plan 0cd8c584 hintScHang) — 대사 맥락 칸 turn.scLowDays: 놓인(뿌리낸) SC 가 하나 이상이고 그 모두가 높은 자리가 «아닌» 날이 며칠째 잇달았나.
+     하나라도 높은 자리면 0 · 놓인 SC 가 없거나 그 방에 높은 자리(선반 윗단 · 걸이)가 없으면 null(셈도 처음부터) · 높은 자리 판정은 house dropM + growth isHighSpot.
+     잇단 날은 sp.n.scLowRun(세이브)에 둔다 — 다시 켜도 이어 센다 */
+function scLowStep(S, roomHasHigh) {
+  const sp = speciesOf(S);
+  const here = sp.pots.filter(q => q && q.species === SC && speciesPlaced(q) && !scRooting(q));
+  if (!here.length || roomHasHigh !== true) { sp.n.scLowRun = 0; return null; }
+  if (here.some(scAtHighSpot)) { sp.n.scLowRun = 0; return 0; }
+  sp.n.scLowRun = (sp.n.scLowRun || 0) + 1;
+  return sp.n.scLowRun;
+}
 /* ★ D76(총괄) — «높은 자리에 놓인» 스킨답서스인가: 놓였고 · 그 자리 dropM 이 growth 정본 문턱(high_spot_min_m) 이상(R.isHighSpot) */
 export function scAtHighSpot(q) {
   return !!(q && q.species === SC && speciesPlaced(q) && Number.isFinite(q.dropM) && RULES && typeof RULES.isHighSpot === 'function' && RULES.isHighSpot(q.dropM));
@@ -179,6 +190,7 @@ export function stepSpecies(S, opt = {}) {
     /* CA — 잎이 다 펴진 날부터 센다(ca_pot 어려움 «말린 잎 없음 한 달») · 다시 말리면 처음부터 */
     if (q.species === CA) { const s = sumOf(q); if (s.curled > 0) q.flatSince = null; else if (q.flatSince == null) q.flatSince = day; }
   }
+  out.scLowDays = scLowStep(S, opt.roomHasHigh);
   /* ★ D71 대사 맥락 칸(plan dialogue · turn.caPlants · turn.caTooBright) — 방에 놓인 칼라테아 수 · 그중 «너무 밝은»(avg7 > hi) 것이 있나 */
   const caHere = sp.pots.filter(q => q && q.species === CA && speciesPlaced(q));
   out.caPlants = caHere.length;

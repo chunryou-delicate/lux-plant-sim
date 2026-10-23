@@ -115,6 +115,9 @@ export const PERSONAS = {
   /* 대조 — 둘째 두 종 손 없이 같은 2년(shop45 와 같은 손 · 굶음·지갑이 D71 탓인지 가른다 · 사건 sc_ask·ca_care 는 나도 손을 안 댄다) */
   shop45L: { ko: '대조: 가게 사람 + 새 두 종(D71 손 없음 · 2년)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
              shop: true, shopDays: 730, species: true },
+  /* 대조 — 높이 먼저인데 가게를 연 뒤 시루를 «안» 잇는 사람(D79 전 하네스 손버릇 · 굶음이 밥값인지 가른 판) */
+  shop71n: { ko: '가게 사람 + 둘째 두 종 · 높이 먼저 · 가게에선 시루 안 함(D79 전 손버릇 대조)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
+             shop: true, shopDays: 730, species: true, sp2: true, sp2Hold: true, shopCrops: false },
   /* 같은 사람인데 «높이 먼저» — 지킴이 줄기가 «높은 자리에서만 닿는 길이»에 닿을 때(sc_hang)까지 안 자른다(곁줄 몇 날에 끝나나 · 그동안 삽수 주문은 놓친다) */
   shop71h: { ko: '가게 사람 + 둘째 두 종 · 높이 먼저(곁줄 sc_hang 끝날 때까지 지킴이 줄기를 안 자름)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'withCuttings', lazy: 0, follow: true, grow: true, carryKeep: true,
              shop: true, shopDays: 730, species: true, sp2: true, sp2Hold: true },
@@ -189,7 +192,11 @@ export async function play(name, seed, opt = {}) {
           (out.dumps = out.dumps || {})[stage] = { day: S.day, file: path.relative(ROOT, f) }; }
     catch (e) { (out.dumpErr = out.dumpErr || {})[stage] = String(e && e.message || e).slice(0, 200); }
   };
-  const book = (cat, dw) => { if (dw > 0) dayIn[cat] = (dayIn[cat] || 0) + dw; if (!LG || !dw) return; bucket()[cat] += dw; LG.today += dw; };
+  /* ★ 2026-10-23 총괄 «가게 2년 굶음 가르기» — 가게를 연 날부터 30일씩 따로 적는다(돈 흐름 · 무엇이 바닥을 내나) */
+  const shopMonth = () => { const i = Math.floor((S.day - out.shop.openDay) / 30); const M = out.shop.months = out.shop.months || [];
+    while (M.length <= i) M.push({ m: M.length + 1, orders: 0, other: 0, veg: 0, varie: 0, plain: 0, mother: 0, relief: 0, living: 0, power: 0, rent: 0, buy: 0, saved: 0, cashEnd: null, regulars: null, done: 0, expired: 0 });
+    return M[i]; };
+  const book = (cat, dw) => { if (dw > 0) dayIn[cat] = (dayIn[cat] || 0) + dw; if (out.shop && dw) { const sm = shopMonth(); sm[cat] = (sm[cat] || 0) + dw; } if (!LG || !dw) return; bucket()[cat] += dw; LG.today += dw; };
   const led = (cat, fn) => { const c0 = ts.cashWon; const r = fn(); book(cat, ts.cashWon - c0); return r; };
   const ord = (id, n) => led('buy', () => orderItem(S, id, n));   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
   /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
@@ -264,6 +271,9 @@ export async function play(name, seed, opt = {}) {
       if (hv && hv.arrived) { setPotSlot(S, pot0(S), SILL, light.room.slots); moveMonstera(S.firstPlay, SILL, { slots: light.room.slots }); }
       /* ★ D59 — 산 집(투룸)엔 반지하 가구 자리 이름이 없다 — 가게를 연 뒤엔 콩나물·무순 다시 심기를 그만둔다(옮길 때 reseatCrops 가 앉힌 그대로) */
       if (!out.shop) { try { resowCrop(S, { sirus: target, at: moved ? 'banjiha-dresser:1' : DARK, slots: light.room.slots }); } catch { } }
+      /* ★ 2026-10-23 총괄 D79 «시루가 밥 · 식물이 돈» — 가게 사람도 시루를 잇는다(기본): 투룸 가장 어두운 낮은 선반에 다시 심는다.
+           (예전엔 «투룸엔 반지하 자리 이름이 없다»로 끊어 굶음 3~7/10 이 하네스 손버릇이었다 · shopCrops:false 는 그 대조) */
+      else if (P.shopCrops !== false) { try { resowCrop(S, { sirus: target, at: 'tworoom-shelf-low:0', slots: light.room.slots }); out.shop.cropsOk = (out.shop.cropsOk || 0) + 1; } catch (e) { out.shop.cropErr = String(e && e.message).slice(0, 120); } }
       try { waterCrop(S, { all: true }); } catch { }
       if (P.follow && (openQ('crop_mix') || openQ('radish5'))) {
         const mw = (openQ('radish5') || doneQ('radish5')) ? 5 : 1;
@@ -574,6 +584,9 @@ export async function play(name, seed, opt = {}) {
             }
             out.rentWon = Number.isFinite(opt.rent) ? opt.rent : null;
             out.ledger = []; LG = { start: ts.cashWon, today: 0 }; out.cashAtMove = ts.cashWon;
+            /* ⚖ 재는 손잡이(--cropmult X · 총괄 10-23 가게 굶음 판) — 이사 뒤(원룸 이후) 콩나물·무순 수확 배수를 이 판에서만 바꿔 끼운다
+                 (first_play §CROP_HARVEST_MULT 표는 «원룸 이후 1.3» · 게임엔 아직 안 이어져 어디서나 반지하 2.0 — 게임 값은 안 건드림) */
+            if (Number.isFinite(opt.cropmult) && S.firstPlay && S.firstPlay.rules) S.firstPlay.rules = Object.freeze({ ...S.firstPlay.rules, cropHarvestMult: opt.cropmult });
             if (pot0(S)) { try { setPotSlot(S, pot0(S), ONE_SILL, light.room.slots); } catch { } }
             S.lamps.count = ts.lamp.owned || 0; if (ts.lamp) ts.lamp.placed = S.lamps.count; light.clearCache();
           } catch (e) { out.moveErr = (e && e.message) || String(e); }
@@ -710,7 +723,8 @@ export async function play(name, seed, opt = {}) {
         /* 따라 하는 사람 — AL 주문이 붙으면 구근 하나 더(지갑 > 구근값 + 관리비 한 달) */
         if (P.shopFollow && e && e.id === 'order_new' && (e.kind === 'al' || e.kind === 'al_corm') && SPM.speciesShopOpen(S, 'al_corm') &&
             ts.cashWon > buyPriceOf('al_corm') + 80_000) { try { ord('al_corm', 1); out.shop.cormMore = (out.shop.cormMore || 0) + 1; } catch { } }
-        if (e && e.id === 'order_new') { const k = `${e.kind}/${e.tier}`; (out.shop.newKinds = out.shop.newKinds || {})[k] = (out.shop.newKinds[k] || 0) + 1; }
+        if (e && e.id === 'order_new') { const k = `${e.kind}/${e.tier}`; (out.shop.newKinds = out.shop.newKinds || {})[k] = (out.shop.newKinds[k] || 0) + 1; shopMonth().newN = (shopMonth().newN || 0) + 1; }
+        if (e && e.id === 'order_expired') shopMonth().expN = (shopMonth().expN || 0) + 1;
         /* ★ D71 — 둘째 두 종 사건 날(연 날부터) · 사진 단계(sc5 · ca8 · caSaved) */
         if (e && /^(sc_ask|sc_rooted|ca_care|ca_saved)$/.test(e.id)) {
           const ev2 = out.shop.ev2 = out.shop.ev2 || {};
@@ -724,11 +738,23 @@ export async function play(name, seed, opt = {}) {
         const keepSC = P.sp2 && out.sp2 && out.sp2.keeper && SPM.speciesPotsOf(S).filter(q => q.species === 'scindapsus').length < 2 ? out.sp2.keeper : null;
         const cands = JSHOP.candidatesFor(S, o).filter(c => !(keepSC && c.ref.type === 'species' && c.ref.id === keepSC)).sort((a, b) => a.won - b.won);
         if (!cands.length) continue;
-        try { const r = JSHOP.deliverOrder(S, o.id, cands[0].ref); led('other', () => creditShopOrder(S, r.won)); out.shop.done++; out.shop.wonTotal += r.won; out.shop.doneKinds[o.kind] = (out.shop.doneKinds[o.kind] || 0) + 1;
+        try { const r = JSHOP.deliverOrder(S, o.id, cands[0].ref); led('other', () => creditShopOrder(S, r.won)); shopMonth().orders += r.won; shopMonth().done += 1; out.shop.done++; out.shop.wonTotal += r.won; out.shop.doneKinds[o.kind] = (out.shop.doneKinds[o.kind] || 0) + 1;
               (out.shop.wonKinds = out.shop.wonKinds || {})[o.kind] = (out.shop.wonKinds[o.kind] || 0) + r.won; } catch { }
       }
       out.shop.regulars = J.regulars.length; out.shop.sign = J.milestones[10] != null ? J.milestones[10] - out.shop.openDay : null;
       out.shop.ms3 = J.milestones[3] != null ? J.milestones[3] - out.shop.openDay : null;
+      out.shop.ms30 = J.milestones[30] != null ? J.milestones[30] - out.shop.openDay : null;   /* 단골 30 — 가게 끝맺음(D75) */
+      { const sm = shopMonth(); sm.cashEnd = ts.cashWon; sm.regulars = J.regulars.length; sm.saved += ((turn && turn.tutorial && turn.tutorial.savedWon) || 0);
+        /* 달말 가진 것 — 보낼 것이 남았나(주문 원천) */
+        const cl = cuttingsOf(S).filter(c => c && c.status !== 'dead'), spp = SPM.speciesPotsOf(S);
+        sm.stock = { pot: (S.pots || []).length, cut: cl.filter(c => c.status !== 'established').length, est: cl.filter(c => c.status === 'established').length,
+                     pp: spp.filter(q => q.species === 'pink_princess').length, al: spp.filter(q => q.species === 'alocasia_frydek' && q.plant && (q.plant.leaves || []).length).length,
+                     sc: spp.filter(q => q.species === 'scindapsus').length, ca: spp.filter(q => q.species === 'calathea').length, open: J.orders.length,
+                     cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0,
+                     mLeaves: (() => { try { const st = pot0(S) && io.growth.leafStats ? io.growth.leafStats() : null; return st ? (st.total ?? st.leaves ?? null) : null; } catch { return null; } })(),
+                     mDli: (() => { try { const p0 = pot0(S); if (!p0 || !p0.slotId) return null; const sky = light.skyFor(S.day, S.sim); return +light.dliOfSlot(p0.slotId, lightOptsOf(S, sky)).toFixed(1); } catch { return null; } })(),
+                     lamps: (S.lamps && S.lamps.count) || 0 };
+        sm.expired = J.expired - (out.shop._exp0 || 0); }
       for (const n of [5, 8]) if (out.shop['reg' + n] == null && J.regulars.length >= n) out.shop['reg' + n] = S.day - out.shop.openDay;   /* D71 들이는 때 */
       if (P.sp2) { const q2 = questSnapshotOf(S, io); if (out.shop.longVineOn == null && q2.scLongVine >= 1) out.shop.longVineOn = S.day - out.shop.openDay; }
       out.shop.expired = J.expired;
@@ -770,11 +796,13 @@ const RENT = arg('rent', null) == null ? null : Number(arg('rent'));
 const GRADES = arg('grades', null);
 const BOOST = arg('boost', null) == null ? null : Number(arg('boost'));
 const MOVECOST = arg('movecost', null) == null ? null : Number(arg('movecost'));
+const CROPMULT = arg('cropmult', null) == null ? null : Number(arg('cropmult'));
 const TRACE = !!arg('trace', false);
 const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false),
                                                          ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}),
                                                          ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}), ...(TRACE ? { trace: true } : {}),
-                                                         ...(Number.isFinite(MOVECOST) ? { movecost: MOVECOST } : {}) })));
+                                                         ...(Number.isFinite(MOVECOST) ? { movecost: MOVECOST } : {}),
+                                                         ...(Number.isFinite(CROPMULT) ? { cropmult: CROPMULT } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {
@@ -911,6 +939,27 @@ for (const name of NAMES) {
       console.log(`    달마다 «모주 잎(무늬)/삽수 잎(무늬)»: ` + rows.join(' · '));
     } }
   /* 장부(--ledger) — 판마다 이사 뒤 30일씩 · 단위 만 원 */
+  /* ★ 2026-10-23 총괄 «가게 2년 굶음» — 연 날부터 30일씩 · 단위 만 원 */
+  if (arg('shopledger', false)) {
+    const sh = rs.filter(r => r.shop && r.shop.months && r.shop.months.length);
+    const m1 = v => (v / 10000).toFixed(1);
+    const starvedRel = r => r.starvedDay != null ? r.starvedDay - r.shop.openDay : null;
+    console.log(`  ▤ 가게 장부 — 굶은 판 ${sh.filter(r => r.starvedDay != null).length}/${sh.length} · 굶은 날(연 뒤) ${sh.filter(r => r.starvedDay != null).map(r => `${r.seed}:${starvedRel(r)}`).join(' ')} · 단골 30(연 뒤) ${sh.map(r => `${r.seed}:${r.shop.ms30 ?? '—'}`).join(' ')}`);
+    const half = (rows, a, b) => { const xs = rows.flatMap(r => r.shop.months.slice(a, b)); const n = Math.max(1, xs.length);
+      const S2 = k => xs.reduce((t, x) => t + (x[k] || 0), 0) / n;
+      return `주문 ${m1(S2('orders'))} · 그 밖 들어옴 ${m1(S2('other') - S2('orders') + S2('veg') + S2('varie') + S2('plain') + S2('mother'))} · 아낀 밥값 ${m1(S2('saved'))} · 살림 ${m1(S2('living'))} · 전기 ${m1(S2('power'))} · 산 것 ${m1(S2('buy'))} · 남음 ${m1(S2('orders') + (S2('other') - S2('orders')) + S2('veg') + S2('varie') + S2('plain') + S2('mother') + S2('living') + S2('power') + S2('buy'))} (${xs.length}달)`; };
+    for (const [ko, rows] of [['굶은 판', sh.filter(r => r.starvedDay != null)], ['안 굶은 판', sh.filter(r => r.starvedDay == null)]]) {
+      if (!rows.length) continue;
+      console.log(`    ${ko} ${rows.length} — 달 평균(만 원)`);
+      for (const [a, b, k] of [[0, 6, '1~6달'], [6, 12, '7~12달'], [12, 18, '13~18달'], [18, 25, '19~25달']]) console.log(`      ${k}: ${half(rows, a, b)}`);
+    }
+    for (const r of sh.filter(x => x.starvedDay != null)) {
+      console.log(`    · 씨앗 ${r.seed} — 연 날 ${r.shop.openDay} · 굶음 연 뒤 ${starvedRel(r)}일 · 단골 30 ${r.shop.ms30 ?? '못 닿음'} · 달(주문/살림/전기/산 것/달말 지갑/단골):`);
+      console.log('      ' + r.shop.months.map(x => `${x.m}:${m1(x.orders)}/${m1(x.living)}/${m1(x.power)}/${m1(x.buy)}/${x.cashEnd == null ? '—' : m1(x.cashEnd)}/${x.regulars ?? '—'}`).join(' · '));
+      console.log('      새 주문/납품/기한 지남 · 달말 가진 것(화분 · 삽수 · 자리 잡은 삽수 · PP · 잎 있는 AL · SC · CA · 열린 주문 · 오늘 자를 마디): ' +
+                  r.shop.months.map(x => `${x.m}:${x.newN || 0}/${x.done || 0}/${x.expN || 0}[${x.stock ? [x.stock.pot, x.stock.cut, x.stock.est, x.stock.pp, x.stock.al, x.stock.sc, x.stock.ca, x.stock.open, x.stock.cutOpen].join(',') + ` 모주잎${x.stock.mLeaves ?? '?'}·DLI${x.stock.mDli ?? '?'}·등${x.stock.lamps}` : '—'}]`).join(' '));
+    }
+  }
   if (arg('ledger', false)) for (const r of rs.filter(x => x.ledger && x.ledger.length)) {
     const m = v => (v / 1e4).toFixed(1).replace(/\.0$/, '');
     const avg = (w, n) => n ? m(w / n) : '—';

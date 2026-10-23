@@ -68,7 +68,7 @@ import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow, cutBlockedReason } from './propagation.js';
 import { stepShop, stepMarket } from './shop.js';
-import { stepSpecies } from './species.js';   /* ★ 2026-10-09 D45 — 새 두 종의 하루(§stepSpeciesOfTurn) */
+import { stepSpecies, speciesKnown, speciesRules } from './species.js';   /* ★ 2026-10-09 D45 — 새 두 종의 하루(§stepSpeciesOfTurn) */
 import { stepShopJob } from './job_shop.js';   /* ★ 2026-10-10 D59 — 식물 가게 하루(주문 · 기한) */
 /* ★ 2026-10-08 [plan] 지도 13 — turn.cropNow(콩 씨앗 재고 · 빈 시루)를 짓는 데 쓴다(§attachEvents) */
 import { stockOf as shopStockOf } from './shop.js';
@@ -373,7 +373,9 @@ function stepSpeciesOfTurn(S, io, report) {
         return dli;
       },
       /* ★ 2026-10-23 D71 — 자라는 스킨답서스의 받침 높이(growth dropM · 줄기 상한) */
-      dropOf: (q) => speciesDropOf(io, q)
+      dropOf: (q) => speciesDropOf(io, q),
+      /* ★ D78 — 이 방에 높은 자리가 하나라도 있나(turn.scLowDays · 없으면 귀띔이 할 말이 없다) */
+      roomHasHigh: roomHasHighSpot(io)
     });
     if (missed) pushLog(S, `⚠ 새 식물 ${missed}그루의 자리 빛을 못 쟀습니다 — 오늘은 건너뜁니다`);
     if (r.missedDrop) pushLog(S, `⚠ 스킨답서스 ${r.missedDrop}그루의 받침 높이를 못 쟀습니다 — 오늘은 건너뜁니다`);
@@ -404,6 +406,13 @@ export function speciesDropInfoOf(io, q) {
     if (d && Number.isFinite(d.dropM)) return { dropM: d.dropM, edgeM: Number.isFinite(d.edgeM) ? d.edgeM : null, dir: Array.isArray(d.dir) ? d.dir : null };
   }
   return null;
+}
+/* ★ D78 — 이 방 자리 가운데 «높은 자리»(house dropM ≥ growth high_spot_min_m)가 있나. 규칙이 스킨답서스를 모르거나 자리 높이를 못 세면 false */
+function roomHasHighSpot(io) {
+  const slots = (io && io.light && io.light.room && io.light.room.slots) || [];
+  if (!speciesKnown('scindapsus')) return false;
+  const R = speciesRules();
+  return typeof R.isHighSpot === 'function' && slots.some(x => x && Number.isFinite(x.dropM) && R.isHighSpot(x.dropM));
 }
 /* ★ D71 — 오늘 방 자리 [{ slotId, dropM, dli }] — 가게 주문 가드(«높은 자리» · «칼라테아 알맞은 자리» · 줄기 상한 · job_shop §species2Sources).
      빛은 그루와 같은 자(lightOptsOf · 오늘 하늘). 못 세면 null — 그러면 길이·칼라테아 주문을 안 낸다 */
@@ -802,7 +811,10 @@ function attachEvents(S, turn, fpBefore) {
   /* ★ 2026-10-23 D71 [plan] 대사 맥락 칸 — 방에 놓인 칼라테아 수 · 그중 «너무 밝은»(avg7 > hi) 것이 있나. 새 종 하루가 안 돈 날은 null(모른다) */
   { const sp = turn.species && !turn.species.error ? turn.species : null;
     turn.caPlants = sp && Number.isFinite(sp.caPlants) ? sp.caPlants : null;
-    turn.caTooBright = sp && typeof sp.caTooBright === 'boolean' ? sp.caTooBright : null; }
+    turn.caTooBright = sp && typeof sp.caTooBright === 'boolean' ? sp.caTooBright : null;
+    turn.scLowDays = sp && Number.isFinite(sp.scLowDays) ? sp.scLowDays : null; }   /* D78 hintScHang */
+  /* ★ D79 [plan] 주문 가뭄 — 가게를 연 판에서 열린 주문이 0건인 날이 며칠째 잇달았나(가게 판이 아니면 null) */
+  turn.shopOrderDryDays = turn.jobShop && !turn.jobShop.error && Number.isFinite(turn.jobShop.dryDays) ? turn.jobShop.dryDays : null;
   /* ★ 2026-10-08 [plan] 지도 13 — 오늘의 작물 손 상태 두 칸. order_seed 독촉이 재고가 있는 날 «씨앗이 떨어졌어» 대신
        «씨앗이 있는데 빈 시루가 있어. 심어 줘.»를 고르는 근거다. 이른 턴(몬스테라 전)도 이 함수를 지나므로 여기서 채운다.
        emptySiru — 방에 놓였는데 콩이 안 들었거나(안 심음) 거둔 뒤 빈 콩나물 시루가 있나. 못 세면 null(대사가 예전 그대로) */

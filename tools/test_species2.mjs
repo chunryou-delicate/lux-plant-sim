@@ -361,5 +361,37 @@ T('J 스냅샷 · 세이브 · 옛 세이브', () => {
   assert.ok(day(S3).some(e => e.id === 'sc_ask'), '옛 세이브(단골 6)에 sc_ask 가 안 난다');
 });
 
+T('K 낮은 자리 날 수(turn.scLowDays · D78 hintScHang) — 높은 자리 없으면 null · 하나라도 높으면 0 · 다 낮으면 잇단 날', () => {
+  const S = openS();
+  const run = (hasHigh, n = 1) => { let r = null; for (let d = 0; d < n; d++) r = SP.stepSpecies(S, { day: dayNo++, season: 'spring', lightOf: () => 6, dropOf: x => x.at.y, roomHasHigh: hasHigh }).scLowDays; return r; };
+  assert.strictEqual(run(true), null, 'SC 가 없는데 수');
+  const a = SP.addSpeciesPot(S, 'scindapsus', { origin: 'shop', newPlant: { form: 'rooted', nodes: 3 } });
+  SP.setSpeciesAt(S, a.id, { slotId: 'lo', at: { x: 0, y: 0.3, z: 0 } });
+  assert.strictEqual(run(false, 3), null, '방에 높은 자리가 없는데 수(귀띔이 할 말이 없다)');
+  assert.strictEqual(run(true, 7), 7, '다 낮은 자리 7일');
+  const back = SP.unpackSpecies(JSON.parse(JSON.stringify(SP.packSpecies(S.species))));
+  assert.strictEqual(back.n.scLowRun, 7, '잇단 날이 세이브에 안 실렸다');
+  const b = SP.addSpeciesPot(S, 'scindapsus', { origin: 'shop', newPlant: { form: 'rooted', nodes: 3 } });
+  SP.setSpeciesAt(S, b.id, { slotId: 'hi', at: { x: 0, y: 0.81, z: 0 } });
+  assert.strictEqual(run(true), 0, '하나라도 높은 자리인데 수');
+  SP.bagSpecies(S, b.id);
+  assert.strictEqual(run(true), 1, '높은 그루를 치운 이튿날 처음부터');
+  SP.bagSpecies(S, a.id);
+  assert.strictEqual(run(true), null, '놓인 SC 가 없는데 수');
+});
+
+T('L 주문 가뭄(turn.shopOrderDryDays · D79) — 열린 주문 0 인 날 잇단 수 · 하나라도 걸리면 0 · 세이브', () => {
+  const S = openS();
+  S.jobShop.orders = []; S.jobShop.nextOrderDay = 99999;
+  let r = null; for (let d = 0; d < 22; d++) { S.day += 1; r = JS.stepShopJob(S, {}); }
+  assert.strictEqual(r.dryDays, 22, '열린 주문 0 인 22일');
+  const J2 = JS.unpackJobShop(JSON.parse(JSON.stringify(JS.packJobShop(S.jobShop))));
+  assert.strictEqual(J2.dryRun, 22, '잇단 날이 세이브에 안 실렸다');
+  S.jobShop.orders.push({ id: 'z', kind: 'pp', need: {}, customerId: 'k', dueOn: S.day + 30 });
+  S.day += 1; assert.strictEqual(JS.stepShopJob(S, {}).dryDays, 0, '주문이 걸렸는데 가뭄');
+  assert.strictEqual(JS.unpackJobShop({ orders: [] }).dryRun, 0, '옛 세이브 기본값');
+  const none = newS(); assert.strictEqual(JS.stepShopJob(none, {}).dryDays, undefined, '가게 판이 아닌데 가뭄 수');
+});
+
 console.log(bad ? `species2: FAIL (${bad})` : 'species2: PASS');
 process.exit(bad ? 1 : 0);
