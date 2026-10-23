@@ -1114,6 +1114,23 @@ export function createFurnitureDress(opt = {}) {
     if (held) return [];
     return propList.filter(p => !p.flat && p.node.visible).map(p => ({ ...p.rect }));
   }
+  /* ★ 2026-10-24 [house] 총괄 청 — 소품 하나가 «지금 선» 자리(세계 좌표 · 밑 가운데 x·y·z · 크기 w·d·h · 그린 그림의 상자에서 잰다).
+       끝맺음 선 자리(game.html endingStandAside)가 위 PROPS 값을 적어 쓰던 것을 이 손으로 바꾼다(값 한 벌).
+       안 섰으면 null — 옷 꺼짐 · 이 방에 없는 소품 · 깃발 꺼짐(입간판 shopSign) · 진짜 가구가 대신 섬 · 화분·가구에 비켜 숨음.
+       깃발은 켜졌는데 그림을 아직 받는 중이면 표의 자리(ready:false · w·d 모름) — 곧 그 자리에 선다. 열지도(held)는 잠깐 숨김이라 그대로 섰다고 친다 */
+  function propSpot(id) {
+    if (!on || !cur.roomId) return null;
+    const p = (PROPS[cur.roomId] || []).find(q => q.id === id);
+    if (!p || (p.flag && !flags.has(p.flag))) return null;
+    if (p.preset && ((cur.roomDef && cur.roomDef.furniture) || []).some(f => f && f.preset === p.preset)) return null;
+    const made = propList.find(q => q.id === id);
+    if (!made) return { id, x: p.x, y: 0, z: p.z, w: null, d: null, h: p.h || 0, ready: false };
+    if (!made.node.visible) return null;
+    made.node.updateWorldMatrix(true, true);
+    const b = new T.Box3().setFromObject(made.node), r3 = v => +v.toFixed(3);
+    return { id, x: r3((b.min.x + b.max.x) / 2), y: r3(b.min.y), z: r3((b.min.z + b.max.z) / 2),
+             w: r3(b.max.x - b.min.x), d: r3(b.max.z - b.min.z), h: r3(b.max.y - b.min.y), ready: true };
+  }
   function setHeld(v) {
     v = !!v;
     if (v === held) return held;
@@ -1143,6 +1160,7 @@ export function createFurnitureDress(opt = {}) {
   const api = {
     get enabled() { return on; },
     furnReady, preload, dress, props, yieldTo, blobRects, setEnabled, setSeason, setFlag,   // setSeason: 달력 쪽 · setFlag: 깃발 소품(10-10)
+    propSpot,                                                                              // 소품이 지금 선 자리(10-24 · 간판 — view.signSpot)
     hasDress: preset => !!specOf(preset) || !!DECOR['preset:' + preset],   // 이 프리셋에 v2 그림(옷·색 변형·위 소품)이 있나 — 가구점 그림 자(tools/shot_furn_thumbs)가 묻는다
     set: setEnabled,
     hold: setHeld,

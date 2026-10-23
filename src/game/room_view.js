@@ -61,7 +61,7 @@ import { getPlantAssembler } from '../render3d/plant_assemble.js';
    복사하면 방과 방 도구에서 통행 판정이 어긋난다(floor_nav.js 머리말). */
 import { createFloorNav } from '../render3d/floor_nav.js';
 import { createFurnitureDress } from '../render3d/furniture_dress.js';   /* ↓ 벽 걸이 v1 걸이 자리(10-10 [house]) */
-import { hangSpotsOf, hangPoseOf, hangFits, hangSpotAt } from './hang_spots.js';   // v2: 가구 옷(GLB)·소품 — 그림만
+import { hangSpotsOf, hangPoseOf, hangFits, hangSpotAt, BOARD_KIND } from './hang_spots.js';   // v2: 가구 옷(GLB)·소품 — 그림만
 /* ★ 배치 규칙은 game/place.js 한 벌만 쓴다.
    place.js 는 THREE 도 DOM 도 없이 도는 순수 모듈이라, 화면과 Node 테스트가
    **같은 식**으로 판정한다. 여기서 다시 짜면 두 벌이 되고 두 벌은 반드시 어긋난다
@@ -6437,6 +6437,16 @@ export async function createRoomView(canvas, opts = {}) {
     if (busy && !busy.free) throw new Error('벽에 걸 자리가 다 찼습니다');
     return hangPoseOf(sp, built.size, size);
   }
+  /* ★ 2026-10-24 [house] 총괄 청 — 걸린 판(주문판·맡김판·메모판 · hang_spots BOARD_KIND)이 지금 선 자리.
+       세계 좌표 · 밑 가운데 x·y·z · 크기 w·d·h(그린 상자에서 잰다 — signSpot 과 같은 꼴). 판이 안 걸렸거나 깎인 벽을 따라 숨었으면 null */
+  function boardSpotOf() {
+    const g = hangNodes().find(n => BOARD_KIND[presetOfUid(n.userData.uid)] && n.children.some(c => c.visible));
+    if (!g) return null;
+    g.updateWorldMatrix(true, true);
+    const b = new THREE.Box3().setFromObject(g), r3 = v => +v.toFixed(3);
+    return { uid: g.userData.uid, preset: presetOfUid(g.userData.uid), x: r3((b.min.x + b.max.x) / 2), y: r3(b.min.y), z: r3((b.min.z + b.max.z) / 2),
+             w: r3(b.max.x - b.min.x), d: r3(b.max.z - b.min.z), h: r3(b.max.y - b.min.y) };
+  }
 
   /* 그 가구가 화면 어디에 찍히나 — **캔버스 기준 CSS 픽셀**(screenPosOf 와 같은 규약).
      up=0 이면 **발밑**(바닥과 맞바꿀 수 있는 점 — 상대 끌기의 기준점),
@@ -10155,6 +10165,9 @@ export async function createRoomView(canvas, opts = {}) {
     setSeason(s) { const ch = furnDress.setSeason(s); if (ch) needsRender = true; return ch; },
     /* 가게 입간판(plan D59 단골 10명) — 켜면 투룸 문 옆에 선다(그림뿐 · 부딪힘·빛 없음) */
     setShopSign(on) { const ch = furnDress.setFlag('shopSign', !!on); if (ch) { needsRender = true; if (on) restandOffProps(); } return ch; },
+    /* 간판·판이 지금 선 자리(10-24 [house] · 읽기만) — { x, y, z 밑 가운데 · w, d, h } · 안 섰으면 null. 간판은 ready:false 면 그림을 받는 중(표의 자리) */
+    signSpot() { try { return furnDress.propSpot('shop_sign'); } catch (e) { throw fail(e); } },
+    boardSpot() { try { return boardSpotOf(); } catch (e) { throw fail(e); } },
     previewFurnitureAt(uid, pos) { try { return previewFurnitureAt(uid, pos); } catch (e) { throw fail(e); } },
     clearFurniturePreview() { disposeFurnGhost(); },
     /* 실제로 옮긴다 — 방을 다시 조립하고 화분을 규칙대로 되돌린다(위 ⑧-b 주석).
