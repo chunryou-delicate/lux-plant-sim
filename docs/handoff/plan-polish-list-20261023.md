@@ -22,6 +22,7 @@
 | 1-6 | data/balance/characters.json 칸 다섯(`household` · `monthlyIncome` · `electricityWaived` · `goalType` · `systems`) | 읽는 코드 0(E 를 지을 때 섬) | core | ○(E) | E §0 |
 | 1-7 | game.html `hardReset` · `gameOverAgain` `localStorage.clear()` | 다시 시작이 세이브 밖 열쇠까지 지움 → E 의 «집 엔딩 본 적» 메타 열쇠와 부딪힘 | core | ○(E) | D §9 · E §0 |
 | 1-8 | story_arc.md §5 «달력이 둘»(화면 `tutorial.seasonAt` 여름 45일차 · 빛 `weather.seasonOf(S.day)` 0 = 봄) | 지금도 오프셋이 남았는지 확인 안 함 — 새 판은 둘을 같게(E §1-3) | core | ? | E §1-3 |
+| 1-9 | tools/test_balance_routes.mjs ③ «튜토 완주 30~50분(배속 10초/일)» | **50.9분 — 0.9분 넘침**(게임 258일 · 누름 157회 · 누름당 3초 가정). 바닥 사람(시루 1 고정 · 등 없이) 판이라 «안내대로»보다 길다 · D81 대로 붉게 둠(core 1533f7e7) | **총괄**(임자 판단 — 자를 고칠지 · 판을 고칠지) | ? | core 10-24 · 총괄 D81 ⑧ |
 
 ## 2. 낡은 글 — 코드는 맞고 글이 옛 값 (✕ 글만)
 
