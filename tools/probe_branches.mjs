@@ -585,7 +585,7 @@ export async function play(name, seed, opt = {}) {
             out.rentWon = Number.isFinite(opt.rent) ? opt.rent : null;
             out.ledger = []; LG = { start: ts.cashWon, today: 0 }; out.cashAtMove = ts.cashWon;
             /* ⚖ 재는 손잡이(--cropmult X · 총괄 10-23 가게 굶음 판) — 이사 뒤(원룸 이후) 콩나물·무순 수확 배수를 이 판에서만 바꿔 끼운다
-                 (first_play §CROP_HARVEST_MULT 표는 «원룸 이후 1.3» · 게임엔 아직 안 이어져 어디서나 반지하 2.0 — 게임 값은 안 건드림) */
+                 (first_play §CROP_HARVEST_MULT · D79 로 어디서나 2.0 — 1.3 이었다면 어떻게 되나를 재는 손잡이 · 게임 값은 안 건드림) */
             if (Number.isFinite(opt.cropmult) && S.firstPlay && S.firstPlay.rules) S.firstPlay.rules = Object.freeze({ ...S.firstPlay.rules, cropHarvestMult: opt.cropmult });
             if (pot0(S)) { try { setPotSlot(S, pot0(S), ONE_SILL, light.room.slots); } catch { } }
             S.lamps.count = ts.lamp.owned || 0; if (ts.lamp) ts.lamp.placed = S.lamps.count; light.clearCache();

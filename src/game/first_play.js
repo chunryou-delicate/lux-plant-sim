@@ -682,14 +682,16 @@ function cropGramSpecOf(rules, kindIndex = 0) {
 
    ══ 표 ═══════════════════════════════════════════════════════════
      반지하(배우는 구간)  **2.0배**  — 체력 5·시루 25개에서 하루 +8,850원. 안 죽는다
-     원룸 이후            **1.3배**  — 체력 5 에서 겨우 본전(+275원). 늘려야 남는다
+     원룸 이후            **2.0배**  — ★ 2026-10-23 총괄 D79: 처음 표는 1.3(«체력 5 에서 겨우 본전») 이었으나 배선이 없어 게임은 늘 2.0 으로 돌았고,
+                                     그 값을 그대로 정한다(«시루가 밥 · 식물이 돈» — 가게 판도 시루가 받친다). 1.3 이면 500만 엔딩 342 → 425일
+                                     (core 하네스 --cropmult 1.3 · 10-23 잼)
    ⚠ **밥으로 아끼는 것은 안 늘어난다** — 하루 몫 4,867원이 상한이라 g 이 늘어도 그대로다.
      늘어난 것은 **전부 팔린다.** 그래서 배수의 효과는 **판매 수입에만** 온다.
    ⚠ `savedWonPerCycle` 은 **안 건드린다.** 같이 올리면 하루 몫이 흔들리고
      START-HERE §2.8 의 4,867원이 통째로 움직인다.
    ⚠ 표를 **여기 박지 않는다** — `rules.cropHarvestMult` 로 넘어오면 그것을 쓴다.
      안 넘어오면 2.0(반지하)이다. 원룸 배선은 `oneroom.js` 몫이다(아직 미확정 · §oneroom). */
-export const CROP_HARVEST_MULT = Object.freeze({ banjiha: 2.0, oneroom: 1.3 });
+export const CROP_HARVEST_MULT = Object.freeze({ banjiha: 2.0, oneroom: 2.0 });   /* oneroom — D79(10-23) 2.0 그대로(배선은 없어 아무도 안 읽는다 · 표만 사실대로) */
 const harvestMultOf = (rules) => {
   const v = rules && rules.cropHarvestMult;
   return (Number.isFinite(v) && v > 0) ? v : CROP_HARVEST_MULT.banjiha;

@@ -326,10 +326,15 @@ console.log('\n══ E  ★★ 회귀 — 화분 하나였던 판이 그대로�
        && buyPriceOf(id) === buyWon,
        it ? `${it.ko} ${it.listWon}/${it.leadDays}일/${buyPriceOf(id)}원` : '품목이 사라졌습니다');
   }
-  ok('E-5 옛 품목이 하나도 안 사라졌고, 늘어난 것은 화분 넷뿐이다',
-     catalogList().length === BEFORE.length + 4
-     && ['pot_concrete_round', 'pot_terracotta', 'pot_ceramic', 'pot_concrete_square']
-          .every(id => !!CATALOG[id]),
+  /* ⚠⚠ 2026-10-23 [core] — 이 줄은 10-09 21:36(da423fb6 · D45 새 두 종 상점 품목 al_corm · pp_young)부터 «낡은 자»였다(13품목 ≠ 11).
+       D71(090bc888)이 sc_cutting 하나를 더해 14. 늘어난 것은 «화분 넷 + 새 종 품목 셋»이다 — 셋은 kind 'plant'(새 종 그루 · species §speciesShopOpen 이 진열 때를 거른다).
+       지키는 것은 그대로: 옛 품목이 하나도 안 사라졌고, 그 밖엔 안 늘었다 */
+  const NEW_POTS = ['pot_concrete_round', 'pot_terracotta', 'pot_ceramic', 'pot_concrete_square'];
+  const NEW_SPECIES = ['al_corm', 'pp_young', 'sc_cutting'];   /* D45 · D45 · D71 */
+  ok('E-5 옛 품목이 하나도 안 사라졌고, 늘어난 것은 화분 넷 + 새 종 품목 셋뿐이다',
+     catalogList().length === BEFORE.length + NEW_POTS.length + NEW_SPECIES.length
+     && NEW_POTS.every(id => !!CATALOG[id])
+     && NEW_SPECIES.every(id => !!CATALOG[id] && CATALOG[id].kind === 'plant'),
      `${catalogList().length}품목`);
   /* ★★ 2026-08-09 — **두 작물이 반대로 움직였다.**
        콩나물 700/3,000 = 23.3% → **500/3,000 = 16.7%**   (씨앗이 싸졌다)
@@ -358,9 +363,13 @@ console.log('\n══ E  ★★ 회귀 — 화분 하나였던 판이 그대로�
      박사님이 수확량 눈금을 넓히셔서(*"200-500"* · first_play §그램) 최상이 500g · 400g 이 됐다.
      ★ 이 줄이 지키는 것은 값이 아니라 **「씨앗값과 회전분이 움직인 만큼만 움직였다」**이므로
        분자(씨앗값 500·600)는 그대로 두고 분모만 새 최상 수확량으로 바꾼다. */
-  ok('E-6 손익분기 — 씨앗값과 회전분이 움직인 만큼만 움직였다',
-     near(cropBreakEvenRate('beansprout'), 500 / 5000, 1e-12)
-     && near(cropBreakEvenRate('musun'), 600 / 4000, 1e-12),
+  /* ⚠⚠ 2026-10-23 [core] — 이 줄은 08-16 16:40(30c7728c «수확량에 난이도 배수 — 반지하 2배»)부터 «낡은 자»였다. 08-18 에 눈금(500g · 400g)만 고치고
+       배수를 안 곱해 한 번도 초록이 아니었다(0.05 · 0.075 ≠ 0.1 · 0.15). 총괄 D79(10-23): 수확 배수 ×2 는 지금 게임이 도는 값 그대로 둔다 —
+       ⇒ 분모 = 최상 수확량 × 2(first_play §CROP_HARVEST_MULT.banjiha). 분자(씨앗값 500 · 600)는 그대로 */
+  const HM = 2;   /* first_play §CROP_HARVEST_MULT.banjiha — 손으로 적는 규약(카탈로그에서 베끼지 않는다) */
+  ok('E-6 손익분기 — 씨앗값과 회전분이 움직인 만큼만 움직였다(수확 배수 ×2 · D79)',
+     near(cropBreakEvenRate('beansprout'), 500 / (5000 * HM), 1e-12)
+     && near(cropBreakEvenRate('musun'), 600 / (4000 * HM), 1e-12),
      `${cropBreakEvenRate('beansprout')} / ${cropBreakEvenRate('musun')}`);
 
   /* 도착 자체 — 화분이 예전과 같은 모양으로 생긴다 */
