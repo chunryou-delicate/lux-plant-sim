@@ -4658,12 +4658,27 @@ function hintAvoidChip(h, hand, r) {
                         return rc.width && cs.visibility !== 'hidden' && cs.display !== 'none' ? rc : null; };
   /* ★ 2026-10-24 총괄 D72 — 밥상 창 아낌 알림 칸(#mealSay)도 비킨다: 첫날 «하루를 보냅니다» 말풍선이 «오늘 아낄 수 있는 만큼 다 아꼈습니다» 글을 덮었다(360·390 사진) →
        말풍선은 [이대로 다음 날] 아래로(손가락이 위로 그 단추를 짚는다) */
-  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('mealSay'))].filter(Boolean);
+  /* ★ 2026-10-24 다듬기 6-3 — 할 일 창 머리 줄(#questSub · 칭호 칩 «동네 식물 가게» · «· 단골 30명» · [진로 바꾸기])도 비킨다.
+       줄 칸 전체가 아니라 «글이 차지한 자리»(Range)만 잰다 — 칸은 창 폭이라 [✕] 옆 빈자리까지 막는다 */
+  const textBox = el => { if (!shown(el)) return null; try { const rg = document.createRange(); rg.selectNodeContents(el); const q = rg.getBoundingClientRect(); return q.width ? q : null; } catch (e) { return null; } };
+  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('mealSay')), textBox($('questSub'))].filter(Boolean);
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
   const cr = obs.find(o => hit(h.getBoundingClientRect(), o));
   if (!cr) return;
+  /* ⓪ 옆에 선 말풍선(위가 막혀 옆에서 가리킨다 · 할 일 창 [✕])은 먼저 위아래로만 비킨다 — 손이 대상 높이 안에 남는 만큼만(6-3).
+       [✕] 옆 말풍선이 머리 줄 윗도리를 9px 덮었다 · 아래(①)로 보내면 할 일 첫 줄 보상 글을 덮는다(360·390 잼) */
+  if (h.classList.contains('side')) {
+    const hb0 = h.getBoundingClientRect(), c0 = hb0.top + hb0.height / 2;
+    const up = hb0.bottom - cr.top + 2, down = cr.bottom - hb0.top + 2, c1 = c0 + (up <= down ? -up : down);   /* 덜 움직이는 쪽 */
+    if (c1 >= r.top + 4 && c1 <= r.bottom - 4) {
+      h.style.top = c1 + 'px';
+      const hb1 = h.getBoundingClientRect();
+      if (!hitAny(hb1) && hb1.top >= 4 && hb1.bottom <= innerHeight - 8) return;
+      h.style.top = c0 + 'px';
+    }
+  }
   /* ① 아래 — 말풍선은 대상 밑, 손가락(👆)이 위를 짚는다 */
   h.classList.remove('side', 'toRight'); h.classList.add('below');
   hand.textContent = '👆'; hand.style.left = '0px';
@@ -6205,9 +6220,12 @@ function updateHint() {
     const pop = document.querySelector('.pop.on');
     if (pop) {
       const live = (el) => el && !el.disabled && onScreen(el);
+      /* ★ 2026-10-24 다듬기 6-3(core 가름) — 글 속 글자 단추(.linkBtn · 할 일 머리 줄 [진로 바꾸기])는 «창의 일하는 단추»가 아니다.
+           9f7263d2 가 머리 줄에 [진로 바꾸기]를 넣자 «살아 있는 마지막 단추»가 그것이 되어 손가락이 진로 바꾸기를 짚었고,
+           위가 막혀 왼쪽으로 선 말풍선 «여기를 눌러 보세요»가 칭호 칩 «동네 식물 가게 · 단골 30명»을 덮었다(총괄 다시 걸음 end30_quest) ⇒ 예전처럼 [✕] */
       const go = [...pop.querySelectorAll('button.go')].find(live)
               || [...pop.querySelectorAll('button.primary')].find(live)
-              || [...pop.querySelectorAll('button')].filter(live).pop();
+              || [...pop.querySelectorAll('button:not(.linkBtn)')].filter(live).pop();
       /* ⚠ 말도 «창 이름»으로 안 고른다 — **그 단추가 무슨 일을 한다고 적혀 있나**로 고른다.
          「다음 날」이라 적힌 단추는 곧 하루를 넘기는 손이므로 하려던 말(`wait`)을 그대로 쓴다.
          그 밖의 창(가계부처럼 «읽는» 창)에서 「하루를 넘기세요」라 하면 가리킴과 말이 어긋난다. */
@@ -11960,9 +11978,17 @@ function drawJourney() {
     questFresh = (Array.isArray(qv.fresh) && qv.fresh[0]) ? { id: qv.fresh[0].id, ko: qv.fresh[0].ko } : null;
   } catch { questGoal = null; questChain = null; }
 
+  /* ★ 2026-10-24 총괄 다듬기 6-2(core 뿌리 찾음) — 이사한 뒤엔 튜토리얼 줄(quest[fp.phase])로 절대 안 떨어진다.
+       가게 사슬을 다 끝낸 날(Day 845) 열린 할 일이 없어 «말린 새순이 나왔습니다!…»(첫 플레이 끝 줄)가 칩에 떴다.
+       ⇒ 이미 있는 진로 머리 줄(job_shop §jobHeadOf · job_care §careHeadOf · job_breed §breedHeadOf 의 ko)로 · 그것도 없으면 비운다(칩이 숨는다 · §questChipShouldShow «글자가 있나») · 새 글은 짓지 않는다 */
+  const movedOutNow = !!(ts && ts.movedOut);
+  const jobLine = (() => { if (!movedOutNow) return null;
+    try { const cur = (JOB.jobOf(S) || {}).id; const h = cur === 'shop' ? JOB.jobHeadOf(S) : cur === 'care' ? CARE.careHeadOf(S) : cur === 'breed' ? BREED.breedHeadOf(S) : null; return (h && h.ko) || null; }
+    catch (e) { console.warn('[진로 머리 줄]', e && e.message); return null; } })();
   $('quest').textContent = justMoved
     ? `${josaRo(slotLabel(plant.slotId))} 옮겼습니다. 빛 판정은 7일 평균이라 ` +
       `나흘쯤 지나야 새 자리 값이 됩니다 — 하루씩 넘겨 보세요.`
+    : movedOutNow ? (questGoal || livingGoal || jobLine || '')
     : (questGoal || livingGoal || quest[fp.phase] || '첫 플레이를 진행하세요.');
   /* ★ [가방]에 있던 진행 안내가 [식물] 맨 위로 왔다 (2026-08-06).
      없애면 처음 하는 사람이 시트 안에서 길을 잃는다 — 아래 퀘스트 줄은 시트를 열면 가린다.
