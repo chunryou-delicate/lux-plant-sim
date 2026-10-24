@@ -1409,6 +1409,9 @@
     background:rgba(16,13,24,.82);border:1px solid rgba(255,180,84,.35);
     box-shadow:0 4px 14px rgba(0,0,0,.45);text-align:left;color:var(--ink)}
   #questChip.on{display:block}
+  /* ★ 2026-10-24 (plan d_B_switched · core 걸음) — 배너(#event)는 6초에 꺼진 뒤 0.45초 동안 사라지는데, 칩은 감춤 규칙(§#stage:has(#event.on))이 풀리는 즉시 돌아와
+       그 사이 둘이 겹쳐 보였다. 칩이 «돌아올 때»만 배너가 다 사라진 뒤(0.45초)에 온다 — 감출 때는 위 규칙 그대로 바로 */
+  #questChip{transition:opacity .2s ease .45s,visibility 0s linear .45s}
   #questChip b{display:block;font-size:10.5px;font-weight:700;color:var(--gold);
     letter-spacing:.02em;margin-bottom:2px}
   #questChip span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
@@ -1457,6 +1460,10 @@
   #chapterEndSub .jobNote{display:block;margin-top:6px;font-size:12px;color:var(--dim)}
   html.finalcover #dlg{z-index:96}
   html.finalcover #dlgFace{display:none}   /* 덮개 동안 초상이 제목을 덮었다(10-24 사진) — 이름표(몬이)는 대사 창에 남는다 */
+  html.finalcover #dlgSkip{display:none}   /* «건너뛰기» 알약이 [계속 산다] 오른쪽 끝을 덮었다(총괄 10-24 · d_C_cover) — 두 줄뿐이라 눌러 넘긴다 */
+  /* 낱말 가운데 꺾임(«해 본/다» · «없습/니다» — plan 10-24 사진) — 진로 화면 · 끝맺음 카드 글은 낱말 단위로만 줄을 바꾼다 */
+  #chapterEnd p, #jobCards .job b, #jobCards .job span, #jobCards .job i.jmark, #jobCards .job button, #shopEndPanel .pbtns button{word-break:keep-all}
+  .nowrap{white-space:nowrap}
   .linkBtn{background:none;border:0;padding:2px 4px;margin-left:4px;min-height:0;width:auto;color:#f0c674;font-weight:700;font-size:.92em;text-decoration:underline;cursor:pointer}
   #orderBoard h4.rest{margin-top:12px}
   /* ★ D59 — 주문판(상점 탭 맨 위) */
@@ -2297,7 +2304,7 @@
     <div class="psub" id="shopEndSub">단골 서른 — 가게 끝맺음</div>
     <div class="plots" id="shopEndRows"></div>
     <div id="shopEndFaces"></div>
-    <div class="pbtns"><button id="shopEndSwitch" class="ghost" type="button" style="display:none">다른 진로도 해 본다</button><button id="shopEndGo" class="go" type="button">계속 산다</button></div>
+    <div class="pbtns"><button id="shopEndSwitch" class="ghost" type="button" style="display:none">진로 바꾸기</button><button id="shopEndGo" class="go" type="button">계속 산다</button></div>
   </div>
 </div>
 <!-- ★ 2026-10-24 C 육종 — 새 품종 이름(D74 ④ 입력 칸 + 자동 이름 미리 채움 · 비워 두면 자동 이름) -->
@@ -3565,8 +3572,7 @@ function noteTurn(t) {
     else if (t.events.some(e => e && e.id === 'care_ending')) { shopEndPending = true; shopEndKind = 'care'; }   /* B 돌봄 끝맺음(살린 30) */
     else if (t.events.some(e => e && e.id === 'breed_ending')) { shopEndPending = true; shopEndKind = 'breed'; }   /* C 육종 끝맺음(품종 3) */
     /* D85 ④ — 끝맺음 장면: 진로 카메라가 선 뒤 주인공이 진열대 앞줄에서 비켜선다 */
-    if (t.events.some(e => e && /^(shop|care|breed)_ending$/.test(e.id)))
-      setTimeout(() => { try { const r = endingStandAside(); window.__byeotEndingStandLast = r; } catch (e) { console.warn('[끝맺음 선 자리]', e && e.message); } }, 600);
+    if (t.events.some(e => e && /^(shop|care|breed)_ending$/.test(e.id))) endingStandWhenSettled();
   }
   stuckDays = (t && (t.growthBlocked || t.headroomBlocked)) ? stuckDays + 1 : 0;
   if (!t) resetStageMemo();   /* 새 판(같은 쪽에서 S = newState → noteTurn(null)) — 어제 값이 남으면 첫 배너가 빠지거나 거짓으로 뜬다 */
@@ -10283,8 +10289,8 @@ function jobHeadHtml() {
   const titles = SWITCH.jobTitles(S), mine = titles.find(t => t.id === cur);
   const chips = [...(mine ? [mine] : []), ...titles.filter(t => t.id !== cur)].map(t => `<span class="titleChip">${esc(t.title)}</span>`).join(' ');
   const num = cur === 'shop' ? `단골 ${h.regulars}명` : cur === 'care' ? `살린 화분 ${h.saved}` : `품종 ${h.varieties}`;
-  const body = mine ? `${chips} · ${num}` : `${chips ? chips + ' ' : ''}${esc(h.ko)}`;
-  const sw = SWITCH.canSwitchJob(S) ? ` <button type="button" class="linkBtn" data-act="jobSwitch">${esc((SWITCH.careerSwitchText().todoHead || {}).switch || '진로 바꾸기')}</button>` : '';
+  const body = mine ? `${chips} <span class="nowrap">· ${num}</span>` : `${chips ? chips + ' ' : ''}<span class="nowrap">${esc(h.ko)}</span>`;   /* «품종 / 3» 줄 갈림(plan 10-24) */
+  const sw = SWITCH.canSwitchJob(S) ? ` <button type="button" class="linkBtn nowrap" data-act="jobSwitch">${esc((SWITCH.careerSwitchText().todoHead || {}).switch || '진로 바꾸기')}</button>` : '';
   return body + sw;
 }
 function homeGoalHtml(v) {
@@ -14207,52 +14213,182 @@ function syncShopRoomView() {
   } catch (e) { console.warn('[가게 카메라]', e && e.message); }
 }
 window.__byeotShopView = () => syncShopRoomView();   /* 재는 손잡이 */
-/* ══ ★ 2026-10-24 D 나머지(총괄 D85 ④) — 끝맺음 장면에서 주인공이 비켜선다 ══
+/* ══ ★ 2026-10-24 D 나머지(총괄 D85 ④ · 10-24 MAJOR) — 끝맺음 장면에서 주인공이 비켜선다 ══
    끝맺음 아침 장면은 진로 카메라(진열대·다단 선반·판) 위에 대사다. 주인공이 진열대 앞에 서 있으면 앞줄(D0·D1)을 가렸다(house 사진 jobcam_tworoom_b_390).
-   ⇒ 화면 칸을 훑어 «몸(발 ~ 머리 1.6m 네모)이 그루·판을 안 가리고 · 대사 창 위에 보이는» 바닥 한 점을 골라 걸어간다(가장 넓게 비는 데 · 같으면 가까운 데).
-   방 뷰의 공개 손만 쓴다(floorPointAt · worldToScreen · screenPosOf · walkTo) — room_view(house) 는 안 건드린다. 못 고르면 그대로 둔다(그림만 덜 좋음). */
-function endingStandAside() {
+   ★ 한 규칙(세 끝맺음 같음) — 몸 네모(발 ~ 머리 1.6m · 너비 = 키 × 0.55)가
+       ① 화면 안 — 캔버스 양옆 8% 안 · 위 0 아래 · 대사 창 위
+       ② 대사 창 · 대사 초상(몬이 얼굴 · #dlgFace) 밖
+       ③ 그루(plantBox) · 판(house boardSpot) · 간판(house signSpot)을 안 가림(빈틈 ≥ 12px)
+     지금 자리가 셋 다 맞으면 그대로 · 아니면 셋 다 맞는 빈 칸 중 넉넉하고(지킬 것 · 대사 창 · 초상까지 틈 40px 까지만 침) 길이 짧은 데로 걷는다 ·
+     다 맞는 데가 없으면 ①② 를 지키는 데 중 가장 덜 가리는 데. 걷기가 끝나면 다시 재고 어긋나면 다음 점(두 번까지).
+   ★ 칸막이 너머(투룸 거실 쪽)도 된다 — 잰 값(10-24 · 390×844 · 세 끝맺음 판 · __byeotEndingStandCands):
+       가게 방 안 빈 칸 270여 곳 중 셋 다 맞는 데 0 — 진열대 앞 띠는 앞줄·간판을 가리고(−7 ~ −63px) 그 앞 바닥은 몬이 얼굴 자리다.
+       칸막이 너머는 110~126곳(빈틈 100px 넘음). 문으로 돌아 5.5m ≈ 3.8초(WALK_SPEED 1.45 m/s).
+       ⚠ 앞서 «문으로 돌아 17초»로 읽고 같은 방만 골랐던 것은 헤드리스가 초당 2.3장만 그려(틀마다 dt 0.1초 상한) 걸음이 느려 보인 것이다.
+   ★ 후보는 방 뷰가 «실제로 세울» 빈 칸으로 잰다(previewWalk 의 x·z — 가구 자리를 찍으면 가장 가까운 빈 칸으로 당긴다).
+       찍은 점으로 재면 진열대 안쪽 점이 좋아 보이고 걸으면 늘 진열대 앞 띠로 당겨졌다(10-24 C 자국).
+   ⚠ 셈은 «대사가 서고 카메라가 멎은 뒤» 한 번 더 — 장면 첫 틀(진로 카메라)과 v2 대사 카메라가 움직이는 동안 재면 화면 끝으로 가고(총괄 사진 9f7263d2 A·B)
+     초상이 아직 없어 그 뒤에 숨었다. 방 뷰의 공개 손만 쓴다(previewWalk · floorPointAt · worldToScreen · plantBox · signSpot · boardSpot · walkTo) — room_view(house) 는 안 건드린다. */
+var endingStandMemo = { w: null, dlgR: null, faceR: null };   /* var — noteTurn(위쪽 줄)이 먼저 불러도 «초기화 전» 오류가 안 나게(heldBanners 와 같은 까닭) */
+function endingStandRule() {
   const rv = roomView;
-  if (!rv || !rv.walkTo || !rv.floorPointAt || !rv.worldToScreen || !rv.characters) return null;
+  if (!rv || !rv.floorPointAt || !rv.worldToScreen || !rv.characters) return null;
+  const cv = $('roomCanvas').getBoundingClientRect();
+  const rectIn = el => { const r = el && el.getBoundingClientRect(); return r && r.height > 0 && r.width > 0 ? { l: r.left - cv.left, r: r.right - cv.left, t: r.top - cv.top, b: r.bottom - cv.top } : null; };
+  /* 대사 창 · 초상 — 떠 있으면 그 자리(기억해 둔다) · 안 떠 있으면 기억한 자리 · 처음이면 꼴에서 셈(장면 «전»에 걷기 시작하려고) */
+  let dlgR = rectIn($('dlgBox')), faceR = rectIn($('dlgFace'));
+  const M = endingStandMemo;
+  if (dlgR && M.w === cv.width) M.dlgR = dlgR; else if (!dlgR && M.w === cv.width) dlgR = M.dlgR || null;
+  if (faceR && M.w === cv.width) M.faceR = faceR; else if (!faceR && M.w === cv.width) faceR = M.faceR || null;
+  if (M.w !== cv.width) { M.w = cv.width; M.dlgR = dlgR; M.faceR = faceR; }
+  if (!dlgR) dlgR = { l: 10, r: cv.width - 10, t: innerHeight * 0.765 - cv.top, b: cv.height };   /* 390×844 에서 잰 대사 상자 위 끝(화면 645/844 — 캔버스 높이로 셈하면 50px 위로 갔다) */
+  /* 초상 크기 — #dlgBox 의 --faceH(min(24vh, 40vw·4/3, 240px) · 넓은 PC 는 min(52vh, 560px)) 를 그대로 셈.
+     ⚠ 예전엔 :root 에서 읽어 늘 빈 값 → 170 으로 물러서 390×844 실제(202.6)보다 작게 잡았고, 대사 전 첫 고름이 얼굴 자리로 갔다(10-24 품종 판) */
+  if (!faceR) { const pc = matchMedia('(min-width:1000px) and (min-aspect-ratio:13/10)').matches;
+    const fh = pc ? Math.min(innerHeight * 0.52, 560) : Math.min(innerHeight * 0.24, innerWidth * 0.4 * 4 / 3, 240);
+    faceR = { l: dlgR.l + 7, r: dlgR.l + 7 + fh * 0.75, t: dlgR.t + 18 - fh, b: dlgR.t + 18 }; }
+  const dlgTop = dlgR.t;
+  /* 세계 상자 → 화면 네모(꼭짓점 여덟) */
+  const boxRect = (min, max) => { let l = Infinity, r = -Infinity, t = Infinity, b = -Infinity, n = 0;
+    for (const x of [min[0], max[0]]) for (const y of [min[1], max[1]]) for (const z of [min[2], max[2]]) { const q = rv.worldToScreen(x, y, z); if (!q) continue; n++; l = Math.min(l, q.x); r = Math.max(r, q.x); t = Math.min(t, q.y); b = Math.max(b, q.y); }
+    return n ? { l, r, t, b } : null; };
+  const spotRect = sp => sp && Number.isFinite(sp.x) ? boxRect([sp.x - (sp.w || 0.3) / 2, sp.y || 0, sp.z - (sp.d || 0.3) / 2], [sp.x + (sp.w || 0.3) / 2, (sp.y || 0) + (sp.h || 0.5), sp.z + (sp.d || 0.3) / 2]) : null;
+  const keep = [];
+  for (const p of (rv.plants ? rv.plants() : [])) {
+    if (!p || p.key == null) continue;
+    let bx = null; try { bx = rv.plantBox ? rv.plantBox(p.key) : null; } catch (e) { bx = null; }
+    const r = bx && bx.box ? boxRect(bx.box.min, bx.box.max) : null;
+    if (r) keep.push({ ...r, id: p.key }); else { const q = rv.screenPosOf(p.key); if (q) keep.push({ l: q.x, r: q.x, t: q.y, b: q.y, id: p.key }); }
+  }
+  /* 판 — house boardSpot(걸린 판 상자 · 없으면 판 가구 발밑 점으로 물러섬) */
+  { let bs = null; try { bs = rv.boardSpot ? rv.boardSpot() : null; } catch (e) { bs = null; }
+    const r = spotRect(bs);
+    if (r) keep.push({ ...r, id: 'board' });
+    else for (const f of (rv.furniture ? rv.furniture() : [])) if (f && GIVEN_FURNITURE.includes(f.preset)) { const q = rv.screenPosOf(f.uid); if (q) keep.push({ l: q.x, r: q.x, t: q.y, b: q.y, id: 'board' }); } }
+  /* 간판 — house signSpot(지금 선 자리 · null 이면 furniture_dress PROPS.tworoom shop_sign 값 x −3.14 · z −0.95 · 높이 0.85 로 물러섬) */
+  if (S.home && S.home.room === 'tworoom' && signOnNow()) {
+    let ss = null; try { ss = rv.signSpot ? rv.signSpot() : null; } catch (e) { ss = null; }
+    const r = spotRect(ss) || spotRect({ x: -3.14, y: 0, z: -0.95, w: 0.5, d: 0.4, h: 0.85 });
+    if (r) keep.push({ ...r, id: 'sign' });
+  }
+  const bodyOf = (x, z) => { const a = rv.worldToScreen(x, 0, z), b = rv.worldToScreen(x, 1.6, z); if (!a || !b) return null;
+    const h = Math.max(1, a.y - b.y), w = h * 0.55; return { l: a.x - w / 2, r: a.x + w / 2, t: b.y, b: a.y }; };   /* 너비 — 머리칼까지(사진으로 잼) */
+  const hit = (a, b) => !!(a && b && a.r > b.l && a.l < b.r && a.b > b.t && a.t < b.b);
+  const gap = (bd, k) => Math.max(k.l - bd.r, bd.l - k.r, k.t - bd.b, bd.t - k.b);   /* 떨어진 만큼(+) · 겹치면 −(덜 겹친 축) */
+  const clear = bd => keep.length ? Math.min(...keep.map(k => gap(bd, k))) : 999;
+  const inView = (bd, pad = 0) => bd.l >= cv.width * 0.08 && bd.r <= cv.width * 0.92 && bd.t >= 0 && bd.b <= dlgTop - 2 - pad;
+  const grow = (q, m) => q && { l: q.l - m, r: q.r + m, t: q.t - m, b: q.b + m };
+  /* pad — 고를 때는 초상 자리를 넓히고 대사 창 위로 띄워 잰다(걸음 끝이 한 뼘 어긋나도 얼굴·대사 창에 안 들어가게 · 10-24 C 에서 0.2m 어긋나 들어갔다) */
+  const judge = (bd, pad = 0) => { if (!bd) return null; const c = clear(bd), v = inView(bd, pad), f = hit(bd, grow(faceR, pad)) || hit(bd, dlgR);
+    const edge = Math.min(dlgTop - 2 - bd.b, gap(bd, faceR));   /* 대사 창 위 끝 · 초상까지 남은 틈(+) */
+    return { inView: v, faceOrDlg: f, clear: Math.round(c), edge: Math.round(edge), ok: v && !f && c >= 12, hits: keep.filter(k => gap(bd, k) < 12).map(k => k.id) }; };
+  return { rv, cv, dlgTop, bodyOf, judge, faceR, dlgR, keep };
+}
+/* 지금 선 자리를 그 규칙으로 잰다 — 걸음(probe_switch_walk)이 «화면 안 · 얼굴 밖 · 안 가림»을 같은 자로 본다 */
+function endingStandCheck() {
+  const R = endingStandRule(); if (!R) return null;
+  const me = (R.rv.characters() || []).find(c => c && c.id === 'jachwi');
+  if (!me) return null;
+  const j = R.judge(R.bodyOf(me.pos.x, me.pos.z));
+  return j && { ...j, x: +me.pos.x.toFixed(2), z: +me.pos.z.toFixed(2), walking: !!(R.rv.isWalking && R.rv.isWalking('jachwi')) };
+}
+window.__byeotEndingStandCheck = () => endingStandCheck();   /* 재는 손잡이 */
+/* 고를 수 있는 자리 — 화면 격자 점마다 방 뷰가 «실제로 세울» 빈 칸(previewWalk · 걷지 않음)을 받아 그 자리 몸 네모로 잰다 · 길 길이는 칸막이 문을 거쳐 셈 */
+function endingStandCands(R, me) {
+  const { rv, cv, dlgTop, bodyOf, judge } = R;
+  const parts = (() => { try { const d = houseRooms.rooms && houseRooms.rooms[S.home.room]; return (d && Array.isArray(d.partitions)) ? d.partitions : []; } catch (e) { return []; } })();
+  const sideOf = (q, p) => Math.sign((q.axis === 'z' ? p.z : p.x) - (+q.at || 0));
+  const doorOf = q => (q.door && Number.isFinite(+q.door.at)) ? (q.axis === 'z' ? { x: +q.door.at, z: +q.at } : { x: +q.at, z: +q.door.at }) : null;
+  const here = { x: me.pos.x, z: me.pos.z };
+  const route = p => { let from = here, d = 0;   /* 칸막이를 넘으면 그 문을 거친다(house_rooms partitions — 투룸 x −0.6 · 문 z 1.4) */
+    for (const q of parts) { const dp = doorOf(q); if (dp && sideOf(q, from) !== sideOf(q, p)) { d += Math.hypot(dp.x - from.x, dp.z - from.z); from = dp; } }
+    return d + Math.hypot(p.x - from.x, p.z - from.z); };
+  const box = rv.roomSize ? rv.roomSize() : null, seen = new Map();
+  try {
+    for (let gy = 0.25; gy <= 0.95; gy += 0.03) for (let gx = 0.06; gx <= 0.94; gx += 0.03) {
+      const vx = cv.left + cv.width * gx, vy = cv.top + Math.min(dlgTop - 4, cv.height * gy);
+      const t = rv.previewWalk ? rv.previewWalk('jachwi', vx, vy) : rv.floorPointAt(vx, vy);
+      if (!t || t.ok === false) continue;   /* 못 서는 데(방 밖 · 0.9m 넘게 당겨짐) */
+      if (box && (Math.abs(t.x) > box.w / 2 - 0.3 || Math.abs(t.z) > box.d / 2 - 0.3)) continue;   /* 방 밖 바닥(창 너머) — floorPointAt 으로 물러섰을 때 */
+      const key = t.x.toFixed(2) + ',' + t.z.toFixed(2); if (seen.has(key)) continue;
+      const j = judge(bodyOf(t.x, t.z), 10); if (!j) continue;   /* 고를 때는 10px 넓혀 잰다 */
+      seen.set(key, { vx, vy, x: t.x, z: t.z, route: route(t), other: parts.some(q => sideOf(q, t) !== sideOf(q, here)), ...j });
+    }
+  } finally { if (rv.previewWalk) rv.previewWalk('jachwi', null, null); }   /* 미리보기 기둥은 같은 틀 안에서 지운다(그려지지 않는다) */
+  return [...seen.values()];
+}
+function endingStandAside(skip = 0) {
+  const R = endingStandRule(); if (!R) return null;
+  const { rv, bodyOf, judge } = R;
+  if (!rv.walkTo) return null;
   const me = (rv.characters() || []).find(c => c && c.id === 'jachwi' && c.walkable);
   if (!me) return null;
-  const cv = $('roomCanvas').getBoundingClientRect();
-  const dlgTop = (() => { const d = $('dlgBox') || $('dlg'); const r = d && d.getBoundingClientRect(); return r && r.height > 0 ? r.top - cv.top : cv.height * 0.84; })();
-  const keep = [];
-  for (const p of (rv.plants ? rv.plants() : [])) { const q = p && p.key != null ? rv.screenPosOf(p.key) : null; if (q) keep.push(q); }
-  for (const f of (rv.furniture ? rv.furniture() : [])) if (f && (GIVEN_FURNITURE.includes(f.preset) || SHOP_FRAME_UIDS.includes(f.uid))) { const q = rv.screenPosOf(f.uid); if (q) keep.push(q); }
-  /* 간판(가구가 아니라 소품 — house furniture_dress PROPS.tworoom shop_sign x −3.14 · z −0.95 · 높이 0.85 · 자리를 묻는 손이 없어 그 값을 적어 둔다) */
-  if (S.home && S.home.room === 'tworoom' && signOnNow()) for (const y of [0.15, 0.45, 0.8]) { const q = rv.worldToScreen(-3.14, y, -0.95); if (q) keep.push(q); }
-  const bodyOf = (x, z) => { const a = rv.worldToScreen(x, 0, z), b = rv.worldToScreen(x, 1.6, z); if (!a || !b) return null;
-    const h = Math.max(1, a.y - b.y), w = h * 0.55; return { l: a.x - w / 2, r: a.x + w / 2, t: b.y, b: a.y, foot: a }; };   /* 너비 — 머리칼까지(사진으로 잼) */
-  const clear = (bd) => Math.min(...keep.map(k => Math.max(bd.l - k.x, k.x - bd.r, bd.t - k.y, k.y - bd.b, 0) || -Math.min(k.x - bd.l, bd.r - k.x, k.y - bd.t, bd.b - k.y)));
-  const here = bodyOf(me.pos.x, me.pos.z);
-  /* 대사 초상(#dlgFace — 대사 창 위 왼쪽) 뒤에 숨지 않게 — 사진(10-24): 아랫몸이 몬이 초상에 덮였다 */
-  const faceR = (() => { const f = $('dlgFace'), r = f && f.getBoundingClientRect(); return r && r.height > 0 && r.width > 0 ? { l: r.left - cv.left, r: r.right - cv.left, t: r.top - cv.top, b: r.bottom - cv.top } : null; })();
-  const inView = bd => bd.l >= cv.width * 0.05 && bd.r <= cv.width * 0.95 && bd.t >= 0 && bd.b <= dlgTop;   /* 화면 끝에 반쯤 걸리지 않게 */
-  const faceHit = bd => !!(faceR && bd.r > faceR.l && bd.l < faceR.r && bd.b > faceR.t && bd.t < faceR.b);
-  if (here && keep.length && clear(here) >= 24 && inView(here)) return { moved: false, clear: Math.round(clear(here)) };   /* 안 가리면 그대로(초상 뒤에 숨는 것은 그루를 안 가린다) */
-  const box = rv.roomSize ? rv.roomSize() : null, cand = [];
-  for (let gy = 0.30; gy <= 0.95; gy += 0.05) for (let gx = 0.06; gx <= 0.94; gx += 0.04) {
-    const vx = cv.left + cv.width * gx, vy = cv.top + Math.min(dlgTop - 4, cv.height * gy);
-    const f = rv.floorPointAt(vx, vy); if (!f) continue;
-    if (box && (Math.abs(f.x) > box.w / 2 - 0.3 || Math.abs(f.z) > box.d / 2 - 0.3)) continue;   /* 방 밖 바닥(창 너머)은 못 간다 */
-    const bd = bodyOf(f.x, f.z); if (!bd || !inView(bd)) continue;
-    const c = keep.length ? clear(bd) : 999;
-    if (c >= 12) cand.push({ vx, vy, c, face: faceHit(bd), dist: Math.hypot(f.x - me.pos.x, f.z - me.pos.z), x: f.x, z: f.z });
-  }
-  /* 차례: 초상에 안 걸림 → 넉넉히 빈 데(40px 넘으면 같은 값 — 그중 가까운 데 · 장면 동안 멀리 걷지 않게) → 넓게 빈 데 · 가까운 데.
-     가구 안·벽 쪽은 walkTo 가 ok:false 로 돌려준다 → 다음 칸 */
-  const roomy = c => Math.min(c.c, 40);
-  const far = c => c.dist > 3;   /* 장면 동안 방을 가로질러 걷지 않게(3m 넘는 데는 뒤로) */
-  cand.sort((a, b) => (far(a) !== far(b) ? (far(a) ? 1 : -1) : a.face !== b.face ? (a.face ? 1 : -1) : Math.abs(roomy(a) - roomy(b)) > 8 ? roomy(b) - roomy(a) : a.dist - b.dist));
-  for (const k of cand.slice(0, 24)) {
+  const here = judge(bodyOf(me.pos.x, me.pos.z));
+  if (here && here.ok) return { moved: false, ...here };   /* 지금 자리가 셋 다 맞으면 그대로 */
+  const cand = endingStandCands(R, me).filter(c => c.inView && !c.faceOrDlg);   /* ①② 는 늘 지킨다 */
+  /* 넉넉함 = 지킬 것 · 대사 창 · 초상까지 가장 가까운 틈 — 40px 까지만 친다 · 그 위로는 길이 짧은 데(장면 동안 덜 걷게 · 총괄 사진 9f7263d2 A·B 는 진열대 앞을 가로질렀다)
+       ⚠ 대사 창 틈을 안 치면 창 바로 위 자리를 골라 걸음 끝이 0.08m 어긋나자 창에 닿았다(10-24 가게 판 · 한 번 더 걸음) ·
+         24px 로 자르면 초상 바로 옆(틈 3~5px)에 섰다 → 40px(360·390·430 × 세 끝맺음 아홉 판이 한 번 걸음에 틈 21px 넘게) */
+  const roomy = c => Math.min(c.clear, c.edge, 40);
+  cand.sort((a, b) => (a.ok !== b.ok ? (a.ok ? -1 : 1) : Math.abs(roomy(a) - roomy(b)) > 8 ? roomy(b) - roomy(a) : a.route - b.route));
+  /* 걸음은 길 끝(walkTo 의 x·z)에 선다 → 길 끝으로 다시 재어 어긋나면 다음 점 · 다 어긋나면 처음 길로 간다 */
+  let tried = 0, first = null;
+  for (const k of cand.slice(skip, skip + 12)) {
+    tried++;
     const r = rv.walkTo('jachwi', k.vx, k.vy);
-    if (r && r.ok) return { moved: true, clear: Math.round(k.c), to: { x: +k.x.toFixed(2), z: +k.z.toFixed(2) } };
+    if (!(r && r.ok)) continue;
+    const end = Number.isFinite(r.x) && Number.isFinite(r.z) ? { x: r.x, z: r.z } : { x: k.x, z: k.z };
+    const je = judge(bodyOf(end.x, end.z), 6);
+    const res = { moved: true, ok: !!(je && je.ok), clear: je ? je.clear : k.clear, to: { x: +end.x.toFixed(2), z: +end.z.toFixed(2) },
+                  route: +k.route.toFixed(2), other: k.other, rank: skip + tried - 1, of: cand.length };
+    if (!first) first = { k, res };
+    if (je && (k.ok ? je.ok : (je.inView && !je.faceOrDlg))) return res;
   }
-  return { moved: false, clear: null, tried: Math.min(24, cand.length) };
+  if (first) { rv.walkTo('jachwi', first.k.vx, first.k.vy); return { ...first.res, fallback: true }; }
+  return { moved: false, ok: false, tried, here };
 }
 window.__byeotEndingStand = () => endingStandAside();   /* 재는 손잡이 */
+/* 재는 손잡이 — 지금 화면에서 고를 수 있는 빈 칸 셈(걷지 않음 · 고르는 손과 같은 자) · 같은 방 / 칸막이 너머 */
+window.__byeotEndingStandCands = () => { const R = endingStandRule(); if (!R) return null;
+  const me = (R.rv.characters() || []).find(c => c && c.id === 'jachwi'); if (!me) return null;
+  const all = endingStandCands(R, me);
+  const best = f => all.filter(f).sort((a, b) => b.clear - a.clear).slice(0, 4).map(c => ({ x: +c.x.toFixed(2), z: +c.z.toFixed(2), clear: c.clear, route: +c.route.toFixed(2), hits: c.hits }));
+  return { me: { x: +me.pos.x.toFixed(2), z: +me.pos.z.toFixed(2) }, free: all.length,
+           same: { n: all.filter(c => !c.other).length, ok: all.filter(c => !c.other && c.ok).length, best: best(c => !c.other && c.inView && !c.faceOrDlg) },
+           other: { n: all.filter(c => c.other).length, ok: all.filter(c => c.other && c.ok).length, best: best(c => c.other && c.ok) } }; };
+/* 때 — 끝맺음 아침 차례가 오자마자 비켜서기 시작(대사 «전» · 초상·대사 창은 기억한 자리) → 대사가 서면 실제 자리로 다시 재어 어긋나면 다시 고름 →
+   걷기가 끝나면 한 번 더 재고 어긋나면 다음 점(두 번까지). ⚠ 장면 첫 줄부터 걸어 가로지르면 대사 셋째 줄에도 진열대 앞을 걷고 있었다(10-24 걸음 사진) */
+function endingStandWhenSettled() {
+  const t0 = performance.now();
+  let skip = 0, retry = 0, checkedTalk = false;
+  const walkingNow = () => { try { return !!(roomView && roomView.isWalking && roomView.isWalking('jachwi')); } catch (e) { return false; } };
+  const go = (why) => { let r = null; try { r = endingStandAside(skip); } catch (e) { console.warn('[끝맺음 선 자리]', e && e.message); }
+    window.__byeotEndingStandLast = { ...(r || {}), why, prev: window.__byeotEndingStandLast || null };
+    if (r && r.moved) skip = (r.rank || skip) + 1;
+    return r; };
+  /* 지금 자리가 이미 맞아 안 걸으면 대사가 선 뒤 한 번 재고 끝난다(아래 tick) */
+  const done = (how) => { window.__byeotEndingStandLast = { ...(window.__byeotEndingStandLast || {}), done: how }; };   /* 재는 손잡이 — 비켜서기가 다 끝났다 */
+  const tick = () => {
+    if (performance.now() - t0 > 60000) { done('시간'); return; }   /* 상한 — 진짜 걸음은 4초 남짓 · 헤드리스(초당 2~3장)에선 5.5m 가 19초라 20초 상한이 «걷기 뒤 다시»를 잘랐다 */
+    const st = $('stage'), talking = !!(st && st.classList.contains('talking'));
+    if (talking && !checkedTalk) {   /* 대사가 섰다 — 실제 초상·대사 창 자리로 다시 잰다(서 있는 자리든 가는 자리든) */
+      checkedTalk = true;
+      const c = endingStandCheck();
+      const target = (window.__byeotEndingStandLast || {}).to;
+      let bad = c && !c.ok && !c.walking;
+      if (c && c.walking && target) { const R = endingStandRule(); const j = R && R.judge(R.bodyOf(target.x, target.z)); bad = !!(j && !j.ok); }
+      if (bad) { skip = 0; go('대사가 선 뒤 다시'); }
+    }
+    if (!walkingNow() && checkedTalk) {
+      const c = endingStandCheck();
+      window.__byeotEndingStandLast = { ...(window.__byeotEndingStandLast || {}), after: c, retry };
+      if (c && !c.ok && retry < 2) { retry++; go('걷기 뒤 다시'); }
+      else { done(c && c.ok ? '맞음' : '다 해 봄'); return; }
+    }
+    setTimeout(tick, 250);
+  };
+  setTimeout(() => { go('아침 차례'); tick(); }, 60);
+}
 /* 주인공 모습을 성별에 맞춘다 — 3D 몸·옷(v2_hero 한 곳) · 위 칸 «나» 얼굴. 방뷰를 세우기 «전»에 부른다(몸은 처음 받을 때 고른다) */
 function syncHeroGender() {
   const g = heroGenderNow();

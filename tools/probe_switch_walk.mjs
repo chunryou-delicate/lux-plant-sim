@@ -15,7 +15,9 @@ import path from 'node:path';
 import { launch, sleep } from './test_cdp.mjs';
 
 const BASE = process.env.BYEOT_URL || 'http://127.0.0.1:9300';
-const SWT = JSON.parse(fs.readFileSync(new URL('../data/balance/career_switch.json', import.meta.url), 'utf8'));   /* 화면 글은 plan 표 그대로 읽는다 */
+const SWT = JSON.parse(fs.readFileSync(new URL('../data/balance/career_switch.json', import.meta.url), 'utf8'));   /* 화면 글은 plan 표 그대로 읽는다 — 글이 바뀌어도 자가 낡지 않게 */
+const TT = id => SWT.jobs[id].title, MK = (k, id) => SWT.cards.mark[k].replace('{title}', id ? TT(id) : '');
+const ROW = (id, k) => [MK(k, k === 'fresh' ? null : id), k === 'current' ? null : k === 'ended' ? SWT.cards.back : SWT.jobs[id].go];
 const DUMP = process.env.DUMP;
 const PFX = process.env.PFX || 'switchW_g';
 const OUTDIR = process.env.OUTDIR || null; if (OUTDIR) fs.mkdirSync(OUTDIR, { recursive: true });
@@ -32,13 +34,22 @@ await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__bye
 const J = async (js, ms = 180000) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, ms));
 const shot = async n => { if (OUTDIR) await page.shot(`${OUTDIR}/${n}.png`); };
 const click = sel => page.eval(`(()=>{ const x=document.querySelector(${JSON.stringify(sel)}); if (!x) return false; x.click(); return true; })()`, true);
+let standAt = null;   /* 끝맺음 장면에서 잰 선 자리(talk 가 그 대사에서 채운다) */
 const talk = async (want = null, name = null, max = 80) => {
   const lines = []; let shotTaken = false;
   for (let i = 0; i < max; i++) {
     const t = await J(`(()=>({ on: document.getElementById('stage').classList.contains('talking'), text: ((document.getElementById('dlgText') || {}).textContent || '').trim() }))()`);
     if (!t.on) break;
     if (t.text && lines[lines.length - 1] !== t.text) lines.push(t.text);
-    if (want && !shotTaken && want.test(t.text)) { await sleep(3500); await shot(name); shotTaken = true; }
+    if (want && !shotTaken && want.test(t.text)) {
+      /* 끝맺음 장면 — 주인공이 비켜서는 걸음이 멎은 뒤(그 자리에서 대사 위) 찍고 같은 자(game.html §endingStandCheck)로 잰다 */
+      await sleep(1500);
+      /* 비켜서기가 다 끝날 때까지(game.html §endingStandWhenSettled 가 done 을 남긴다 · 걷다 끼면 «걷기 뒤 다시» 한두 번 · 60초까지 —
+         칸막이 너머 5.5m 는 진짜로 4초 남짓이지만 헤드리스는 초당 2~3장이라 19초 걸린다) */
+      for (let k = 0; k < 240; k++) { const d = await J(`(()=> (window.__byeotEndingStandLast || {}).done || null)()`); if (d) break; await sleep(250); }
+      await sleep(600); await shot(name); shotTaken = true;
+      standAt = await J(`(()=> window.__byeotEndingStandCheck ? window.__byeotEndingStandCheck() : null)()`);
+    }
     await page.eval(`(()=>{ const x=document.getElementById('dlgBox'); if (x) x.click(); })()`, false); await sleep(200);
   }
   return { lines, shotTaken };
@@ -76,11 +87,21 @@ const head = async () => { await page.eval(`(()=>{ window.__byeotSheet.open('que
 const closeSheet = async () => { await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch(e){} })()`, false); await sleep(400); };
 const boardName = () => J(`(()=>{ const f=(window.__rv.furniture()||[]).find(x=>['order_board','care_board','memo_board'].includes(x.preset)); return f ? { preset: f.preset, ko: (window.__byeotBoardKo ? window.__byeotBoardKo(f.preset) : null) } : null; })()`);
 const stand = () => J(`(()=> window.__byeotEndingStandLast || null)()`);
+/* 보이는 두 요소가 겹치나 — 사진으로 본 꼴(총괄 · plan 10-24)을 자로: 덮개·끝맺음 카드 단추 × «건너뛰기» 알약 · 옮김 배너 × 할 일 칩 */
+const overlapOf = (aSel, bSels) => J(`(()=>{ const vis = e => { if (!e) return null; const cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) return null;
+    const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? r : null; };
+  const a = vis(document.querySelector(${JSON.stringify(aSel)})); if (!a) return { a: false, hit: [] };
+  const hit = ${JSON.stringify(bSels)}.filter(sel => { const b = vis(document.querySelector(sel)); return b && a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom; });
+  return { a: true, hit }; })()`);
 const endingStep = async (stage, kind, want) => {
   const t = await nextDayTalk(want, `${stage}_ending`);
   ok(t.lines.length >= 5, `[${stage}] 끝맺음 장면 대사`, t.lines.slice(0, 3).join(' / '));
-  const st = await stand(); ok(!!st && (st.moved || st.clear >= 24), `[${stage}] 끝맺음 장면 — 주인공이 진열대 앞줄을 안 가림`, JSON.stringify(st));
+  const st = await stand();
+  /* 총괄 10-24 MAJOR — 세 끝맺음이 한 규칙: ① 화면 안(양옆 8% 안 · 대사 창 위) ② 대사 창 · 몬이 얼굴 밖 ③ 그루 · 판 · 간판 안 가림 */
+  ok(!!standAt && standAt.inView && !standAt.faceOrDlg && standAt.clear >= 12, `[${stage}] 끝맺음 장면 — 주인공이 화면 안 · 얼굴 밖 · 진열대 앞줄을 안 가림`, JSON.stringify({ standAt, st }));
   await sleep(800); await shot(`${stage}_card`);
+  const ov = await overlapOf('#dlgSkip', ['#shopEndGo', '#shopEndSwitch']);
+  ok(ov.hit.length === 0, `[${stage}] 끝맺음 카드 단추를 «건너뛰기» 알약이 안 덮음`, JSON.stringify(ov));
   return card();
 };
 
@@ -90,11 +111,11 @@ try {
     const e0 = exc.length;
     await load('end30_pre'); console.log('[A] 실음 —', JSON.stringify(await J(digest)));
     const c = await endingStep('A', 'shop', /오늘부터 여긴/);
-    ok(c.on && c.title === '동네 식물 가게' && c.sw && c.swKo === '다른 진로도 해 본다' && c.go === '계속 산다', '[A] 끝맺음 카드 — 단추 둘', JSON.stringify(c));
+    ok(c.on && c.title === TT('shop') && c.sw && c.swKo === SWT.endCard.switch && c.go === SWT.endCard.stay, '[A] 끝맺음 카드 — 단추 둘', JSON.stringify(c));
     await click('#shopEndSwitch'); await sleep(900);
     const k = await cards(); await shot('A_cards');
-    ok(k.on && k.title === '진로 바꾸기' && !k.art && !k.again && k.look === SWT.cards.close, '[A] 진로 바꾸기 화면', JSON.stringify({ title: k.title, art: k.art, again: k.again, look: k.look }));
-    ok(JSON.stringify(k.rows.map(r => [r.mark, r.go])) === JSON.stringify([['지금 하는 중 · 동네 식물 가게', null], ['해 볼 수 있음', '돌봄을 시작한다'], ['해 볼 수 있음', '육종을 시작한다']]), '[A] 카드 표 셋', JSON.stringify(k.rows));
+    ok(k.on && k.title === SWT.cards.title && !k.art && !k.again && k.look === SWT.cards.close, '[A] 진로 바꾸기 화면', JSON.stringify({ title: k.title, art: k.art, again: k.again, look: k.look }));
+    ok(JSON.stringify(k.rows.map(r => [r.mark, r.go])) === JSON.stringify([ROW('shop', 'current'), ROW('care', 'fresh'), ROW('breed', 'fresh')]), '[A] 카드 표 셋', JSON.stringify(k.rows));
     const d0 = await J(digest);
     await click('[data-switchjob="care"]'); await sleep(1500);
     const t = await talk(/남의 화분|맡김판으로/, 'A_switched');
@@ -107,7 +128,7 @@ try {
        '[A] 기록 줄 — 옮김 · 판 그대로 · 손님 이음', lg.slice(-6).join(' | '));
     const bn = await boardName(); ok(bn && bn.ko === '맡김판', '[A] 창 옆 판 이름 = 맡김판(house boardAs)', JSON.stringify(bn));
     const h = await head(); await shot('A_head');
-    ok(h.chips.join(',') === '동네 식물 가게' && /식물 돌봄 · 살린 화분/.test(h.text) && !h.sw, '[A] 할 일 머리 — 칭호 칩 · 지금 진로 · «진로 바꾸기» 없음(돌봄 끝맺음 전)', h.text);
+    ok(h.chips.join(',') === TT('shop') && /식물 돌봄 · 살린 화분/.test(h.text) && !h.sw, '[A] 할 일 머리 — 칭호 칩 · 지금 진로 · «진로 바꾸기» 없음(돌봄 끝맺음 전)', h.text);
     await closeSheet();
     ok(exc.length === e0, '[A] 처리 안 된 예외 0', exc.slice(e0).join(' | '));
     await roundTrip('A');
@@ -117,19 +138,24 @@ try {
     const e0 = exc.length;
     await load('careEnd_pre'); console.log('[B] 실음 —', JSON.stringify(await J(digest)));
     const c = await endingStep('B', 'care', /오늘부터 여긴/);
-    ok(c.on && c.title === '동네 식물 의사' && c.sw, '[B] 끝맺음 카드 — [다른 진로도 해 본다](육종이 남음)', JSON.stringify(c));
+    ok(c.on && c.title === TT('care') && c.sw, '[B] 끝맺음 카드 — [다른 진로도 해 본다](육종이 남음)', JSON.stringify(c));
     await click('#shopEndSwitch'); await sleep(900);
     const k = await cards(); await shot('B_cards');
-    ok(JSON.stringify(k.rows.map(r => [r.mark, r.go])) === JSON.stringify([['끝맺음 봄 · 동네 식물 가게', '돌아간다'], ['지금 하는 중 · 동네 식물 의사', null], ['해 볼 수 있음', '육종을 시작한다']]), '[B] 카드 표 셋', JSON.stringify(k.rows));
+    ok(JSON.stringify(k.rows.map(r => [r.mark, r.go])) === JSON.stringify([ROW('shop', 'ended'), ROW('care', 'current'), ROW('breed', 'fresh')]), '[B] 카드 표 셋', JSON.stringify(k.rows));
     const d0 = await J(digest);
     await click('[data-switchjob="breed"]'); await sleep(1500);
+    { const ov = await overlapOf('#event', ['#questChip']); ok(ov.a && ov.hit.length === 0, '[B] 옮김 배너 위에 할 일 칩이 안 겹침', JSON.stringify(ov));
+      /* 배너가 꺼지며 0.45초 동안 사라지는 사이에도 칩이 먼저 돌아와 겹치지 않는다(10-24 — 앞 판 사진이 그 틈에 찍혔다) */
+      for (let k = 0; k < 40; k++) { if (!(await J(`document.getElementById('event').classList.contains('on')`))) break; await sleep(250); }
+      const fade = []; for (const ms of [0, 150, 300, 400]) { if (ms) await sleep(ms - (fade.length ? [0, 150, 300, 400][fade.length - 1] : 0)); fade.push((await overlapOf('#event', ['#questChip'])).hit.length); }
+      ok(fade.every(n => n === 0), '[B] 배너가 사라지는 동안에도 할 일 칩이 안 겹침', JSON.stringify(fade)); }
     const t = await talk(/하나 나온 건 우연/, 'B_switched');
     const d1 = await J(digest);
     ok(d1.job === 'breed' && d1.room === d0.room && d1.cash === d0.cash, '[B] 육종으로 옮김 · 이사 없음 · 돈 그대로', JSON.stringify({ d0, d1 }));
     ok(t.lines.some(x => /하나 나온 건 우연/.test(x)) && !t.lines.some(x => /이제부턴 진짜/.test(x)), '[B] 대사 — jobSwitchBreed', t.lines.join(' / '));
     const bn = await boardName(); ok(bn && bn.ko === '메모판', '[B] 창 옆 판 이름 = 메모판', JSON.stringify(bn));
     const h = await head(); await shot('B_head');
-    ok(h.chips.join(',') === '동네 식물 가게,동네 식물 의사' && /무늬 육종 · 품종 0/.test(h.text) && !h.sw, '[B] 할 일 머리 — 칭호 칩 둘', h.text);
+    ok(h.chips.join(',') === [TT('shop'), TT('care')].join(',') && /무늬 육종 · 품종 0/.test(h.text) && !h.sw, '[B] 할 일 머리 — 칭호 칩 둘', h.text);
     await closeSheet();
     ok(exc.length === e0, '[B] 처리 안 된 예외 0', exc.slice(e0).join(' | '));
     await roundTrip('B');
@@ -139,22 +165,24 @@ try {
     const e0 = exc.length;
     await load('breedEnd_pre'); console.log('[C] 실음 —', JSON.stringify(await J(digest)));
     const c = await endingStep('C', 'breed', /육종가/);
-    ok(c.on && c.title === '무늬 육종가' && !c.sw, '[C] 끝맺음 카드 — [다른 진로도 해 본다] 없음(셋 다 해 봄)', JSON.stringify(c));
+    ok(c.on && c.title === TT('breed') && !c.sw, '[C] 끝맺음 카드 — [다른 진로도 해 본다] 없음(셋 다 해 봄)', JSON.stringify(c));
     await click('#shopEndGo'); await sleep(1200);
     const cv = await cards();
     const ft = await J(`(()=>({ fc: document.documentElement.classList.contains('finalcover'), talking: document.getElementById('stage').classList.contains('talking'), text: (document.getElementById('dlgText')||{}).textContent }))()`);
     await sleep(600); await shot('C_cover');
-    ok(cv.on && cv.title === '여기까지 — 이 집 이야기' && cv.sub === '동네 식물 가게 · 동네 식물 의사 · 무늬 육종가' && cv.art && !cv.again && cv.look === '계속 산다', '[C] 마지막 덮개 — 글 · 원화 · [계속 산다] · [처음부터 다시] 없음', JSON.stringify(cv));
+    ok(cv.on && cv.title === SWT.finalCover.title && cv.sub === SWT.finalCover.sub && cv.art && !cv.again && cv.look === SWT.finalCover.stay, '[C] 마지막 덮개 — 글 · 원화 · [계속 산다] · [처음부터 다시] 없음', JSON.stringify(cv));
+    { const ov = await overlapOf('#dlgSkip', ['#chapterLook']); ok(ov.hit.length === 0, '[C] 덮개 [계속 산다]를 «건너뛰기» 알약이 안 덮음(대사 중)', JSON.stringify(ov));
+      const ov2 = await overlapOf('#dlgBox', ['#chapterLook']); ok(ov2.hit.length === 0, '[C] 덮개 [계속 산다]를 대사 창이 안 덮음', JSON.stringify(ov2)); }
     const t = await talk();
     ok(ft.fc && t.lines.some(x => /가게도, 돌봄도, 육종도 다 해 봤네/.test(x)) && t.lines.some(x => /물 주는 날은 또 와/.test(x)), '[C] 덮개 위 몬이 두 줄', (ft.text || '') + ' / ' + t.lines.join(' / '));
     await click('#chapterLook'); await sleep(900);
     const d0 = await J(digest);
     ok(d0.cover != null, '[C] 덮개 본 날이 적힘(한 번)', JSON.stringify(d0));
     const h = await head(); await shot('C_head');
-    ok(h.chips.join(',') === '무늬 육종가,동네 식물 가게,동네 식물 의사' && h.sw, '[C] 할 일 머리 — 칭호 셋(지금 진로 먼저) + «진로 바꾸기»', h.text);
+    ok(h.chips.join(',') === [TT('breed'), TT('shop'), TT('care')].join(',') && h.sw, '[C] 할 일 머리 — 칭호 셋(지금 진로 먼저) + «진로 바꾸기»', h.text);
     await click('#questGoalTab [data-act="jobSwitch"]'); await sleep(900);
     const k = await cards(); await shot('C_cards');
-    ok(JSON.stringify(k.rows.map(r => [r.mark, r.go])) === JSON.stringify([['끝맺음 봄 · 동네 식물 가게', '돌아간다'], ['끝맺음 봄 · 동네 식물 의사', '돌아간다'], ['지금 하는 중 · 무늬 육종가', null]]), '[C] 카드 표 — 셋 다 끝맺음', JSON.stringify(k.rows));
+    ok(JSON.stringify(k.rows.map(r => [r.mark, r.go])) === JSON.stringify([ROW('shop', 'ended'), ROW('care', 'ended'), ROW('breed', 'current')]), '[C] 카드 표 — 셋 다 끝맺음', JSON.stringify(k.rows));
     await closeSheet();
     const jc0 = await J(`(()=>{ const J=window.__S().jobCare; return { saved: J.saved, seq: J.seq, opened: J.openedOn }; })()`);
     await click('[data-switchjob="care"]'); await sleep(1500);
