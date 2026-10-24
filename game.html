@@ -368,6 +368,12 @@
     background:rgba(255,180,84,.09);border:1px solid rgba(255,180,84,.24)}
   .popcard .pquote.warn{background:rgba(255,140,84,.11);border-color:rgba(255,140,84,.32);color:#ffb454}
   .popcard .pbtns{display:flex;gap:8px;margin-top:12px}
+  /* ★ 2026-10-24 총괄 D72 ㉠(core test_questui W 가르기 · 66ebbb14 «그 밖 공과·전기 · 오늘 지갑에서 나가는 돈» 두 줄 뒤) — 밥상 창 단추 줄은 창 아래에 붙는다.
+       360×844 에서 콩나물+무순 판이 22px 넘쳐 [이대로 다음 날] 아랫도리가 창 밖이었다. 글은 그대로 두고(굴러도 됨) 단추 줄만 늘 보인다.
+       bottom −15px · 아래 여백 15px = 창 안쪽 여백(.popcard padding)만큼 — 끝까지 굴리면 단추 줄이 제자리(글 밑)에 와서 마지막 글을 안 가린다.
+       위로 10px 은 창 바탕색으로 번지게(밑에 깔린 글이 단추 바로 위에서 잘려 보이지 않게) */
+  #mealPanel .popcard .pbtns{position:sticky;bottom:-15px;z-index:2;margin-bottom:-15px;padding:10px 0 15px;
+    background:linear-gradient(180deg,rgba(20,16,32,0),#141020 10px)}
   .popcard .pbtns button{flex:1;min-height:var(--tap);font-weight:700;font-size:14px;border-radius:12px}
   /* 확인 쪽이 더 넓다 — 그만두기는 물러나는 길이지 고르는 길이 아니다 */
   .popcard .pbtns button.go{flex:1.45}
@@ -1341,6 +1347,10 @@
   #hint.below{display:none;flex-direction:column-reverse;align-items:center}
   #hint.below.on{display:flex}
   #hint.below .hand{margin-top:0;margin-bottom:1px}
+  /* ★ 2026-10-24 총괄 D72 ㉠ — «아래 · 한 줄»: 손(👆)을 글 왼쪽에 붙여 키를 줄인다. 밥상 창 360·390·430 에서 세로로 쌓은 «아래»(75px)는 화면 아래를 넘었고,
+       그다음 «왼쪽»은 왼쪽 끝 단추라 자리가 없어 [이대로 다음 날] 글 위에 앉았다(사진 mealA_360) */
+  #hint.below.row{flex-direction:row-reverse;gap:2px}
+  #hint.below.row .hand{margin:0;font-size:26px}
   @keyframes handBobXL{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
   @keyframes handBobXR{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
   /* 가리키는 대상이 눈에 띄게 — 테두리가 한 번씩 숨쉰다 */
@@ -4591,7 +4601,7 @@ function placeHintAt(el, say) {
   dimAt(r.left + r.width / 2, r.top + r.height / 2, Math.max(r.width, r.height) / 2 + 16);
   const hand = h.querySelector('.hand');
   h.querySelector('.say').textContent = say;
-  h.classList.remove('side', 'toRight', 'below');
+  h.classList.remove('side', 'toRight', 'below', 'row');
   hand.style.left = '0px';        /* ★ 지난 번에 민 것을 되돌린다 — 안 되돌리면 쌓인다 */
   hand.textContent = '👇';
   h.style.left = (r.left + r.width / 2) + 'px';
@@ -4646,7 +4656,9 @@ function hintAvoidChip(h, hand, r) {
        그 아랫줄을 덮었다(probe_reach_uses corridor.png) — 경고를 가리고 [확인]만 짚으면 안 된다. 비키는 법은 칩과 같다 */
   const shown = el => { if (!el) return null; const rc = el.getBoundingClientRect(); const cs = getComputedStyle(el);
                         return rc.width && cs.visibility !== 'hidden' && cs.display !== 'none' ? rc : null; };
-  const obs = [shown($('questChip')), shown($('placeConfirmWarn'))].filter(Boolean);
+  /* ★ 2026-10-24 총괄 D72 — 밥상 창 아낌 알림 칸(#mealSay)도 비킨다: 첫날 «하루를 보냅니다» 말풍선이 «오늘 아낄 수 있는 만큼 다 아꼈습니다» 글을 덮었다(360·390 사진) →
+       말풍선은 [이대로 다음 날] 아래로(손가락이 위로 그 단추를 짚는다) */
+  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('mealSay'))].filter(Boolean);
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
@@ -4663,6 +4675,16 @@ function hintAvoidChip(h, hand, r) {
   hand.style.left = Math.max(-(hb.width / 2 - 8), Math.min(hb.width / 2 - 8, want - got)).toFixed(1) + 'px';
   hb = h.getBoundingClientRect();
   if (!hitAny(hb) && hb.bottom <= innerHeight - 8) return;
+  /* ①-b 아래 · 한 줄 — 손을 글 왼쪽에 붙여 키를 줄인다(총괄 D72 ㉠ · 밥상 창: 세로로 쌓으면 화면 아래를 넘고 «왼쪽»은 대상 단추를 덮었다).
+       손이 대상 한가운데 밑에 오게 말풍선을 오른쪽으로 민다(화면 안으로 물림 · 말풍선이 대상을 덮으면 안 쓴다) */
+  h.classList.add('row'); hand.style.left = '0px';
+  hb = h.getBoundingClientRect();
+  { const hw = hand.getBoundingClientRect().width || 28;
+    const c = Math.min(innerWidth - 8 - hb.width / 2, Math.max(hb.width / 2 + 8, want + hb.width / 2 - hw / 2));
+    h.style.left = c + 'px'; h.style.top = (r.bottom + 2) + 'px'; }
+  hb = h.getBoundingClientRect();
+  if (!hitAny(hb) && !hit(hb, r) && hb.bottom <= innerHeight - 8) return;
+  h.classList.remove('row');
   /* ② 왼쪽 — 대상 왼쪽에 세운다(손이 오른쪽에서 가리킨다) */
   h.classList.remove('below'); h.classList.add('side');
   hand.textContent = '👉'; hand.style.left = '0px';

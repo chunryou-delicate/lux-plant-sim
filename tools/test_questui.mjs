@@ -310,6 +310,16 @@ const mealRead = () => page.eval(`(()=>{
     say:t('mealSay'),
     inView: r.top>=0 && r.bottom<=innerHeight,
     scroll: c.scrollHeight > c.clientHeight+1,
+    scrollPx: Math.max(0, c.scrollHeight - c.clientHeight),
+    /* ★ 2026-10-24 총괄 D72 ㉠ — 단추 줄이 창 안에 다 보이나(굴리기 전) · 끝까지 굴리면 마지막 글(아낌 알림 칸)이 단추 줄 위에서 끝나나 */
+    ...(() => { const b=c.querySelector('.pbtns'); if (!b) return { btnsIn:false, lastClear:false };
+      const top0=c.scrollTop, cr=c.getBoundingClientRect(), b0=b.getBoundingClientRect();
+      const btnsIn = b0.top >= cr.top - 1 && b0.bottom <= cr.bottom + 1;
+      c.scrollTop = c.scrollHeight;
+      const last = b.previousElementSibling, lr = last && last.getBoundingClientRect(), b1 = b.getBoundingClientRect();
+      const lastClear = !lr || lr.bottom <= b1.top + 1;
+      c.scrollTop = top0;
+      return { btnsIn, lastClear }; })(),
     overflow: document.documentElement.scrollWidth > innerWidth });})()`);
 
 {
@@ -377,9 +387,12 @@ for (const w of [360, 390, 430]) {
   await putPantry([{ kind: 'beansprout', ko: '콩나물', g: 400 },
                    { kind: 'musun', ko: '무순', g: 300 }]);
   const M = JSON.parse(await mealRead());
-  ok(`W-${w} ★ 밥상 창이 화면 안이고 · 안 구르고 · 가로로 안 넘친다`,
-     M.inView && !M.scroll && !M.overflow,
-     `inView ${M.inView} · scroll ${M.scroll} · overflow ${M.overflow}`);
+  /* ★ 2026-10-24 자를 정함에 맞췄다 — 총괄 D72 ㉠(밥상 창: 글은 그대로 두고 단추 줄만 창 아래에 붙여 늘 보이게).
+       예전 «안 구른다»는 66ebbb14(10-08 «그 밖 공과·전기 · 오늘 지갑에서 나가는 돈» 두 줄)부터 360·390 에서 거짓이 됐다(22px · 2px 넘침 —
+       360 에선 [이대로 다음 날] 아랫도리가 창 밖). ⇒ 단추 줄이 늘 보이고 · 끝까지 굴리면 마지막 글이 단추에 안 가리고 · 가로로 안 넘치는지 잰다 · 구르는 만큼은 값으로 적는다 */
+  ok(`W-${w} ★ 밥상 창이 화면 안이고 · 단추 줄이 늘 보이고 · 끝까지 굴리면 마지막 글이 단추에 안 가리고 · 가로로 안 넘친다(총괄 D72 ㉠)`,
+     M.inView && M.btnsIn && M.lastClear && !M.overflow,
+     `inView ${M.inView} · 단추 줄 보임 ${M.btnsIn} · 마지막 글 안 가림 ${M.lastClear} · 구름 ${M.scrollPx}px · overflow ${M.overflow}`);
   const btns = await page.eval(`JSON.stringify([...document.querySelectorAll('#mealPanel button')]
     .map(b=>{const r=b.getBoundingClientRect();
       return Math.round(r.width)+'×'+Math.round(r.height);}))`);
