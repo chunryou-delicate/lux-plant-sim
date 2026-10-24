@@ -214,14 +214,24 @@ console.log('\n══ C. ★★ 할 일 창 — 팝업 틀 · 진행도 · 여�
 /* ══ A. 배선 — 실제로 열리고 · 끝나고 · 보상이 들어온다 ══════════════════ */
 console.log('\n══ A. ★★★ 배선이 살아 있다 ═════════════════════════════════');
 {
-  /* ⚠ 지름길 — 첫 플레이를 끝난 것으로 세운다. 33일을 실제로 굴리는 것은 이 검사의
+  /* ⚠ 지름길 — 앞 사슬을 끝난 것으로 세운다. 33일을 실제로 굴리는 것은 이 검사의
      대상이 아니고(그건 `test_quest` 가 스냅샷으로 잰다), 여기서 재려는 것은
-     **화면이 그 사실을 읽어 판정을 부르는가**다. 굴리는 길은 `_probe_quest_say` 가 맡는다. */
-  const maxBefore = await page.eval(`window.__S().stamina.max`);
-  await page.eval(`(()=>{ const S=window.__S(); S.firstPlay.completed = true; })()`, false);
+     **화면이 그 사실을 읽어 판정을 부르는가**다. 굴리는 길은 `_probe_quest_say` 가 맡는다.
+     ★ 2026-10-24 [core] 자를 명세에 맞췄다(총괄 10-24 · test_questui 45/57 가르기 — 바로 앞 판 6f072348 은 57/57).
+       plan-quest-reframe ㉱ⓓ(core bfaeefab 09-04 «사슬을 다시 짰다») — 「무순을 처음 만나는 자리」 = ① crop_mix 는 **시루 다섯 «뒤»**에 열리고,
+       ② 는 crop_mix 끝 뒤의 radish5 다. 예전 자는 08-17 표(«crop_mix = 첫 플레이 끝난 날 · 그다음 siru5_cycle5»)를 기대해
+       bfaeefab 부터 A-1 · A-4 · A-5 가, 그 뒤 A-6 이 빨갰다(게임은 명세대로 · 자가 낡음).
+       ⇒ «언제 무엇이 열리나»를 새 순서 그대로 잰다 — 시루 다섯 전엔 ①이 안 열린다(A-0) · 시루 다섯이 끝나면 열린다(A-1) · ①이 끝나면 ②가 열린다(A-6).
+         지름길은 옛 열쇠(첫 플레이 끝) 대신 새 열쇠(시루 다섯 끝 = stamina.questsTaken 에 siru5_cycle5) — 첫 플레이 끝도 예전처럼 같이 세운다. */
+  const v0 = JSON.parse(await page.eval(`JSON.stringify(window.__questView())`));
+  ok('A-0 ★★ 시루 다섯 전엔 ①(crop_mix)이 **안 열린다** — 무순은 시루 다섯 «뒤»(plan ㉱ⓓ) · 첫 줄은 처음부터 열려 있다',
+     !v0.open.includes('crop_mix') && v0.open.includes(QUESTS[0].id), JSON.stringify(v0.open));
+  await page.eval(`(()=>{ const S=window.__S(); S.firstPlay.completed = true;
+    const t=S.stamina.questsTaken; if (!t.includes('siru5_cycle5')) t.push('siru5_cycle5'); })()`, false);
   await redraw();
+  const maxBefore = await page.eval(`window.__S().stamina.max`);   /* 세운 뒤에 잰다 — ①의 보상만 보이게(시루 다섯 보상은 세울 때 안 들어간다) */
   const v1 = JSON.parse(await page.eval(`JSON.stringify(window.__questView())`));
-  ok('A-1 ★★ 첫 플레이가 끝나면 ①이 **열린다**', v1.open.includes('crop_mix'),
+  ok('A-1 ★★ 시루 다섯이 끝나면 ①(crop_mix)이 **열린다**', v1.open.includes('crop_mix'),
      JSON.stringify(v1.open));
   ok('A-2 ★★★ 그러면 **아래 한 줄이 퀘스트를 말한다**(확정문 §4 — 퀘스트가 이긴다)',
      (await txt('#quest')) === (v1.next && v1.next.todo), await txt('#quest'));
@@ -259,8 +269,8 @@ console.log('\n══ A. ★★★ 배선이 살아 있다 ═══════
   ok('A-5 ★★ **보상이 실제로 들어왔다** — 최대체력이 늘었다',
      maxAfter > maxBefore, `${maxBefore} → ${maxAfter}`);
   const v2 = JSON.parse(await page.eval(`JSON.stringify(window.__questView())`));
-  ok('A-6 ★★ ①을 끝내면 ②가 **열린다** (다음 줄로 이어진다)',
-     v2.open.includes('siru5_cycle5'), JSON.stringify(v2.open));
+  ok('A-6 ★★ ①을 끝내면 ②(radish5 · crop_mix 끝 뒤 — plan ㉱)가 **열린다** (다음 줄로 이어진다)',
+     v2.open.includes('radish5'), JSON.stringify(v2.open));
   /* ⚠ 2026-08-16 — **`=== 1` 을 걷었다.** 재려던 것은 「끝낸 줄에 도장이 찍히나」인데
      끝낸 줄이 **하나뿐일 때만** 참인 식이었다. 초반 사슬이 붙어 이 시점에 이미 둘 이상이
      끝나 있고(①시루 놓기가 놓는 순간에 끝난다), 그 수는 사슬이 자라면 또 바뀐다.
@@ -274,11 +284,16 @@ console.log('\n══ A. ★★★ 배선이 살아 있다 ═══════
 
 /* ══ D·E. 밥상 창의 표현 ═══════════════════════════════════════════════════ */
 console.log('\n══ D·E. ★★★ 밥상 창 — 몫이 보이나 · 거짓말을 안 하나 ═════════');
+/* ★ 2026-10-24 [core] 자를 명세에 맞췄다(총괄 10-24 · 바로 앞 판 d23a6b8a 는 E·D·W 초록) — 캠페인 D13(core b9817f04 10-08 «밥상 한 줄»):
+     밥상 창은 처음 · 달라진 날 · 모자란 날만 팝업이고, 어제와 같은 상을 기본 그대로 넘겼으면 배너 한 줄로 넘긴다(기억 = localStorage byeot.mealLast).
+     이 자는 A 에서 «콩나물 400g + 무순 300g» 상으로 하루를 넘기므로, ⓑ 의 같은 곳간이 «어제와 같은 상»이 되어 팝업이 안 뜨고
+     자가 지난 창(ⓐ) 글을 읽었다(E-1~4 · D-8/9 · W 빨강 — b9817f04 부터). ⇒ 곳간을 바꿀 때마다 밥상 기억을 비운다(D13 «기억이 없으면 늘 팝업» · 첫 만남과 같은 판) */
 const putPantry = async (lots) => {
   await page.eval(`(()=>{ const S=window.__S(), f=S.firstPlay.food;
     const L = ${JSON.stringify(lots)};
     f.pantryLots = L.map(l => ({ kind:l.kind, kindKo:l.ko, won:l.g*10, g:l.g, day:S.day }));
     f.pantryWon = L.reduce((a,l)=>a+l.g*10, 0);
+    localStorage.removeItem('byeot.mealLast');   /* D13 밥상 기억(game.html MEAL_LAST_KEY) */
     if (S.stamina) S.stamina.usedToday = 0; })()`, false);
   await page.eval(`(()=>{const b=document.getElementById('mealCancel'); if(b) b.click();})()`, false);
   await sleep(150);
