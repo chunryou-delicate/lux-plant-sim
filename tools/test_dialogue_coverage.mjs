@@ -1091,6 +1091,25 @@ check('잡담 — 마지막 귀띔 둘(뿌리 자리 · AL 갈래)은 때가 참
   assert.equal(c0.breedRootDarkHint, null); assert.equal(c0.breedAlKindsHint, null);
 });
 
+/* ★ 2026-10-30 [plan] 총괄 D90 ② — 등 글: «안 단 등» 독촉 · 원룸 등 잡담 둘은 «단 등»으로 가른다(첫 등은 공짜로 가방에 온다) */
+check('대사 — 등: 안 단 등 독촉 · 원룸 등 잡담은 «단 등»으로 갈린다 · «샀다/안 샀다» 없음(D90 ②)', () => {
+  for (const id of ['lampSkipped', 'chatOneroomLamp', 'chatOneroomNoLamp'])
+    for (const l of SCRIPTS[id]) assert.ok(!/샀|사 ?온|안 사/.test(l.text), `'${id}' 에 «사다» 낱말(첫 등은 공짜): ${l.text}`);
+  assert.ok(!SCRIPTS.lampSkipped.some(l => /그것도 답/.test(l.text)), '«안 다는 것도 답» — 등이 곧 길과 어긋납니다');
+  assert.ok(SCRIPTS.lampSkipped.some(l => /가방/.test(l.text)) && SCRIPTS.lampSkipped.some(l => /창 위/.test(l.text)), '안 단 등 독촉에 «가방» · «창 위»가 없습니다');
+  const row = id => CHATTER.find(r => r.id === id).when;
+  const c = (owned, placed) => ({ movedOut: true, movedHome: false, lampOwned: owned, lampPlaced: placed });
+  assert.equal(row('chatOneroomLamp')(c(1, 0)), false, '가방에만 있는데 «달려 있다»가 섭니다');
+  assert.equal(row('chatOneroomLamp')(c(1, 1)), true, '단 등이 있는데 안 섭니다');
+  assert.equal(row('chatOneroomNoLamp')(c(1, 0)), true, '가방에 있고 안 달았는데 안 섭니다');
+  assert.equal(row('chatOneroomNoLamp')(c(1, 1)), false, '달았는데 «걸이가 비어 있다»가 섭니다');
+  assert.equal(row('chatOneroomNoLamp')(c(0, 0)), false, '등이 없는데 «가방에 있어»가 섭니다');
+  const ctx = lamp => chatterContextOf({ day: 200 }, { tutorial: { lamp, movedOut: true } });
+  assert.equal(ctx({ owned: 1, placed: 0 }).lampPlaced, 0);
+  assert.equal(ctx({ owned: 2, placed: 1 }).lampPlaced, 1);
+  assert.equal(ctx({ owned: 1 }).lampPlaced, 1, 'placed 가 없는 옛 세이브는 owned 로');
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {

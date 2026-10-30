@@ -519,12 +519,18 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach', text: '방이 아니라 **그 자리**가 밝아진 거야. 등 밑에 있는 것만.' },
     { who: 'moni',   text: '어두운 구석에 두고 켜면 아무 일도 안 일어나. 그건 전에 봤지?' }
   ],
-  /* 해금하고 이레가 지나도록 안 샀을 때. ★"왜 안 사냐"가 아니다 — 안 사는 것도 답이다. */
+  /* ★★ 2026-10-30 [plan] 총괄 D90 ②ⓑ — **«안 단 등»** 독촉으로 다시 썼다(사건 id 는 그대로 lamp_skipped).
+     있던 말: 「등은 아직 안 샀네.」/「이사 자금에 보태려고.」/「그것도 답이야. 창턱이 버텨 주는 동안은.」
+     ⇒ 둘 다 낡았다 — 첫 등은 가방에 공짜로 오고(살 일이 없다), «안 사도 된다»는 «등이 곧 길»(박사님 08-16)과 어긋난다.
+     참인 조건(core 가 tutorial.js §lamp_skipped 를 이렇게 바꾼다): 가을 이레째 · 가진 등 ≥ 1 · **단 등 0**.
+       「가방에 있네」 = 가졌는데 안 달았다 · 「창 위가 비었어」 = 첫 등 자리(벽부형 · 창 위 벽 · light_adapter.rigsOn 앞에서부터)가 비었다 ·
+       「창턱이 밝아져」 = 상점 줄 «창 위 벽에 붙습니다 · 창턱이 밝아집니다»(game.html §drawShop)와 같은 말. 수는 안 쓴다. */
   lampSkipped: [
-    { who: 'moni',   face: 'worry', text: '등은 아직 안 샀네.' },
-    { who: 'jachwi', text: '이사 자금에 보태려고.' },
-    { who: 'moni',   face: 'calm', text: '그것도 답이야. 창턱이 버텨 주는 동안은.' }
-    /* ⛔ 2026-10-07 D14 — **게임 안에서는 안 뜬다. 지우지 않고 둔다.**
+    { who: 'moni',   face: 'worry', text: '등은 아직 가방에 있네.' },
+    { who: 'jachwi', text: '어디 달지 몰라서.' },
+    { who: 'moni',   face: 'teach', text: '창 위가 비었어. 거기 달면 창턱이 밝아져.' }
+    /* ⚠ 2026-10-30 — 아래 D14 메모는 «owned === 0» 조건 때 것이다. 조건이 «단 등 0»으로 바뀌면 게임에서 뜬다.
+       ⛔ 2026-10-07 D14 — **게임 안에서는 안 뜬다. 지우지 않고 둔다.**
        까닭: 이 줄은 `tutorial.js:731` 「해금됐는데 ts.lamp.owned === 0」일 때만 나는데,
        게임 화면은 첫 등을 가방에 공짜로 넣는다(game.html:12393 `L.owned = 1`). 그래서 «등이 0개인 판»이 화면에서는 안 온다.
        ★ 쓰는 곳은 «순수 코어 판»(등 없는 A·C 경로 걷기)과 test_dialogue_coverage 다 — 지우면 그 자가 깨진다.
@@ -2556,9 +2562,13 @@ export const SCRIPTS = {
        (날씨 기댓값 ×0.643 · oneroom.js §D1). 창턱 avg7 은 **4.30** — 갈라짐 6.0 을 등 없이 못 넘는다(맑은 날만 6.69).
        [growth] real 잰 값: 등0 자라는 날 96% mid · 등1 bright 59%. ⇒ 08-15 에 걷은 «창만으로는 안 되는 게 하나 남았어»가 **다시 참**이 됐다.
      ⇒ 대사: «창만으로도 자란다 · 갈라짐과 좋은 무늬는 등 밑이라야 자주». 「안 켜도 돼」는 «자라기만 할 거면»으로 좁혔다. */
+  /* ★ 2026-10-30 [plan] 총괄 D90 ②ⓓ — 첫 줄 「저 방에서 산 등이 여기도 달려 있다.」가 거짓이 되는 판이 있었다:
+       조건이 «가진 등 ≥ 1»이라 공짜 등을 가방에만 둔 사람에게도 떴다(안 샀고 안 달렸다).
+     ⇒ 조건을 «단 등 ≥ 1»(lampPlaced)로 · 말은 «산» 없이 지금 보이는 것만. 둘째 줄의 「창턱 위에 붙어」는 첫 줄과 겹쳐 뺐다.
+     참인 조건: 원룸 · 단 등 ≥ 1(원룸 첫 등 자리 = 창턱 위 걸이 oneroom-growlight-bar). */
   chatOneroomLamp: [
-    { who: 'jachwi', text: '저 방에서 산 등이 여기도 달려 있다.' },
-    { who: 'moni',   face: 'teach', text: '창턱 위에 붙어. 여긴 창만으로도 자라.' },
+    { who: 'jachwi', text: '창턱 위 걸이에 등이 달려 있다.' },
+    { who: 'moni',   face: 'teach', text: '응. 여긴 창만으로도 자라.' },
     { who: 'jachwi', face: 'surprise', text: '그럼 안 켜도 돼?' },
     { who: 'moni',   text: '자라기만 할 거면. 근데 창만으로는 안 되는 게 남았어.' },
     { who: 'moni',   face: 'teach', text: '잎에 구멍이 나는 거, 그리고 좋은 무늬. 둘 다 등 밑이라야 자주 나.' }
@@ -2567,13 +2577,17 @@ export const SCRIPTS = {
      ★ 2026-08-15 밤(story4) — 마지막 줄이 «자라는 데까지는 그래. 그 위는 창이 못 하고.»
        였는데 **거짓이다**(위 §chatOneroomLamp). 이 방 창턱은 창만으로 그 위까지 간다.
        ⇒ 지금 참인 것으로 바꿨다: 원룸 창턱 6.69 > 반지하 창턱 4.80. */
+  /* ★ 2026-10-30 [plan] 총괄 D90 ②ⓓ — 「저 방에서 안 샀으니까」가 거짓이었다(첫 등은 공짜로 온다 · 살 일이 없다).
+     ⇒ 조건을 «가진 등 ≥ 1 · 단 등 0»(가방에 있다)으로 · 끝 줄은 「됐어」 대신 등이 사는 값(좋은 무늬)을 말한다 —
+       등 0 원룸은 돈이 바닥난다(하네스 10/10 · D90 ②ⓒ). 「자라긴 해」 = growth real 등0 자라는 날 96% ·
+       「좋은 무늬는 등 밑이라야 자주」 = 위 chatOneroomLamp 끝 줄과 같은 말(등1 bright 59%). */
   chatOneroomNoLamp: [
     { who: 'jachwi', text: '창턱 위에 등 걸이가 비어 있다.' },
-    { who: 'moni',   face: 'calm', text: '저 방에서 안 샀으니까. 여기 걸이는 그대로 있어.' },
+    { who: 'moni',   face: 'calm', text: '등은 가방에 있어. 걸이는 그대로야.' },
     { who: 'jachwi', text: '창이 밝으면 됐지.' },
     /* ★ 2026-10-08 [plan] D1 — 「저 방 창턱보다 밝아」는 novice 비교(6.69 > 4.80)였다. real 원룸 창턱 avg7 4.30 은 «고르게»는 더 밝지 않다.
        등 없이도 자라는 것(growth 96%)만 말한다. 나무라지 않는 결은 그대로. */
-    { who: 'moni',   face: 'proud', text: '됐어. 이 창턱은 등 없이도 자라.' }
+    { who: 'moni',   face: 'teach', text: '자라긴 해. 근데 좋은 무늬는 등 밑이라야 자주 나.' }
   ],
   /* ★ ③ 의 규칙 전환을 살림 속에서 한 번 더 짚는다 — 확정 무늬는 이사에서 끝났다
      (`tutorial.stepVarieGrant` 가 `!ts.movedOut` 을 본다). 새 규칙을 가르치는 것이 아니라
@@ -3477,8 +3491,9 @@ export const CHATTER = [
   /* ★★ **조건을 코드가 읽는다** — 화분이 실제로 놓인 자리의 오늘 빛이 갈라짐 문턱을
      넘을 때만. 숫자를 대사에 안 박았으므로 방이 바뀌어도 안 낡는다(안 뜰 뿐이다). */
   { id: 'chatOneroomFenestrate', when: c => c.movedOut && !c.movedHome && c.fenestrating },
-  { id: 'chatOneroomLamp',    when: c => c.movedOut && !c.movedHome && c.lampOwned >= 1 },
-  { id: 'chatOneroomNoLamp',  when: c => c.movedOut && !c.movedHome && !c.lampOwned },
+  /* ★ 2026-10-30 D90 ②ⓓ — «가진 등»이 아니라 «단 등»으로 가른다(첫 등은 공짜로 가방에 온다) */
+  { id: 'chatOneroomLamp',    when: c => c.movedOut && !c.movedHome && c.lampPlaced >= 1 },
+  { id: 'chatOneroomNoLamp',  when: c => c.movedOut && !c.movedHome && c.lampOwned >= 1 && !(c.lampPlaced >= 1) },
   { id: 'chatOneroomVarie',   when: c => c.movedOut && !c.movedHome },
   { id: 'chatOneroomWinter',  when: c => c.movedOut && !c.movedHome && c.season === 'winter' },
   /* ★ 한참 뒤. 뒤쪽이 아니라 여기 둔다 — 조건이 이미 60일로 늦춰져 있어서
@@ -3805,6 +3820,8 @@ export function chatterContext(turn = {}, S = null) {
          (`plant_grow §canFenestrate` 가 7일평균으로 보는 것과 같은 이유). */
     fenestrating: !!(turn.slot && turn.slot.fenestrating),
     lampOwned: ts ? ts.lamp.owned : 0,
+    /* ★ 2026-10-30 D90 — 방에 «단» 등. placed 가 없는 옛 세이브는 예전대로 owned(tutorial.js §lamp 와 같은 규약) */
+    lampPlaced: ts ? (Number.isFinite(ts.lamp.placed) ? ts.lamp.placed : (ts.lamp.owned || 0)) : 0,
     movedOut: !!(ts && ts.movedOut),
     /* ★ 2026-10-08 [plan] D20 — «상태를 보고 말한다»의 두 칸. 읽기만 한다.
        hasMonstera  몬스테라가 왔나(fp.monstera.arrived) — 화분·잎 얘기의 조건
