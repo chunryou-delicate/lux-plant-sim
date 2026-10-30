@@ -279,7 +279,8 @@ await sleep(400);
   ok('★ 카드가 화면 안 한가운데다',
      !!card && card.y >= 0 && card.y + card.h <= vp.h &&
      Math.abs((card.x + card.w / 2) - vp.w / 2) <= 2, JSON.stringify(card));
-  ok('★ 남는 몫을 말한다', /쌓입니다|아낍니다/.test(await txt('#mealSay')), await txt('#mealSay'));
+  /* ★ 2026-10-30 [plan] D90 ⑤ — 밥상 글이 한 목소리로 바뀌었다(«… 남은 Ng은 [상점]에서 파는 편이 낫습니다» · c8448676). 총괄 고정 판 걸음에서 잡힘 */
+  ok('★ 남는 몫을 말한다', /쌓입니다|아낍니다|파는 편이 낫습니다/.test(await txt('#mealSay')), await txt('#mealSay'));
 
   /* [그만두기] — 하루가 **안** 간다 */
   const b1 = await money();
