@@ -3291,6 +3291,8 @@ import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
          removeContainer,
          /* ★ 2026-10-08 — 자리 잡은 삽수에서 다시 자른다(§drawCuttings «가진 삽수» · 총괄 14:25 ①) */
          cuttableNodesOfCutting,
+         /* ★ 2026-10-30 총괄 D90 — 자르기 문 셈(growth 88af8c92) · 화면 · 하네스 · 검사가 같은 함수 */
+         varieMaturedLeavesOf,
          CONTAINERS, METHODS } from './src/game/propagation.js';
 import { CUTTING_LEAF_DAYS } from './src/game/propagation.js';   /* ★ 2026-10-09 D46 — 다음 잎까지 온 몫(nextLeaf01) */
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
@@ -7668,10 +7670,9 @@ function cutMotherLoss(p, n) {
 function varieMaturedLeavesNow() {
   let rows = null;
   try { rows = io.growth.leafState(); } catch { rows = null; }
-  if (!Array.isArray(rows)) return null;
-  let n = 0;
-  for (const r of rows) if (r && r.varie && r.matured && !r.dropped) n += 1;
-  return n;
+  /* ★ 2026-10-30 총괄 D90 — 세는 것은 propagation §varieMaturedLeavesOf 하나(growth 88af8c92 · 하네스 probe_branches 가 같은 함수로 문을 묻는다).
+       뜻은 그대로: 무늬 · 다 자람 · 안 떨어짐 · 못 읽으면 null */
+  return varieMaturedLeavesOf(rows);
 }
 /* ══ ★★★ **그루값에 넘길 잎 목록** — 「달린 잎」만, 그리고 «잎 순서대로» (2026-08-26)
    ------------------------------------------------------------
@@ -19203,7 +19204,7 @@ function drawPantrySale() {
   /* ★★ 2026-10-30 [plan] D90 ⑤ — «N원 손해입니다»를 걷었다. 그 «손해»는 물건 값(10원/g)과 판 값의 차였다 — 하루 밥상 몫을 넘어 쌓인 것까지
        «손해»라 해서, 밥상 판의 «파는 편이 낫습니다»와 반대로 말했다(한 목소리 «하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 것은 판다»).
        값 낱말은 «팔면 N원» 하나. 다 파는 날의 무게(08-27 [Plan] ④)는 남긴다 — 그날은 밥상에 올릴 채소가 정말 안 남는다.
-       ⚠ 기본 판 수를 «남는 몫(곳간 − 이레치 밥상 몫)»으로 하고 «이레치 밥상 몫은 남깁니다»를 앞에 붙이는 것은 core(이레 값 확정 뒤) */
+       ★ 기본 판 수 «남는 몫»과 «이레치 밥상 몫은 남깁니다»는 core 975f4c67(이레치 = 14끼 · 아래 §pantryKeepStatus · §pantrySellDefaultN) */
   /* ★ 2026-10-30 총괄 D90 ⑤ — 글은 plan(plan-to-core-d90 ⑤-1) · 이레치 = 14끼(first_play §PANTRY_KEEP_MEALS · growth 하네스 keepMeals 와 같은 자).
        남는 몫을 꼭 맞게 팔 때 «이레치 밥상 몫은 남깁니다» · 그보다 더 팔면 «밥상에 올릴 몫까지» · 덜 팔면 예전 글(둔 g 이 참).
        갈래(그 채소만)를 골랐을 때는 남는 몫을 갈래로 못 가르므로 예전 글 그대로 */
