@@ -100,6 +100,15 @@ export const PERSONAS = {
   lazy:    { ko: '게으름(이틀에 한 번)', lamps: 1, siruCap: 5,  cut: 'asap',  sellMother: 'never', move: 'asap',         lazy: 1, follow: true },
   nocut:   { ko: '안 자름',            lamps: 1, siruCap: 5,  cut: 'none',  sellMother: 'never', move: 'asap',         lazy: 0, follow: true },
   big:     { ko: '크게(시루 16 · 등 2)', lamps: 2, siruCap: 16, cut: 'asap',  sellMother: 'never', move: 'asap',         lazy: 0, follow: true },
+  /* ★ 2026-10-30 총괄 D90 #10 — 세 사람(자르기 문을 지킨 판 · propagation §takeCutting 이 varieMaturedLeaves 를 문에 싣는다 · growth 039185e8):
+       human    «사람 손» — 손가락대로 [확인](자동 자리 = 버그 1 뒤 판: 몬스테라 창턱 · 시루 어두운 데) · 시루 8 까지만(할 일이 16 을 말해도) ·
+                남는 채소는 판다(안내대로와 같은 손 · 닷새마다 · 이레치 PANTRY_KEEP 남김) · 등은 사지 않고 가을 첫날(Day 45) 공짜 등 하나를 바로 단다
+       doctor   «박사님식» — 사람 손 + house 줄(창 밑 쌓기 3칸 · banjiha-stack:0~2)을 방 표에 붙이고, 뿌리낸 삽수를 그 자리에서 그루로 키워(안 팔고) 거기서 다시 자른다
+       default2 «기본 2자리» — 사람 손 + house 줄(창턱 받침 하나 더 · banjiha-sill-2:0) · 거기 삽수 하나를 키운다
+       ⚠ house 줄은 등 0·1 만 믿는다(등 2·3 은 집게등이 책상을 따라가는 것을 안 셌다) · 박사님식의 옮긴 가구(책상·서랍장·협탁) 제 자리 줄은 기본 값 그대로(house 주석) */
+  human:   { ko: '사람 손(손가락대로 [확인] · 시루 8 · 남는 채소 팖 · Day 45 공짜 등을 담)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true },
+  doctor:  { ko: '박사님식(사람 손 + 창 밑 쌓기 3칸에 삽수를 키워 다시 자름)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, rows: 'doctor', keepBanjiha: true },
+  default2:{ ko: '기본 2자리(사람 손 + 창턱 받침 하나 더에 삽수 하나를 키움)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, rows: 'default2', keepBanjiha: true },
   /* ★ 2026-10-09 (총괄 11:12 ①) — 원룸에서 처음 뿌리낸 무늬 삽수 하나는 «안 팔고» 키워(혹 → 흙) 거기서 다시 자른다 · 등 1 · 오늘 가장 밝은 빈 창턱 */
   grower:  { ko: '늘리는 사람(삽수 하나 남겨 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, grow: true },
   /* ★ 2026-10-09 (총괄 D40 표) — «D41 안내대로»: 이사 때 무늬 삽수 하나를 들고 가고(D27 말림을 따름 · 삽수 들고 이사와 같은 손) ·
@@ -201,6 +210,16 @@ export async function play(name, seed, opt = {}) {
   const targets = opt.targets || [5_000_000, 10_000_000];
   const maxDays = opt.days || 660;
   const light = makeSwitchingLight('banjiha');
+  /* ★ 2026-10-30 D90 #10 — house 반지하 밝은 자리 줄(docs/handoff/house-d90-banjiha-rows.json · 다시 뽑기 node tools/probe_d90_banjiha_rows.mjs --write)을 이 판의 방 표에 붙인다(자식 프로세스마다 따로) */
+  const extraSlots = [];
+  if (P.rows) {
+    const H = JSON.parse(fs.readFileSync(path.join(ROOT, 'docs', 'handoff', 'house-d90-banjiha-rows.json'), 'utf8'));
+    for (const r of (((H.personas || {})[P.rows] || {}).rows || [])) {
+      if (!r || !r.row || r.row.slotId === SILL) continue;
+      addProfileSlot('banjiha', r.row); extraSlots.push(r.row.slotId);
+    }
+    light.build('banjiha'); light.clearCache();
+  }
   const io = { light, growth: await makeGrowth(seed === 'g' ? GAME_PLANT_SEED : seed, { prologue: !opt.noprologue }) };
   const S = newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES, tutorialRules: TUT_RULES });   /* D8 — 게임과 같은 살림 규칙 */
   S.sim.seed = seed === 'g' ? 0 : seed;
@@ -286,6 +305,8 @@ export async function play(name, seed, opt = {}) {
   let meals = [];
   let followSiru = 0;               /* 안내를 따른 시루 목표(한 번 오르면 안 내린다) */
   for (let d = 1; d <= maxDays; d++) {
+    /* ★ 2026-10-30 core(D90 버그 2 재현) — --one 의 dumpDays:[N,…] — 그날 아침(손 대기 전) 세이브를 «d<N>» 으로 뜬다(게임 localStorage 꼴 · 화면 걸음이 싣는다) */
+    if (opt.dump && Array.isArray(opt.dumpDays) && opt.dumpDays.includes(S.day)) dump('d' + S.day);
     const moved = !!ts.movedOut;
     const rest = P.lazy && (d % 2 === 1);
     if (!rest) { try { waterPot(S); } catch { } }
@@ -324,7 +345,7 @@ export async function play(name, seed, opt = {}) {
       /* ── 작물 ── 안내를 따르는 사람은 열린 퀘스트가 말하는 시루 수를 맞춘다(5·8·16) · 무순도 들인다(crop_mix 1 · radish5 5) */
       const stm = S.stamina || {}, openQ = id => (stm.questsOpenedOn || {})[id] != null, doneQ = id => (stm.questsTaken || []).includes(id);
       if (P.follow) { for (const [id, n] of [['siru5_cycle5', 5], ['siru8', 8], ['siru16', 16]]) if (openQ(id) || doneQ(id)) followSiru = Math.max(followSiru, n); }
-      const b = S.firstPlay.beansprout, want = Math.max(P.siruCap, followSiru);
+      const b = S.firstPlay.beansprout, want = Math.min(Math.max(P.siruCap, followSiru), Number.isFinite(P.siruMax) ? P.siruMax : Infinity);   /* ★ 10-30 사람 손 — 시루 8 까지만 */
       /* ★ 2026-10-08 (총괄 13:55) — 안내를 따르는 사람의 손버릇은 night_play guided 와 같게: 시루는 «시키는 수 > 놓인 수 · 재고 0 · 오는 중 0»일 때 하루 하나 ·
            씨앗은 놓인 시루 수만큼. 열리자마자 다 사들이면 사람보다 가난한 판이 된다(첫 판 d60 364,830 ↔ 봇 d45 741,666) */
       if (P.follow) {
@@ -367,9 +388,45 @@ export async function play(name, seed, opt = {}) {
         for (const id of P.buyFurn) if (!out.boughtFurn[id]) { try { ord(id, 1); out.boughtFurn[id] = S.day; } catch { } }
       }
       /* ── 등 ── */
+      /* ★ 10-30 사람 손 — 가을 첫날 화면이 가방에 넣어 주는 공짜 등(game.html §lamp_unlocked: owned 1)을 그날 단다(placed 1) · 더 사지는 않는다 */
+      if (P.lamps === 'free' && ts.lamp.unlocked && !(ts.lamp.owned || 0) && !(ts.lamp.placed || 0)) {
+        ts.lamp.owned = 1; ts.lamp.placed = 1; S.lamps.count = Math.min(1, light.growLampCount()); light.clearCache(); out.freeLampDay = S.day;
+      }
       if (P.lamps >= 1 && ts.lamp.unlocked && (ts.lamp.owned || 0) < P.lamps && ts.cashWon >= (ts.rules.lampPriceWon || 0)) {
         try { led('buy', () => buyLamp(ts)); S.lamps.count = ts.lamp.owned; if (ts.lamp) ts.lamp.placed = ts.lamp.owned; light.clearCache(); } catch { }
       }
+    }
+    /* ── ★ 10-30 D90 #10 반지하 그루 키우기(박사님식 · 기본 2자리) — 밝은 덧자리(house 줄)마다 뿌리낸 삽수 하나를 앉혀 흙에 옮기고(안 판다) · 잎 둘이면 거기서 다시 자른다 ── */
+    if (!rest && P.keepBanjiha && !ts.movedOut && extraSlots.length) {
+      const bk = out.bkeep = out.bkeep || { seat: {}, seated: 0, potted: 0, recut: 0, recutWhy: {} };
+      const live = cuttingsOf(S).filter(c => c && c.status !== 'dead');
+      const keeperIds = new Set(Object.values(bk.seat).filter(id => live.some(c => c.id === id)));
+      for (const sid of extraSlots) {
+        if (bk.seat[sid] && keeperIds.has(bk.seat[sid])) continue;
+        const c = live.find(x => !keeperIds.has(x.id) && !listingFor(S, x) && x.status !== 'rooting' && Number.isFinite(x.rootedOnDay) && x.varieFromCut)
+               || live.find(x => !keeperIds.has(x.id) && !listingFor(S, x) && x.status !== 'rooting' && Number.isFinite(x.rootedOnDay));
+        if (!c) break;
+        try { setCuttingAt(S, c, atOf(light, sid), { slots: light.room.slots, size: light.room.size }); bk.seat[sid] = c.id; keeperIds.add(c.id); bk.seated++; if (bk.firstSeat == null) bk.firstSeat = S.day; } catch (e) { bk.seatErr = String(e && e.message).slice(0, 80); }
+      }
+      for (const id of keeperIds) {
+        const c = live.find(x => x.id === id); if (!c) continue;
+        if (c.status === 'node') {
+          if (stockOf(S, 'pot') < 1 && incomingOf(S, 'pot') < 1) { try { ord('pot', 1); } catch { } }
+          if (stockOf(S, 'pot') >= 1) { try { repotCutting(S, c.id); bk.potted++; } catch { } }
+        }
+        if (c.status === 'established' && P.cut !== 'none') {
+          let lv = 0; try { lv = cuttingStatsNow(c).leaves; } catch { }
+          if (lv >= 2) {
+            if (stockOf(S, 'jar') < 1 && incomingOf(S, 'jar') < 1) { try { ord('jar', 1); } catch { } }
+            if (stockOf(S, 'jar') >= 1) {
+              const cn = cuttableNodesOfCutting(c), pick = cn.find(n => n.variegatedLeaves > 0) || cn[0];
+              if (pick) { try { takeCutting(S, { motherCuttingId: c.id, nodes: cn, nodeId: pick.nodeId, container: 'jar', at: atOf(light, SILL), slots: light.room.slots }); bk.recut++; out.cuts.fromCutting++; dayCuts++; if (bk.firstRecut == null) bk.firstRecut = S.day; }
+                          catch (e) { const k = reasonKey(e && e.message); bk.recutWhy[k] = (bk.recutWhy[k] || 0) + 1; } }
+            }
+          }
+        }
+      }
+      out._bkeepIds = keeperIds;
     }
     /* ── 자르기(막은 말은 쉬는 날에도 센다 — 규칙이 막는지가 물음이다) ── */
     if (pot0(S)) {
@@ -589,6 +646,7 @@ export async function play(name, seed, opt = {}) {
         if (out.breed && c.varieFromCut && (c.grewLeaves || 0) < 3) continue;   /* C — 무늬 삽수는 새 잎 셋(표본) 낸 뒤 판다 */
         if (!SELLABLE_CUTTING_STATUS.includes(c.status) || listingFor(S, c)) continue;
         if (growNow && c.id === out.keeperId) continue;
+        if (out._bkeepIds && !ts.movedOut && out._bkeepIds.has(c.id)) continue;   /* ★ 10-30 반지하에서 키우는 그루(박사님식 · 기본 2자리)는 안 판다 */
         const varie = (c.variegatedLeaves || 0) > 0 || !!c.varieFromCut;
         if (varie && keepVarie) continue;
         /* ★ 2026-10-10 [plan] a0e86638 — 안내대로(follow)는 반지하 무늬 삽수를 퀘스트대로 판다: sell_varie(«무늬 삽수가 둘이면 하나를 팔아 보세요»)와
