@@ -109,6 +109,10 @@ export const PERSONAS = {
   human:   { ko: '사람 손(손가락대로 [확인] · 시루 8 · 남는 채소 팖 · Day 45 공짜 등을 담)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, keepMeals: 14 },
   doctor:  { ko: '박사님식(사람 손 + 창 밑 쌓기 3칸에 삽수를 키워 다시 자름)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, keepMeals: 14, rows: 'doctor', keepBanjiha: true },
   default2:{ ko: '기본 2자리(사람 손 + 창턱 받침 하나 더에 삽수 하나를 키움)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, keepMeals: 14, rows: 'default2', keepBanjiha: true },
+  /* ★ 2026-10-30 총괄 D91(growth) — siru16 되살림(plan ab821458 · siru8 → sell_surplus → siru16) 뒤의 «사람 손»: 할 일 사슬대로 시루를 늘린다(8 에서 안 멈춤).
+       human · default2 는 D90 #10 그대로(시루 8 에서 멈춤) 견줌으로 남긴다 */
+  humanQ:  { ko: '사람 손 · 할 일 사슬대로(시루 8 → 남는 건 판다 → 16 · 남는 채소 팖 · Day 45 공짜 등을 담)', lamps: 'free', siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, keepMeals: 14 },
+  default2Q:{ ko: '사람 손 · 할 일 사슬대로 + 창턱 받침 하나 더(sill-2)에 삽수 하나를 키움', lamps: 'free', siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, keepMeals: 14, rows: 'default2', keepBanjiha: true },
   /* ★ 2026-10-09 (총괄 11:12 ①) — 원룸에서 처음 뿌리낸 무늬 삽수 하나는 «안 팔고» 키워(혹 → 흙) 거기서 다시 자른다 · 등 1 · 오늘 가장 밝은 빈 창턱 */
   grower:  { ko: '늘리는 사람(삽수 하나 남겨 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, grow: true },
   /* ★ 2026-10-09 (총괄 D40 표) — «D41 안내대로»: 이사 때 무늬 삽수 하나를 들고 가고(D27 말림을 따름 · 삽수 들고 이사와 같은 손) ·
@@ -270,7 +274,10 @@ export async function play(name, seed, opt = {}) {
     return M[i]; };
   const book = (cat, dw) => { if (dw > 0) dayIn[cat] = (dayIn[cat] || 0) + dw; if (out.shop && dw) { const sm = shopMonth(); sm[cat] = (sm[cat] || 0) + dw; } if (!LG || !dw) return; bucket()[cat] += dw; LG.today += dw; };
   const led = (cat, fn) => { const c0 = ts.cashWon; const r = fn(); book(cat, ts.cashWon - c0); return r; };
-  const ord = (id, n) => led('buy', () => orderItem(S, id, n));   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
+  /* ★ 2026-10-30 총괄 D91 ③(growth) — 반지하 «손일 수». 화면이 한 번씩 누르는 단위로 센다: 거두기·심기는 시루마다(game.html §harvestOne · resowCrop potIds:[id]) ·
+       물은 작물 종류마다 실제로 준 날만(§waterCrop kind) · 화분 물 · 채소 팔기 · 자르기 · 올리기 · 흥정 · 주문 · 앉히기 · 옮겨 심기. 이사 뒤는 안 센다 */
+  const hand = (k, n = 1) => { if (ts.movedOut || !(n > 0)) return; const H = out.hands = out.hands || {}; H[k] = (H[k] || 0) + n; out._dayHand = (out._dayHand || 0) + n; };
+  const ord = (id, n) => { const r = led('buy', () => orderItem(S, id, n)); hand('order'); return r; };   /* D8 — 원룸 월세 · 이사 뒤 최저 지갑 · 이사 뒤 첫 0원 날 */
   /* cashDaily[i] = i+1 일 끝의 지갑(총괄 봇 기록 days[].cash 와 대 보기) · rootBands = 뿌리내린 무늬 삽수의 빛 띠(반지하/원룸) */   /* leafAt[날] = [잎 · 무늬 잎 · 무늬이면서 다 자란 잎 · 유효 생장일] (30일마다) */   /* 이사 두 축이 처음 선 날(canMoveOut · 무늬 잎을 낸 적 · 이사 자금) */
   const qOpen = new Map();          // id → { since, run }
   const cutKeys = new Set();        // 모주에서 이미 잘려 나간 잎의 열쇠(leafKeys) — 진단용(§ghostCuts)
@@ -313,7 +320,8 @@ export async function play(name, seed, opt = {}) {
     if (opt.dump && Array.isArray(opt.dumpDays) && opt.dumpDays.includes(S.day)) dump('d' + S.day);
     const moved = !!ts.movedOut;
     const rest = P.lazy && (d % 2 === 1);
-    if (!rest) { try { waterPot(S); } catch { } }
+    out._dayHand = 0;
+    if (!rest) { try { const w = waterPot(S); if (w && w.watered) hand('potWater'); } catch { } }
     let turn = null;
     dayIn = {}; dayCuts = 0; dayGrades = [];
     /* ★ D71 --dump — 둘째 두 종 사건 «전날» 세이브(게임에서 [다음 날]을 눌러 그 대사를 제 손으로 보게 · probe_species2_walk) */
@@ -362,13 +370,14 @@ export async function play(name, seed, opt = {}) {
       const needSeed = (P.follow ? b.sirus : target * 2) - stockOf(S, 'bean_seed') - incomingOf(S, 'bean_seed');
       if (needSeed > 0) { try { ord('bean_seed', needSeed); } catch { } }
       let hv = null; if (beansproutReady(S.firstPlay)) { try { hv = led('veg', () => harvestCrop(S, io)); } catch { } }
+      if (hv && Number.isFinite(hv.harvestedPots)) hand('harvest', hv.harvestedPots);
       if (hv && hv.arrived) { setPotSlot(S, pot0(S), SILL, light.room.slots); moveMonstera(S.firstPlay, SILL, { slots: light.room.slots }); }
       /* ★ D59 — 산 집(투룸)엔 반지하 가구 자리 이름이 없다 — 가게를 연 뒤엔 콩나물·무순 다시 심기를 그만둔다(옮길 때 reseatCrops 가 앉힌 그대로) */
-      if (!out.shop && !out.care && !out.breed) { try { resowCrop(S, { sirus: target, at: moved ? 'banjiha-dresser:1' : DARK, slots: light.room.slots }); } catch { } }
+      if (!out.shop && !out.care && !out.breed) { try { const rs = resowCrop(S, { sirus: target, at: moved ? 'banjiha-dresser:1' : DARK, slots: light.room.slots }); if (rs) hand('sow', rs.resown || 0); } catch { } }
       /* ★ 2026-10-23 총괄 D79 «시루가 밥 · 식물이 돈» — 가게 사람도 시루를 잇는다(기본): 투룸 가장 어두운 낮은 선반에 다시 심는다.
            (예전엔 «투룸엔 반지하 자리 이름이 없다»로 끊어 굶음 3~7/10 이 하네스 손버릇이었다 · shopCrops:false 는 그 대조) */
       else if (P.shopCrops !== false) {   /* 가게 · 돌봄 판(투룸) */ try { resowCrop(S, { sirus: target, at: 'tworoom-shelf-low:0', slots: light.room.slots }); { const J0 = out.shop || out.care || out.breed; J0.cropsOk = (J0.cropsOk || 0) + 1; } } catch (e) { (out.shop || out.care || out.breed).cropErr = String(e && e.message).slice(0, 120); } }
-      try { waterCrop(S, { all: true }); } catch { }
+      try { const w = waterCrop(S, { all: true }); if (w && w.watered) hand('water'); } catch { }
       if (P.follow && (openQ('crop_mix') || openQ('radish5'))) {
         const mw = (openQ('radish5') || doneQ('radish5')) ? 5 : 1;
         const site = (S.firstPlay.crops || []).find(x => x && x.kind === 'musun');
@@ -377,10 +386,10 @@ export async function play(name, seed, opt = {}) {
         const needRad = Math.max(1, have) - stockOf(S, 'radish_seed') - incomingOf(S, 'radish_seed');   /* 씨앗은 놓인 판 수만큼 */
         if (needRad > 0) { try { ord('radish_seed', needRad); } catch { } }
         const mt = Math.min(mw, have + stockOf(S, 'sprout_tray'));
-        if (mt > 0 && !out.shop && !out.care && !out.breed) { try { resowCrop(S, { kind: 'musun', sirus: mt, at: MUSUN_AT, slots: light.room.slots }); } catch { } }   /* 투룸엔 반지하 책상 자리 이름이 없다 */
-        try { waterCrop(S, { kind: 'musun', all: true }); } catch { }
+        if (mt > 0 && !out.shop && !out.care && !out.breed) { try { const rs = resowCrop(S, { kind: 'musun', sirus: mt, at: MUSUN_AT, slots: light.room.slots }); if (rs) hand('sow', rs.resown || 0); } catch { } }   /* 투룸엔 반지하 책상 자리 이름이 없다 */
+        try { const w = waterCrop(S, { kind: 'musun', all: true }); if (w && w.watered) hand('water'); } catch { }
       }
-      if (!P.follow || S.day % 5 === 0) { try { led('veg', () => sellCropSurplus(S)); } catch { } }   /* 안내대로는 닷새마다 남는 채소를 판다(night_play 와 같게) */
+      if (!P.follow || S.day % 5 === 0) { try { const r = led('veg', () => sellCropSurplus(S)); if (r && r.won > 0) hand('sell'); } catch { } }   /* 안내대로는 닷새마다 남는 채소를 판다(night_play 와 같게) */
       /* ★ 보유 채소 팔기 — night_play §sellSurplus 손버릇: 닷새마다 · 이레치 밥값(10판)은 남기고 나머지를 판다(값은 안 건드린다) */
       if (P.follow && S.day % 5 === 0) {
         try { const q = pantrySaleQuote(S.firstPlay, 0);
@@ -388,7 +397,7 @@ export async function play(name, seed, opt = {}) {
               let keepLots = PANTRY_KEEP;
               if (Number.isFinite(P.keepMeals)) { const L = pantryLotsOf(S.firstPlay); let m = 0; keepLots = 0; for (let i = L.length - 1; i >= 0 && m < P.keepMeals; i--) { m += L[i].meals || 0; keepLots++; } }
               const n = (q && q.maxLots || 0) - keepLots;
-              if (n > 0) { const r = led('veg', () => sellPantryCrop(S, n)); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
+              if (n > 0) { hand('sell'); const r = led('veg', () => sellPantryCrop(S, n)); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
       }
       /* ── 가구(화분대) — 가구점이 열리면 한 번씩(D47 · 돈만) ── */
       if (P.buyFurn && ts.lamp && ts.lamp.unlocked) {
@@ -414,13 +423,13 @@ export async function play(name, seed, opt = {}) {
         const c = live.find(x => !keeperIds.has(x.id) && !listingFor(S, x) && x.status !== 'rooting' && Number.isFinite(x.rootedOnDay) && x.varieFromCut)
                || live.find(x => !keeperIds.has(x.id) && !listingFor(S, x) && x.status !== 'rooting' && Number.isFinite(x.rootedOnDay));
         if (!c) break;
-        try { setCuttingAt(S, c, atOf(light, sid), { slots: light.room.slots, size: light.room.size }); bk.seat[sid] = c.id; keeperIds.add(c.id); bk.seated++; if (bk.firstSeat == null) bk.firstSeat = S.day; } catch (e) { bk.seatErr = String(e && e.message).slice(0, 80); }
+        try { setCuttingAt(S, c, atOf(light, sid), { slots: light.room.slots, size: light.room.size }); bk.seat[sid] = c.id; keeperIds.add(c.id); bk.seated++; hand('place'); if (bk.firstSeat == null) bk.firstSeat = S.day; } catch (e) { bk.seatErr = String(e && e.message).slice(0, 80); }
       }
       for (const id of keeperIds) {
         const c = live.find(x => x.id === id); if (!c) continue;
         if (c.status === 'node') {
           if (stockOf(S, 'pot') < 1 && incomingOf(S, 'pot') < 1) { try { ord('pot', 1); } catch { } }
-          if (stockOf(S, 'pot') >= 1) { try { repotCutting(S, c.id); bk.potted++; } catch { } }
+          if (stockOf(S, 'pot') >= 1) { try { repotCutting(S, c.id); bk.potted++; hand('repot'); } catch { } }
         }
         if (c.status === 'established' && P.cut !== 'none') {
           let lv = 0; try { lv = cuttingStatsNow(c).leaves; } catch { }
@@ -667,7 +676,7 @@ export async function play(name, seed, opt = {}) {
         if (P.follow && !ts.movedOut && c.varieFromCut &&
             !cuttingsOf(S).some(x => x && x !== c && x.varieFromCut && x.status !== 'dead' && !listingFor(S, x))) { out.keptOne = (out.keptOne || 0) + 1; continue; }
         if (!ts.movedOut && c.varieFromCut && out.varieListAxis == null) { try { out.varieListAxis = { day: S.day, axis: !!canMoveOut(ts).varie, money: !!canMoveOut(ts).money }; } catch { } }
-        try { listCutting(S, c.id); } catch { }
+        try { listCutting(S, c.id); hand('list'); } catch { }
       }
       if (P.sellMother === 'early' && pot0(S) && !listingFor(S, pot0(S))) {
         try { const st = io.growth.leafStats(); if (st.leaves >= 3) listPot(S, { leaves: st.leaves, variegatedLeaves: st.variegatedLeaves }); } catch { }
@@ -676,7 +685,7 @@ export async function play(name, seed, opt = {}) {
         /* 팔린 삽수의 잎 등급(팔기 전에 읽는다 — 팔면 목록에서 빠진다) · 무늬 판매 기록(날 · 방 · 값 · 등급) */
         let soldGrades = null;
         try { const c = (S.cuttings || []).find(x => x && x.id === l.refId); if (c && l.kind !== 'pot') soldGrades = (cuttingStatsNow(c).leafGrades || []).filter(Boolean); } catch { }
-        try { const c0 = ts.cashWon; const r = dealListing(S, l.listingId), dw = ts.cashWon - c0;
+        try { const c0 = ts.cashWon; const r = dealListing(S, l.listingId), dw = ts.cashWon - c0; hand('deal');
               if (r.kind !== 'pot' && l.variegatedLeaves > 0) (out.varieSales = out.varieSales || []).push({ day: S.day, room: S.home.room, won: dw, grades: soldGrades });
               const cat = r.kind === 'pot' ? 'mother' : (l.variegatedLeaves > 0 ? 'varie' : 'plain');
               if (r.kind === 'pot') out.sold.pot++; else if (l.variegatedLeaves > 0) out.sold.varie++; else out.sold.plain++;
@@ -782,6 +791,7 @@ export async function play(name, seed, opt = {}) {
     if (ts.starved && out.starvedDay == null) { out.starvedDay = S.day; break; }
     if ([60, 120, 180, 240, 360].includes(S.day)) out.cashAt[S.day] = cash;
     out.cashDaily.push(cash);
+    if (!ts.movedOut) { hand('cut', dayCuts); (out.handDays = out.handDays || []).push(out._dayHand || 0); }   /* ★ D91 ③ 반지하 하루 손일 */
     if (opt.trace) (out._trace = out._trace || []).push({ day: S.day, room: S.home.room, cash,
       cashIn: Object.keys(dayIn).length ? dayIn : null, said: saidIds.length ? saidIds : null,
       events: [...new Set([...((turn && turn.events) || []).map(e => e && e.id), ...(out._qEv || [])].filter(Boolean))],

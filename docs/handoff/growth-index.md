@@ -311,6 +311,8 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 > ★ 10-30 D90 #10 — 자르기 문 순수 함수(propagation §cutDoorOpen · 88af8c92) · 하네스가 그것을 묻는다(--nodoor 로 옛 판) · 덧자리 한 번에(addProfileSlots).
 >   문 지킨 판 이사: 사람 손 4/11 · 337 · 박사님식 11/11 · 202 · 기본 2자리 11/11 · 191 — 사람 손을 막는 것은 시루 8(시루 16 이면 5/5 · 120).
 >   PANTRY_KEEP 10판 = 30끼 ≈ 15일치. 전문 `growth-d90-personas-20261030.md` · `growth-d90-personas.json`.
+> ★ 10-30 D91 — siru16 되살린 판(plan ab821458): 사람 손 · 할 일 사슬대로 11/11 · 135일(받침 하나 더 붙여도 135 — 반지하에서 안 씀) · 내 집 357 ·
+>   반지하 손일 하루 중앙 10 · 90% 14(66% 가 시루마다 심기·거두기). 같은 문서 §7 · `growth-d91-personas.json`.
 
 ### 2026-10-24 · C 판 «무늬 육종» growth 몫 — AL 싹틈 사건 출처 · 품종 칸 다섯 «품종까지 날 수» 표 (총괄 D83 · plan-breed-career-spec §8)
 

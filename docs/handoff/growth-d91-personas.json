@@ -1,0 +1,561 @@
+{
+ "args": {
+  "code": "HEAD ab821458(plan D91 siru16 되살림) + growth 하네스(이 커밋 · 손일 수 · humanQ · default2Q)",
+  "seeds": "g,1-10",
+  "days": 700,
+  "door": "켬",
+  "target": 5000000,
+  "hands": "반지하만 · 화면 누름 단위(거두기·심기는 시루마다 · 물은 작물마다 준 날만)"
+ },
+ "rows": {
+  "humanQ": {
+   "ko": "사람 손 · 할 일 사슬대로(시루 8 → 남는 건 판다 → 16 · 남는 채소 팖 · Day 45 공짜 등을 담)",
+   "n": 11,
+   "move": {
+    "done": 11,
+    "med": 135,
+    "p90": 135
+   },
+   "home": {
+    "done": 11,
+    "med": 357,
+    "p90": 445
+   },
+   "starved": 0,
+   "brokeAfterMove": 9,
+   "siru16Done": 11,
+   "cashAt": {
+    "60": 1224130,
+    "120": 1989050,
+    "180": 1717036,
+    "240": 2336196
+   },
+   "hands": {
+    "banjihaDaysMed": 134,
+    "perDayMed": 10,
+    "perDayP90": 14,
+    "perDayMax": 18,
+    "totalMed": 1312,
+    "perKindMed": {
+     "order": 214,
+     "water": 192,
+     "sow": 445,
+     "harvest": 425,
+     "potWater": 21,
+     "sell": 24,
+     "cut": 0,
+     "list": 0,
+     "deal": 0
+    }
+   },
+   "perSeed": [
+    {
+     "seed": 3,
+     "move": 133,
+     "home": 355,
+     "starved": null
+    },
+    {
+     "seed": 2,
+     "move": 135,
+     "home": 380,
+     "starved": null
+    },
+    {
+     "seed": "g",
+     "move": 135,
+     "home": 410,
+     "starved": null
+    },
+    {
+     "seed": 1,
+     "move": 135,
+     "home": 425,
+     "starved": null
+    },
+    {
+     "seed": 5,
+     "move": 135,
+     "home": 330,
+     "starved": null
+    },
+    {
+     "seed": 4,
+     "move": 135,
+     "home": 357,
+     "starved": null
+    },
+    {
+     "seed": 6,
+     "move": 135,
+     "home": 330,
+     "starved": null
+    },
+    {
+     "seed": 7,
+     "move": 135,
+     "home": 445,
+     "starved": null
+    },
+    {
+     "seed": 10,
+     "move": 135,
+     "home": 255,
+     "starved": null
+    },
+    {
+     "seed": 8,
+     "move": 135,
+     "home": 323,
+     "starved": null
+    },
+    {
+     "seed": 9,
+     "move": 135,
+     "home": 470,
+     "starved": null
+    }
+   ]
+  },
+  "default2Q": {
+   "ko": "사람 손 · 할 일 사슬대로 + 창턱 받침 하나 더(sill-2)에 삽수 하나를 키움",
+   "n": 11,
+   "move": {
+    "done": 11,
+    "med": 135,
+    "p90": 135
+   },
+   "home": {
+    "done": 11,
+    "med": 341,
+    "p90": 410
+   },
+   "starved": 0,
+   "brokeAfterMove": 10,
+   "siru16Done": 11,
+   "cashAt": {
+    "60": 1224130,
+    "120": 1989050,
+    "180": 1755436,
+    "240": 2652384
+   },
+   "hands": {
+    "banjihaDaysMed": 134,
+    "perDayMed": 10,
+    "perDayP90": 14,
+    "perDayMax": 18,
+    "totalMed": 1312,
+    "perKindMed": {
+     "order": 214,
+     "water": 192,
+     "sow": 445,
+     "harvest": 425,
+     "potWater": 21,
+     "sell": 24,
+     "cut": 0,
+     "place": 0,
+     "list": 0,
+     "repot": 0,
+     "deal": 0
+    }
+   },
+   "perSeed": [
+    {
+     "seed": "g",
+     "move": 135,
+     "home": 410,
+     "starved": null
+    },
+    {
+     "seed": 2,
+     "move": 135,
+     "home": 380,
+     "starved": null
+    },
+    {
+     "seed": 1,
+     "move": 135,
+     "home": 382,
+     "starved": null
+    },
+    {
+     "seed": 3,
+     "move": 136,
+     "home": 341,
+     "starved": null
+    },
+    {
+     "seed": 4,
+     "move": 135,
+     "home": 357,
+     "starved": null
+    },
+    {
+     "seed": 5,
+     "move": 135,
+     "home": 330,
+     "starved": null
+    },
+    {
+     "seed": 6,
+     "move": 135,
+     "home": 330,
+     "starved": null
+    },
+    {
+     "seed": 10,
+     "move": 135,
+     "home": 255,
+     "starved": null
+    },
+    {
+     "seed": 7,
+     "move": 135,
+     "home": 445,
+     "starved": null
+    },
+    {
+     "seed": 8,
+     "move": 135,
+     "home": 323,
+     "starved": null
+    },
+    {
+     "seed": 9,
+     "move": 135,
+     "home": 311,
+     "starved": null
+    }
+   ]
+  },
+  "guide": {
+   "ko": "안내대로",
+   "n": 11,
+   "move": {
+    "done": 11,
+    "med": 145,
+    "p90": 145
+   },
+   "home": {
+    "done": 11,
+    "med": 360,
+    "p90": 450
+   },
+   "starved": 0,
+   "brokeAfterMove": 7,
+   "siru16Done": 11,
+   "cashAt": {
+    "60": 1070630,
+    "120": 1836750,
+    "180": 1576880,
+    "240": 2193336
+   },
+   "hands": {
+    "banjihaDaysMed": 144,
+    "perDayMed": 10,
+    "perDayP90": 14,
+    "perDayMax": 20,
+    "totalMed": 1421,
+    "perKindMed": {
+     "order": 229,
+     "water": 208,
+     "sow": 484,
+     "harvest": 464,
+     "potWater": 22,
+     "sell": 25,
+     "cut": 3,
+     "list": 0,
+     "deal": 0
+    }
+   },
+   "perSeed": [
+    {
+     "seed": "g",
+     "move": 145,
+     "home": 345,
+     "starved": null
+    },
+    {
+     "seed": 2,
+     "move": 142,
+     "home": 410,
+     "starved": null
+    },
+    {
+     "seed": 1,
+     "move": 135,
+     "home": 435,
+     "starved": null
+    },
+    {
+     "seed": 3,
+     "move": 133,
+     "home": 360,
+     "starved": null
+    },
+    {
+     "seed": 4,
+     "move": 145,
+     "home": 343,
+     "starved": null
+    },
+    {
+     "seed": 5,
+     "move": 145,
+     "home": 477,
+     "starved": null
+    },
+    {
+     "seed": 6,
+     "move": 145,
+     "home": 340,
+     "starved": null
+    },
+    {
+     "seed": 7,
+     "move": 145,
+     "home": 450,
+     "starved": null
+    },
+    {
+     "seed": 10,
+     "move": 145,
+     "home": 265,
+     "starved": null
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "home": 320,
+     "starved": null
+    },
+    {
+     "seed": 8,
+     "move": 145,
+     "home": 450,
+     "starved": null
+    }
+   ]
+  },
+  "human": {
+   "ko": "사람 손(손가락대로 [확인] · 시루 8 · 남는 채소 팖 · Day 45 공짜 등을 담)",
+   "n": 11,
+   "move": {
+    "done": 4,
+    "med": 337,
+    "p90": 387
+   },
+   "home": {
+    "done": 3,
+    "med": 387,
+    "p90": 387
+   },
+   "starved": 0,
+   "brokeAfterMove": 1,
+   "siru16Done": 0,
+   "cashAt": {
+    "60": 1038630,
+    "120": 1167350,
+    "180": 1451470,
+    "240": 1420590
+   },
+   "hands": {
+    "banjihaDaysMed": 700,
+    "perDayMed": 8,
+    "perDayP90": 11,
+    "perDayMax": 15,
+    "totalMed": 5338,
+    "perKindMed": {
+     "order": 962,
+     "water": 944,
+     "sow": 1588,
+     "harvest": 1576,
+     "potWater": 115,
+     "sell": 137,
+     "cut": 8,
+     "list": 7,
+     "deal": 7
+    }
+   },
+   "perSeed": [
+    {
+     "seed": "g",
+     "move": 337,
+     "home": 337,
+     "starved": null
+    },
+    {
+     "seed": 1,
+     "move": 387,
+     "home": 387,
+     "starved": null
+    },
+    {
+     "seed": 2,
+     "move": null,
+     "home": null,
+     "starved": null
+    },
+    {
+     "seed": 4,
+     "move": null,
+     "home": null,
+     "starved": null
+    },
+    {
+     "seed": 5,
+     "move": null,
+     "home": null,
+     "starved": null
+    },
+    {
+     "seed": 3,
+     "move": null,
+     "home": null,
+     "starved": null
+    },
+    {
+     "seed": 7,
+     "move": null,
+     "home": null,
+     "starved": null
+    },
+    {
+     "seed": 6,
+     "move": null,
+     "home": null,
+     "starved": null
+    },
+    {
+     "seed": 8,
+     "move": 623,
+     "home": 623,
+     "starved": null
+    },
+    {
+     "seed": 9,
+     "move": null,
+     "home": null,
+     "starved": null
+    },
+    {
+     "seed": 10,
+     "move": 155,
+     "home": null,
+     "starved": null
+    }
+   ]
+  },
+  "default2": {
+   "ko": "기본 2자리(사람 손 + 창턱 받침 하나 더에 삽수 하나를 키움)",
+   "n": 11,
+   "move": {
+    "done": 11,
+    "med": 191,
+    "p90": 213
+   },
+   "home": {
+    "done": 10,
+    "med": 485,
+    "p90": 562
+   },
+   "starved": 0,
+   "brokeAfterMove": 8,
+   "siru16Done": 0,
+   "cashAt": {
+    "60": 1038630,
+    "120": 1167350,
+    "180": 1851470,
+    "240": 1299308
+   },
+   "hands": {
+    "banjihaDaysMed": 190,
+    "perDayMed": 7,
+    "perDayP90": 11,
+    "perDayMax": 15,
+    "totalMed": 1394,
+    "perKindMed": {
+     "order": 265,
+     "water": 246,
+     "sow": 412,
+     "harvest": 400,
+     "potWater": 30,
+     "sell": 35,
+     "cut": 5,
+     "place": 1,
+     "list": 4,
+     "deal": 3,
+     "repot": 1
+    }
+   },
+   "perSeed": [
+    {
+     "seed": "g",
+     "move": 204,
+     "home": 485,
+     "starved": null
+    },
+    {
+     "seed": 1,
+     "move": 177,
+     "home": 562,
+     "starved": null
+    },
+    {
+     "seed": 2,
+     "move": 185,
+     "home": 530,
+     "starved": null
+    },
+    {
+     "seed": 3,
+     "move": 192,
+     "home": 514,
+     "starved": null
+    },
+    {
+     "seed": 4,
+     "move": 223,
+     "home": 478,
+     "starved": null
+    },
+    {
+     "seed": 5,
+     "move": 213,
+     "home": 593,
+     "starved": null
+    },
+    {
+     "seed": 6,
+     "move": 191,
+     "home": 488,
+     "starved": null
+    },
+    {
+     "seed": 8,
+     "move": 169,
+     "home": 457,
+     "starved": null
+    },
+    {
+     "seed": 9,
+     "move": 178,
+     "home": 433,
+     "starved": null
+    },
+    {
+     "seed": 7,
+     "move": 196,
+     "home": null,
+     "starved": null
+    },
+    {
+     "seed": 10,
+     "move": 161,
+     "home": 388,
+     "starved": null
+    }
+   ]
+  }
+ }
+}
