@@ -41,7 +41,7 @@ import { fileURLToPath } from 'node:url';
 import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf, setGrowthTuningPatch, addProfileSlot, addProfileSlots } from './lib/byeot_harness.mjs';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop, placedItems } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
-import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote, pantryLotsOf } from '../src/game/first_play.js';
+import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote, pantryKeepStatus } from '../src/game/first_play.js';
 import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
 import { useStock, creditSpeciesSale, furnitureItemIdOf } from '../src/game/shop.js';
@@ -393,10 +393,8 @@ export async function play(name, seed, opt = {}) {
       /* ★ 보유 채소 팔기 — night_play §sellSurplus 손버릇: 닷새마다 · 이레치 밥값(10판)은 남기고 나머지를 판다(값은 안 건드린다) */
       if (P.follow && S.day % 5 === 0) {
         try { const q = pantrySaleQuote(S.firstPlay, 0);
-              /* ★ 10-30 keepMeals — 새 꾸러미부터 끼니를 세어 그 몫만 남기고 옛 것(앞쪽)부터 판다(pantrySaleQuote 는 앞에서부터 고른다) */
-              let keepLots = PANTRY_KEEP;
-              if (Number.isFinite(P.keepMeals)) { const L = pantryLotsOf(S.firstPlay); let m = 0; keepLots = 0; for (let i = L.length - 1; i >= 0 && m < P.keepMeals; i--) { m += L[i].meals || 0; keepLots++; } }
-              const n = (q && q.maxLots || 0) - keepLots;
+              /* ★ 10-30 keepMeals — first_play §pantryKeepStatus(core 975f4c67 · 새 꾸러미부터 끼니를 세어 그 몫만 남김 · sellLots = 앞의 남는 판 수)와 한 자리 */
+              const n = Number.isFinite(P.keepMeals) ? pantryKeepStatus(S.firstPlay, P.keepMeals).sellLots : (q && q.maxLots || 0) - PANTRY_KEEP;
               if (n > 0) { hand('sell'); const r = led('veg', () => sellPantryCrop(S, n)); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
       }
       /* ── 가구(화분대) — 가구점이 열리면 한 번씩(D47 · 돈만) ── */
