@@ -11764,7 +11764,8 @@ function siruBadgeRows() {
               : r.growing ? `🌱 ${r.ageDays}/${r.harvestDays}`
               : null;
     if (!txt) continue;
-    out.push({ id: r.id, kind: r.kind || 'beansprout', key: pl.key, pos: pl.pos, txt });
+    const st = r.ready ? 'ready' : r.harvested ? 'empty' : r.needsSow ? 'sow' : r.needsWater ? 'water' : 'grow';   /* ★ 10-31 묶음 글(§siruGroupText)이 센다 */
+    out.push({ id: r.id, kind: r.kind || 'beansprout', key: pl.key, pos: pl.pos, txt, st });
   }
   return out;
 }
@@ -11773,14 +11774,14 @@ function drawSiruBadges() {
   const box = $('siruBadges');
   if (!box) return;
   const want = SIRU_BADGE_ON ? siruBadgeRows() : [];
-  const sig = want.map(b => b.id + '|' + b.txt).join(',');
+  const sig = want.map(b => b.id + '|' + b.txt + '|' + b.st).join(',');
   if (box.dataset.sig !== sig) {
     box.dataset.sig = sig;
     box.innerHTML = '';
     for (const b of want) {
       const el = document.createElement('button');
       el.type = 'button'; el.className = 'sbadge';
-      el.dataset.id = b.id; el.dataset.key = b.key; el.dataset.kind = b.kind;
+      el.dataset.id = b.id; el.dataset.key = b.key; el.dataset.kind = b.kind; el.dataset.st = b.st;
       el.textContent = b.txt;
       el.setAttribute('aria-label', `시루 — ${b.txt}`);
       el.addEventListener('click', (e) => { e.stopPropagation(); openSiruRow(b.id); });
@@ -11806,23 +11807,76 @@ function placeSiruBadges() {
   const hole = (() => { if (!hintOn) return null; const d = $('hintDim'); const v = String((d && d.dataset.hole) || '').split(',').map(Number);
                         return v.length === 3 && v.every(Number.isFinite) ? { x: v[0], y: v[1], r: v[2] } : null; })();
   const cr = $('roomCanvas').getBoundingClientRect(), sr = $('stage').getBoundingClientRect();
-  const placed = [];
+  /* ① 보일 표지와 그 화면 자리 */
+  const items = [];
   for (const el of box.children) {
+    if (el.classList.contains('sgroup')) continue;            /* 묶음 표지는 아래 ③ 이 맡는다 */
     const p = pos.get(el.dataset.id);
     let sp = null; try { sp = p ? roomView.worldToScreen(p.x, p.y + SIRU_BADGE_RIM + SIRU_BADGE_UP, p.z) : null; } catch { sp = null; }
     if (!sp || marked.has(el.dataset.key) || (hintKey && hintKey === el.dataset.key)) { el.style.display = 'none'; continue; }
     /* ★ 2026-10-10 한 판 걸음 — 화면 «밖» 시루의 표지는 숨긴다. 가게 방 첫 화면(시루가 거실 쪽 · 화면 밖)에서 익은 시루 21개의 표지가
          왼쪽 가장자리로 밀려 «겹치면 위로 22px» 를 되풀이하며 세로 탑으로 넘쳤다(사진으로 잼). 아래 «콩나물 거두기(익은 것 N개)» 칩이 모아 알린다 */
     if (sp.x < -8 || sp.y < -8 || sp.x > cr.width + 8 || sp.y > cr.height + 8) { el.style.display = 'none'; continue; }
-    el.style.display = '';
-    let x = cr.left - sr.left + sp.x, y = cr.top - sr.top + sp.y;
-    for (const q of placed) if (Math.abs(q.x - x) < 44 && Math.abs(q.y - y) < 20) y = q.y - 22;   /* 겹치면 뒤엣것을 위로 22px */
-    placed.push({ x, y });
-    el.style.left = x + 'px'; el.style.top = y + 'px';
     /* 손가락 구멍이 그 시루 위면 그 표지만 숨긴다(시루 발밑 화면 점과 구멍 가운데 거리로) */
     if (hole && p) { let base = null; try { base = roomView.worldToScreen(p.x, p.y, p.z); } catch { }
-      if (base && Math.hypot(cr.left + base.x - hole.x, cr.top + base.y - hole.y) <= hole.r + 10) el.style.display = 'none'; }
+      if (base && Math.hypot(cr.left + base.x - hole.x, cr.top + base.y - hole.y) <= hole.r + 10) { el.style.display = 'none'; continue; } }
+    items.push({ el, x: cr.left - sr.left + sp.x, y: cr.top - sr.top + sp.y });
   }
+  /* ② 한 자리(가로 44px · 세로 20px 안 — 아래 «겹치면 위로» 와 같은 자)에 모인 것끼리 묶는다
+     ★ 2026-10-31 총괄(c0db6208 걸음 · probe_day_walk moved_boot · Day 149 이사 첫날) — 원룸 콩나물 자리가 한 칸이라 시루 열여섯의 «🌱 3/5» 가
+       창 앞 한 자리에서 22px 씩 올라가 세로 탑이 되고 위 알림 카드·할 일 칩·손가락 말풍선까지 덮었다. D91 로 시루 16 이 기본 길이라 모두가 본다.
+       ⇒ 셋 이상이면 하나로 묶는다(§siruGroupText · 누르면 [식물] 시루 줄). 둘까지는 예전처럼 위로 쌓는다(두 칸이 붙은 창턱에서 날 수를 잃지 않게) */
+  const clusters = [];
+  for (const it of items) {
+    const c = clusters.find(q => Math.abs(q.x - it.x) < 44 && Math.abs(q.y - it.y) < 20);
+    if (c) c.members.push(it); else clusters.push({ x: it.x, y: it.y, members: [it] });
+  }
+  /* ③ 세운다 — 묶음 표지는 쓰던 것을 다시 쓴다(프레임마다 새로 짓지 않는다) */
+  const groups = [...box.querySelectorAll('.sgroup')];
+  let gi = 0;
+  const placed = [];
+  const put = (el, x, y0) => {
+    let y = y0;
+    for (const q of placed) if (Math.abs(q.x - x) < 44 && Math.abs(q.y - y) < 20) y = q.y - 22;   /* 겹치면 뒤엣것을 위로 22px */
+    placed.push({ x, y });
+    el.style.display = '';
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+  };
+  for (const c of clusters) {
+    if (c.members.length < SIRU_GROUP_MIN) { for (const m of c.members) put(m.el, m.x, m.y); continue; }
+    for (const m of c.members) m.el.style.display = 'none';
+    let g = groups[gi++];
+    if (!g) {
+      g = document.createElement('button');
+      g.type = 'button'; g.className = 'sbadge sgroup';
+      g.addEventListener('click', (e) => { e.stopPropagation(); openSiruRow(g.dataset.first || ''); });
+      box.appendChild(g);
+    }
+    const t = siruGroupText(c.members.map(m => m.el));
+    if (g.textContent !== t.text) { g.textContent = t.text; g.title = t.title; g.setAttribute('aria-label', `시루 묶음 — ${t.title || t.text}`); }
+    g.dataset.first = c.members[0].el.dataset.id || '';
+    put(g, c.x, c.y);
+  }
+  for (; gi < groups.length; gi++) groups[gi].style.display = 'none';
+}
+/* ★ 2026-10-31 총괄 — 시루 표지 묶음(위 §placeSiruBadges ②). 셋 이상이 한 자리면 하나로.
+     글(plan 10-31): «시루 16 · 🥣3 💧2 🫘1 ⚪2» — 갈래 수는 낱말(«시루 N» · «재배판 N»), 상태는 낱개 표지와 같은 그림 글자 + 수.
+       차례는 급한 쪽부터 🥣(거두기) → 💧(물) → 🫘(심기) → ⚪(비었음) · 0 인 상태는 안 적음 · 섞이면 상태 수는 둘을 합친 수 ·
+       손 쓸 것이 하나도 없으면 «시루 16 · 🌱 자라는 중» · 길게 누르면(title) 낱말로 «거둘 것 3 · 물 줄 것 2 · 심을 것 1 · 빈 것 2».
+     ★ 수는 그 묶음(화면 한 자리에 모인 표지)만 센다 — 방 전체 수가 아니다(누르면 [식물] 시트가 전체를 보인다).
+     값은 낱개 표지가 쥔 상태 열쇠(data-st · §siruBadgeRows) 그대로 센다 */
+const SIRU_GROUP_MIN = 3;
+function siruGroupText(els) {
+  const n = { siru: 0, tray: 0, ready: 0, water: 0, sow: 0, empty: 0 };
+  for (const el of els) {
+    if ((el.dataset.kind || 'beansprout') === 'musun') n.tray++; else n.siru++;
+    if (el.dataset.st && el.dataset.st in n) n[el.dataset.st]++;
+  }
+  const kinds = [n.siru ? `시루 ${n.siru}` : '', n.tray ? `재배판 ${n.tray}` : ''].filter(Boolean);
+  const STATES = [['ready', '🥣', '거둘 것'], ['water', '💧', '물 줄 것'], ['sow', '🫘', '심을 것'], ['empty', '⚪', '빈 것']];
+  const marks = STATES.filter(([k]) => n[k] > 0).map(([k, g]) => `${g}${n[k]}`);
+  const words = STATES.filter(([k]) => n[k] > 0).map(([k, , w]) => `${w} ${n[k]}`);
+  return { text: [...kinds, marks.length ? marks.join(' ') : '🌱 자라는 중'].join(' · '), title: words.join(' · ') };
 }
 /* 그 시루의 줄을 연다 — [식물] 시트의 그 칸으로 */
 function openSiruRow(id) {
