@@ -858,6 +858,28 @@ export function cutEndsMother(S, nodes, nodeId, opt = {}) {
   return cutBudgetOf(S, nodes, opt).leftLeaves - node.leaves < 1;
 }
 
+/* ══ ★★ 자르기 문 — «무늬이면서 다 자란 잎»이 넉넉한가 (2026-10-30 · 총괄 D90 #10 · growth) ══════════
+   박사님 08-24 문(아래 §cutBlockedReason «아직 이릅니다»)을 **순수 함수 하나**로 뺐다.
+   ⚠ 왜 — 이 문은 화면(game.html §varieMaturedLeavesNow → 단추 회색)에만 서 있었다. `takeCutting` 은
+     문 물음에 `varieMaturedLeaves` 를 안 넣으므로(아래 mkey) 코어를 바로 부르는 하네스는 문 열리기 전에
+     잘랐다(growth 039185e8 · 이사 135일이 게임보다 5~10일 이름). 화면 · 하네스 · 검사가 **같은 함수**를 묻는다.
+   ⚠ takeCutting 의 뜻은 안 바꾼다 — 그쪽을 바꾸면 문을 모르는 옛 검사가 흔들린다. 부르는 쪽이 이것을 먼저 묻는다.
+   ★ 모주 자르기에만 건다 — 삽수에서 다시 자르기는 이 문을 안 탄다(§cutBlockedReason 주석 그대로).
+   ★ 모르면 안 막는다 — 셀 수 없으면(null) «열렸다»(이 저장소의 규약 · cuttableNodes 와 같은 결). */
+export const CUT_DOOR_VARIE_MATURED = 2;
+/* growth leafState() 의 줄에서 «무늬이면서 다 자란(갈라진) · 안 떨어진» 잎을 센다. 못 읽으면 null(0 으로 안 메꾼다) */
+export function varieMaturedLeavesOf(leafStateRows) {
+  if (!Array.isArray(leafStateRows)) return null;
+  let n = 0;
+  for (const r of leafStateRows) if (r && r.varie && r.matured && !r.dropped) n += 1;
+  return n;
+}
+/* 모주 자르기 문이 열렸나 — 받는 것은 위의 수(또는 leafState 줄 그대로) */
+export function cutDoorOpen(varieMaturedLeaves) {
+  const n = Array.isArray(varieMaturedLeaves) ? varieMaturedLeavesOf(varieMaturedLeaves) : varieMaturedLeaves;
+  return !Number.isInteger(n) || n >= CUT_DOOR_VARIE_MATURED;
+}
+
 /* 왜 못 자르나 — 사람이 읽을 수 있는 사유. 없으면 null(자를 수 있다).
    ★★ 2026-08-17 — `opt.container` 를 받는다. 「이 마디를 **이 용기로**」가 사유를 가르기
      때문이다: 잎 두 장짜리 마디는 흙에는 되고 병에는 안 된다(§WATER_LEAF_MAX).
@@ -902,8 +924,7 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
      ⚠ **안 넘기면 이 문은 «안 걸린다».** 모르면 안 막는다 — 이 저장소의 규약 그대로다
        (`cuttableNodes`·`leafStats` 가 "못 재면 null, 0 으로 안 메꾼다"고 적어 둔 그 결).
      ⚠ 삽수에서 다시 자르는 것은 이 문을 안 탄다 — 모주의 잎으로 삽수를 막을 근거가 없다. */
-  if (!opt.motherCuttingId && !opt.motherCutting &&
-      Number.isInteger(opt.varieMaturedLeaves) && opt.varieMaturedLeaves < 2)
+  if (!opt.motherCuttingId && !opt.motherCutting && !cutDoorOpen(opt.varieMaturedLeaves))   /* ★ 10-30 §cutDoorOpen — 같은 뜻 · 문은 한 곳 */
     /* ⚠ 값을 문장에 안 적는다 — 「둘」도 「하프문」도 읊지 않는다(§2.8). */
     /* ★ [Plan] 2026-08-27 — 「막는 말」이 아니라 「기다리는 말」로 쓴다.
          *"뜻은 같은데 «누가 주인인가»가 다릅니다. 회색은 «누르기 전»이니 «가르침» 쪽이라야 합니다."*
