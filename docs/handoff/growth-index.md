@@ -308,6 +308,9 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 >   화면만 단추를 회색으로 막음 game.html:7840). 문을 지킨 판: guide 이사 145 · nolamp 140(반지하 무늬 판매 0/10) · nolamp 내 집 458(9/10).
 >   «하나 남김»(probe_branches.mjs:597)은 문을 지키면 이사 날에 안 걸리고, 끄면 guide 내 집이 늦어진다(360 → 435 · 7/10).
 >   전문 `growth-sell-varie-delay-20261030.md` · 씨앗별 `growth-sell-varie-delay.json`.
+> ★ 10-30 D90 #10 — 자르기 문 순수 함수(propagation §cutDoorOpen · 88af8c92) · 하네스가 그것을 묻는다(--nodoor 로 옛 판) · 덧자리 한 번에(addProfileSlots).
+>   문 지킨 판 이사: 사람 손 4/11 · 337 · 박사님식 11/11 · 202 · 기본 2자리 11/11 · 191 — 사람 손을 막는 것은 시루 8(시루 16 이면 5/5 · 120).
+>   PANTRY_KEEP 10판 = 30끼 ≈ 15일치. 전문 `growth-d90-personas-20261030.md` · `growth-d90-personas.json`.
 
 ### 2026-10-24 · C 판 «무늬 육종» growth 몫 — AL 싹틈 사건 출처 · 품종 칸 다섯 «품종까지 날 수» 표 (총괄 D83 · plan-breed-career-spec §8)
 

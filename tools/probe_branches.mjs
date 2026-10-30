@@ -38,17 +38,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf, setGrowthTuningPatch, addProfileSlot } from './lib/byeot_harness.mjs';
+import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf, setGrowthTuningPatch, addProfileSlot, addProfileSlots } from './lib/byeot_harness.mjs';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop, placedItems } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
-import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote } from '../src/game/first_play.js';
+import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote, pantryLotsOf } from '../src/game/first_play.js';
 import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
 import { useStock, creditSpeciesSale, furnitureItemIdOf } from '../src/game/shop.js';
 import * as SPM from '../src/game/species.js';   /* ★ D45 — 새 두 종(guide45)이 쓰는 손 */
 import { canMoveOut, varieView, buyLamp } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow, cuttingsOf, cutBlockedReason,
-         cuttingStatsNow, cuttableNodesOfCutting, installVarieBoost, setCuttingAt } from '../src/game/propagation.js';
+         cuttingStatsNow, cuttableNodesOfCutting, installVarieBoost, setCuttingAt, cutDoorOpen, varieMaturedLeavesOf } from '../src/game/propagation.js';
 import { lightOptsOf } from '../src/game/loop.js';
 import { moveIntoOneroom } from '../src/game/oneroom.js';
 import { endingRulesFrom, endingProgress, finishEnding } from '../src/game/ending.js';
@@ -102,13 +102,13 @@ export const PERSONAS = {
   big:     { ko: '크게(시루 16 · 등 2)', lamps: 2, siruCap: 16, cut: 'asap',  sellMother: 'never', move: 'asap',         lazy: 0, follow: true },
   /* ★ 2026-10-30 총괄 D90 #10 — 세 사람(자르기 문을 지킨 판 · propagation §takeCutting 이 varieMaturedLeaves 를 문에 싣는다 · growth 039185e8):
        human    «사람 손» — 손가락대로 [확인](자동 자리 = 버그 1 뒤 판: 몬스테라 창턱 · 시루 어두운 데) · 시루 8 까지만(할 일이 16 을 말해도) ·
-                남는 채소는 판다(안내대로와 같은 손 · 닷새마다 · 이레치 PANTRY_KEEP 남김) · 등은 사지 않고 가을 첫날(Day 45) 공짜 등 하나를 바로 단다
+                남는 채소는 판다(안내대로와 같은 손 · 닷새마다 · ★ growth 10-30: 곳간에 «이레치 밥상 몫» = 14끼(keepMeals)를 남기고 판다 — PANTRY_KEEP 10판은 30끼 ≈ 15일치라 이레가 아니다) · 등은 사지 않고 가을 첫날(Day 45) 공짜 등 하나를 바로 단다
        doctor   «박사님식» — 사람 손 + house 줄(창 밑 쌓기 3칸 · banjiha-stack:0~2)을 방 표에 붙이고, 뿌리낸 삽수를 그 자리에서 그루로 키워(안 팔고) 거기서 다시 자른다
        default2 «기본 2자리» — 사람 손 + house 줄(창턱 받침 하나 더 · banjiha-sill-2:0) · 거기 삽수 하나를 키운다
        ⚠ house 줄은 등 0·1 만 믿는다(등 2·3 은 집게등이 책상을 따라가는 것을 안 셌다) · 박사님식의 옮긴 가구(책상·서랍장·협탁) 제 자리 줄은 기본 값 그대로(house 주석) */
-  human:   { ko: '사람 손(손가락대로 [확인] · 시루 8 · 남는 채소 팖 · Day 45 공짜 등을 담)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true },
-  doctor:  { ko: '박사님식(사람 손 + 창 밑 쌓기 3칸에 삽수를 키워 다시 자름)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, rows: 'doctor', keepBanjiha: true },
-  default2:{ ko: '기본 2자리(사람 손 + 창턱 받침 하나 더에 삽수 하나를 키움)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, rows: 'default2', keepBanjiha: true },
+  human:   { ko: '사람 손(손가락대로 [확인] · 시루 8 · 남는 채소 팖 · Day 45 공짜 등을 담)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, keepMeals: 14 },
+  doctor:  { ko: '박사님식(사람 손 + 창 밑 쌓기 3칸에 삽수를 키워 다시 자름)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, keepMeals: 14, rows: 'doctor', keepBanjiha: true },
+  default2:{ ko: '기본 2자리(사람 손 + 창턱 받침 하나 더에 삽수 하나를 키움)', lamps: 'free', siruCap: 5, siruMax: 8, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, keepMeals: 14, rows: 'default2', keepBanjiha: true },
   /* ★ 2026-10-09 (총괄 11:12 ①) — 원룸에서 처음 뿌리낸 무늬 삽수 하나는 «안 팔고» 키워(혹 → 흙) 거기서 다시 자른다 · 등 1 · 오늘 가장 밝은 빈 창턱 */
   grower:  { ko: '늘리는 사람(삽수 하나 남겨 키움)', lamps: 1, siruCap: 5, cut: 'asap', sellMother: 'never', move: 'asap', lazy: 0, follow: true, grow: true },
   /* ★ 2026-10-09 (총괄 D40 표) — «D41 안내대로»: 이사 때 무늬 삽수 하나를 들고 가고(D27 말림을 따름 · 삽수 들고 이사와 같은 손) ·
@@ -187,7 +187,9 @@ export const PERSONAS = {
 };
 const DARK = 'banjiha-dresser:1', SILL = 'banjiha-sill:0', ONE_SILL = 'oneroom-sill:0', ONE_BRIGHT = ['oneroom-sill:1', 'oneroom-sill:2', 'oneroom-sill:3'];
 const STUCK_DAYS = 14;
-const PANTRY_KEEP = 10;               /* 남겨 둘 판 수 — night_play KEEP_LOTS 와 같은 손버릇(값 아님) */
+const PANTRY_KEEP = 10;               /* 남겨 둘 판 수 — night_play KEEP_LOTS 와 같은 손버릇(값 아님)
+                                         ★ growth 10-30 잼(guide·nolamp 씨앗 1-3 · 160일 · 판매 168번): 남긴 10판 = 끼니 중앙 30끼(최소 20) = **15일치**(최소 10일)
+                                           · 곳간은 하루 두 끼(한 끼 2,500원 · 하루 5,000원 상한 · first_play §dailyCropMealCap) ⇒ «이레치»가 아니다. 이레치는 P.keepMeals 14 */
 const MUSUN_AT = 'banjiha-desk:0';    /* 무순 판 자리 — 반지하 책상(원룸에도 짐으로 같은 이름이 선다) */
 const reasonKey = m => String(m || '')
   .replace(/n[\d.]+#\d+/g, '마디').replace(/\d[\d,.]*/g, 'N').replace(/\s+/g, ' ').slice(0, 46);
@@ -216,8 +218,10 @@ export async function play(name, seed, opt = {}) {
     const H = JSON.parse(fs.readFileSync(path.join(ROOT, 'docs', 'handoff', 'house-d90-banjiha-rows.json'), 'utf8'));
     for (const r of (((H.personas || {})[P.rows] || {}).rows || [])) {
       if (!r || !r.row || r.row.slotId === SILL) continue;
-      addProfileSlot('banjiha', r.row); extraSlots.push(r.row.slotId);
+      extraSlots.push(r.row.slotId);
     }
+    /* ★ 10-30 growth — 하나씩 붙이면 마지막 줄만 남는다(addProfileSlot 은 원본에서 다시 시작) ⇒ 한 번에(§addProfileSlots) */
+    addProfileSlots('banjiha', (((H.personas || {})[P.rows] || {}).rows || []).filter(r => r && r.row && r.row.slotId !== SILL).map(r => r.row));
     light.build('banjiha'); light.clearCache();
   }
   const io = { light, growth: await makeGrowth(seed === 'g' ? GAME_PLANT_SEED : seed, { prologue: !opt.noprologue }) };
@@ -379,7 +383,11 @@ export async function play(name, seed, opt = {}) {
       if (!P.follow || S.day % 5 === 0) { try { led('veg', () => sellCropSurplus(S)); } catch { } }   /* 안내대로는 닷새마다 남는 채소를 판다(night_play 와 같게) */
       /* ★ 보유 채소 팔기 — night_play §sellSurplus 손버릇: 닷새마다 · 이레치 밥값(10판)은 남기고 나머지를 판다(값은 안 건드린다) */
       if (P.follow && S.day % 5 === 0) {
-        try { const q = pantrySaleQuote(S.firstPlay, 0); const n = (q && q.maxLots || 0) - PANTRY_KEEP;
+        try { const q = pantrySaleQuote(S.firstPlay, 0);
+              /* ★ 10-30 keepMeals — 새 꾸러미부터 끼니를 세어 그 몫만 남기고 옛 것(앞쪽)부터 판다(pantrySaleQuote 는 앞에서부터 고른다) */
+              let keepLots = PANTRY_KEEP;
+              if (Number.isFinite(P.keepMeals)) { const L = pantryLotsOf(S.firstPlay); let m = 0; keepLots = 0; for (let i = L.length - 1; i >= 0 && m < P.keepMeals; i--) { m += L[i].meals || 0; keepLots++; } }
+              const n = (q && q.maxLots || 0) - keepLots;
               if (n > 0) { const r = led('veg', () => sellPantryCrop(S, n)); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
       }
       /* ── 가구(화분대) — 가구점이 열리면 한 번씩(D47 · 돈만) ── */
@@ -433,7 +441,7 @@ export async function play(name, seed, opt = {}) {
       let v = null;
       try { const vv = varieView(S, { nodes: io.growth.cuttableNodes(), stats: io.growth.leafStats() });
             v = { nodes: cuttableNow(S, vv.nodes || []), all: vv.nodes || [], stats: motherStatsNow(S, vv.stats), budget: cutBudgetOf(S, vv.nodes || []) }; } catch { v = null; }
-      let vm = null; try { const ls = io.growth.leafState(); vm = Array.isArray(ls) ? ls.filter(r => r && r.varie && r.matured && !r.dropped).length : null;
+      let vm = null; try { const ls = io.growth.leafState(); vm = varieMaturedLeavesOf(ls);   /* ★ 10-30 propagation §varieMaturedLeavesOf — 화면과 같은 셈 */
                            if (S.day % 30 === 0 && Array.isArray(ls)) { const on = ls.filter(r => r && !r.dropped);
                              out.leafAt[S.day] = [on.length, on.filter(r => r.varie).length, vm, (() => { try { return Math.round(io.growth.growthDays()); } catch { return null; } })()]; } } catch { }
       const room = moved ? 'oneroom' : 'banjiha';
@@ -446,6 +454,10 @@ export async function play(name, seed, opt = {}) {
           if (stockOf(S, 'jar') + incomingOf(S, 'jar') < 1) { try { ord('jar', 1); } catch { } }
           if (stockOf(S, 'pot') + incomingOf(S, 'pot') < 1) { try { ord('pot', 1); } catch { } }
           let node = pickNode(v.nodes, v.budget, false);
+          /* ★★ 2026-10-30 D90 #10(growth) — 자르기 문(propagation §cutDoorOpen · 무늬이면서 다 자란 잎 ≥ 2). 게임은 화면이 단추를 회색으로 막는데
+               takeCutting 은 문을 안 물어 이 자의 사람이 문 열리기 전에 잘랐다(growth 039185e8 · 이사 135일이 게임보다 5~10일 이름).
+               모주 자르기만 막는다(삽수에서 다시 자르기는 문을 안 탄다) · --nodoor 면 옛 판(견주기용) */
+          if (node && !opt.nodoor && !cutDoorOpen(vm)) { node = null; out.doorShut = (out.doorShut || 0) + 1; }
           /* ★ D59 가게 사람 — 가게를 연 뒤엔 게임과 같은 자로 고른다(cutBlockedReason 이 안 막는 마디 · 무늬 먼저 · 잎 적은 것) —
                pickNode 의 «잎 예산 − 1»은 게임 문(S.cutOpenToday)보다 엄격해 열린 마디를 안 잘랐다(원룸 «자를 수 있음» 265일 · 자름 3) */
           if (out.shop && !node) {
@@ -1355,7 +1367,7 @@ const BOOST = arg('boost', null) == null ? null : Number(arg('boost'));
 const MOVECOST = arg('movecost', null) == null ? null : Number(arg('movecost'));
 const CROPMULT = arg('cropmult', null) == null ? null : Number(arg('cropmult'));
 const TRACE = !!arg('trace', false);
-const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false),
+const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false), nodoor: !!arg('nodoor', false),
                                                          ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}),
                                                          ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}), ...(TRACE ? { trace: true } : {}),
                                                          ...(Number.isFinite(MOVECOST) ? { movecost: MOVECOST } : {}),

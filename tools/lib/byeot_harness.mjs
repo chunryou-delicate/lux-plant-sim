@@ -154,6 +154,18 @@ export function addProfileSlot(roomId, row, drop) {
   if (drop) { dropTableOf(roomId)[row.slotId] = { dropM: drop.dropM, high: drop.high === true, y: row.point && row.point.y }; }
   return PROFILES[roomId];
 }
+/* ★ 2026-10-30 D90 #10(growth) — 줄 여럿을 «한 번에» 붙인다. addProfileSlot 은 부를 때마다 원본 표에서 다시 시작하므로
+     셋을 하나씩 붙이면 마지막 하나만 남는다(박사님식 banjiha-stack:0·1 이 «makeAt: {x,y,z} 가 필요합니다»로 못 앉던 까닭 · core 230ee4f6 메모).
+     addProfileSlot 의 뜻은 그대로 둔다(부르는 쪽이 «한 줄 = 원본 + 그 줄»을 믿는다) */
+export function addProfileSlots(roomId, rows) {
+  const base = readJSON(`data/profiles/room_profile.${roomId}.json`);
+  const ids = new Set((rows || []).map(r => r && r.slotId));
+  const p = { ...base, slots: [...base.slots.filter(s => !ids.has(s.slotId)), ...(rows || []).filter(Boolean)] };
+  const warn = console.warn; console.warn = () => { };
+  try { PROFILES[roomId] = { p, light: createProfileLight(p.uidStable === true ? p : { ...p, uidStable: true }, LIGHT_DATA) }; }
+  finally { console.warn = warn; }
+  return PROFILES[roomId];
+}
 export function makeSwitchingLight(start = 'banjiha') {
   let cur = profileOf(start).light;
   /* ★ 2026-10-08 — 정적 표는 자유 좌표(at)를 «모른다고 던진다»(계약 D · room_profile §dliOfSlot). 게임의 삽수는 언제나 at 을 들고 있어
