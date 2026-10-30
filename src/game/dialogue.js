@@ -31,13 +31,13 @@
    ⇒ 그래서 **말하되 안 박는다.** 값이 움직이면 문장이 같이 움직인다.
    ★ 순수함은 안 깨진다 — `shop.js` 도 DOM 도 타이머도 모르는 순수 모듈이다.
    ⚠ 못 읽는 판(품목이 사라진 판)에서는 **숫자 없는 말**로 떨어진다. 지어내지 않는다. */
-import { catalogList } from './shop.js';
+import { catalogList, stockOf, incomingOf } from './shop.js';   /* ★ 2026-10-30 D90 — 독촉이 가방·배송 중인 것을 보게(§siruBag) */
 /* ★ 등값·전기값의 정본은 `TUTORIAL_RULES` 다 — 대사가 거기서 읽는다(아래 §LAMP).
    ⚠ `tutorial.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
 import { TUTORIAL_RULES } from './tutorial.js';
 /* ★ 콩나물이 자라는 날의 정본은 `CROP_KINDS[0].harvestDays` 다 — 대사가 거기서 읽는다(아래 §BEAN_DAYS).
    ⚠ `first_play.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
-import { CROP_KINDS } from './first_play.js';
+import { CROP_KINDS, cropPotList } from './first_play.js';
 /* 독촉 «기다림» 판정 — [core] 파일(D2 · 2026-10-07). 한 방향: dialogue → nudge_wait */
 import { nudgeWaiting, nudgeDaysOf, varieSourceCount } from './nudge_wait.js';
 /* 방 거름 — 반지하 줄은 이사 뒤에 독촉하지 않는다(quest.js §questRoomOk · 2026-10-07). quest.js 는 아무것도 import 하지 않아 돌지 않는다 */
@@ -856,7 +856,9 @@ export const SCRIPTS = {
   ],
   /* ⚠ 완료는 **두 줄**이다. 이 자리는 몬스테라 도착(총 3회전)과 붙어 있어서 붐빈다 */
   questDoneOrderSeed: [
-    { who: 'jachwi', text: '왔다. 바로 심었어.' },
+    /* ★ 2026-10-30 [plan] 종합 5 · 비판 판 D17 — 「왔다. 바로 심었어.」는 무엇이 왔는지 몰랐고, 이 줄이 뜨는 때는 «도착»이 아니라
+         세 번째 수확이다(done = cropHarvestTotal ≥ 3). 처음 받은 한 봉지로는 두 바퀴뿐이라 셋째는 산 씨앗이다(§order_seed) — 참. */
+    { who: 'jachwi', text: '산 씨앗으로 돌린 것도 거뒀다.' },
     { who: 'moni',   face: 'proud', text: '이제 이 시루는 네가 시키는 만큼 돌아.' }
   ],
 
@@ -975,9 +977,13 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach', text: '하루에 물 줄 수 있는 횟수.' },
     { who: 'moni',   text: '**이 방에서 제일 모자란 거.**' }
   ],
+  /* ★ 2026-10-30 [plan] 종합 5 · 비판 판 — 있던 줄 「다섯 개가 다섯 바퀴. 이제 이 방이 밥값은 내네.」/「손이 모자라던데.」는 셋 다 틀렸다:
+       몬이가 수를 말했고(규율) · «바퀴»는 09-02 에 물렸으며(done = 시루 다섯을 «가짐») · 다섯 중 둘만 심긴 날(D16)에도 «밥값은 내네»라 했다.
+     참: 끝 = 콩나물 시루 다섯을 가짐(«꽤 늘었네») · 시루가 늘면 돌볼 것이 는다(«바빠지겠다» — 앞일이지만 손 수가 느는 것은 규칙) ·
+       보상 = 최대 체력 +1(stamina siru5_cycle5 · «하나 늘려 놨어»). */
   questDoneSiru5: [
-    { who: 'moni',   face: 'proud', text: '다섯 개가 다섯 바퀴. 이제 이 방이 밥값은 내네.' },
-    { who: 'jachwi', face: 'tired', text: '손이 모자라던데.' },
+    { who: 'moni',   face: 'proud', text: '시루가 꽤 늘었네.' },
+    { who: 'jachwi', face: 'tired', text: '손은 더 바빠지겠다.' },
     { who: 'moni',   face: 'proud', text: '그래서 하나 늘려 놨어.' }
   ],
 
@@ -998,8 +1004,10 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach', text: '콩나물은 어두울수록 하얗고 아삭해.' },
     { who: 'moni',   text: '무순은 **반대야.** 빛을 봐야 파래지고 알싸해져.' }
   ],
+  /* ★ 2026-10-30 [plan] 종합 5 · 비판 판 D28 — 첫 줄 「판마다 색이 다르네. 어두운 데 둔 건 희멀겋게 웃자랐어.」는 판을 «놓는» 날 떠서
+       (done = 놓인 판 다섯) 새 판은 아직 심지도 않았다. 참: 판 다섯을 놓았다. 나머지 셋은 그대로(방의 밝은 자리 수 · 등과 이사) */
   questDoneRadish5: [
-    { who: 'jachwi', text: '판마다 색이 다르네. 어두운 데 둔 건 희멀겋게 웃자랐어.' },
+    { who: 'jachwi', text: '판을 다 놨다.' },
     { who: 'moni',   face: 'teach', text: '이 방에서 무순이 파래지는 자리는 몇 개 없어.' },
     { who: 'jachwi', face: 'curious', text: '더 늘리려면?' },
     { who: 'moni',   text: '방을 바꾸든지, 빛을 들이든지.' }
@@ -1291,9 +1299,11 @@ export const SCRIPTS = {
     { who: 'moni',   text: '밥값이 덜 나가야 나머지도 모여.' }
   ],
   /* ★ 2026-09-25 — d22 무렵에 뜬다. 등·무늬 낱말을 안 쓴다(그 둘은 아직 저마다의 장면이 먼저 말할 몫이다) */
+  /* ★ 2026-10-30 [plan] 종합 5 · 비판 판 D17 — 「밥은 이제 좀 돈다.」/「응. 밥은 됐어.」는 그날 밥값 1만 원을 다 낸 판에서도 떴다.
+       이 사건(loop.js move_short_both_light)의 조건은 «시루가 넉넉하다»(cropEnough · siru5 의 수)뿐이다 ⇒ 그것만 말한다. */
   shortBothLight: [
-    { who: 'jachwi', text: '밥은 이제 좀 돈다.' },
-    { who: 'moni',   face: 'proud', text: '응. 밥은 됐어. 이제 남은 건 볕이야.' },
+    { who: 'jachwi', text: '시루는 이제 꽤 늘었어.' },
+    { who: 'moni',   face: 'proud', text: '응. 시루는 됐어. 이제 남은 건 볕이야.' },
     { who: 'jachwi', face: 'think', text: '…해 드는 방.' },
     { who: 'moni',   face: 'calm',  text: '저 화분이 거기까지 데려다줄 거야.' }
   ],
@@ -1465,7 +1475,10 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'surprise', text: '뭔가 하얀 게 올라왔어.' },
     { who: 'moni',   face: 'teach', text: '봐. 빛 없이도 자라는 게 있어.' },
     { who: 'jachwi', face: 'think', text: '내일이면 먹는 건가.' },
-    { who: 'moni',   text: '내일 아침에 열어 봐.' }
+    /* ★ 2026-10-30 [plan] 종합 «고칠 차례» 5 · 비판 판 #8(MAJOR) — 「내일 아침에 열어 봐.」는 거짓이었다: 이 줄은 물 준 지 이틀(cropAgeDays ≥ 2)에
+         뜨는데 콩나물은 닷새(CROP_KINDS[0].harvestDays) — Day 8 화면은 «수확까지 3일»이었다. 날을 장담하지 않는다.
+         참: 다 자라면 독촉 nudgeHarvestReady 「다 자랐어! 거두자.」와 손가락이 [거두기]를 짚는다 */
+    { who: 'moni',   text: '다 자라면 내가 말해 줄게.' }
   ],
   /* ★★ 2026-08-11 추가 — **회전이 도는 구간의 같은 자리**를 채운다.
      위 둘(chatCrop1·chatCrop2)은 「처음 보는 사람」의 말이라 첫 플레이 전용이다. 그런데 조건이
@@ -1513,6 +1526,8 @@ export const SCRIPTS = {
   /* ★ 2026-10-08 [plan] 갈래 지도 4 — 「아직 처음 자리야」는 가방에 둔 판(자리가 없음)에선 거짓 · 「다른 어두운 데」로 옮긴 판도 못 짚었다 */
   nudgeMonsteraPush:  [ { who: 'moni', face: 'worry', text: '몬스테라가 아직 자라는 자리에 없어. 창턱이 이 방에서 제일 밝아.' } ],
   nudgeMixOffer:      [ { who: 'moni', face: 'teach', text: '무순도 상점에 있어. 콩나물이랑 한 상에 올려 봐.' } ],
+  /* ★ 2026-10-30 [plan] 종합 5 · 비판 판 D18 — 「무순도 상점에 있어」는 이미 가방에 있는 날에도 떴다. 참: 가방에 무순 판이 있다 · 무순은 밝은 데라야 파래진다 */
+  nudgeMixBag:        [ { who: 'moni', face: 'teach', text: '무순 판이 가방에 있어. 밝은 데 놓아 길러 봐.' } ],
   nudgeMixPush:       [ { who: 'moni', face: 'teach', text: '콩나물만으론 상이 한 가지야. 무순을 길러야 둘째 몫이 생겨.' } ],
   nudgeCutOffer:      [ { who: 'moni', face: 'teach', text: '수경병은 상점에 있어. 잎 한 장짜리 마디를 잘라 꽂아 봐.' } ],
   nudgeCutPush:       [ { who: 'moni', face: 'teach', text: '잘라도 안 죽어. 마디 하나가 한 그루가 돼.' } ],
@@ -1664,6 +1679,10 @@ export const SCRIPTS = {
   /* ★ 2026-10-08 [plan] 갈래 지도 15 — 시루 줄(하나 더 · 다섯 · 여덟 · 열여섯)에 «무엇을·어디서»(D19). 넷이 같은 두 줄을 쓴다 — 수는 할 일 칩이 말한다.
      ⚠ 「늘리면 하루가 안 깎여」는 안 쓴다 — 늘리는 동안은 오히려 더 깎인다(questSiru16 의 08-27 실측). 「거두는 것도 늘어」는 늘 참. */
   nudgeSiruOffer: [ { who: 'moni', face: 'teach', text: '시루는 상점에 더 있어. 더 놓아 봐.' } ],
+  /* ★ 2026-10-30 [plan] 종합 5 · 비판 판 D15 — 「시루는 상점에 더 있어」는 이미 세 개를 주문해 둔 날에도 떴다.
+     ⇒ 가방에 있으면 «가방», 오는 중이면 «주문한 것», 둘 다 없을 때만 «상점»(§CHATTER 갈래 · 칸 siruBag · siruIncoming) */
+  nudgeSiruBag:    [ { who: 'moni', face: 'teach', text: '가방에 시루가 있어. 꺼내서 놓아 봐.' } ],
+  nudgeSiruComing: [ { who: 'moni', face: 'teach', text: '주문한 시루가 오면 놓아 봐.' } ],
   nudgeSiruPush:  [ { who: 'moni', face: 'teach', text: '시루가 늘면 거두는 것도 늘어.' } ],
   /* ★ 2026-10-08 [plan] 갈래 지도 7 — 원룸 첫 이레의 상태 줄 둘(§CHATTER status). 원천 수는 [core] varieSourceCount(틀려도 «더» 센다 —
      그래서 «없다»를 거짓으로 말하지 않는다). [growth] 7062b538: 원룸 «씨앗부터»는 1년 넘어도 넷에 셋이 무늬 잎을 못 봄 ·
@@ -3479,6 +3498,8 @@ export function scriptsForEvents(events = [], S = null) {
 /* ★ 독촉 날 문턱 — [plan] 밑값(plan-quest-nudge ⓔ: 열린 다음 날 · 사나흘 · 한 이레 · 두 이레).
    ⚠ 「뜬 날·열쇠」 표가 나온 뒤 [plan]이 다시 센다. 여기 것은 밑값이다. */
 export const NUDGE_DAYS = Object.freeze({ ask: 4, worry: 7, back: 14 });
+/* ★ 2026-10-30 [plan] 종합 5 — 시루 줄 넷(같은 독촉 두 줄을 쓴다 · 가방·배송 중 갈래 §nudgeSiruBag) */
+const SIRU_NUDGE_QS = Object.freeze(['siru_two', 'siru5_cycle5', 'siru8', 'siru16']);
 /* ★ 2026-10-09 [plan] — «제 줄이 있는 긴 줄»(한 달에 한 번 · 몇 달 열려 있음)은 범용 셋(Offer·Ask·Worry)에서 뺀다 —
    제 줄 다음 날 범용 «걱정»이 붙어 달마다 두 번씩 났다(재미 점검 모의: 무순 다섯 37·38일). 집 자금(13달) · 무순 다섯(16주). */
 const LONG_OWN_LINES = new Set(['oneroom_home_fund', 'radish5',
@@ -3682,9 +3703,19 @@ export const CHATTER = [
       ['siru16', 'nudgeSiruOffer', 'nudgeSiruPush'],
       /* ★ 2026-10-30 D90 ④ — 남는 건 판다(«어디서»를 말한다 · 수 없음) */
       ['sell_surplus', 'nudgeSurplusOffer', 'nudgeSurplusPush']].flatMap(([q, offer, push]) => [
-    { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
+    /* ★ 2026-10-30 [plan] 종합 5 — 시루 줄·한 상 줄의 «상점에 있어»는 가방·배송 중이 비었을 때만(아래 nudgeSiruBag · nudgeSiruComing · nudgeMixBag) */
+    { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask
+        && (!SIRU_NUDGE_QS.includes(q) || (!(c.siruBag > 0) && !(c.siruIncoming > 0)))
+        && (q !== 'crop_mix' || !(c.musunBag > 0)) },
     { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry }
   ]),
+  /* ★ 2026-10-30 [plan] 종합 5 — 위 «상점에 있어»의 짝(같은 날 창 · 하나만 참) */
+  { id: 'nudgeSiruBag',    nudge: true, when: c => !!c.nudge && SIRU_NUDGE_QS.includes(c.nudge.id) && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask
+                                          && c.siruBag > 0 },
+  { id: 'nudgeSiruComing', nudge: true, when: c => !!c.nudge && SIRU_NUDGE_QS.includes(c.nudge.id) && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask
+                                          && !(c.siruBag > 0) && c.siruIncoming > 0 },
+  { id: 'nudgeMixBag',     nudge: true, when: c => !!c.nudge && c.nudge.id === 'crop_mix' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask
+                                          && c.musunBag > 0 },
   /* ★ 2026-10-09 [plan] 재미 점검 — 무순 다섯(16주 칩)도 한 달에 한 번(gap 30) */
   { id: 'nudgeRadishOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'radish5' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry },
   { id: 'nudgeRadishPush',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'radish5' && c.nudge.days >= NUDGE_DAYS.worry },
@@ -3933,6 +3964,16 @@ export function chatterContext(turn = {}, S = null) {
       ? S.cuttings.filter(c => c && c.status !== 'dead' && c.varieFromCut).length : null; } catch { return null; } })(),
     /* ★ 2026-10-09 [plan] D29 — 가방에 든 안 죽은 삽수 수([core] turn.bagCuttings). 모르면 null */
     bagCuttings: (turn && Number.isFinite(turn.bagCuttings)) ? turn.bagCuttings : null,
+    /* ★ 2026-10-30 [plan] 종합 5 — 가방의 빈 시루(상점 재고 + 아직 안 놓은 개체 — first_play §idleCropPots 의 «둘을 더해 센다») ·
+       배송 중인 시루 · 가방의 무순 판. 못 읽으면 null(= 예전 그대로 «상점에 있어») */
+    ...(() => {
+      try {
+        const rows = (fp && Number.isFinite(turn.day ?? (S && S.day))) ? (cropPotList(fp, turn.day ?? S.day) || []) : [];
+        const bag = kind => rows.filter(r => r && r.kind === kind && r.inBag).length;
+        return { siruBag: stockOf(S, 'siru') + bag('beansprout'), siruIncoming: incomingOf(S, 'siru'),
+                 musunBag: stockOf(S, 'sprout_tray') + bag('musun') };
+      } catch { return { siruBag: null, siruIncoming: null, musunBag: null }; }
+    })(),
     /* ★ 2026-10-10 [plan] D59 — 산 집(투룸 · 진로)으로 옮겼나 · 진로 · 가게 판(S.jobShop · [core] job_shop). 원룸 잡담·상태 줄은 산 집에선 쉰다 */
     movedHome: !!(S && ((S.home && S.home.room === 'tworoom') || (S.tutorial && S.tutorial.homeOwned))),
     jobId: (S && S.story && S.story.job && S.story.job.id) || null,

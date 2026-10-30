@@ -1170,6 +1170,35 @@ check('대사 — 요령을 막지 않는다: «단 한 자리» 없음 · 원�
   assert.equal(H.when(c({ bagCuttings: 0 })), false, '둘 데 없는 삽수가 없는데 섭니다');
 });
 
+/* ★ 2026-10-30 [plan] 종합 «고칠 차례» 5 — 비판 판 «대사가 지금 상황을 모른다» 여섯: 날을 장담 안 함 · 수 안 말함 · 일어난 것만 · 가방·배송 중을 봄 */
+check('대사 — 상황을 모르던 여섯 줄(Day 8 «내일 아침» · 시루 다섯 · 무순 다섯 · 씨앗 · 밥은 돈다 · 상점에 있어)(종합 5)', () => {
+  const T = id => SCRIPTS[id].map(l => l.text).join(' / ');
+  assert.ok(!/내일 아침/.test(T('chatCrop2')), `chatCrop2 가 날을 장담합니다: ${T('chatCrop2')}`);
+  for (const l of SCRIPTS.questDoneSiru5) if (l.who === 'moni') assert.ok(!/다섯|바퀴|[0-9]/.test(l.text), `questDoneSiru5 몬이 수: ${l.text}`);
+  assert.ok(!/밥값은 내네|모자라던데/.test(T('questDoneSiru5')), T('questDoneSiru5'));
+  assert.ok(!/색이 다르|웃자랐/.test(T('questDoneRadish5')), T('questDoneRadish5'));
+  assert.ok(!/^왔다/.test(SCRIPTS.questDoneOrderSeed[0].text), T('questDoneOrderSeed'));
+  assert.ok(!/밥은/.test(T('shortBothLight')), T('shortBothLight'));
+  /* ⚠ 같은 id 의 줄이 여럿이다(시루 줄 넷이 nudgeSiruOffer 를 함께 쓴다) — 하나라도 참이면 «선다» */
+  const row = id => c => CHATTER.filter(r => r.id === id).some(r => { try { return !!r.when(c); } catch { return false; } });
+  const n = (q, o = {}) => ({ nudge: { id: q, days: 2 }, ...o });
+  /* 시루 줄 — 가방 › 오는 중 › 상점, 하나만 참 · 모르면(null) 예전 그대로 «상점» */
+  const pick = c => ['nudgeSiruOffer', 'nudgeSiruBag', 'nudgeSiruComing'].filter(id => row(id)(c));
+  assert.deepEqual(pick(n('siru8', { siruBag: 1, siruIncoming: 3 })), ['nudgeSiruBag']);
+  assert.deepEqual(pick(n('siru8', { siruBag: 0, siruIncoming: 3 })), ['nudgeSiruComing']);
+  assert.deepEqual(pick(n('siru8', { siruBag: 0, siruIncoming: 0 })), ['nudgeSiruOffer']);
+  assert.deepEqual(pick(n('siru5_cycle5', { siruBag: null, siruIncoming: null })), ['nudgeSiruOffer']);
+  const mix = c => ['nudgeMixOffer', 'nudgeMixBag'].filter(id => row(id)(c));
+  assert.deepEqual(mix(n('crop_mix', { musunBag: 2 })), ['nudgeMixBag']);
+  assert.deepEqual(mix(n('crop_mix', { musunBag: 0 })), ['nudgeMixOffer']);
+  /* 문맥이 실제 판에서 센다 — 상점 재고 + 배송 중 */
+  const S = newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES });
+  S.shop = S.shop || {}; S.shop.stock = { ...(S.shop.stock || {}), siru: 2, sprout_tray: 1 };
+  S.shop.orders = [...(S.shop.orders || []), { itemId: 'siru', qty: 3, arriveDay: 9 }];
+  const c = chatterContextOf({ day: 5 }, S);
+  assert.ok(c.siruBag >= 2 && c.siruIncoming === 3 && c.musunBag >= 1, JSON.stringify({ b: c.siruBag, i: c.siruIncoming, m: c.musunBag }));
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {
