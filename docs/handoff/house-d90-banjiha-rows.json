@@ -1,0 +1,455 @@
+{
+ "_what": "house D90 — 반지하 «박사님식» · «기본 2자리» 하네스 줄. core 가 tools/lib/byeot_harness.mjs addProfileSlot(\"banjiha\", row) 로 붙인다(데이터 아님)",
+ "_how": "node tools/probe_d90_banjiha_rows.mjs --write · light_adapter.profile 과 같은 줄 꼴 · 반지하 novice(맑은 여름) · 문턱 몬스테라 min 2.7",
+ "_warn": [
+  "등 2·3 값은 집게등이 책상을 따라가는 것을 안 셌다 — 등 0·1 만 믿을 것",
+  "옮긴 가구의 제 자리 줄(desk:* · nightstand:*)은 기본 프로필 값 그대로"
+ ],
+ "madeAt": "4cf2a38f",
+ "baseRoomRev": "d0bc365 2026-08-17 반지하 셋째 등(거치형) — 그 뒤 house_rooms.json §banjiha 는 안 움직였다. 가구 프리셋 쪽 마지막은 ca3f8f8(협탁 2×2)이라 그것도 이 값에 들어 있다.",
+ "lampCounts": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "personas": {
+  "doctor": {
+   "ko": "박사님식 — 창 밑 쌓기 3칸 + 창턱(창턱까지 4자리)",
+   "moves": {
+    "banjiha-desk": {
+     "x": 0.65,
+     "z": -1.65,
+     "rot": 0
+    },
+    "banjiha-dresser": {
+     "x": 0.65,
+     "z": -1.65,
+     "rot": 0,
+     "y": 0.74
+    },
+    "banjiha-nightstand": {
+     "x": 1.75,
+     "z": -1.65,
+     "rot": 0
+    }
+   },
+   "rows": [
+    {
+     "row": {
+      "slotId": "banjiha-sill:0",
+      "owner": "shelf_wall",
+      "point": {
+       "x": 0,
+       "y": 1.585,
+       "z": -1.85
+      },
+      "maxPotD": 0.27,
+      "ratio": 0.239378,
+      "ppfd": [
+       0,
+       54.24,
+       55.15,
+       57.61
+      ]
+     },
+     "dli": [
+      3.68,
+      6.02,
+      6.06
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    },
+    {
+     "row": {
+      "slotId": "banjiha-stack:0",
+      "owner": "banjiha-dresser",
+      "point": {
+       "x": 0.275,
+       "y": 1.54,
+       "z": -1.775
+      },
+      "maxPotD": 0.25,
+      "ratio": 0.192844,
+      "ppfd": [
+       0,
+       38.56,
+       39.96,
+       42.05
+      ]
+     },
+     "dli": [
+      2.96,
+      4.63,
+      4.69
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    },
+    {
+     "row": {
+      "slotId": "banjiha-stack:1",
+      "owner": "banjiha-dresser",
+      "point": {
+       "x": 0.525,
+       "y": 1.54,
+       "z": -1.775
+      },
+      "maxPotD": 0.25,
+      "ratio": 0.20015,
+      "ppfd": [
+       0,
+       26.64,
+       28.75,
+       30.46
+      ]
+     },
+     "dli": [
+      3.08,
+      4.23,
+      4.32
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    },
+    {
+     "row": {
+      "slotId": "banjiha-stack:2",
+      "owner": "banjiha-dresser",
+      "point": {
+       "x": 0.775,
+       "y": 1.54,
+       "z": -1.775
+      },
+      "maxPotD": 0.25,
+      "ratio": 0.187422,
+      "ppfd": [
+       0,
+       17.68,
+       21.1,
+       22.51
+      ]
+     },
+     "dli": [
+      2.88,
+      3.64,
+      3.79
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    }
+   ]
+  },
+  "default2": {
+   "ko": "기본 2자리 — 창턱 받침 하나 더(x −0.6 · 아직 데이터에 없음 · D90 #7 견준 뒤 정함)",
+   "add": {
+    "uid": "banjiha-sill-2",
+    "preset": "shelf_sill_pot1",
+    "x": -0.6,
+    "y": 1.55,
+    "z": -1.85,
+    "d": 0.3
+   },
+   "rows": [
+    {
+     "row": {
+      "slotId": "banjiha-sill:0",
+      "owner": "shelf_wall",
+      "point": {
+       "x": 0,
+       "y": 1.585,
+       "z": -1.85
+      },
+      "maxPotD": 0.27,
+      "ratio": 0.239378,
+      "ppfd": [
+       0,
+       54.24,
+       55.15,
+       57.61
+      ]
+     },
+     "dli": [
+      3.68,
+      6.02,
+      6.06
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    },
+    {
+     "row": {
+      "slotId": "banjiha-sill-2:0",
+      "owner": "shelf_wall",
+      "point": {
+       "x": -0.6,
+       "y": 1.585,
+       "z": -1.85
+      },
+      "maxPotD": 0.27,
+      "ratio": 0.234822,
+      "ppfd": [
+       0,
+       25.42,
+       25.89,
+       29.66
+      ]
+     },
+     "dli": [
+      3.61,
+      4.71,
+      4.73
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    }
+   ]
+  }
+ },
+ "extra": {
+  "sill2Right": {
+   "ko": "받침 하나 더를 오른쪽 x +0.6 에(값은 왼쪽과 같음 · 오른쪽 쌓기 칸 둘의 머리공간을 막는다)",
+   "rows": [
+    {
+     "row": {
+      "slotId": "banjiha-sill-2:0",
+      "owner": "shelf_wall",
+      "point": {
+       "x": 0.6,
+       "y": 1.585,
+       "z": -1.85
+      },
+      "maxPotD": 0.27,
+      "ratio": 0.234822,
+      "ppfd": [
+       0,
+       25.42,
+       27.61,
+       29.15
+      ]
+     },
+     "dli": [
+      3.61,
+      4.71,
+      4.8
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    }
+   ]
+  },
+  "stackLeft": {
+   "ko": "왼쪽 쌓기(칸 값은 오른쪽과 같음 · 3단 선반을 비켜 무순 윗단이 0.10~0.25 로 준다)",
+   "moves": {
+    "banjiha-etagere": {
+     "x": 1.6,
+     "z": -1.72,
+     "rot": 0
+    },
+    "banjiha-drying-rack": {
+     "x": 1.6,
+     "z": 0.6
+    },
+    "banjiha-desk": {
+     "x": -0.65,
+     "z": -1.65,
+     "rot": 0
+    },
+    "banjiha-dresser": {
+     "x": -0.65,
+     "z": -1.65,
+     "rot": 0,
+     "y": 0.74
+    }
+   },
+   "rows": [
+    {
+     "row": {
+      "slotId": "banjiha-stack:0",
+      "owner": "banjiha-dresser",
+      "point": {
+       "x": -0.775,
+       "y": 1.54,
+       "z": -1.775
+      },
+      "maxPotD": 0.25,
+      "ratio": 0.187422,
+      "ppfd": [
+       0,
+       17.68,
+       18.09,
+       22.75
+      ]
+     },
+     "dli": [
+      2.88,
+      3.64,
+      3.66
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    },
+    {
+     "row": {
+      "slotId": "banjiha-stack:1",
+      "owner": "banjiha-dresser",
+      "point": {
+       "x": -0.525,
+       "y": 1.54,
+       "z": -1.775
+      },
+      "maxPotD": 0.25,
+      "ratio": 0.20015,
+      "ppfd": [
+       0,
+       26.64,
+       27.15,
+       31.16
+      ]
+     },
+     "dli": [
+      3.08,
+      4.23,
+      4.25
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    },
+    {
+     "row": {
+      "slotId": "banjiha-stack:2",
+      "owner": "banjiha-dresser",
+      "point": {
+       "x": -0.275,
+       "y": 1.54,
+       "z": -1.775
+      },
+      "maxPotD": 0.25,
+      "ratio": 0.192844,
+      "ppfd": [
+       0,
+       38.56,
+       39.24,
+       42.55
+      ]
+     },
+     "dli": [
+      2.96,
+      4.63,
+      4.66
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    }
+   ]
+  },
+  "bedNightstand": {
+   "ko": "침대 위 협탁(윗면 1.42 · 왼쪽 쌓기와 함께면 6자리 · 침대 키 0.94 는 머리판까지라 그림이 뜰 수 있음)",
+   "moves": {
+    "banjiha-bed": {
+     "x": 0.7,
+     "z": -0.9,
+     "rot": 0
+    },
+    "banjiha-nightstand": {
+     "x": 0.7,
+     "z": -1.65,
+     "rot": 0,
+     "y": 0.94
+    },
+    "banjiha-chair": {
+     "x": 1.75,
+     "z": -0.6
+    },
+    "banjiha-etagere": {
+     "x": 1.75,
+     "z": -1.72,
+     "rot": 0
+    },
+    "banjiha-drying-rack": {
+     "x": -1.6,
+     "z": 0.9
+    }
+   },
+   "rows": [
+    {
+     "row": {
+      "slotId": "banjiha-stack-r:0",
+      "owner": "banjiha-nightstand",
+      "point": {
+       "x": 0.575,
+       "y": 1.42,
+       "z": -1.775
+      },
+      "maxPotD": 0.25,
+      "ratio": 0.198691,
+      "ppfd": [
+       0,
+       20.33,
+       22.9,
+       24.55
+      ]
+     },
+     "dli": [
+      3.05,
+      3.93,
+      4.04
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    },
+    {
+     "row": {
+      "slotId": "banjiha-stack-r:1",
+      "owner": "banjiha-nightstand",
+      "point": {
+       "x": 0.825,
+       "y": 1.42,
+       "z": -1.775
+      },
+      "maxPotD": 0.25,
+      "ratio": 0.182021,
+      "ppfd": [
+       0,
+       14.36,
+       18.86,
+       20.23
+      ]
+     },
+     "dli": [
+      2.8,
+      3.42,
+      3.61
+     ],
+     "ok": {
+      "lamp0": true,
+      "lamp1": true
+     }
+    }
+   ]
+  }
+ }
+}
