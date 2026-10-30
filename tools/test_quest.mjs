@@ -277,10 +277,10 @@ const steps = [
   MS(46, { cropPots: [...bean(5), ...musun(1)], mealKinds: ['beansprout', 'musun'] }),
   MS(47, { cropPots: [...bean(5), ...musun(1)], mealKinds: ['beansprout', 'musun'] }),
   MS(48, { cropPots: [...bean(5), ...musun(5)], mealKinds: ['beansprout', 'musun'] }),
-  /* 여덟 · 열여섯(놓인 것만 센다) */
+  /* 여덟(놓인 것만 센다) · ★ 2026-10-30 D90 ④ 남는 건 판다(열여섯 물림) — 곳간이 이레치를 넘어 열리고 · 한 번 팔아 끝난다 */
   MS(50, { cropPots: [...bean(8), ...musun(5)] }),
-  MS(51, { cropPots: [...bean(8), ...musun(5)] }),
-  MS(56, { cropPots: [...bean(16), ...musun(5)] }),
+  MS(51, { cropPots: [...bean(8), ...musun(5)], pantrySoldCount: 0, pantryOverKeepGrams: 2400 }),
+  MS(56, { cropPots: [...bean(16), ...musun(5)], pantrySoldCount: 1, pantryOverKeepGrams: 0 }),
   /* ★ 2026-10-30 [plan] D90 ③ — 무늬 잎 하나가 다 자랐다(1/2) → 자르기까지(wait_varie) 열림 · 둘이 되는 60일에 끝(first_cut 과 같은 자) */
   MS(57, { cropPots: [...bean(16), ...musun(5)], motherVarieMatured: 1, motherVarieLeaves: 2 }),
   /* 가을 — 등이 풀린다 · 무늬 잎이 다 자랐다(D25 · 둘) — 등 → 자르기 → 무늬 차례로 하루씩 */
@@ -774,6 +774,23 @@ check('D90 ③ 자르기까지 — 셈 n/2 · 처음 열 때만 «아직» · �
   const b3 = newBoard(); b3.stamina.questsTaken = [...others]; stepQuests(b3, MS(57, { motherVarieMatured: 1 }));
   const w = questView(b3, MS(57, { motherVarieMatured: 1 }), { isWaiting: id => id === 'wait_varie' }).all.find(a => a.id === 'wait_varie');
   assert.equal(w.waiting, true); assert.equal(w.waitWhat, '무늬 잎이 다 자라기를 · 1/2');
+});
+
+/* ★ 2026-10-30 [plan] 총괄 D90 ④ — 남는 건 판다(siru16 자리): 칸을 모르면 안 열림 · 곳간이 이레치를 안 넘으면 안 열림 ·
+     한 번 팔면 끝 · 열여섯은 물림(표에서 빠지고 이름만) · 체력 +1 이 옮겨 옴 */
+check('D90 ④ 남는 건 판다 — 칸 모르면 안 열림 · 넘친 날에 열림 · 한 번 팔면 끝 · 열여섯 물림 · 체력 +1 옮김', () => {
+  const q = questOf('sell_surplus');
+  assert.ok(q && q.room === 'banjiha' && q.after === 'siru8', 'sell_surplus 가 없거나 자리가 다릅니다');
+  assert.ok(!QUEST_IDS.includes('siru16') && RETIRED_QUESTS.some(r => r.id === 'siru16'), 'siru16 이 표에 남았거나 이름이 없어졌습니다');
+  assert.equal(STAMINA_RULES.quests.sell_surplus, 1, '체력 +1 이 안 옮겨 왔습니다');
+  const b = newBoard(); const ctx = { doneIds: ['siru8'], S: b, q };
+  assert.equal(!!q.opens(MS(51, { pantrySoldCount: null }), ctx), false, '칸을 모르는데 열립니다(열고 영영 안 끝남)');
+  assert.equal(!!q.opens(MS(51, { pantrySoldCount: 0, pantryOverKeepGrams: 0 }), ctx), false, '곳간이 이레치를 안 넘었는데 «쌓이네»가 섭니다');
+  assert.equal(!!q.opens(MS(51, { pantrySoldCount: 0, pantryOverKeepGrams: 1200 }), ctx), true, '넘쳤는데 안 열립니다');
+  assert.equal(!!q.opens(MS(51, { pantrySoldCount: 0, pantryOverKeepGrams: null }), ctx), true, '넘침을 모르면 siru8 끝으로만 열어야 합니다');
+  assert.equal(!!q.done(MS(51, { pantrySoldCount: 0 })), false); assert.equal(!!q.done(MS(51, { pantrySoldCount: 1 })), true);
+  assert.equal(!!q.done(MS(51, { pantrySoldCount: null })), false, '모르는데 끝납니다');
+  assert.ok(questTodo(q, MS(51)).length <= 28);
 });
 
 /* ── 보고 ────────────────────────────────────────────────────────────── */

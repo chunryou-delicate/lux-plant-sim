@@ -1139,6 +1139,22 @@ check('대사 — 첫 달 끝 «들이는 달» · 이레 지갑 첫 플러스 �
   assert.equal(ctx.startCashWon, 1500000); assert.equal(ctx.shopSpentWon, 9000); assert.equal(ctx.walletWeekDelta, -5000);
 });
 
+/* ★ 2026-10-30 [plan] 총괄 D90 ④ — 남는 건 판다: 한 목소리 · 상점 단추 이름 · 수 없음 · 장담 없음 */
+check('대사 — 남는 건 판다(한 목소리 «하루 밥상 몫은 먹고 그 위는 판다» · 상점 단추 이름 · 수 없음)(D90 ④)', () => {
+  assert.equal(QUEST_OPEN_SCRIPT.sell_surplus, 'questSellSurplus'); assert.equal(QUEST_DONE_SCRIPT.sell_surplus, 'questDoneSellSurplus');
+  assert.ok(SCRIPTS.questSellSurplus.some(l => /하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 건 팔아/.test(l.text)), '한 목소리 줄이 없습니다');
+  const html = readFileSync(U('../game.html'), 'utf8');
+  const btn = (html.match(/id="sellPantry"[^>]*>([^<]+)</) || [])[1];
+  assert.ok(btn && SCRIPTS.questSellSurplus.some(l => l.text.includes(btn.trim())), `상점 단추 이름(${btn})과 대사가 다릅니다`);
+  for (const id of ['questSellSurplus', 'questDoneSellSurplus', 'nudgeSurplusOffer', 'nudgeSurplusPush'])
+    for (const l of SCRIPTS[id]) {
+      if (l.who === 'moni') assert.ok(!/[0-9]|이레|열여섯|다섯|여덟/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+      assert.ok(!/손해/.test(l.text), `'${id}' 가 «손해»를 말합니다(한 목소리와 어긋남): ${l.text}`);
+    }
+  const row = id => CHATTER.find(r => r.id === id);
+  assert.ok(row('nudgeSurplusOffer') && row('nudgeSurplusPush'), '남는 건 판다 독촉 줄이 없습니다');
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {

@@ -1039,6 +1039,27 @@ export const SCRIPTS = {
     { who: 'moni',   text: '한동안은. 그러고 나서 넘어가.' },
     { who: 'moni',   face: 'teach', text: '거기까지 가면 처음으로 **버는 쪽**이 돼.' }
   ],
+  /* ★★ 2026-10-30 [plan] 총괄 D90 ④ — **남는 건 판다**(quest.js §sell_surplus · siru16 자리).
+     한 목소리(D90 ⑤): «하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 것은 판다.»
+     참인 조건: 열리는 날 = siru8 끝 · 곳간이 이레치 밥상 몫을 넘음(core 칸을 알면)(«쌓이네») ·
+       «이 방에서 돈이 들어오는 길은 그거야» = 그때(무늬 삽수를 자를 수 있기 전 · 반찬가게 주문도 채소)의 수입은 채소뿐(하네스 D1–120 98%) ·
+       **보유 채소 팔기** = 상점 단추 이름(game.html #sellPantry) · 끝 = 곳간을 한 번 팔았다(«지갑이 늘었어» — 판 돈이 지갑에 든다) ·
+       «쌓아 두기만 하면 그냥 쌓여» = 곳간은 쉬지 않는다(first_play §pantryCapWon · spoiled 늘 0) ·
+       «시루를 더 늘리면 더 빨리 모여» = 하네스 big(시루 16) 내 집 350일 vs 안내대로 375일 — «손이 닿는 만큼»은 체력 천장(siru5 가르침). 수 없음. */
+  questSellSurplus: [
+    { who: 'jachwi', face: 'think', text: '채소가 자꾸 쌓이네.' },
+    { who: 'moni',   face: 'teach', text: '하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 건 팔아.' },
+    { who: 'moni',   text: '이 방에서 돈이 들어오는 길은 그거야.' },
+    { who: 'jachwi', face: 'curious', text: '어디서 팔아?' },
+    { who: 'moni',   face: 'teach', text: '상점에서 **보유 채소 팔기**를 눌러.' }
+  ],
+  questDoneSellSurplus: [
+    { who: 'jachwi', face: 'surprise', text: '팔았다. 지갑이 늘었어.' },
+    { who: 'moni',   face: 'proud', text: '쌓아 두기만 하면 그냥 쌓여. 돌려야 돈이야.' },
+    { who: 'moni',   face: 'teach', text: '시루를 더 늘리면 더 빨리 모여. 손이 닿는 만큼만.' }
+  ],
+  /* ⚠ 2026-10-30 D90 ④ — 아래 questSiru16 · questDoneSiru16 은 물린 줄(siru16)의 대사라 이제 안 뜬다.
+     «…줄지 않는다» 두 줄은 일어난 날의 사건(walletWeekUp · 8885af39)으로 옮겼다. 지우지 않고 둔다(물린 줄 규약 — siru_two 와 같음). */
   questDoneSiru16: [
     { who: 'jachwi', face: 'happy', text: '…줄지 않는다. 오늘 처음이야.' },
     { who: 'moni',   face: 'proud', text: '여기서부터는 모으는 거야. 버티는 게 아니라.' },
@@ -1469,6 +1490,9 @@ export const SCRIPTS = {
      ⇒ 「그거」 → «할 일에 적힌 거»(가리킴을 말에 넣었다) · 「무슨 일 있어?」 → «무엇이 그대로인지»를 말한다.
      ⇒ 「급한 건 아니야」는 독촉 사다리에서 «내렸다» — 할 수 있는 퀘스트가 없는 날(다 끝났거나 시루가 도는 날)의 잡담이다(§CHATTER). */
   nudgeOffer: [ { who: 'moni', face: 'teach', text: '해 보면 알 거야.' } ],
+  /* ★ 2026-10-30 [plan] D90 ④ — 남는 건 판다 독촉 두 줄. 참: 상점 [보유 채소 팔기] · 곳간은 쉬지 않는다(쌓이기만 한다) */
+  nudgeSurplusOffer: [ { who: 'moni', face: 'teach', text: '남는 채소는 상점에서 팔 수 있어.' } ],
+  nudgeSurplusPush:  [ { who: 'moni', face: 'teach', text: '쌓아만 두면 돈이 안 돼. 남는 건 팔아.' } ],
   nudgeAsk:   [ { who: 'moni', face: 'curious', text: '할 일에 적힌 거, 아직이지?' } ],
   /* ⚠ [plan] 은 «worry» 라 했는데 몬이 초상화에 그 키가 없다(game.html §FACE_FILE.moni: base·happy·sad·curious·surprise).
      없는 키는 소리 없이 기본 얼굴로 떨어지므로(dialogue_coverage ⑷) 있는 것 중 제일 가까운 «sad» 를 쓴다.
@@ -3083,7 +3107,8 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   radish5:      'questRadish5',
   /* ★ 2026-08-16 — 시루 늘리기 둘(실측 문턱 여덟·열여섯 · quest.js §②-b·②-c) */
   siru8:        'questSiru8',
-  siru16:       'questSiru16',
+  siru16:       'questSiru16',          /* ⚠ 물린 줄(D90 ④) — 안 뜬다 */
+  sell_surplus: 'questSellSurplus',     /* ★ 2026-10-30 D90 ④ */
   first_cut:    'questFirstCut',
   buy_lamp:     'questBuyLamp',
   varie_bright: 'questVarieBright',
@@ -3144,7 +3169,8 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   siru5_cycle5: 'questDoneSiru5',
   radish5:      'questDoneRadish5',
   siru8:        'questDoneSiru8',
-  siru16:       'questDoneSiru16',
+  siru16:       'questDoneSiru16',      /* ⚠ 물린 줄(D90 ④) — 안 뜬다 */
+  sell_surplus: 'questDoneSellSurplus', /* ★ 2026-10-30 D90 ④ */
   first_cut:    'questDoneFirstCut',
   buy_lamp:     'questDoneBuyLamp',
   varie_bright: 'questDoneVarieBright',
@@ -3638,7 +3664,9 @@ export const CHATTER = [
       ['siru_two', 'nudgeSiruOffer', 'nudgeSiruPush'],
       ['siru5_cycle5', 'nudgeSiruOffer', 'nudgeSiruPush'],
       ['siru8', 'nudgeSiruOffer', 'nudgeSiruPush'],
-      ['siru16', 'nudgeSiruOffer', 'nudgeSiruPush']].flatMap(([q, offer, push]) => [
+      ['siru16', 'nudgeSiruOffer', 'nudgeSiruPush'],
+      /* ★ 2026-10-30 D90 ④ — 남는 건 판다(«어디서»를 말한다 · 수 없음) */
+      ['sell_surplus', 'nudgeSurplusOffer', 'nudgeSurplusPush']].flatMap(([q, offer, push]) => [
     { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
     { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry }
   ]),
