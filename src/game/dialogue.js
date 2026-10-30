@@ -2633,11 +2633,20 @@ export const SCRIPTS = {
        선반 넷은 `oneroom-shelf:5·7·4·6` = 4.90 · 4.46 · 3.22 · **3.00**(경계) 이다. */
   /* ★★ 2026-10-08 [plan] D1 — 「선반 위 넷 · 여덟」을 걷었다. 여덟은 novice 수다 — real(원룸~)에선 선반이 날씨 따라 들락날락한다
      (avg7: 4.90×0.643=3.15 만 넘고 나머지 셋은 못 넘는다). 창턱 넷은 등 없이도 자란다(growth: 등0 자라는 날 96%) — 그것만 말한다. */
+  /* ★★ 2026-10-31 [plan] 총괄 — **여름에만 선다**(§CHATTER). 위 «96%»는 여름 값이었다.
+     growth ab7bbecf(probe_oneroom_sill_seasons · real · 20씨앗 × 3해): 등0 으로 몬스테라가 자라는 날 — 봄 60~74% · 여름 89~96% · 가을 45~64% · 겨울 1%.
+       기대 DLI 등0: 여름 sill:0~3 4.03~4.30(넷 다 ≥3.78) · 겨울 1.50~1.60(넷 다 2.7 밑). 이사 날(하네스 135)은 겨울 첫날이라
+       조건 없던 옛 줄은 원룸 첫 철 내내 네 자리 다 거짓이었다(원룸 철 차례: 겨울 90 → 봄 85 → 여름 50).
+     ⇒ 고른 것: 조건을 c.season === 'summer'(skyFor 와 같은 달력) · 몬이 말에 «지금은»을 붙여 철 따라 바뀌는 것임을 남긴다
+       (이사 장면 «여긴 바깥이 그대로 들어와. 흐린 날도, 계절도.»와 같은 결). 다른 길: 봄까지(봄은 넷에 하나꼴로 멈추는 주 — 「다 자라」를 못 지킴) ·
+       겨울 갈래 새 줄(«등 가까운 데만» — 멈춤 처방은 이미 §BLOCKED_RX_KO 가 말한다 · 새 가르침이라 이번엔 안 지음).
+     ⚠ 몬이는 수를 안 말한다 — 옛 «거기 넷은» · «하나였지. 그 하나를 지키느라 백 일을» 을 걷었다(자취생 수는 규칙 밖).
+       자취생 «넉 줄»은 «넷»으로(창턱 받침은 한 줄에 넷이다 — house_rooms §oneroom shelf_sill_pot4). */
   chatOneroomBright: [
-    { who: 'jachwi', text: '창을 가로질러 놓을 데가 넉 줄이나 있다.' },
-    { who: 'moni',   face: 'teach', text: '거기 넷은 등 없이도 자라.' },
+    { who: 'jachwi', text: '창턱에 놓을 데가 넷이나 있다.' },
+    { who: 'moni',   face: 'teach', text: '지금은 거기 다 등 없이도 자라.' },
     { who: 'jachwi', text: '저 방은 창턱 하나였고.' },
-    { who: 'moni',   face: 'calm', text: '하나였지. 그 하나를 지키느라 백 일을 썼고.' }
+    { who: 'moni',   face: 'calm', text: '그랬지. 저 방에선 그 자리를 지키는 게 일이었고.' }
   ],
   /* ★ 미화하지 않는다 — 원룸도 하늘을 다 보는 방은 아니다
      (`house_rooms.json` §oneroom.skyViewK 1.18: *"골목 안 2층. 맞은편 건물이 아직 하늘의
@@ -3620,7 +3629,8 @@ export const CHATTER = [
   { id: 'chatOneroomSiru',    when: c => c.movedOut && !c.movedHome },
   /* ★ 2026-10-30 D90 ⑥ — 원리 한 줄(반지하 · 가구점 열림 = 첫 등이 온 뒤 · 가방에 삽수 · 한 번) */
   { id: 'hintRaisePot',       gap: 9999, when: c => c.hasMonstera && !c.movedOut && c.lampOwned >= 1 && c.bagCuttings >= 1 },
-  { id: 'chatOneroomBright',  when: c => c.movedOut && !c.movedHome },
+  /* ★ 2026-10-31 [plan] — 여름에만(등 없이 창턱 넷이 다 서는 철 · growth ab7bbecf · 위 SCRIPTS 머리말) */
+  { id: 'chatOneroomBright',  when: c => c.movedOut && !c.movedHome && c.season === 'summer' },
   { id: 'chatOneroomWindow',  when: c => c.movedOut && !c.movedHome },
   { id: 'chatOneroomEmpty',   when: c => c.movedOut && !c.movedHome && c.daysInOneroom != null && c.daysInOneroom <= 30 },
   /* ★★ **조건을 코드가 읽는다** — 화분이 실제로 놓인 자리의 오늘 빛이 갈라짐 문턱을

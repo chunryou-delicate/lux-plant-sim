@@ -1260,6 +1260,16 @@ check('D92 이삿짐 — 이사 장면 끝 줄 차례 · 상태 줄 갈래 · �
   assert.ok(REPEATABLE.has('movedInBagCrops') && REPEATABLE.has('statusBagCrops') && REPEATABLE.has('statusBagCropsMove'));
 });
 
+/* ★ 2026-10-31 [plan] 총괄 — chatOneroomBright «등 없이도 자라»는 여름에만(growth ab7bbecf: 등0 자라는 날 여름 89~96% · 겨울 1% · 이사 날 = 겨울 첫날) */
+check('원룸 창턱 «등 없이도 자라» — 여름에만 · 몬이 수 없음(growth ab7bbecf)', () => {
+  const on = c => CHATTER.filter(r => r.id === 'chatOneroomBright').some(r => { try { return !!r.when(c); } catch { return false; } });
+  const o = { movedOut: true, movedHome: false };
+  assert.equal(on({ ...o, season: 'summer' }), true);
+  for (const season of ['winter', 'spring', 'autumn', undefined]) assert.equal(on({ ...o, season }), false, `${season} 에 섭니다`);
+  for (const l of SCRIPTS.chatOneroomBright) if (l.who === 'moni')
+    assert.ok(!/[0-9]|하나|둘|셋|넷|백 일/.test(l.text), `chatOneroomBright 몬이가 수를 말합니다: ${l.text}`);
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {
