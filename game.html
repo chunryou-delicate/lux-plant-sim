@@ -9522,30 +9522,36 @@ function drawGrowGauge() {
     ro.observe(gg); if (nx) ro.observe(nx);
   } catch (e) { console.warn('[확대 카드 자리]', e && e.message); }
 })();
-/* ★ 2026-10-31 총괄 D90 ③ — 확대창 한 줄(plan-to-core-d90 ③-4 · 글 plan): «자르기까지 — 다 자란 무늬 잎 n/2 · 자라는 무늬 잎 N%»
-     n = 무늬이면서 다 자란 잎(§varieMaturedLeavesNow — 자르기 문과 같은 셈) · 2 = propagation CUT_DOOR_VARIE_MATURED.
-     N = 아직 다 안 자란 무늬 잎 중 가장 덜 펼친 잎의 펼침(growth leafOnPlant leafM · leafState 와 leafBirth 로 맞물림).
-     ⚠ 반지하 모주만(삽수에서 다시 자르기는 이 문을 안 탄다 · 이사 뒤엔 안 적음) · 문이 열렸으면(n ≥ 2) · 못 세면 안 적는다.
-     ⚠ 펼침이 100% 여도 «다 자람»(성숙)은 따로 온다 — 그때는 «N%»를 안 붙인다(100% 인데 안 셈해 보이는 거짓을 피함) */
+/* ★ 2026-10-31 총괄 D90 ③ — 확대창 한 줄(plan-to-core-d90 ③-4 · plan 정정 10e434f8 «10-31 정정»)
+     머리 «자르기까지 — 다 자란 무늬 잎 n/2»(n = §varieMaturedLeavesNow — 자르기 문과 같은 셈 · 2 = propagation CUT_DOOR_VARIE_MATURED) 뒤에 셋 중 하나:
+       후보 = 무늬 · 안 다 자람 · 안 떨어짐 · 달림(growth leafOnPlant) · locked 아님(줄에 실려 오면) — 그중 leafM 이 «가장 큰»(다음에 다 자랄) 잎 하나
+       ① 후보 없음                «· 새 무늬 잎을 기다립니다»(지금 달린 잎으로는 n 이 안 는다)
+       ② 후보 leafM < stageMid    «· 자라는 무늬 잎 N%» · N = ⌊leafM ÷ stageMid × 100⌋(99 까지 · 성숙 굴림 전이라 «자라는»이 참)
+       ③ 후보 leafM ≥ stageMid    «· 무늬 잎이 다 자라기를 기다립니다»(굴리는 중 — 언제를 약속 안 함 · 칩 «기다리는 중 — 무늬 잎이 다 자라기를»과 같은 말)
+     정본 plant_grow §stepMaturation: leafM ≥ stageMid(0.66)부터 성숙 게이지가 차고 차면 굴린다 · 3% 는 중간잎으로 굳어(locked) 안 센다.
+     ⚠ 반지하 모주만(삽수에서 다시 자르기는 이 문을 안 탄다 · 이사 뒤엔 안 적음) · 문이 열렸으면(n ≥ 2) · 잎 줄·stageMid 를 못 읽으면 머리만 */
 function cutWaitLine() {
   if (S.home && S.home.room !== 'banjiha') return '';
   if (S.tutorial && S.tutorial.movedOut) return '';
   const n = varieMaturedLeavesNow();
   if (!Number.isInteger(n) || n >= CUT_DOOR_VARIE_MATURED) return '';
-  let rows = null, on = null;
+  const head = `자르기까지 — 다 자란 무늬 잎 ${n}/${CUT_DOOR_VARIE_MATURED}`;
+  let rows = null, on = null, mid = null;
   try { rows = io.growth.leafState(); } catch { rows = null; }
   try { on = io.growth.leafOnPlant ? io.growth.leafOnPlant() : null; } catch { on = null; }
-  let least = null;
-  if (Array.isArray(rows) && Array.isArray(on)) {
-    const mOf = new Map(on.filter(r => r && r.onPlant === true && Number.isFinite(r.leafM)).map(r => [r.leafBirth, r.leafM]));
-    for (const r of rows) {
-      if (!r || !r.varie || r.matured || r.dropped || !mOf.has(r.leafBirth)) continue;
-      const m = mOf.get(r.leafBirth);
-      if (least == null || m < least) least = m;
-    }
+  try { const ps = io.growth.leafStageParams ? io.growth.leafStageParams() : null; mid = ps && Number.isFinite(ps.stageMid) && ps.stageMid > 0 ? ps.stageMid : null; } catch { mid = null; }
+  if (!Array.isArray(rows) || !Array.isArray(on)) return head;
+  const mOf = new Map(on.filter(r => r && r.onPlant === true && Number.isFinite(r.leafM)).map(r => [r.leafBirth, r.leafM]));
+  let best = null;
+  for (const r of rows) {
+    if (!r || !r.varie || r.matured || r.dropped || r.locked === true || !mOf.has(r.leafBirth)) continue;
+    const m = mOf.get(r.leafBirth);
+    if (best == null || m > best) best = m;
   }
-  const pct = least == null ? null : Math.round(Math.max(0, Math.min(1, least)) * 100);
-  return `자르기까지 — 다 자란 무늬 잎 ${n}/${CUT_DOOR_VARIE_MATURED}` + (pct != null && pct < 100 ? ` · 자라는 무늬 잎 ${pct}%` : '');
+  if (best == null) return `${head} · 새 무늬 잎을 기다립니다`;
+  if (mid == null) return head;
+  if (best < mid) return `${head} · 자라는 무늬 잎 ${Math.min(99, Math.floor(best / mid * 100))}%`;
+  return `${head} · 무늬 잎이 다 자라기를 기다립니다`;
 }
 
 /* ★★ 2026-10-08 G — **「더 밝은 자리로 옮겨 보세요」가 거짓인 날** (총괄 13:50 · [house] 자리 자유)
