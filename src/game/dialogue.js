@@ -2429,8 +2429,21 @@ export const SCRIPTS = {
      §STATUS 표가 조건을 갖는다. 칸([core] turn.leafWait)이 없으면 조건이 다 거짓이라 안 뜬다.
      ⚠ 몬이는 수를 말하지 않는다 · 「날짜로는 못 세」(Day 13 · monsteraGuide)와 한 편이다 — 날수·% 를 안 말한다.
      ⚠ «다음 잎 준비»(leafwait ⓔ)는 뺐다 — growth 장부의 «달렸는데 leafM 0»이 무엇인지 아직 모른다(총괄 02:18). */
+  /* ★ 2026-10-30 [plan] 총괄 D90 ⑥ — 「여기가 이 방에서 얘가 자라는 단 한 자리야.」가 박사님 요령(창 밑에 가구를 쌓아 화분을 창 높이로)에선
+       거짓이다 — house 잼: 책상 위 받침대 2.66 · 서랍장이면 창턱까지 넷(«자라는 자리»가 늘어난다). 게임이 «하나뿐»이라 막아서면 찾을 길을 닫는다.
+     ⇒ «지금 · 제일 밝은»(비교)으로 좁혔다. 참인 조건: 등 받기 전(§statusSill 줄) · 창턱이 방에서 가장 밝다(반지하 창턱 4.80 > 책상 위 화분대 윗단 2.07 ·
+       받침대 2.66 — house 10-30 · 등이 오면 이 줄은 안 뜬다). */
   statusSill: [
-    { who: 'moni',   face: 'teach', text: '여기가 이 방에서 얘가 자라는 단 한 자리야.' }
+    { who: 'moni',   face: 'teach', text: '지금은 여기가 얘한테 제일 밝은 자리야.' }
+  ],
+  /* ★ 2026-10-30 [plan] 총괄 D90 ⑥ — **원리 한 줄**(요령은 가르치지 않되 막지 않는다 · 레시피 아님). 가구점 화분대 소개(house cd8561de:
+       «윗단일수록 창에 가깝다 — 빛도 윗단부터 닿는다» · «화분을 높이 올린다 — 창에 가까울수록 빛이 닿는다»)와 같은 말.
+     참인 조건: 반지하(창이 뒷벽 높은 띠 · 창턱 받침 y 1.55 — house_rooms banjiha) · 화분을 창 쪽으로 높일수록 밝다(house 잼: 창 밑 바닥 0.25 →
+       책상 위 받침대 2.66 · 비교만 말하고 «자란다»는 안 말한다) · 때 = 가구점이 열렸고(첫 등이 온 뒤 · 같은 문) 가방에 둘 데 없는 삽수가 있을 때 · 한 번.
+     첫 플레이 «높은 창턱 자리로 옮겨 보세요»(move_monstera)의 되풀이라 새 비밀을 주지 않는다. */
+  hintRaisePot: [
+    { who: 'jachwi', face: 'think', text: '삽수는 어디 두지.' },
+    { who: 'moni',   face: 'teach', text: '창이 높으면 화분도 높여 봐. 창에 가까울수록 빛이 닿아.' }
   ],
   statusGauge: [
     { who: 'jachwi', face: 'curious', text: '빛이 쌓인 만큼이라며. 얼마나 쌓였어?' },
@@ -3542,6 +3555,8 @@ export const CHATTER = [
   { id: 'chatOneroomMoney',   when: c => c.movedOut && !c.movedHome && c.cashWon != null && c.cashWon < 300_000
                                       && c.daysInOneroom != null && c.daysInOneroom <= 45 },
   { id: 'chatOneroomSiru',    when: c => c.movedOut && !c.movedHome },
+  /* ★ 2026-10-30 D90 ⑥ — 원리 한 줄(반지하 · 가구점 열림 = 첫 등이 온 뒤 · 가방에 삽수 · 한 번) */
+  { id: 'hintRaisePot',       gap: 9999, when: c => c.hasMonstera && !c.movedOut && c.lampOwned >= 1 && c.bagCuttings >= 1 },
   { id: 'chatOneroomBright',  when: c => c.movedOut && !c.movedHome },
   { id: 'chatOneroomWindow',  when: c => c.movedOut && !c.movedHome },
   { id: 'chatOneroomEmpty',   when: c => c.movedOut && !c.movedHome && c.daysInOneroom != null && c.daysInOneroom <= 30 },

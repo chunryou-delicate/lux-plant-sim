@@ -1155,6 +1155,21 @@ check('대사 — 남는 건 판다(한 목소리 «하루 밥상 몫은 먹고 
   assert.ok(row('nudgeSurplusOffer') && row('nudgeSurplusPush'), '남는 건 판다 독촉 줄이 없습니다');
 });
 
+/* ★ 2026-10-30 [plan] 총괄 D90 ⑥ — 박사님 요령: 가르치지 않되 막지 않는다(«단 한 자리» 걷음 · 원리 한 줄은 비교만) */
+check('대사 — 요령을 막지 않는다: «단 한 자리» 없음 · 원리 한 줄은 비교만 · 반지하 · 한 번(D90 ⑥)', () => {
+  for (const id of Object.keys(SCRIPTS))
+    for (const l of SCRIPTS[id]) assert.ok(!/단 한 자리/.test(l.text), `'${id}' 가 «단 한 자리»를 말합니다(요령과 어긋남): ${l.text}`);
+  assert.ok(SCRIPTS.statusSill.some(l => /지금은/.test(l.text) && /제일 밝은/.test(l.text)), 'statusSill 이 «지금은 · 제일 밝은»이 아닙니다');
+  const H = CHATTER.find(r => r.id === 'hintRaisePot');
+  assert.ok(H && H.gap === 9999 && !REPEATABLE.has('hintRaisePot'), '원리 한 줄은 한 번');
+  for (const l of SCRIPTS.hintRaisePot) assert.ok(!/[0-9]|넷|네 개|쌓아|자라/.test(l.text), `원리 줄이 레시피·장담을 말합니다: ${l.text}`);
+  const c = o => ({ hasMonstera: true, movedOut: false, lampOwned: 1, bagCuttings: 1, ...o });
+  assert.equal(H.when(c()), true);
+  assert.equal(H.when(c({ movedOut: true })), false, '원룸에서 섭니다');
+  assert.equal(H.when(c({ lampOwned: 0 })), false, '가구점이 열리기 전에 섭니다');
+  assert.equal(H.when(c({ bagCuttings: 0 })), false, '둘 데 없는 삽수가 없는데 섭니다');
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {
