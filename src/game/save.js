@@ -795,7 +795,10 @@ function packFirstPlay(fp) {
                                    'firstPlay.food.totalSurplusSoldWon', { min: 0 }),
       /* ★ 곳간 채소를 팔아 받은 돈 누계 (2026-08-15 · §곳간 판매). 옛 세이브엔 없다 → 0 */
       totalPantrySoldWon: needNum(f.totalPantrySoldWon ?? 0,
-                                  'firstPlay.food.totalPantrySoldWon', { min: 0 })
+                                  'firstPlay.food.totalPantrySoldWon', { min: 0 }),
+      /* ★ 2026-10-30 총괄 D90 ④ — 곳간 판 횟수(first_play §pantrySoldCountOf · 할 일 sell_surplus). 안 실으면 저장 한 번에 사라져 그 줄이 다시 «안 끝남».
+         옛 세이브·아직 안 판 판은 칸이 없다 → 칸을 안 만든다(0 으로 채우면 «판 돈이 있으면 1» 셈이 막힌다) */
+      ...(f.pantrySoldCount == null ? {} : { pantrySoldCount: needInt(f.pantrySoldCount, 'firstPlay.food.pantrySoldCount', { min: 0 }) })
     },
     monstera: {
       arrived: !!m.arrived,

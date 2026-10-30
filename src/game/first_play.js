@@ -3006,6 +3006,7 @@ export function takeCropSurplus(fp) {
   if (q.pendingWon <= 0) return { ...q, won: 0 };
   fp.food.surplusWon = 0;
   fp.food.totalSurplusSoldWon = Math.round((fp.food.totalSurplusSoldWon || 0) + q.won);
+  fp.food.pantrySoldCount = (Number.isFinite(fp.food.pantrySoldCount) ? fp.food.pantrySoldCount : 0) + 1;   /* ★ 2026-10-30 D90 ④ §pantrySoldCountOf — 잉여 넘김도 한 번 */
   return q;
 }
 
@@ -3105,6 +3106,28 @@ export function pantryLotsWithGrams(fp) {
   return pantryLotsOf(fp).map(l => ({ ...l, g: gramsOfWon(l.won) }));
 }
 /* 곳간에 몇 g 이 있나 — **낱개의 합**이다(§그램 ⚠). */
+/* ★★ 2026-10-30 총괄 D90 ④⑤ — «이레치 밥상 몫»과 «남는 몫»(core 확정 · growth 하네스 keepMeals 14 와 같은 자 · growth 83b1e728)
+   이레 = 7일 · 곳간은 하루 두 끼 ⇒ 14끼. 꾸러미(판)마다 끼니 수(lot.meals · 품질 띠가 정함)가 다르므로 «판 수»가 아니라 «끼니»로 센다
+   (하네스 옛 PANTRY_KEEP 10판은 끼니 중앙 30 ≈ 15일치였다 — 판 크기가 작물·수확마다 달라 날수가 흔들린다).
+   ★ 새 꾸러미부터 끼니를 세어 14끼 몫만 남기고, 그 앞(옛 것)이 남는 몫이다 — pantrySaleQuote 가 앞에서부터 고르므로 «남는 몫 = 앞의 sellLots 판»이다.
+   ⚠ 끼니 칸이 없는 꾸러미(옛 세이브를 쪼갠 몫 · meals 0)는 끼니로 안 센다 — 하네스와 같은 자를 쓰려고 지어내지 않는다(남기는 쪽으로 기운다).
+   반환 { keepMeals, keepLots, keepGrams, sellLots, overKeepGrams } · 곳간이 14끼에 못 미치면 sellLots 0 · overKeepGrams 0 */
+export const PANTRY_KEEP_MEALS = 14;
+export function pantryKeepStatus(fp, keepMeals = PANTRY_KEEP_MEALS) {
+  const L = pantryLotsOf(fp);
+  let m = 0, keepLots = 0, keepGrams = 0;
+  for (let i = L.length - 1; i >= 0 && m < keepMeals; i--) { m += L[i].meals || 0; keepLots++; keepGrams += gramsOfWon(L[i].won); }
+  const total = pantryGramsOf(fp);
+  return { keepMeals, keepLots, keepGrams, sellLots: Math.max(0, L.length - keepLots), overKeepGrams: Math.max(0, total - keepGrams) };
+}
+
+/* ★ 2026-10-30 총괄 D90 ④ — 곳간(보유 채소)을 판 횟수(잉여 넘김 포함 · 삽수·그루 판매는 안 셈) — 할 일 sell_surplus 가 본다(quest §pantrySoldCount).
+   셈은 아래 §takeCropSurplus · §takePantryCrop 이 정말 덜어 낸 때만 하나씩. 옛 세이브는 칸이 없다 → 판 돈이 있으면 1(«한 번은 팔았다»만 참) */
+export function pantrySoldCountOf(fp) {
+  const f = (fp && fp.food) || {};
+  if (Number.isFinite(f.pantrySoldCount)) return f.pantrySoldCount;
+  return ((f.totalPantrySoldWon || 0) + (f.totalSurplusSoldWon || 0)) > 0 ? 1 : 0;
+}
 export function pantryGramsOf(fp) {
   return pantryLotsWithGrams(fp).reduce((a, l) => a + l.g, 0);
 }
@@ -3177,6 +3200,7 @@ export function takePantryCrop(fp, count, opt = {}) {
   } else fp.food.pantryLots = lots.slice(q.lots);
   fp.food.pantryWon = Math.max(0, Math.round((fp.food.pantryWon || 0) - q.pendingWon));
   fp.food.totalPantrySoldWon = Math.round((fp.food.totalPantrySoldWon || 0) + q.won);
+  fp.food.pantrySoldCount = (Number.isFinite(fp.food.pantrySoldCount) ? fp.food.pantrySoldCount : 0) + 1;   /* ★ 2026-10-30 D90 ④ §pantrySoldCountOf */
   /* ⚠ `q.pantryGrams` 는 **덜어 내기 전** 값이라 그대로 내면 거짓말이 된다. 다시 센다 */
   return { ...q, pantryWon: fp.food.pantryWon, pantryGrams: pantryGramsOf(fp) };
 }

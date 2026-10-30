@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';   /* D71 — 자리 높이 표(tools/lib/drop_table) */
 import { ARRIVAL, pot0, hasPlant } from '../../src/game/state.js';
-import { firstPlayRulesFromBalance, cropSites, cropPotList } from '../../src/game/first_play.js';
+import { firstPlayRulesFromBalance, cropSites, cropPotList, pantryKeepStatus, pantrySoldCountOf } from '../../src/game/first_play.js';
 import { createProfileLight } from '../../src/game/room_profile.js';
 import { cuttingsOf } from '../../src/game/propagation.js';
 import { storyOf, tutorialRulesFromHomes } from '../../src/game/oneroom.js';
@@ -216,6 +216,9 @@ export function questSnapshotOf(S, io, opt = {}) {
     lampUnlocked: !!(ts.lamp && ts.lamp.unlocked), lampOwned: (ts.lamp && ts.lamp.owned) || 0,
     lampPlaced: ts.lamp && Number.isInteger(ts.lamp.placed) ? ts.lamp.placed : null,
     monsteraArrived: !!(fp.monstera && fp.monstera.arrived), monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved),
+    /* ★ 2026-10-30 D90 ④ — game.html §questSnapshotNow 와 같은 함수(곳간 판 횟수 · 이레치 밥상 몫 넘친 g) */
+    pantrySoldCount: (() => { try { return pantrySoldCountOf(fp); } catch { return null; } })(),
+    pantryOverKeepGrams: (() => { try { return pantryKeepStatus(fp).overKeepGrams; } catch { return null; } })(),
     /* ★ 2026-10-08 — game.html questSnapshotNow §monsteraGrowing 과 같은 자(그날 하늘 · 자리 표 · bandOf · 안 자람 셋 아님). real 판의 날씨 기댓값은 화면만 쓴다 */
     monsteraGrowing: (() => { const p0 = pot0(S); if (!p0 || !p0.slotId) return false;
       try { const sky = io.light.skyFor(S.day, S.sim); const d = io.light.dliOfSlot(p0.at ? p0 : p0.slotId, { weather: sky.weather, season: sky.season, lampCount: (S.lamps && S.lamps.count) || 0, litHours: (S.lamps && S.lamps.litHours) || 0 });

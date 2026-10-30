@@ -3317,6 +3317,7 @@ import {
   placeCrop,
   slotFitsDiameter,
   cropQualityOf,
+  pantryKeepStatus, pantrySoldCountOf,   /* ★ 2026-10-30 D90 ④⑤ 이레치 밥상 몫 · 남는 몫 · 곳간 판 횟수 */
   monsteraArrivalLeft,
   /* 2종째 작물(무순). 자리 이름·종류표·자리 찾기 — 숫자를 화면이 또 갖지 않는다 */
   cropSiteOf,
@@ -5675,7 +5676,7 @@ function bindDetail() {
     if (e.target.closest('#bagSellCrop')) {
       e.stopPropagation();
       pantrySellKind = null;                 /* 아래 단추는 예전대로 섞어서 판다 */
-      pantrySellOpen = true; pantrySellN = 1;
+      pantrySellOpen = true; pantrySellN = pantrySellDefaultN();   /* ★ 2026-10-30 D90 ⑤ 남는 몫 */
       try { window.__byeotSheet.tab('shop'); } catch { }
       draw();
       /* ★ 2026-08-17 — `scrollIntoView` 를 걷었다. 고르개가 **화면 한가운데 팝업**이라
@@ -10156,6 +10157,10 @@ function questSnapshotNow(turn) {
     /* ★ 초반 사슬 ⑥「몬스테라 자리 잡기」가 이 둘로 판정한다. 정본은 `firstPlay.monstera` 다 */
     monsteraArrived: !!(fp.monstera && fp.monstera.arrived),
     monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved),
+    /* ★ 2026-10-30 총괄 D90 ④ — 남는 건 판다(quest §sell_surplus): 곳간 판 횟수(first_play §pantrySoldCountOf) ·
+         곳간 g − 이레치 밥상 몫 g(first_play §pantryKeepStatus · 14끼) — 하네스 §questSnapshotOf 와 같은 함수 */
+    pantrySoldCount: (() => { try { return pantrySoldCountOf(fp); } catch { return null; } })(),
+    pantryOverKeepGrams: (() => { try { return pantryKeepStatus(fp).overKeepGrams; } catch { return null; } })(),
     /* ★ 2026-09-02 — 무순 줄(crop_mix)이 「집 잡은 «다음 날»」로 열리게 — 있는 칸 둘을 옮겨 적는다 */
     monsteraHomedDays: (fp.monstera && fp.monstera.guide && fp.monstera.guide.movedDays) || 0,
     monsteraGrewOnce: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.grewOnce),
@@ -19199,20 +19204,31 @@ function drawPantrySale() {
        «손해»라 해서, 밥상 판의 «파는 편이 낫습니다»와 반대로 말했다(한 목소리 «하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 것은 판다»).
        값 낱말은 «팔면 N원» 하나. 다 파는 날의 무게(08-27 [Plan] ④)는 남긴다 — 그날은 밥상에 올릴 채소가 정말 안 남는다.
        ⚠ 기본 판 수를 «남는 몫(곳간 − 이레치 밥상 몫)»으로 하고 «이레치 밥상 몫은 남깁니다»를 앞에 붙이는 것은 core(이레 값 확정 뒤) */
-  $('pantryQuote').textContent =
-    `${formatGram(ps.pendingGrams)}을 ${ps.won.toLocaleString()}원에 팝니다. ` +
-    (Math.max(0, ps.pantryGrams - ps.pendingGrams) > 0
-      ? `${formatGram(Math.max(0, ps.pantryGrams - ps.pendingGrams))}은 그대로 둡니다.`
-      : `다 팝니다 — 밥상에 올릴 채소가 안 남습니다.`);
+  /* ★ 2026-10-30 총괄 D90 ⑤ — 글은 plan(plan-to-core-d90 ⑤-1) · 이레치 = 14끼(first_play §PANTRY_KEEP_MEALS · growth 하네스 keepMeals 와 같은 자).
+       남는 몫을 꼭 맞게 팔 때 «이레치 밥상 몫은 남깁니다» · 그보다 더 팔면 «밥상에 올릴 몫까지» · 덜 팔면 예전 글(둔 g 이 참).
+       갈래(그 채소만)를 골랐을 때는 남는 몫을 갈래로 못 가르므로 예전 글 그대로 */
+  const keep = (() => { try { return pantrySellKind ? null : pantryKeepStatus(S.firstPlay); } catch { return null; } })();
+  const leftG = Math.max(0, ps.pantryGrams - ps.pendingGrams);
+  const sayWon = `${formatGram(ps.pendingGrams)}을 ${ps.won.toLocaleString()}원에 팝니다.`;
+  $('pantryQuote').textContent = !leftG ? `${sayWon} 다 팝니다 — 밥상에 올릴 채소가 안 남습니다.`
+    : (keep && keep.sellLots > 0 && ps.lots === keep.sellLots)
+    ? `이레치 밥상 몫은 남깁니다 — 나머지 ${formatGram(ps.pendingGrams)}을 ${ps.won.toLocaleString()}원에 팝니다. 밥상은 그대로입니다.`
+    : (keep && ps.lots > keep.sellLots) ? `${sayWon} 밥상에 올릴 몫까지 팝니다 — 그만큼 밥값이 나갑니다.`
+    : `${sayWon} ${formatGram(leftG)}은 그대로 둡니다.`;
   $('pantryGo').disabled = !ps.canSell;
 }
 
 $('sellPantry').onclick = guard(() => {
   /* ★ 누르면 바로 안 판다 — **고르는 자리가 먼저 뜬다**(박사님 요청) */
   pantrySellOpen = !pantrySellOpen;
-  pantrySellN = 1;
+  pantrySellN = pantrySellDefaultN();   /* ★ 2026-10-30 D90 ⑤ 남는 몫 */
   drawPantrySale();
 });
+/* ★ 2026-10-30 총괄 D90 ⑤ — 섞어 파는 창의 기본 판 수 = 남는 몫(곳간 − 이레치 밥상 몫 · first_play §pantryKeepStatus) · 남는 몫이 없으면 예전대로 1판.
+     ⚠ 그 채소만 파는 창(가방 채소 칸)은 1판 그대로 — 남는 몫을 갈래로 못 가른다 */
+function pantrySellDefaultN() {
+  try { const k = pantryKeepStatus(S.firstPlay); return k.sellLots > 0 ? k.sellLots : 1; } catch { return 1; }
+}
 $('pantryMinus').onclick = guard(() => { pantrySellN -= 1; drawPantrySale(); });
 $('pantryPlus').onclick  = guard(() => { pantrySellN += 1; drawPantrySale(); });
 $('pantryAll').onclick   = guard(() => {
