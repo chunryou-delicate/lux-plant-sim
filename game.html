@@ -7326,7 +7326,8 @@ function drawMonthPanel() {
     `살림 ${subFrom}~${r.toDay}일차` +
     (r.period ? ` · 월세는 ${r.period}일마다 나갑니다` : '') +
     (r.days < r.toDay - r.fromDay ? ` · ⚠ 이 중 ${r.days}일치만 셌습니다` : '');
-  /* D21 — 가계부 맨 위 한 줄: 「이사비 {목표}원 — {n}원 남았습니다」 · 다 모으면 「이사비가 모였습니다」 */
+  /* D21 — 가계부 맨 위 한 줄: 「이사비까지 {n}원 모자랍니다」 · 다 모으면 「이사비가 모였습니다」
+     ★ 2026-10-30 [plan] D90 ③ — 「이사비 {목표}원 — {n}원 남았습니다」는 «남은 돈»인지 «모자란 돈»인지 헷갈렸다(비판 판 ④). 목표 금액은 이사 창이 말한다 */
   { let g = $('monthGoal');
     if (!g) { g = document.createElement('div'); g.id = 'monthGoal'; g.className = 'psub';
               $('monthTitle').insertAdjacentElement('afterend', g); }
@@ -7334,7 +7335,7 @@ function drawMonthPanel() {
     const hg = mg ? null : homeGoalOf();      /* ★ 2026-10-08 ④ — 이사 뒤엔 내 집 마련 줄 */
     g.style.display = (mg || hg) ? '' : 'none';
     if (mg) g.textContent = mg.done ? '이사비가 모였습니다'
-      : `이사비 ${mg.target.toLocaleString('ko-KR')}원 — ${mg.left.toLocaleString('ko-KR')}원 남았습니다`;
+      : `이사비까지 ${mg.left.toLocaleString('ko-KR')}원 모자랍니다`;
     else if (hg) g.innerHTML = homeGoalHtml(hg); }
 
   /* ★★ 한 줄 요약 — 이 창의 전부다 */
@@ -12596,7 +12597,8 @@ const siruHarvest = guard((id, kind) => {
   noteHarvest(r);           /* 아래 한 줄이 「얼마를 아꼈나」를 말할 근거 (§A ①) */
   let ko = '콩나물'; try { ko = cropKindOf(kind).ko; } catch { }
   banners([{ title: `🥣 ${josa(ko, '을', '를')} 거뒀습니다`,
-             sub: `${r.qualityKo || ''} · 밥값 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원어치` },
+             /* ★ 2026-10-30 [plan] D90 ⑤ — «밥값 N원어치»(물건 값 10원/g)를 걷고 거둔 g 만(값 낱말은 밥상 «한 몫 2,500원 아낌» · 파는 창 «팔면 N원» 둘뿐) */
+             sub: `${r.qualityKo || ''} · ${formatGram((r.perPot || []).reduce((a, x) => a + (x.grams || 0), 0))}` },
            ...surplusBannerOf(r), ...neighborOrderBannerOf(r.events)]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   if (r.events && r.events.length) dlgOpen(story.events(r.events, S));
@@ -13292,10 +13294,11 @@ function drawMealPanel() {
     say.className = 'pquote warn';
   } else if (ms.savedWon < ms.capWon && ms.restGrams > 0) {
     /* ★★★ 여기가 옛 화면이 거짓말하던 자리다(위 ㉠). 곳간은 남아 있다 — **규칙이 안 올린다** */
+    /* ★ 2026-10-30 [plan] D90 ⑤ 한 목소리 «하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 것은 판다» — «숫자 벽»(비판 판 ④)을 걷었다.
+         참: 이 갈래 = 규칙이 더 안 올림(같은 작물 둘째 몫 1,200원 < 판 값) · 곳간이 남음 · 곳간은 안 쉰다 */
     say.textContent =
-      `보유 채소가 ${formatGram(ms.restGrams)} 남았는데 더 안 올립니다 — 한 몫에 드는 g 은 ` +
-      `작물마다 정해져 있고, 둘째 몫을 같은 작물로 채우면 그 몫이 파는 값보다 못합니다. ` +
-      `남는 것은 그대로 쌓입니다 — 파는 편이 낫습니다.`;
+      `오늘 밥상에 오를 몫은 다 올렸습니다 — 둘째 몫을 같은 작물로 채우면 파는 것보다 못합니다. ` +
+      `남은 ${formatGram(ms.restGrams)}은 [상점]에서 파는 편이 낫습니다.`;
     say.className = 'pquote';
   } else if (ms.savedWon < ms.capWon) {
     /* 진짜로 곳간이 모자란 판 — 이때만 곳간을 탓한다 */
@@ -18834,7 +18837,8 @@ const reallyHarvest = guard(() => {
   noteHarvest(r);           /* 아래 한 줄이 「얼마를 아꼈나」를 말할 근거 (§A ①) */
   lastTurn = lastTurn || null;
   banners([{ title: `🥣 콩나물을 거뒀습니다`,
-             sub: `${r.qualityKo || ''} · 밥값 ${Math.round(r.savedWon || r.cycleSavedWon || 0).toLocaleString()}원어치` },
+             /* ★ 2026-10-30 [plan] D90 ⑤ — «밥값 N원어치»(물건 값 10원/g)를 걷고 거둔 g 만(값 낱말은 밥상 «한 몫 2,500원 아낌» · 파는 창 «팔면 N원» 둘뿐) */
+             sub: `${r.qualityKo || ''} · ${formatGram((r.perPot || []).reduce((a, x) => a + (x.grams || 0), 0))}` },
            ...surplusBannerOf(r), ...neighborOrderBannerOf(r.events)]);
   if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
   /* 대사는 턴과 같은 창구로 낸다 — 수확 → 배움 → 식물신 → 도착 순서가 여기서 지켜진다 */
@@ -19065,19 +19069,15 @@ function drawPantrySale() {
   $('pantryCount').textContent = `${ps.lots}판`;
   $('pantryMinus').disabled = ps.lots <= 1;
   $('pantryPlus').disabled = ps.lots >= max;
-  /* ★★ 손해를 **문장 한가운데**에 둔다 — 꼬리에 달면 안 읽힌다 */
+  /* ★★ 2026-10-30 [plan] D90 ⑤ — «N원 손해입니다»를 걷었다. 그 «손해»는 물건 값(10원/g)과 판 값의 차였다 — 하루 밥상 몫을 넘어 쌓인 것까지
+       «손해»라 해서, 밥상 판의 «파는 편이 낫습니다»와 반대로 말했다(한 목소리 «하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 것은 판다»).
+       값 낱말은 «팔면 N원» 하나. 다 파는 날의 무게(08-27 [Plan] ④)는 남긴다 — 그날은 밥상에 올릴 채소가 정말 안 남는다.
+       ⚠ 기본 판 수를 «남는 몫(곳간 − 이레치 밥상 몫)»으로 하고 «이레치 밥상 몫은 남깁니다»를 앞에 붙이는 것은 core(이레 값 확정 뒤) */
   $('pantryQuote').textContent =
-    `${formatGram(ps.pendingGrams)}(밥값 ${ps.pendingWon.toLocaleString()}원어치)을 ` +
-    `${ps.won.toLocaleString()}원에 넘깁니다 — ${ps.lossWon.toLocaleString()}원 손해입니다. ` +
-    /* ★★ 2026-08-27 — **「전부」일 때 말이 달라진다** ([Plan] ④)
-       있던 말은 늘 「남는 것 N 남음」이었다. ⇒ ⛔ 다 넘기는 날에도 「남는 것 0g 남음」이라 적혔다.
-       ★ 그 순간이 이 화면에서 제일 무거운 자리인데 말이 «제일 가벼웠다».
-       ⇒ 남을 때는 「다음에 또 급할 수 있습니다」, 전부일 때는 「팔 것이 «없습니다»」.
-       ⚠ 수를 안 더 적는다 — 남는 g 은 위에서 이미 말한다. 여기는 «뒷일»만 말한다. */
+    `${formatGram(ps.pendingGrams)}을 ${ps.won.toLocaleString()}원에 팝니다. ` +
     (Math.max(0, ps.pantryGrams - ps.pendingGrams) > 0
-      ? `판 만큼 밥값을 못 아낍니다 (남는 것 ` +
-        `${formatGram(Math.max(0, ps.pantryGrams - ps.pendingGrams))} — 다음에 또 급할 수 있습니다)`
-      : `판 만큼 밥값을 못 아낍니다 (다 넘깁니다 — 다음에 급하면 팔 것이 없습니다)`);
+      ? `${formatGram(Math.max(0, ps.pantryGrams - ps.pendingGrams))}은 그대로 둡니다.`
+      : `다 팝니다 — 밥상에 올릴 채소가 안 남습니다.`);
   $('pantryGo').disabled = !ps.canSell;
 }
 
@@ -19138,8 +19138,9 @@ $('pantryGo').onclick = guard(() => {
   const r = sellPantryCrop(S, pantrySellN, { kind: pantrySellKind });
   pantrySellOpen = false;
   pantrySellN = 1;
+  /* ★ 2026-10-30 [plan] D90 ⑤ — «(N원 손해)»를 걷었다(한 목소리 · 값 낱말은 «팔면 N원»). 다른 팔기 배너(§판매 «N원이 들어왔습니다»)와 같은 말 */
   banner('보유 채소를 팔았습니다',
-         `${r.whatKo} ${r.whatG} · ${r.won.toLocaleString()}원 (${r.lossWon.toLocaleString()}원 손해)`);
+         `${r.whatKo} ${r.whatG} · ${r.won.toLocaleString()}원이 들어왔습니다`);
   draw();
 });
 

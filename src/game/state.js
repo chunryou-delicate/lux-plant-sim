@@ -1471,9 +1471,9 @@ export function sellPantryCrop(S, count, opt = {}) {
   const whatG = formatGram(taken.pendingGrams);
   const r = creditCropSurplus(S, taken.won);
   /* ⚠ `opt.log` 를 안 넘긴다 — 아래에서 한 줄을 적는다(두 줄이 되면 더 나쁘다) */
-  pushLog(S, `💰 보유 채소를 팔았습니다 — ${whatKo} ${whatG}(밥값 ${taken.pendingWon.toLocaleString()}원어치)을 ` +
-             `${Math.round(taken.rate * 100)}% 에 넘겨 ${taken.won.toLocaleString()}원 ` +
-             `(${taken.lossWon.toLocaleString()}원 손해 · ${taken.pantryWon.toLocaleString()}원어치 남음)`);
+  /* ★ 2026-10-30 [plan] D90 ⑤ — «밥값 N원어치 · N% · N원 손해 · N원어치 남음»(물건 값)을 걷었다. 값 낱말은 «팔면 N원» 하나 · 남은 것은 g */
+  pushLog(S, `💰 보유 채소를 팔았습니다 — ${whatKo} ${whatG}을 ${taken.won.toLocaleString()}원에 · ` +
+             `${formatGram(Math.max(0, (taken.pantryGrams || 0) - (taken.pendingGrams || 0)))} 남음`);
   return { ...r, lots: taken.lots, picked: taken.picked, whatKo, whatG,
            pendingGrams: taken.pendingGrams, pantryGrams: taken.pantryGrams,
            pendingWon: taken.pendingWon, rate: taken.rate, won: taken.won,

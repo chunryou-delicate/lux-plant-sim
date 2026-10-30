@@ -1654,8 +1654,8 @@ export function harvestCrop(S, io, opt = {}) {
        거둔 것이 물건이 아니라 돈으로 읽힌다 — 가방·상점·밥상 창이 전부 g 으로 말한다.
        ⚠ g 은 `perPot` 이 낸 낱개를 더한다. 총액을 한 번에 나누면 화면 곳곳의 낱개 합과 갈린다. */
     const harvestG = (r.perPot || []).reduce((a, x) => a + (x.grams || 0), 0);
-    pushLog(S, `🥣 수확 — ${what} · ${r.qualityKo} · ${formatGram(harvestG)} · ` +
-               `밥값 ${r.cycleSavedWon.toLocaleString()}원어치`);
+    /* ★ 2026-10-30 [plan] D90 ⑤ — 꼬리 «밥값 N원어치»(물건 값 10원/g)를 걷었다. 밥상은 한 몫 2,500원이라 같은 채소가 두 값으로 읽혔다 */
+    pushLog(S, `🥣 수확 — ${what} · ${r.qualityKo} · ${formatGram(harvestG)}`);
     /* ★★ 겹침 (2026-08-04 · first_play.js §겹침) — 예전 "시루를 늘려도 안 는다"를 대신한다.
        손해의 이유가 시루 수가 아니라 **거두는 때가 겹친 것**이라, 처방도 달라진다:
        "사지 마라"가 아니라 **"물을 날을 달리해 줘라"** 다. */
