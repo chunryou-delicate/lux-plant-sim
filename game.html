@@ -1584,6 +1584,13 @@
     padding:9px 12px;border-radius:13px;background:rgba(16,12,24,.82);
     border:1px solid rgba(255,255,255,.10);backdrop-filter:blur(6px)}
   #stage.zoom #growGauge{display:block}
+  /* ★ 2026-10-31 — 폰 확대 중 [다음 날 ▸ · 수확까지 N일](폭 200px)이 카드 오른쪽 절반(«→ 어린잎까지 …» · 새 줄 «자르기까지 …»)을 덮었다
+       (probe_ggcut 360 · 390 · 430 — 셋 다). 카드 자리는 그대로 두고(밑의 plant_grow 보기 단추를 늘 덮어 온 자리 — 올리면 그 단추가 반쯤 드러난다)
+       ① 확대 중엔 [다음 날]의 «· 수확까지 N일»을 숨기고(§drawNext .nx-sub — 방으로 돌아오면 그대로) ② 카드 글줄은 [다음 날] 폭만큼 비킨다(--nextW · §ggResize)
+       ③ [시야 돌아가기]는 카드 위(카드 높이 --ggH) — 예전엔 카드 윗변과 4px 겹쳤다 */
+  #stage.zoom #next .nx-sub{display:none}
+  #stage.zoom #growGauge .gg-row,#stage.zoom #growGauge .gg-why,#stage.zoom #growGauge .gg-cut{margin-right:max(0px, calc(var(--nextW, 0px) - 4px))}
+  #stage.zoom #closeZoom{bottom:calc(22px + var(--ggH, 72px))}
   #growGauge .gg-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
   #growGauge b{font-size:13px;color:var(--ink);font-weight:700}
   #growGauge span{font-size:11px;color:var(--dim)}
@@ -1603,6 +1610,8 @@
   #monCard .mc-where{font-size:11.5px;color:var(--dim);margin-top:6px;word-break:keep-all}
   #growGauge .gg-why{margin-top:5px;font-size:11px;color:#f0b45a;line-height:1.4}
   #growGauge .gg-why:empty{display:none}
+  #growGauge .gg-cut{margin-top:5px;font-size:11px;color:var(--dim);line-height:1.4;word-break:keep-all}   /* ★ 10-31 D90 ③ «자르기까지» · 꺾을 땐 띄어쓰기에서 */
+  #growGauge .gg-cut:empty{display:none}
   #growth{transition:opacity .4s,filter .4s}
   /* ★ 식물이 없을 때는 무대를 **실제로 가린다** (2026-08-03).
      예전엔 opacity .18 + blur 라 "아직 몬스테라가 없습니다" 뒤로 화분·잎이 그대로 비쳤고,
@@ -2109,6 +2118,7 @@
       <div class="gg-row"><b id="ggPhase">—</b><span id="ggNext"></span></div>
       <div class="gg-bar"><i id="ggFill"></i></div>
       <div class="gg-why" id="ggWhy"></div>
+      <div class="gg-cut" id="ggCut"></div>
     </div>
     <button id="closeZoom" aria-label="시야 돌아가기">↩ 시야 돌아가기</button>
     <div id="stageEmpty"><b><img src="./assets/ui/item_monstera.png" alt="">아직 몬스테라가 없습니다<i>콩나물을 수확하면 새로운 화분이 찾아옵니다.</i></b></div>
@@ -3292,7 +3302,7 @@ import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
          /* ★ 2026-10-08 — 자리 잡은 삽수에서 다시 자른다(§drawCuttings «가진 삽수» · 총괄 14:25 ①) */
          cuttableNodesOfCutting,
          /* ★ 2026-10-30 총괄 D90 — 자르기 문 셈(growth 88af8c92) · 화면 · 하네스 · 검사가 같은 함수 */
-         varieMaturedLeavesOf,
+         varieMaturedLeavesOf, CUT_DOOR_VARIE_MATURED,
          CONTAINERS, METHODS } from './src/game/propagation.js';
 import { CUTTING_LEAF_DAYS } from './src/game/propagation.js';   /* ★ 2026-10-09 D46 — 다음 잎까지 온 몫(nextLeaf01) */
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
@@ -3320,6 +3330,7 @@ import {
   slotFitsDiameter,
   cropQualityOf,
   pantryKeepStatus, pantrySoldCountOf,   /* ★ 2026-10-30 D90 ④⑤ 이레치 밥상 몫 · 남는 몫 · 곳간 판 횟수 */
+  pantrySaleQuote,                       /* ★ 2026-10-31 D90 ③ 가계부 «남는 채소를 팔면» */
   monsteraArrivalLeft,
   /* 2종째 작물(무순). 자리 이름·종류표·자리 찾기 — 숫자를 화면이 또 갖지 않는다 */
   cropSiteOf,
@@ -3361,7 +3372,8 @@ import { createAmbience } from './src/game/ambience.js';
 import { createCameraMoves } from './src/game/camera_moves.js';
 import { seasonAt, seasonDayAt, SEASON_KO, tutorialGoal, learningLeft,
          canMoveOut, moveOut, buyLamp, lampPriceAt, lampNextIndex,
-         dailyCashOutWon, lampElectricityWon } from './src/game/tutorial.js';
+         dailyCashOutWon, lampElectricityWon,
+         walletWeekDeltaOf /* ★ 10-31 D90 ③ 가계부 «지난 이레» */ } from './src/game/tutorial.js';
 /* ★이사는 사건이 아니라 **이동**이다. moveOut 은 돈과 판정만 하고 방을 안 바꿨다 —
    moveIntoOneroom 이 그 위에서 S.home.room 과 자리를 옮긴다(oneroom.js 머리말). */
 import { moveIntoOneroom, storyOf } from './src/game/oneroom.js';
@@ -7440,6 +7452,21 @@ function drawMonthPanel() {
     if (mg) g.textContent = mg.done ? '이사비가 모였습니다'
       : `이사비까지 ${mg.left.toLocaleString('ko-KR')}원 모자랍니다`;
     else if (hg) g.innerHTML = homeGoalHtml(hg); }
+  /* ★ 2026-10-31 총괄 D90 ③ — 가계부 둘째·셋째 줄(plan-to-core-d90 ③-3 · 글 plan). 맨 위 줄처럼 «지금» 값이다.
+       둘째 «지난 이레 ±N원» — tutorial §walletWeekDeltaOf(이레가 안 찼으면 안 적음)
+       셋째 «남는 채소를 팔면 +N원» — 곳간 − 이레치 밥상 몫(first_play §pantryKeepStatus)을 판 값(§pantrySaleQuote · 0 이면 안 적음) */
+  { const line = (id, after) => { let e = $(id);
+      if (!e) { e = document.createElement('div'); e.id = id; e.className = 'psub'; after.insertAdjacentElement('afterend', e); }
+      return e; };
+    const w = line('monthWeek', $('monthGoal'));
+    let wd = null; try { wd = walletWeekDeltaOf(S.tutorial); } catch { wd = null; }
+    w.style.display = Number.isFinite(wd) ? '' : 'none';
+    if (Number.isFinite(wd)) w.textContent = `지난 이레 ${wd >= 0 ? '+' : '−'}${Math.abs(wd).toLocaleString('ko-KR')}원`;
+    const v = line('monthVeg', w);
+    let vw = 0;
+    try { const k = pantryKeepStatus(S.firstPlay); vw = k.sellLots > 0 ? (pantrySaleQuote(S.firstPlay, k.sellLots).won || 0) : 0; } catch { vw = 0; }
+    v.style.display = vw > 0 ? '' : 'none';
+    if (vw > 0) v.textContent = `남는 채소를 팔면 +${vw.toLocaleString('ko-KR')}원`; }
 
   /* ★★ 한 줄 요약 — 이 창의 전부다 */
   const up = r.net >= 0;
@@ -9479,6 +9506,46 @@ function drawGrowGauge() {
       ? `${stuckDays}일째 그대로입니다`
       : shortBlockWhy(why);
   } else $('ggWhy').textContent = '';
+  try { $('ggCut').textContent = cutWaitLine(); } catch { $('ggCut').textContent = ''; }
+}
+/* ★ 2026-10-31 — 카드 높이(--ggH)와 [다음 날] 폭(--nextW)을 #stage 에 적는다(위 CSS 가 [시야 돌아가기]를 카드 위에 · 카드 글줄을 [다음 날] 옆에 세운다).
+     줄 수가 바뀌어도(«자르기까지» 있고 없고) · 라벨이 바뀌어도 따라간다 */
+(function ggResize() {
+  try {
+    const gg = $('growGauge'), nx = $('next'), st = $('stage');
+    if (!gg || !st || typeof ResizeObserver !== 'function') return;
+    const put = () => {
+      if (gg.offsetHeight) st.style.setProperty('--ggH', gg.offsetHeight + 'px');
+      st.style.setProperty('--nextW', (nx && nx.offsetParent ? nx.offsetWidth + 8 : 0) + 'px');
+    };
+    const ro = new ResizeObserver(put);
+    ro.observe(gg); if (nx) ro.observe(nx);
+  } catch (e) { console.warn('[확대 카드 자리]', e && e.message); }
+})();
+/* ★ 2026-10-31 총괄 D90 ③ — 확대창 한 줄(plan-to-core-d90 ③-4 · 글 plan): «자르기까지 — 다 자란 무늬 잎 n/2 · 자라는 무늬 잎 N%»
+     n = 무늬이면서 다 자란 잎(§varieMaturedLeavesNow — 자르기 문과 같은 셈) · 2 = propagation CUT_DOOR_VARIE_MATURED.
+     N = 아직 다 안 자란 무늬 잎 중 가장 덜 펼친 잎의 펼침(growth leafOnPlant leafM · leafState 와 leafBirth 로 맞물림).
+     ⚠ 반지하 모주만(삽수에서 다시 자르기는 이 문을 안 탄다 · 이사 뒤엔 안 적음) · 문이 열렸으면(n ≥ 2) · 못 세면 안 적는다.
+     ⚠ 펼침이 100% 여도 «다 자람»(성숙)은 따로 온다 — 그때는 «N%»를 안 붙인다(100% 인데 안 셈해 보이는 거짓을 피함) */
+function cutWaitLine() {
+  if (S.home && S.home.room !== 'banjiha') return '';
+  if (S.tutorial && S.tutorial.movedOut) return '';
+  const n = varieMaturedLeavesNow();
+  if (!Number.isInteger(n) || n >= CUT_DOOR_VARIE_MATURED) return '';
+  let rows = null, on = null;
+  try { rows = io.growth.leafState(); } catch { rows = null; }
+  try { on = io.growth.leafOnPlant ? io.growth.leafOnPlant() : null; } catch { on = null; }
+  let least = null;
+  if (Array.isArray(rows) && Array.isArray(on)) {
+    const mOf = new Map(on.filter(r => r && r.onPlant === true && Number.isFinite(r.leafM)).map(r => [r.leafBirth, r.leafM]));
+    for (const r of rows) {
+      if (!r || !r.varie || r.matured || r.dropped || !mOf.has(r.leafBirth)) continue;
+      const m = mOf.get(r.leafBirth);
+      if (least == null || m < least) least = m;
+    }
+  }
+  const pct = least == null ? null : Math.round(Math.max(0, Math.min(1, least)) * 100);
+  return `자르기까지 — 다 자란 무늬 잎 ${n}/${CUT_DOOR_VARIE_MATURED}` + (pct != null && pct < 100 ? ` · 자라는 무늬 잎 ${pct}%` : '');
 }
 
 /* ★★ 2026-10-08 G — **「더 밝은 자리로 옮겨 보세요」가 거짓인 날** (총괄 13:50 · [house] 자리 자유)
@@ -11185,7 +11252,9 @@ function drawNext() {
   const going = rows.filter(r => r.growing && Number.isFinite(r.daysLeft) && r.daysLeft > 0);
   if (todo || !going.length) { b.textContent = NEXT_KO; b.removeAttribute('title'); return; }
   const left = Math.min(...going.map(r => r.daysLeft));
-  b.textContent = `${NEXT_KO} · 수확까지 ${left}일`;
+  /* ★ 2026-10-31 — 꼬리는 따로 감싼다(확대 중엔 CSS 가 숨긴다 · 글자는 그대로라 textContent 를 읽는 검사는 안 바뀐다) */
+  b.textContent = NEXT_KO;
+  const sub = document.createElement('span'); sub.className = 'nx-sub'; sub.textContent = ` · 수확까지 ${left}일`; b.appendChild(sub);
   /* 긴 말은 길게 누를 때만 — 단추 한 줄에 다 적으면 좁은 화면에서 잘린다(= 거짓말이 된다) */
   b.title = `하루씩 넘기면 ${left}일 뒤에 거둡니다`;
 }
@@ -13216,6 +13285,12 @@ function showFirstPlayEvents(turn) {
   /* ★★ 하프문 장면은 «자를 수 있게 된 날»에 뜬다 — 대사가 「이제 돼」라서다(§halfSceneDue).
        드러난 날 ✂ 이 아직이면(잎2 갈라짐을 기다림 · 용기 없음 · 팔 삽수가 먼저) 장면은 ✂ 이 서는 날까지 미룬다.
        [growth] 40판(창턱+등1): 잎3 갈라지는 날 곧바로 열림 33/38 · 5/38 은 잎2 를 며칠~수십 일 기다린다. */
+  /* ★ 2026-10-31 총괄 D90 ③-5 — 무늬 잎이 «난» 날(사건 varie_lucky · 대사 varieLucky)을 크게: 배너 · 그루로 당겼다 돌아옴 · 기록 한 줄(plan-to-core-d90 ③-5 · 글 plan).
+       말린 새순엔 무늬가 안 보인다 — «다 자라면 보입니다»가 참 */
+  if (((turn && turn.tutorial && turn.tutorial.events) || []).some(e => e && e.id === 'varie_lucky')) {
+    events.push({ title: '🌿 무늬 잎이 났습니다', sub: '다 자라면 보입니다' });
+    focusOnMonstera(); (window.__stageLog ||= []).push({ day: S.day, kind: 'leaf:lucky' });
+  }
   const leafK0 = pendingLeafScene; pendingLeafScene = null;
   const halfNow = halfSceneDue(leafK0 === 'half');
   const leafK = halfNow ? 'half' : (leafK0 === 'half' ? null : leafK0);

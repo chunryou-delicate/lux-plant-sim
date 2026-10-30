@@ -917,7 +917,11 @@ function packTutorial(ts) {
     brokeSinceDay: ts.brokeSinceDay == null ? null : needInt(ts.brokeSinceDay, 'tutorial.brokeSinceDay', { min: 0 }),
     neighborOrderDay: ts.neighborOrderDay == null ? null : needInt(ts.neighborOrderDay, 'tutorial.neighborOrderDay', { min: 0 }),
     /* ★ 2026-10-10 D59 — 산 집(월세 0) */
-    homeOwned: !!ts.homeOwned
+    homeOwned: !!ts.homeOwned,
+    /* ★ 2026-10-31 총괄 D90 ③ — 이레 지갑(tutorial §walletWeekStep). 안 실으면 새로 켤 때마다 이레가 0 부터 다시 차고, 첫 플러스 사건이 또 난다.
+         옛 세이브는 칸이 없다 → 빈 기록 · false(이레가 다시 찰 때까지 «모른다» — 지어내지 않는다) */
+    cashWeek: needArr(ts.cashWeek || [], 'tutorial.cashWeek').map((v, i) => needNum(v, `tutorial.cashWeek[${i}]`)).slice(-8),
+    walletWeekUp: !!ts.walletWeekUp
   };
 }
 
@@ -1874,6 +1878,7 @@ export function deserialize(raw, opt = {}) {
     ts.movedOut = t.movedOut; ts.bankrupt = t.bankrupt;
     ts.reliefTaken = t.reliefTaken; ts.starved = t.starved; ts.brokeSinceDay = t.brokeSinceDay; ts.neighborOrderDay = t.neighborOrderDay;
     ts.homeOwned = !!t.homeOwned;   /* D59 */
+    ts.cashWeek = t.cashWeek; ts.walletWeekUp = t.walletWeekUp;   /* ★ 10-31 D90 ③ 이레 지갑 */
     /* ★★ 옛 세이브에는 `varieSale` 칸이 **아예 없다** — 위 §무늬 삽수 판매 이관.
        ⚠ 「없다」와 「0건이다」는 다른 말이다. 그래서 `t.varieSale`(없으면 0으로 채워진다)이
          아니라 **날 세이브에 그 칸이 있었는지**를 본다. 뭉개면 실제로 0건인 판까지

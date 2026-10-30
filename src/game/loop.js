@@ -63,7 +63,9 @@ import {
 import { canMoveOut, createTutorialState, LEARNING, tutorialDay, noteLearning,
          stepVarieGrant ,
          /* ★ 2026-08-24 — 무늬 잎을 낸 적(이사 둘째 축) */
-         noteVarieLeaf } from './tutorial.js';
+         noteVarieLeaf,
+         /* ★ 2026-10-31 총괄 D90 ③ — 이레 지갑 */
+         walletWeekStep } from './tutorial.js';
 import { dliFromContract } from './growth_adapter.js';
 import { headroomCheck, PLANT_POT_D_REF } from './headroom.js';
 import { rehomeCuttings, stepCuttings, cuttableNow, cutBlockedReason } from './propagation.js';
@@ -780,6 +782,9 @@ function stepTutorial(S, turn, io) {
     });
     /* ★ D35 — 반찬가게 주문의 마지막 날(창 끝날까지 안 거뒀으면 곳간의 가장 최근 몫으로 · §neighborOrderStep) */
     if (r && !r.error) { const no = neighborOrderStep(S, { lastDay: true }); if (no) r.events = [...(r.events || []), no]; }
+    /* ★ 2026-10-31 총괄 D90 ③ — 이레 지갑(tutorial §walletWeekStep): 오늘 살림이 끝난 지갑을 적고 지난 이레 변화를 턴에 싣는다
+         (dialogue §statusWallet «돈은 매일 줄고»는 이 값이 < 0 일 때만 · 처음 > 0 이면 사건 wallet_week_up 한 번) */
+    if (r && !r.error) { const ww = walletWeekStep(ts); turn.walletWeekDelta = ww.delta; if (ww.event) r.events = [...(r.events || []), ww.event]; }
     if (r && r.events) for (const e of r.events) pushLog(S, '📅 ' + e.ko);
     /* ★확정 무늬는 **배움·돈이 오늘 값이 된 뒤에** 본다 — 조건 ②·④가 오늘 값이라야 맞다 */
     const vg = stepVarieGrantOfTurn(S, io);

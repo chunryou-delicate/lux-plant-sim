@@ -313,9 +313,37 @@ export function createTutorialState(opt = {}) {
     reliefTaken: false,
     /* ★ D35 — 반찬가게 주문이 난 날(한 판에 한 번 · §neighborOrderWon). null = 아직 */
     neighborOrderDay: null,
+    /* ★ 2026-10-31 총괄 D90 ③ — 이레 지갑(§walletWeekStep): 하루 살림이 끝난 뒤의 지갑 최근 8일 · 첫 플러스 사건을 냈나(한 판에 한 번) */
+    cashWeek: [],
+    walletWeekUp: false,
     /* 굶어 죽었나 — 한 번 켜지면 새 판을 깔기 전까지 안 꺼진다 */
     starved: false
   };
+}
+
+/* ══ ★ 2026-10-31 총괄 D90 ③ — 이레 지갑 (plan-to-core-d90 ③ 1·2 · 글 plan 8885af39) ══════════════════════
+   «지난 이레 지갑 변화» = 오늘 하루 살림이 끝난 뒤 지갑 − 이레 전 같은 때 지갑. 사고팔기(턴 밖)도 다음 날 기록에 실린다.
+   ★ 기록은 ts.cashWeek(최근 8일 · 세이브에 실림). 이레가 안 찼으면 null(= 대사 statusWallet 은 예전 그대로 · 가계부는 안 적음).
+   ★ 처음으로 > 0 인 날 사건 wallet_week_up 한 번(ts.walletWeekUp) — 대사 walletWeekUp «…이번 주는 돈이 안 줄었어. 처음이야.» */
+export const WALLET_WEEK_DAYS = 7;
+export function walletWeekDeltaOf(ts) {
+  const h = ts && Array.isArray(ts.cashWeek) ? ts.cashWeek.filter(Number.isFinite) : [];
+  return h.length > WALLET_WEEK_DAYS ? h[h.length - 1] - h[h.length - 1 - WALLET_WEEK_DAYS] : null;
+}
+/* 하루 살림이 끝난 뒤 한 번 부른다(loop §stepTutorial). 반환 { delta, event } */
+export function walletWeekStep(ts) {
+  if (!ts) return { delta: null, event: null };
+  const h = Array.isArray(ts.cashWeek) ? ts.cashWeek.filter(Number.isFinite) : [];
+  h.push(Math.round(ts.cashWon || 0));
+  while (h.length > WALLET_WEEK_DAYS + 1) h.shift();
+  ts.cashWeek = h;
+  const delta = walletWeekDeltaOf(ts);
+  let event = null;
+  if (Number.isFinite(delta) && delta > 0 && !ts.walletWeekUp) {
+    ts.walletWeekUp = true;
+    event = { id: 'wallet_week_up', ko: '이번 이레는 지갑이 늘었습니다', deltaWon: delta };
+  }
+  return { delta, event };
 }
 
 export function createVarieGrantState() {
