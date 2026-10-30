@@ -15286,11 +15286,27 @@ const freePlace = {
     if (!roomView || !roomView.surfaceAt) return null;
     const r = $('roomCanvas').getBoundingClientRect();
     if (px < r.left || px > r.right || py < r.top || py > r.bottom) return null;  // 방 밖 = 취소
-    try { return roomView.surfaceAt(px, py, { potD, ...opt }); } catch { return null; }
+    /* ★ 2026-10-30 총괄 D90 #1 — 3D 붙이기 한도 0.15m(room_view §surfaceAt opt.maxDist · nearestSlot 이 그 밖이면 nearest:null).
+         ⛔ 한도가 없어 쌓은 서랍장 뒷줄을 짚어도 앞줄(0.25m)로 끌려갔다(house 잼) · 화면 거리 붙이기(아래 snap · 44px)는 그대로 */
+    try { return roomView.surfaceAt(px, py, { potD, maxDist: 0.15, ...opt }); } catch { return null; }
   },
   /* 추천 자리가 화면에서 코앞이면 거기 붙인다. 3D 거리가 아니라 **화면 거리**로 잰다 —
      같은 3D 거리라도 멀리 있는 자리는 화면에서 작게 보여 손가락 감각과 안 맞는다. */
   snap(hit, px, py, opt = {}) {
+    /* ★★ 2026-10-30 총괄 D90 #1 버그 4 — 광선이 벽·유리·천장에 맞았거나 면이 없어도(hit.ok 거짓) 화면 44px 안에 «빈 이름 자리»가 있으면 거기 붙인다.
+         ⛔ 반지하 창턱 받침 둘레는 유리(광선이 지나감)·벽이라 surfaceAt 이 «벽에는 못 놓습니다»로 일찍 돌아가고 nearest 도 안 내서,
+           이 붙이기가 창턱에서 한 번도 안 걸렸다 — 폰에서 받침 윗면 약 12×10px 이 과녁 그대로였다(비판 Claude ⑤ #2 · 총괄 판 #4).
+         ⇒ 방 뷰가 화면 거리로 가장 가까운 빈 자리 하나를 준다(house roomView.slotNearScreen · 광선 안 씀 · 안 올라가는 자리·찬 자리는 뺌 ·
+           옮기는 그것이 원래 있던 자리는 빈 것으로). 손가락 지름 40px ≈ 1257px² 보다 넓은 과녁이 된다(house 잼: 창턱 붙는 점 58 → 959).
+         ⚠ 방 밖(hit 없음)은 그대로 취소 · 다른 까닭(겹침 · 방 밖으로 나감)은 그대로 말한다 */
+    if (hit && !hit.ok && roomView && typeof roomView.slotNearScreen === 'function'
+        && /벽에는 못 놓습니다|놓을 수 있는 면이 없습니다|천장에는 못 놓습니다/.test(hit.reason || '')) {
+      const potD = Number.isFinite(opt.potD) ? opt.potD : (Number.isFinite(hit.potD) ? hit.potD : (drag && Number.isFinite(drag.potD) ? drag.potD : null));
+      let n = null; try { n = roomView.slotNearScreen(px, py, { maxPx: SNAP_PX, potD, except: opt.fromSlotId }); } catch { n = null; }
+      if (n) return { ...hit, ok: true, reason: null, x: n.pos.x, y: n.pos.y, z: n.pos.z, surfaceTop: n.pos.y, onUid: n.onUid, occIdx: n.occIdx,
+                      maxPotD: n.maxPotD, potD, nearest: null, snappedTo: n.slotId };
+      return hit;
+    }
     if (!hit || !hit.ok || !hit.nearest || !roomView.screenPosOf) return hit;
     let sp = null; try { sp = roomView.screenPosOf(hit.nearest.slotId); } catch { }
     if (!sp) return hit;
@@ -16103,6 +16119,11 @@ const picked = {
        손가락은 «어디»를 짚고, 이 글은 «왜 거기인지»를 말한다. 둘이 같은 말을 하면 하나가 남는다.
        ⚠ 가이드가 아니면 «아무 데나»가 **맞는 말**이다 — 자유 배치가 이 조작의 사상이다. */
     $('dropLabel').textContent = moveDropLabelKo() || '아무 데나 잡고 끌어 보세요';
+    /* ★ 2026-10-30 총괄 D90 #1 버그 4 — 안내 중(손가락이 «갈 자리»를 짚는 옮기기)이면 «손 뗀 자리»(절대)에 놓는다.
+         ⛔ 손가락 말 «여기로 끌어 보세요 — 창턱 화분받침»은 절대 자리 말인데 옮기기는 «끈 만큼»(상대)이라, 화분에서 받침까지 끌어도
+           화분이 그만큼 «더» 가서 벽에 닿았다(비판 Claude ⑤ #2 — 8분 반 · 다섯 번째에 성공).
+       ⚠ 안내가 아닐 때는 예전 그대로 상대 끌기(«화면 아무 데나 잡고 끈 만큼» — 작은 화분을 정확히 짚지 않아도 된다 · 박사님) */
+    this.absolute = !!moveDropLabelKo();
     /* ★★★ 2026-08-30 — **손가락을 «여기서» 다시 세운다.**
        위에서 `hintAt(null)` 로 껐고, 다시 켜는 일은 다음 `draw()` 를 기다리고 있었다.
        ⇒ 실측: [다시 옮기기]로 격자를 띄우면 아래글은 「…가 제일 밝습니다」인데 **손가락은 없었다.**
@@ -16123,8 +16144,8 @@ const picked = {
   grabbable() { return true; },
   down(e) {
     this.x0 = e.clientX; this.y0 = e.clientY;
-    /* 누른 순간에는 아직 안 움직였다 — 원래 자리를 그대로 미리보기로 띄운다 */
-    if (this.mode === 'move') this.dragTo(0, 0);
+    /* 누른 순간에는 아직 안 움직였다 — 원래 자리를 그대로 미리보기로 띄운다 · 안내 중(절대)이면 누른 그 자리 */
+    if (this.mode === 'move') this.dragTo(this.absolute ? e.clientX - this.originX : 0, this.absolute ? e.clientY - this.originY : 0);
   },
   /* 끈 만큼(dx,dy) 옮겼을 때 어느 자리에 놓이는지 계산하고 반투명으로 보여준다 */
   dragTo(dx, dy) {
@@ -16169,7 +16190,9 @@ const picked = {
     freePlace.labelAt(gx, gy);
   },
   move(e) {
-    if (this.mode === 'move') { this.dragTo(e.clientX - this.x0, e.clientY - this.y0); return; }
+    if (this.mode === 'move') {
+      if (this.absolute) { this.dragTo(e.clientX - this.originX, e.clientY - this.originY); return; }   /* ★ 10-30 안내 중 — 손 뗀 자리(위 §beginMove) */
+      this.dragTo(e.clientX - this.x0, e.clientY - this.y0); return; }
     if (this.mode !== 'turn' || !roomView || !roomView.setPlantYaw) return;
     /* 화면 폭 절반을 끌면 한 바퀴 — 폰에서 손가락이 갈 수 있는 거리에 맞춘다 */
     const yaw = this.yaw0 + (e.clientX - this.x0) / (innerWidth * 0.5) * Math.PI * 2;
