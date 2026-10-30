@@ -755,9 +755,13 @@ export function tutorialDay(ts, opt = {}) {
        「사도 되고 «안 사도» 돼」. **그 줄도 같은 답을 기다린다.**
 
      해금일을 따로 저장하지 않는다: 해금은 가을 0일째라 "가을 7일째"가 곧 이레 뒤다. */
-  if (ts.lamp.unlocked && ts.lamp.owned === 0 &&
+  /* ★ 2026-10-30 총괄 D90 ② ⓑ — 위 «판을 가르는 결정»이 났다(plan f81a020d · plan-to-core-d90): «안 산 등»이 아니라 **«안 단 등»**을 짚는다.
+       ⛔ 첫 등이 공짜로 가방에 와서(game.html §첫 등을 가방에) 화면에서는 owned === 0 이 한 번도 참이 안 됐다 — 대사 lampSkipped 가 0번.
+       ⇒ 가진 등 ≥ 1 · 단 등 0 이면 가을 이레째 한 번 — «등은 아직 가방에 있네.»(dialogue §lampSkipped).
+       placed 칸이 없는 옛 세이브는 save §복원이 «켠 수»로 메운다 */
+  if (ts.lamp.unlocked && (ts.lamp.placed || 0) === 0 && (ts.lamp.owned || 0) >= 1 &&
       season === R.lampUnlockSeason && seasonDay === LAMP_NUDGE_DAY)
-    ev.push({ id: 'lamp_skipped', ko: '식물등을 아직 사지 않았습니다' });
+    ev.push({ id: 'lamp_skipped', ko: '식물등을 아직 달지 않았습니다' });
 
   /* ★겨울까지 못 나간 경우 — **실패가 아니라 더딘 것**이다(박사님 지시).
      겨울에 들어선 것만으로 한 번, 열흘이 지나도 그대로면 한 번 더 짚는다. */

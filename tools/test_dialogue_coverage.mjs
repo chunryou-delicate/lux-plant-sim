@@ -258,7 +258,12 @@ function runCuttingCycle(S, io) {
   }
 }
 
-/* A — 식물등 없이 가을 안에 이사 */
+/* ★ 2026-10-30 [core] 총괄 D90 ② ⓑ — 화면처럼 첫 등을 **가방에** 넣는다(game.html §첫 등을 가방에 · 코어는 신호만 낸다).
+     lamp_skipped 가 «가진 등 ≥ 1 · 단 등 0»으로 바뀌어(tutorial.js) 순수 코어 판(등 0)에서는 안 난다 — 사람 판과 같게 받은 등을 쥐여 준다.
+     안 단 등은 S.lamps.count 0 이라 빛도 전기세도 안 바뀐다(loop §lampCount = S.lamps.count) */
+const giftLamp = ts => { if (ts.lamp.unlocked && !ts.lamp.owned && !ts.lamp.placed) ts.lamp.owned = 1; };
+
+/* A — 식물등 없이 가을 안에 이사(★ 10-30 — 공짜 등은 가방에 두고 안 단다) */
 const A = play({
   /* ⚠ 2026-08-17 — **130 → 145일.** 늘린 까닭은 밸런스가 아니라 **길이**다:
      몬스테라 것이 중고 거래로만 팔리게 되면서(shop.js §⑦-0) 무늬 삽수 한 장을 돈으로
@@ -279,6 +284,7 @@ const A = play({
   cropSlot: DARK, plantSlot: SILL, incomeWon: 24_300, days: 145,
   onDay: ({ S, io }) => {
     const ts = S.tutorial;
+    giftLamp(ts);                           // ★ 10-30 — 위 §giftLamp
     const wasOk = canMoveOut(ts).ok;        // ★ 어제까지의 상태 — 오늘 판 것은 안 센다
     runCuttingCycle(S, io);
     return (wasOk && !ts.movedOut) ? moveOut(ts).events : [];
@@ -305,7 +311,9 @@ const B = play({
     runCuttingCycle(S, io);                 // ★ 둘째 축 — 위 §삽수 한 바퀴
     if (ts.lamp.unlocked && ts.lamp.owned === 0 && ts.cashWon >= ts.rules.lampPriceWon) {
       out.push(...buyLamp(ts).events);
-      S.lamps.count = ts.lamp.owned; io.light.clearCache();
+      /* ★ 2026-10-30 [core] D90 ② ⓑ — 사서 **단다**(화면 §placeLampFromBag 과 같게 placed 를 올린다). 안 올리면 «안 단 등» 독촉이 B 에서 난다 */
+      ts.lamp.placed = ts.lamp.owned;
+      S.lamps.count = ts.lamp.placed; io.light.clearCache();
     }
     if (ts.lamp.owned >= 1 && wasOk && !ts.movedOut) out.push(...moveOut(ts).events);
     return out;
@@ -327,6 +335,7 @@ const C = play({
        옮기는 날이 통째로 앞당겨져 "겨울에 멈춘다"가 가을에 일어난다(실제로 그랬다).
        살림·계절은 첫 플레이가 끝난 뒤에야 흐르므로, 계절을 겨냥한 각본은 튜토 일자가 맞다. */
     const tday = S.tutorial.day;
+    giftLamp(S.tutorial);                       // ★ 10-30 — 위 §giftLamp(받은 등을 안 단다)
     if (tday === 12) movePot(S, DARK);          // 어두운 데로
     if (tday === 37) movePot(S, SILL);          // 다시 창턱으로
     if (tday === 142) movePot(S, DARK);         // 겨울에 다시 멈춘다
@@ -383,7 +392,8 @@ const MUST = [
   ['겨울 진입',                  'season',              'winterCameBanjiha',   [C]],
   ['식물등이 열림',              'lamp_unlocked',       'lampUnlocked',        [A, B, C]],
   ['식물등을 샀을 때',           'lamp_bought',         'lampBought',          [B]],
-  ['안 사고 버틸 때',            'lamp_skipped',        'lampSkipped',         [A, C]],
+  /* ★ 2026-10-30 [core] D90 ② ⓑ — «안 사고»가 아니라 «받은 등을 안 달고»(A · C 는 §giftLamp 로 가방에만 둔다) */
+  ['받은 등을 안 달고 버틸 때',  'lamp_skipped',        'lampSkipped',         [A, C]],
   ['성장이 멈췄을 때',           'plant_stalled',       'plantStalled',        [C]],
   ['또 멈췄을 때',               'plant_stalled_again', 'plantStalledAgain',   [C]],
   ['겨울에 멈췄을 때',           'plant_stalled_winter','plantStalledWinter',  [C]],

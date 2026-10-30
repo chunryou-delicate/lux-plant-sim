@@ -6565,6 +6565,33 @@ function updateHint() {
      ★순서는 거두기 → 물주기다. 다 자란 것을 두고 새 회전을 시작할 이유가 없고,
        cropMarks 의 말풍선 순서(①거두기 ②심기 ③물주기)와도 같은 차례다 —
        두 안내가 서로 다른 곳을 가리키면 그게 곧 소음이다. */
+  /* ══ ★ 2026-10-30 총괄 D90 ② ⓐ — **받은 등을 «단다»까지 손가락이 데려간다**(plan-to-core-d90 ② · plan f81a020d)
+       할 일 buy_lamp «식물등을 달아 밝은 자리를 만드세요»가 열려 있고 가방에 안 단 등이 있으면: 가방 등 칸(누르면 §placeLampFromBag 이 단다) → 가방 문.
+       ⛔ 등 갈래가 0 이라 공짜 등이 가방에 든 채 할 일만 «달아라»였다(손가락은 다른 데). 씨앗 갈래보다 앞 — 가방의 등은 방을 못 밝힌다 */
+  {
+    let lampBagLeft = 0;
+    try { const L = S.tutorial && S.tutorial.lamp; lampBagLeft = L && L.unlocked ? Math.max(0, (L.owned || 0) - (L.placed || 0)) : 0; } catch { lampBagLeft = 0; }
+    let lampQuest = false;
+    if (lampBagLeft > 0) {
+      try { const qv = questView(S, questSnapshotNow(lastTurn)); lampQuest = ((qv && qv.all) || []).some(x => x && x.id === 'buy_lamp' && x.state === 'open'); }
+      catch (e) { console.warn('[등 손가락]', e && e.message); lampQuest = false; }
+    }
+    if (lampQuest) {
+      const cell = document.getElementById(BAG_LAMP_ID);
+      /* 가방이 열렸는데 칸이 화면 밖(시트 아래로 밀림 · 등 칸은 거둔 채소 밑)이면 굴려서 보이게 한 뒤 짚는다 — 들고 온 삽수 갈래와 같은 손.
+           ⛔ 안 굴리면 열린 [가방]을 또 짚는다(probe_lamp 390 · D40 판) */
+      try { if (cell && cell.offsetParent && !onScreen(cell)) cell.scrollIntoView({ block: 'center' }); } catch { }
+      if (onScreen(cell) && !sheetCovers(cell)) return hintAt(cell, '여기를 눌러 보세요');
+      /* 문 고르기는 가방 시루·몬스테라 갈래와 같은 손(이미 고른 탭은 안 짚는다) · 레일 단추는 cur·aria-current 로 열림을 적는다(§shopDoor 와 같게) */
+      for (const [id, say] of [['tabBag', '가방에 식물등이 있습니다'], ['openBag', '가방을 열어 보세요']]) {
+        const el = $(id);
+        if (!el || !onScreen(el) || sheetCovers(el)) continue;
+        if (el.getAttribute && el.getAttribute('aria-selected') === 'true') continue;
+        if (el.getAttribute && (el.getAttribute('aria-current') === 'true' || (el.classList && el.classList.contains('cur')))) continue;
+        return hintAt(el, say);
+      }
+    }
+  }
   /* ══ ★★★ 2026-08-17 — **씨앗을 사는 길을 손가락이 끝까지 데려간다** (박사님)
      ──────────────────────────────────────────────────────────────────────
      원문: *"씨앗 사는 가이드 보강이 안 됐네. **상점 탭 손가락 하고 주문 손가락** 해서
@@ -12821,6 +12848,9 @@ function draw() {
   try { drawMusun(); } catch (e) { console.warn('[무순]', e && e.message); }  /* 2종째 작물 — 없으면 안 보인다 */
   /* ★ 가방은 **무순 다음**이다 — 무순 카드가 보이는지(display)를 읽어 「가방이 비었나」를 정한다.
      앞에 두면 한 프레임 늦은 값을 본다. 없어도 턴은 돌아야 하므로 감싼다. */
+  /* ★ 2026-10-30 총괄 D90 ② ⓐ — 첫 등 선물(§giftFirstLamp)을 가방 그리기 «앞»에서도 한다. 선물은 §syncRoom 안에 있는데 그것은 이 drawBag 뒤라,
+       등이 온 첫 그림엔 가방에 등 칸이 없고 다음 draw 까지 [가방]을 열어도 비어 있었다 — 손가락(«가방을 열어 보세요»)이 빈 가방으로 데려갔다(probe_lamp) */
+  try { giftFirstLamp(); } catch (e) { console.warn('[첫 등]', e && e.message); }
   try { drawBag(); } catch (e) { console.warn('[가방]', e && e.message); }
   try { syncNavDots(); } catch (e) { console.warn('[탭 점]', e && e.message); }
   drawCuttings();           /* ★삽수 — 자르기·분갈이·팔기 (분갈이가 없으면 삽수는 반드시 죽는다) */
@@ -14613,6 +14643,14 @@ function clearIfMoved(kind, nowSlot, warn) {
   }
   shownAt[kind] = nowSlot || null;
 }
+/* ★ 첫 등을 가방에 — 아래 §syncRoom 안 «첫 등을 가방에 넣어 준다»(2026-08-17)의 그 몸. 해금됐고 가진 등도 단 등도 없을 때 한 번. 두 번 불러도 같다 */
+function giftFirstLamp() {
+  const L = S.tutorial && S.tutorial.lamp;
+  if (L && L.unlocked && !L.owned && !L.placed) {
+    L.owned = 1;
+    pushLog(S, '💡 식물등 하나를 가방에 넣어 뒀습니다 — 방에서 달아 주세요');
+  }
+}
 function syncRoom() {
   if (!roomView) return;
   syncHangSeason();   /* ★ 10-10 벽 걸이 — 달력 계절 */
@@ -14636,13 +14674,7 @@ function syncRoom() {
      ⚠ 규칙(무엇을 주기로 했나)은 코어 것이고, **가방에 넣는 일은 화면 몫**이다.
        코어가 직접 넣었더니 순수 코어 검사의 한 달 지출이 570원 늘었다 — 그 판에서는
        「가진 수만큼 켜진다」로 재기 때문이다. */
-  try {
-    const L = S.tutorial && S.tutorial.lamp;
-    if (L && L.unlocked && !L.owned && !L.placed) {
-      L.owned = 1;
-      pushLog(S, '💡 식물등 하나를 가방에 넣어 뒀습니다 — 방에서 달아 주세요');
-    }
-  } catch { }
+  try { giftFirstLamp(); } catch { }   /* ★ 2026-10-30 — 몸은 §giftFirstLamp 하나(draw 의 drawBag 앞에서도 부른다) */
   /* ★ 조도도 그림도 **세운 수**를 본다(§doBuyLamp). 가방에 든 등은 방을 안 밝힌다 */
   try {
     const placed = (S.tutorial && S.tutorial.lamp && S.tutorial.lamp.placed) || 0;
@@ -19533,6 +19565,20 @@ function doMoveOut() {
   const carry = carryFurnitureListNow();
   const r = moveIntoOneroom(S, io, { carry });
   pushLog(S, '📦 원룸으로 이사했습니다 — 반지하 튜토리얼 종료');
+  /* ★ 2026-10-30 총괄 D90 ② ⓒ — 가방에 든(안 단) 등을 원룸 걸이에 단다(위 «등은 들고 온다» · plan-to-core-d90 ②).
+       ⛔ 반지하에서 안 단 공짜 등이 원룸에서도 가방에 남아, 몬이 «등 밑»을 말해도 등이 없었다.
+       moveIntoOneroom 이 조도 창을 원룸으로 지은 뒤라 걸이 수(growLampCount)는 원룸 것이다 — 그 수까지만 · 못 물으면 안 단다(가방에 그대로).
+       대사 갈래(dialogue §chatOneroomLamp «단 등 ≥ 1» · §chatOneroomNoLamp «가진 ≥ 1 · 단 0»)는 이 placed 를 본다 */
+  try {
+    const L = S.tutorial && S.tutorial.lamp;
+    const rigs = io.light.growLampCount();
+    const want = L && Number.isInteger(rigs) ? Math.min(Math.max(0, L.owned || 0), rigs) : 0;
+    if (L && (L.placed || 0) < want) {
+      const n = want - (L.placed || 0);
+      L.placed = want; S.lamps.count = want; io.light.clearCache();
+      pushLog(S, `💡 가방에 있던 식물등 ${n}개를 원룸에 달았습니다`);
+    }
+  } catch (e) { console.warn('[이삿짐 등]', e && e.message); }
   banners([{ title: '📦 원룸으로 이사했습니다', sub: '반지하에서 배운 것을 가지고 갑니다' }]);
   dlgOpen(story.events(r.events, S));   /* 반지하를 떠나는 장면이 여기서 나온다 */
   /* 방 고르개·등 개수·자리 목록은 전부 옛 방 것이다. 새 방 것으로 다시 채운다 */
