@@ -1,0 +1,1429 @@
+{
+ "args": {
+  "code": "HEAD 0276a078 + tools/probe_oneroom_sill_seasons.mjs(이 커밋)",
+  "seeds": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20
+  ],
+  "years": 3,
+  "yearDay0": 135,
+  "litHours": 12,
+  "thresholds": {
+   "monstera": 2.7,
+   "varieCutting": 3.78
+  },
+  "weatherE": {
+   "spring": 0.64,
+   "summer": 0.64,
+   "autumn": 0.64,
+   "winter": 0.64
+  },
+  "rigs": [
+   "oneroom-growlight-bar",
+   "oneroom-growlight-clip",
+   "oneroom-growlight-stand"
+  ],
+  "mark": "◎ ≥ 무늬 삽수 문턱 · ○ ≥ 몬스테라 문턱 · × 둘 다 밑"
+ },
+ "expected": {
+  "move": {
+   "ko": "이사 직후(창턱 받침 + 등 자리 셋)",
+   "slots": {
+    "oneroom-sill:0": {
+     "spring": {
+      "0": {
+       "exp": 3.19,
+       "clearDaylight": 4.96,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 5.75,
+       "clearDaylight": 4.96,
+       "lamp": 2.56
+      },
+      "2": {
+       "exp": 5.96,
+       "clearDaylight": 4.96,
+       "lamp": 2.77
+      },
+      "3": {
+       "exp": 6.88,
+       "clearDaylight": 4.96,
+       "lamp": 3.69
+      }
+     },
+     "summer": {
+      "0": {
+       "exp": 4.28,
+       "clearDaylight": 6.66,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 6.84,
+       "clearDaylight": 6.66,
+       "lamp": 2.56
+      },
+      "2": {
+       "exp": 7.05,
+       "clearDaylight": 6.66,
+       "lamp": 2.77
+      },
+      "3": {
+       "exp": 7.97,
+       "clearDaylight": 6.66,
+       "lamp": 3.69
+      }
+     },
+     "autumn": {
+      "0": {
+       "exp": 2.79,
+       "clearDaylight": 4.34,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 5.35,
+       "clearDaylight": 4.34,
+       "lamp": 2.56
+      },
+      "2": {
+       "exp": 5.56,
+       "clearDaylight": 4.34,
+       "lamp": 2.77
+      },
+      "3": {
+       "exp": 6.48,
+       "clearDaylight": 4.34,
+       "lamp": 3.69
+      }
+     },
+     "winter": {
+      "0": {
+       "exp": 1.59,
+       "clearDaylight": 2.48,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.15,
+       "clearDaylight": 2.48,
+       "lamp": 2.56
+      },
+      "2": {
+       "exp": 4.36,
+       "clearDaylight": 2.48,
+       "lamp": 2.77
+      },
+      "3": {
+       "exp": 5.28,
+       "clearDaylight": 2.48,
+       "lamp": 3.69
+      }
+     }
+    },
+    "oneroom-sill:1": {
+     "spring": {
+      "0": {
+       "exp": 3.2,
+       "clearDaylight": 4.98,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.85,
+       "clearDaylight": 4.98,
+       "lamp": 1.65
+      },
+      "2": {
+       "exp": 5.2,
+       "clearDaylight": 4.98,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 6.17,
+       "clearDaylight": 4.98,
+       "lamp": 2.97
+      }
+     },
+     "summer": {
+      "0": {
+       "exp": 4.3,
+       "clearDaylight": 6.69,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 5.95,
+       "clearDaylight": 6.69,
+       "lamp": 1.65
+      },
+      "2": {
+       "exp": 6.3,
+       "clearDaylight": 6.69,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 7.27,
+       "clearDaylight": 6.69,
+       "lamp": 2.97
+      }
+     },
+     "autumn": {
+      "0": {
+       "exp": 2.8,
+       "clearDaylight": 4.36,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.45,
+       "clearDaylight": 4.36,
+       "lamp": 1.65
+      },
+      "2": {
+       "exp": 4.8,
+       "clearDaylight": 4.36,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 5.77,
+       "clearDaylight": 4.36,
+       "lamp": 2.97
+      }
+     },
+     "winter": {
+      "0": {
+       "exp": 1.6,
+       "clearDaylight": 2.49,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.25,
+       "clearDaylight": 2.49,
+       "lamp": 1.65
+      },
+      "2": {
+       "exp": 3.6,
+       "clearDaylight": 2.49,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 4.57,
+       "clearDaylight": 2.49,
+       "lamp": 2.97
+      }
+     }
+    },
+    "oneroom-sill:2": {
+     "spring": {
+      "0": {
+       "exp": 3.15,
+       "clearDaylight": 4.9,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.75,
+       "clearDaylight": 4.9,
+       "lamp": 0.6
+      },
+      "2": {
+       "exp": 5.15,
+       "clearDaylight": 4.9,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 5.97,
+       "clearDaylight": 4.9,
+       "lamp": 2.82
+      }
+     },
+     "summer": {
+      "0": {
+       "exp": 4.23,
+       "clearDaylight": 6.58,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.83,
+       "clearDaylight": 6.58,
+       "lamp": 0.6
+      },
+      "2": {
+       "exp": 6.23,
+       "clearDaylight": 6.58,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 7.05,
+       "clearDaylight": 6.58,
+       "lamp": 2.82
+      }
+     },
+     "autumn": {
+      "0": {
+       "exp": 2.75,
+       "clearDaylight": 4.28,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.35,
+       "clearDaylight": 4.28,
+       "lamp": 0.6
+      },
+      "2": {
+       "exp": 4.75,
+       "clearDaylight": 4.28,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 5.57,
+       "clearDaylight": 4.28,
+       "lamp": 2.82
+      }
+     },
+     "winter": {
+      "0": {
+       "exp": 1.58,
+       "clearDaylight": 2.45,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 2.18,
+       "clearDaylight": 2.45,
+       "lamp": 0.6
+      },
+      "2": {
+       "exp": 3.58,
+       "clearDaylight": 2.45,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 4.4,
+       "clearDaylight": 2.45,
+       "lamp": 2.82
+      }
+     }
+    },
+    "oneroom-sill:3": {
+     "spring": {
+      "0": {
+       "exp": 3,
+       "clearDaylight": 4.67,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.39,
+       "clearDaylight": 4.67,
+       "lamp": 0.39
+      },
+      "2": {
+       "exp": 5.94,
+       "clearDaylight": 4.67,
+       "lamp": 2.94
+      },
+      "3": {
+       "exp": 6.62,
+       "clearDaylight": 4.67,
+       "lamp": 3.62
+      }
+     },
+     "summer": {
+      "0": {
+       "exp": 4.03,
+       "clearDaylight": 6.27,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.42,
+       "clearDaylight": 6.27,
+       "lamp": 0.39
+      },
+      "2": {
+       "exp": 6.97,
+       "clearDaylight": 6.27,
+       "lamp": 2.94
+      },
+      "3": {
+       "exp": 7.65,
+       "clearDaylight": 6.27,
+       "lamp": 3.62
+      }
+     },
+     "autumn": {
+      "0": {
+       "exp": 2.62,
+       "clearDaylight": 4.08,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.01,
+       "clearDaylight": 4.08,
+       "lamp": 0.39
+      },
+      "2": {
+       "exp": 5.56,
+       "clearDaylight": 4.08,
+       "lamp": 2.94
+      },
+      "3": {
+       "exp": 6.24,
+       "clearDaylight": 4.08,
+       "lamp": 3.62
+      }
+     },
+     "winter": {
+      "0": {
+       "exp": 1.5,
+       "clearDaylight": 2.33,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 1.89,
+       "clearDaylight": 2.33,
+       "lamp": 0.39
+      },
+      "2": {
+       "exp": 4.44,
+       "clearDaylight": 2.33,
+       "lamp": 2.94
+      },
+      "3": {
+       "exp": 5.12,
+       "clearDaylight": 2.33,
+       "lamp": 3.62
+      }
+     }
+    }
+   }
+  },
+  "layoutD": {
+   "ko": "기준 배치 D",
+   "slots": {
+    "oneroom-sill:0": {
+     "spring": {
+      "0": {
+       "exp": 3.19,
+       "clearDaylight": 4.96,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 5.75,
+       "clearDaylight": 4.96,
+       "lamp": 2.56
+      },
+      "2": {
+       "exp": 5.96,
+       "clearDaylight": 4.96,
+       "lamp": 2.77
+      },
+      "3": {
+       "exp": 6.88,
+       "clearDaylight": 4.96,
+       "lamp": 3.69
+      }
+     },
+     "summer": {
+      "0": {
+       "exp": 4.28,
+       "clearDaylight": 6.66,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 6.84,
+       "clearDaylight": 6.66,
+       "lamp": 2.56
+      },
+      "2": {
+       "exp": 7.05,
+       "clearDaylight": 6.66,
+       "lamp": 2.77
+      },
+      "3": {
+       "exp": 7.97,
+       "clearDaylight": 6.66,
+       "lamp": 3.69
+      }
+     },
+     "autumn": {
+      "0": {
+       "exp": 2.79,
+       "clearDaylight": 4.34,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 5.35,
+       "clearDaylight": 4.34,
+       "lamp": 2.56
+      },
+      "2": {
+       "exp": 5.56,
+       "clearDaylight": 4.34,
+       "lamp": 2.77
+      },
+      "3": {
+       "exp": 6.48,
+       "clearDaylight": 4.34,
+       "lamp": 3.69
+      }
+     },
+     "winter": {
+      "0": {
+       "exp": 1.59,
+       "clearDaylight": 2.48,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.15,
+       "clearDaylight": 2.48,
+       "lamp": 2.56
+      },
+      "2": {
+       "exp": 4.36,
+       "clearDaylight": 2.48,
+       "lamp": 2.77
+      },
+      "3": {
+       "exp": 5.28,
+       "clearDaylight": 2.48,
+       "lamp": 3.69
+      }
+     }
+    },
+    "oneroom-sill:1": {
+     "spring": {
+      "0": {
+       "exp": 3.2,
+       "clearDaylight": 4.98,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.85,
+       "clearDaylight": 4.98,
+       "lamp": 1.65
+      },
+      "2": {
+       "exp": 5.2,
+       "clearDaylight": 4.98,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 6.17,
+       "clearDaylight": 4.98,
+       "lamp": 2.97
+      }
+     },
+     "summer": {
+      "0": {
+       "exp": 4.3,
+       "clearDaylight": 6.69,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 5.95,
+       "clearDaylight": 6.69,
+       "lamp": 1.65
+      },
+      "2": {
+       "exp": 6.3,
+       "clearDaylight": 6.69,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 7.27,
+       "clearDaylight": 6.69,
+       "lamp": 2.97
+      }
+     },
+     "autumn": {
+      "0": {
+       "exp": 2.8,
+       "clearDaylight": 4.36,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.45,
+       "clearDaylight": 4.36,
+       "lamp": 1.65
+      },
+      "2": {
+       "exp": 4.8,
+       "clearDaylight": 4.36,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 5.77,
+       "clearDaylight": 4.36,
+       "lamp": 2.97
+      }
+     },
+     "winter": {
+      "0": {
+       "exp": 1.6,
+       "clearDaylight": 2.49,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.25,
+       "clearDaylight": 2.49,
+       "lamp": 1.65
+      },
+      "2": {
+       "exp": 3.6,
+       "clearDaylight": 2.49,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 4.57,
+       "clearDaylight": 2.49,
+       "lamp": 2.97
+      }
+     }
+    },
+    "oneroom-sill:2": {
+     "spring": {
+      "0": {
+       "exp": 3.15,
+       "clearDaylight": 4.9,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.75,
+       "clearDaylight": 4.9,
+       "lamp": 0.6
+      },
+      "2": {
+       "exp": 5.15,
+       "clearDaylight": 4.9,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 5.97,
+       "clearDaylight": 4.9,
+       "lamp": 2.82
+      }
+     },
+     "summer": {
+      "0": {
+       "exp": 4.23,
+       "clearDaylight": 6.58,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.83,
+       "clearDaylight": 6.58,
+       "lamp": 0.6
+      },
+      "2": {
+       "exp": 6.23,
+       "clearDaylight": 6.58,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 7.05,
+       "clearDaylight": 6.58,
+       "lamp": 2.82
+      }
+     },
+     "autumn": {
+      "0": {
+       "exp": 2.75,
+       "clearDaylight": 4.28,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.35,
+       "clearDaylight": 4.28,
+       "lamp": 0.6
+      },
+      "2": {
+       "exp": 4.75,
+       "clearDaylight": 4.28,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 5.57,
+       "clearDaylight": 4.28,
+       "lamp": 2.82
+      }
+     },
+     "winter": {
+      "0": {
+       "exp": 1.58,
+       "clearDaylight": 2.45,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 2.18,
+       "clearDaylight": 2.45,
+       "lamp": 0.6
+      },
+      "2": {
+       "exp": 3.58,
+       "clearDaylight": 2.45,
+       "lamp": 2
+      },
+      "3": {
+       "exp": 4.4,
+       "clearDaylight": 2.45,
+       "lamp": 2.82
+      }
+     }
+    },
+    "oneroom-sill:3": {
+     "spring": {
+      "0": {
+       "exp": 3,
+       "clearDaylight": 4.67,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.39,
+       "clearDaylight": 4.67,
+       "lamp": 0.39
+      },
+      "2": {
+       "exp": 5.94,
+       "clearDaylight": 4.67,
+       "lamp": 2.94
+      },
+      "3": {
+       "exp": 6.62,
+       "clearDaylight": 4.67,
+       "lamp": 3.62
+      }
+     },
+     "summer": {
+      "0": {
+       "exp": 4.03,
+       "clearDaylight": 6.27,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 4.42,
+       "clearDaylight": 6.27,
+       "lamp": 0.39
+      },
+      "2": {
+       "exp": 6.97,
+       "clearDaylight": 6.27,
+       "lamp": 2.94
+      },
+      "3": {
+       "exp": 7.65,
+       "clearDaylight": 6.27,
+       "lamp": 3.62
+      }
+     },
+     "autumn": {
+      "0": {
+       "exp": 2.62,
+       "clearDaylight": 4.08,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 3.01,
+       "clearDaylight": 4.08,
+       "lamp": 0.39
+      },
+      "2": {
+       "exp": 5.56,
+       "clearDaylight": 4.08,
+       "lamp": 2.94
+      },
+      "3": {
+       "exp": 6.24,
+       "clearDaylight": 4.08,
+       "lamp": 3.62
+      }
+     },
+     "winter": {
+      "0": {
+       "exp": 1.5,
+       "clearDaylight": 2.33,
+       "lamp": 0
+      },
+      "1": {
+       "exp": 1.89,
+       "clearDaylight": 2.33,
+       "lamp": 0.39
+      },
+      "2": {
+       "exp": 4.44,
+       "clearDaylight": 2.33,
+       "lamp": 2.94
+      },
+      "3": {
+       "exp": 5.12,
+       "clearDaylight": 2.33,
+       "lamp": 3.62
+      }
+     }
+    }
+   }
+  }
+ },
+ "walked": {
+  "0": {
+   "oneroom-sill:0": {
+    "spring": {
+     "days": 5400,
+     "meanDaily": 3.23,
+     "meanAvg7": 3.17,
+     "minAvg7": 0.78,
+     "maxAvg7": 4.96,
+     "monsteraGrowPct": 74,
+     "varieCutGrowPct": 28.7,
+     "longestShortRun": 20
+    },
+    "summer": {
+     "days": 5400,
+     "meanDaily": 4.29,
+     "meanAvg7": 4.26,
+     "minAvg7": 0.92,
+     "maxAvg7": 6.66,
+     "monsteraGrowPct": 95.9,
+     "varieCutGrowPct": 64.8,
+     "longestShortRun": 14
+    },
+    "autumn": {
+     "days": 5400,
+     "meanDaily": 2.83,
+     "meanAvg7": 2.87,
+     "minAvg7": 0.76,
+     "maxAvg7": 6.33,
+     "monsteraGrowPct": 63.5,
+     "varieCutGrowPct": 12.5,
+     "longestShortRun": 29
+    },
+    "winter": {
+     "days": 5400,
+     "meanDaily": 1.6,
+     "meanAvg7": 1.64,
+     "minAvg7": 0.39,
+     "maxAvg7": 4.07,
+     "monsteraGrowPct": 1.2,
+     "varieCutGrowPct": 0.1,
+     "longestShortRun": 90
+    }
+   },
+   "oneroom-sill:1": {
+    "spring": {
+     "days": 5400,
+     "meanDaily": 3.24,
+     "meanAvg7": 3.18,
+     "minAvg7": 0.79,
+     "maxAvg7": 4.98,
+     "monsteraGrowPct": 74,
+     "varieCutGrowPct": 28.7,
+     "longestShortRun": 20
+    },
+    "summer": {
+     "days": 5400,
+     "meanDaily": 4.31,
+     "meanAvg7": 4.28,
+     "minAvg7": 0.92,
+     "maxAvg7": 6.69,
+     "monsteraGrowPct": 95.9,
+     "varieCutGrowPct": 64.8,
+     "longestShortRun": 14
+    },
+    "autumn": {
+     "days": 5400,
+     "meanDaily": 2.84,
+     "meanAvg7": 2.89,
+     "minAvg7": 0.76,
+     "maxAvg7": 6.36,
+     "monsteraGrowPct": 63.5,
+     "varieCutGrowPct": 12.6,
+     "longestShortRun": 29
+    },
+    "winter": {
+     "days": 5400,
+     "meanDaily": 1.61,
+     "meanAvg7": 1.65,
+     "minAvg7": 0.39,
+     "maxAvg7": 4.09,
+     "monsteraGrowPct": 1.3,
+     "varieCutGrowPct": 0.1,
+     "longestShortRun": 90
+    }
+   },
+   "oneroom-sill:2": {
+    "spring": {
+     "days": 5400,
+     "meanDaily": 3.18,
+     "meanAvg7": 3.13,
+     "minAvg7": 0.77,
+     "maxAvg7": 4.9,
+     "monsteraGrowPct": 73.9,
+     "varieCutGrowPct": 19.2,
+     "longestShortRun": 20
+    },
+    "summer": {
+     "days": 5400,
+     "meanDaily": 4.24,
+     "meanAvg7": 4.21,
+     "minAvg7": 0.91,
+     "maxAvg7": 6.58,
+     "monsteraGrowPct": 93.8,
+     "varieCutGrowPct": 60.6,
+     "longestShortRun": 17
+    },
+    "autumn": {
+     "days": 5400,
+     "meanDaily": 2.79,
+     "meanAvg7": 2.83,
+     "minAvg7": 0.75,
+     "maxAvg7": 6.25,
+     "monsteraGrowPct": 62.6,
+     "varieCutGrowPct": 8.9,
+     "longestShortRun": 29
+    },
+    "winter": {
+     "days": 5400,
+     "meanDaily": 1.58,
+     "meanAvg7": 1.62,
+     "minAvg7": 0.38,
+     "maxAvg7": 4.02,
+     "monsteraGrowPct": 1.1,
+     "varieCutGrowPct": 0,
+     "longestShortRun": 90
+    }
+   },
+   "oneroom-sill:3": {
+    "spring": {
+     "days": 5400,
+     "meanDaily": 3.04,
+     "meanAvg7": 2.98,
+     "minAvg7": 0.73,
+     "maxAvg7": 4.67,
+     "monsteraGrowPct": 60,
+     "varieCutGrowPct": 10.4,
+     "longestShortRun": 26
+    },
+    "summer": {
+     "days": 5400,
+     "meanDaily": 4.04,
+     "meanAvg7": 4.01,
+     "minAvg7": 0.87,
+     "maxAvg7": 6.27,
+     "monsteraGrowPct": 89.3,
+     "varieCutGrowPct": 60.1,
+     "longestShortRun": 17
+    },
+    "autumn": {
+     "days": 5400,
+     "meanDaily": 2.66,
+     "meanAvg7": 2.7,
+     "minAvg7": 0.72,
+     "maxAvg7": 5.96,
+     "monsteraGrowPct": 44.7,
+     "varieCutGrowPct": 3.2,
+     "longestShortRun": 42
+    },
+    "winter": {
+     "days": 5400,
+     "meanDaily": 1.51,
+     "meanAvg7": 1.54,
+     "minAvg7": 0.37,
+     "maxAvg7": 3.83,
+     "monsteraGrowPct": 0.8,
+     "varieCutGrowPct": 0,
+     "longestShortRun": 90
+    }
+   }
+  },
+  "1": {
+   "oneroom-sill:0": {
+    "spring": {
+     "days": 5400,
+     "meanDaily": 5.78,
+     "meanAvg7": 5.73,
+     "minAvg7": 3.34,
+     "maxAvg7": 7.52,
+     "monsteraGrowPct": 100,
+     "varieCutGrowPct": 99.4,
+     "longestShortRun": 0
+    },
+    "summer": {
+     "days": 5400,
+     "meanDaily": 6.85,
+     "meanAvg7": 6.82,
+     "minAvg7": 3.48,
+     "maxAvg7": 9.22,
+     "monsteraGrowPct": 100,
+     "varieCutGrowPct": 99.8,
+     "longestShortRun": 0
+    },
+    "autumn": {
+     "days": 5400,
+     "meanDaily": 5.39,
+     "meanAvg7": 5.43,
+     "minAvg7": 3.32,
+     "maxAvg7": 8.89,
+     "monsteraGrowPct": 100,
+     "varieCutGrowPct": 99.8,
+     "longestShortRun": 0
+    },
+    "winter": {
+     "days": 5400,
+     "meanDaily": 4.16,
+     "meanAvg7": 4.2,
+     "minAvg7": 2.95,
+     "maxAvg7": 6.63,
+     "monsteraGrowPct": 100,
+     "varieCutGrowPct": 85.5,
+     "longestShortRun": 0
+    }
+   },
+   "oneroom-sill:1": {
+    "spring": {
+     "days": 5400,
+     "meanDaily": 4.89,
+     "meanAvg7": 4.83,
+     "minAvg7": 2.44,
+     "maxAvg7": 6.63,
+     "monsteraGrowPct": 99.7,
+     "varieCutGrowPct": 92.1,
+     "longestShortRun": 4
+    },
+    "summer": {
+     "days": 5400,
+     "meanDaily": 5.96,
+     "meanAvg7": 5.93,
+     "minAvg7": 2.58,
+     "maxAvg7": 8.34,
+     "monsteraGrowPct": 100,
+     "varieCutGrowPct": 98.4,
+     "longestShortRun": 1
+    },
+    "autumn": {
+     "days": 5400,
+     "meanDaily": 4.49,
+     "meanAvg7": 4.54,
+     "minAvg7": 2.42,
+     "maxAvg7": 8.01,
+     "monsteraGrowPct": 99.9,
+     "varieCutGrowPct": 87.6,
+     "longestShortRun": 1
+    },
+    "winter": {
+     "days": 5400,
+     "meanDaily": 3.26,
+     "meanAvg7": 3.3,
+     "minAvg7": 2.04,
+     "maxAvg7": 5.74,
+     "monsteraGrowPct": 93.8,
+     "varieCutGrowPct": 13.9,
+     "longestShortRun": 10
+    }
+   },
+   "oneroom-sill:2": {
+    "spring": {
+     "days": 5400,
+     "meanDaily": 3.78,
+     "meanAvg7": 3.73,
+     "minAvg7": 1.36,
+     "maxAvg7": 5.5,
+     "monsteraGrowPct": 88.9,
+     "varieCutGrowPct": 52.6,
+     "longestShortRun": 18
+    },
+    "summer": {
+     "days": 5400,
+     "meanDaily": 4.84,
+     "meanAvg7": 4.81,
+     "minAvg7": 1.51,
+     "maxAvg7": 7.18,
+     "monsteraGrowPct": 98.4,
+     "varieCutGrowPct": 84.9,
+     "longestShortRun": 9
+    },
+    "autumn": {
+     "days": 5400,
+     "meanDaily": 3.39,
+     "meanAvg7": 3.43,
+     "minAvg7": 1.35,
+     "maxAvg7": 6.85,
+     "monsteraGrowPct": 87.6,
+     "varieCutGrowPct": 35.7,
+     "longestShortRun": 13
+    },
+    "winter": {
+     "days": 5400,
+     "meanDaily": 2.18,
+     "meanAvg7": 2.21,
+     "minAvg7": 0.98,
+     "maxAvg7": 4.62,
+     "monsteraGrowPct": 13.8,
+     "varieCutGrowPct": 0.3,
+     "longestShortRun": 86
+    }
+   },
+   "oneroom-sill:3": {
+    "spring": {
+     "days": 5400,
+     "meanDaily": 3.43,
+     "meanAvg7": 3.37,
+     "minAvg7": 1.13,
+     "maxAvg7": 5.06,
+     "monsteraGrowPct": 83.4,
+     "varieCutGrowPct": 31.2,
+     "longestShortRun": 20
+    },
+    "summer": {
+     "days": 5400,
+     "meanDaily": 4.44,
+     "meanAvg7": 4.41,
+     "minAvg7": 1.27,
+     "maxAvg7": 6.67,
+     "monsteraGrowPct": 96.5,
+     "varieCutGrowPct": 73.4,
+     "longestShortRun": 13
+    },
+    "autumn": {
+     "days": 5400,
+     "meanDaily": 3.06,
+     "meanAvg7": 3.1,
+     "minAvg7": 1.11,
+     "maxAvg7": 6.36,
+     "monsteraGrowPct": 68.3,
+     "varieCutGrowPct": 13.1,
+     "longestShortRun": 20
+    },
+    "winter": {
+     "days": 5400,
+     "meanDaily": 1.9,
+     "meanAvg7": 1.94,
+     "minAvg7": 0.76,
+     "maxAvg7": 4.23,
+     "monsteraGrowPct": 3.7,
+     "varieCutGrowPct": 0.1,
+     "longestShortRun": 90
+    }
+   }
+  }
+ },
+ "profileCheck": [
+  {
+   "slotId": "oneroom-sill:0",
+   "season": "spring",
+   "lamps": 0,
+   "engine": 4.96,
+   "profile": 4.96
+  },
+  {
+   "slotId": "oneroom-sill:0",
+   "season": "spring",
+   "lamps": 1,
+   "engine": 7.52,
+   "profile": 7.52
+  },
+  {
+   "slotId": "oneroom-sill:0",
+   "season": "summer",
+   "lamps": 0,
+   "engine": 6.66,
+   "profile": 6.66
+  },
+  {
+   "slotId": "oneroom-sill:0",
+   "season": "summer",
+   "lamps": 1,
+   "engine": 9.22,
+   "profile": 9.22
+  },
+  {
+   "slotId": "oneroom-sill:0",
+   "season": "autumn",
+   "lamps": 0,
+   "engine": 4.34,
+   "profile": 4.34
+  },
+  {
+   "slotId": "oneroom-sill:0",
+   "season": "autumn",
+   "lamps": 1,
+   "engine": 6.9,
+   "profile": 6.9
+  },
+  {
+   "slotId": "oneroom-sill:0",
+   "season": "winter",
+   "lamps": 0,
+   "engine": 2.48,
+   "profile": 2.48
+  },
+  {
+   "slotId": "oneroom-sill:0",
+   "season": "winter",
+   "lamps": 1,
+   "engine": 5.03,
+   "profile": 5.03
+  },
+  {
+   "slotId": "oneroom-sill:1",
+   "season": "spring",
+   "lamps": 0,
+   "engine": 4.98,
+   "profile": 4.98
+  },
+  {
+   "slotId": "oneroom-sill:1",
+   "season": "spring",
+   "lamps": 1,
+   "engine": 6.63,
+   "profile": 6.63
+  },
+  {
+   "slotId": "oneroom-sill:1",
+   "season": "summer",
+   "lamps": 0,
+   "engine": 6.69,
+   "profile": 6.69
+  },
+  {
+   "slotId": "oneroom-sill:1",
+   "season": "summer",
+   "lamps": 1,
+   "engine": 8.34,
+   "profile": 8.34
+  },
+  {
+   "slotId": "oneroom-sill:1",
+   "season": "autumn",
+   "lamps": 0,
+   "engine": 4.36,
+   "profile": 4.36
+  },
+  {
+   "slotId": "oneroom-sill:1",
+   "season": "autumn",
+   "lamps": 1,
+   "engine": 6.01,
+   "profile": 6.01
+  },
+  {
+   "slotId": "oneroom-sill:1",
+   "season": "winter",
+   "lamps": 0,
+   "engine": 2.49,
+   "profile": 2.49
+  },
+  {
+   "slotId": "oneroom-sill:1",
+   "season": "winter",
+   "lamps": 1,
+   "engine": 4.14,
+   "profile": 4.14
+  },
+  {
+   "slotId": "oneroom-sill:2",
+   "season": "spring",
+   "lamps": 0,
+   "engine": 4.9,
+   "profile": 4.9
+  },
+  {
+   "slotId": "oneroom-sill:2",
+   "season": "spring",
+   "lamps": 1,
+   "engine": 5.5,
+   "profile": 5.5
+  },
+  {
+   "slotId": "oneroom-sill:2",
+   "season": "summer",
+   "lamps": 0,
+   "engine": 6.58,
+   "profile": 6.58
+  },
+  {
+   "slotId": "oneroom-sill:2",
+   "season": "summer",
+   "lamps": 1,
+   "engine": 7.18,
+   "profile": 7.18
+  },
+  {
+   "slotId": "oneroom-sill:2",
+   "season": "autumn",
+   "lamps": 0,
+   "engine": 4.28,
+   "profile": 4.28
+  },
+  {
+   "slotId": "oneroom-sill:2",
+   "season": "autumn",
+   "lamps": 1,
+   "engine": 4.88,
+   "profile": 4.88
+  },
+  {
+   "slotId": "oneroom-sill:2",
+   "season": "winter",
+   "lamps": 0,
+   "engine": 2.45,
+   "profile": 2.45
+  },
+  {
+   "slotId": "oneroom-sill:2",
+   "season": "winter",
+   "lamps": 1,
+   "engine": 3.04,
+   "profile": 3.04
+  },
+  {
+   "slotId": "oneroom-sill:3",
+   "season": "spring",
+   "lamps": 0,
+   "engine": 4.67,
+   "profile": 4.67
+  },
+  {
+   "slotId": "oneroom-sill:3",
+   "season": "spring",
+   "lamps": 1,
+   "engine": 5.06,
+   "profile": 5.06
+  },
+  {
+   "slotId": "oneroom-sill:3",
+   "season": "summer",
+   "lamps": 0,
+   "engine": 6.27,
+   "profile": 6.27
+  },
+  {
+   "slotId": "oneroom-sill:3",
+   "season": "summer",
+   "lamps": 1,
+   "engine": 6.67,
+   "profile": 6.67
+  },
+  {
+   "slotId": "oneroom-sill:3",
+   "season": "autumn",
+   "lamps": 0,
+   "engine": 4.08,
+   "profile": 4.08
+  },
+  {
+   "slotId": "oneroom-sill:3",
+   "season": "autumn",
+   "lamps": 1,
+   "engine": 4.48,
+   "profile": 4.48
+  },
+  {
+   "slotId": "oneroom-sill:3",
+   "season": "winter",
+   "lamps": 0,
+   "engine": 2.33,
+   "profile": 2.33
+  },
+  {
+   "slotId": "oneroom-sill:3",
+   "season": "winter",
+   "lamps": 1,
+   "engine": 2.73,
+   "profile": 2.73
+  }
+ ],
+ "arrival": {
+  "humanQ": {
+   "ko": "사람 손 · 할 일 사슬대로(시루 8 → 남는 건 판다 → 16 · 남는 채소 팖 · Day 45 공짜 등을 담)",
+   "seeds": 11,
+   "moveMed": 135,
+   "moveYearDay": 270,
+   "seasonAtMove": {
+    "autumn": 1,
+    "winter": 10
+   },
+   "stayDaysBySeasonMean": {
+    "spring": 85,
+    "summer": 50,
+    "autumn": 12,
+    "winter": 90
+   }
+  },
+  "default2Q": {
+   "ko": "사람 손 · 할 일 사슬대로 + 창턱 받침 하나 더(sill-2)에 삽수 하나를 키움",
+   "seeds": 11,
+   "moveMed": 135,
+   "moveYearDay": 270,
+   "seasonAtMove": {
+    "winter": 11
+   },
+   "stayDaysBySeasonMean": {
+    "spring": 84,
+    "summer": 38,
+    "autumn": 4,
+    "winter": 90
+   }
+  },
+  "guide": {
+   "ko": "안내대로",
+   "seeds": 11,
+   "moveMed": 145,
+   "moveYearDay": 280,
+   "seasonAtMove": {
+    "winter": 10,
+    "autumn": 1
+   },
+   "stayDaysBySeasonMean": {
+    "spring": 85,
+    "summer": 53,
+    "autumn": 18,
+    "winter": 83
+   }
+  },
+  "human": {
+   "ko": "사람 손(손가락대로 [확인] · 시루 8 · 남는 채소 팖 · Day 45 공짜 등을 담)",
+   "seeds": 4,
+   "moveMed": 337,
+   "moveYearDay": 112,
+   "seasonAtMove": {
+    "summer": 2,
+    "spring": 1,
+    "winter": 1
+   },
+   "stayDaysBySeasonMean": {
+    "spring": 23,
+    "summer": 23,
+    "autumn": 23,
+    "winter": 23
+   }
+  },
+  "default2": {
+   "ko": "기본 2자리(사람 손 + 창턱 받침 하나 더에 삽수 하나를 키움)",
+   "seeds": 11,
+   "moveMed": 191,
+   "moveYearDay": 326,
+   "seasonAtMove": {
+    "winter": 11
+   },
+   "stayDaysBySeasonMean": {
+    "spring": 91,
+    "summer": 88,
+    "autumn": 70,
+    "winter": 60
+   }
+  }
+ },
+ "profileCheckWorst": 0,
+ "profileMissing": 0
+}

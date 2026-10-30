@@ -37,6 +37,7 @@
 | `probe_timetable_oneroom.mjs` | ★ **원룸 이사 뒤 X일까지 몇 장 · 무늬 몇 장 · 갈라진 무늬 몇 장** — D9 · core 경제 자와 맞댈 기준 (`PROFILE=`·`SLOT=`·`LAMPS=`·`SEEDS=`·`DAYS=`·`MOTHER_G=`·`OUT=`) | 라이브 |
 | `probe_m5_oneroom.mjs` | ★ **M5 원룸 생장 입력** — 자리 × 등 : 7일평균 · 잎2·잎3 날 · 갈라짐 · 무늬 밴드 (`LAMPS=`·`SLOTS=`·`SEEDS=`·`DAYS=`·`OUT=`) · 안 자라는 자리는 크롬 안 돌림 | 라이브 |
 | `probe_cut_open_knobs.mjs` | ★ **반지하 ✂ 문을 무엇이 정하나** — 잎3 남 · 중간잎 · 갈라짐 · 문 + 손잡이 후보(이 프로세스 GT 만) · 크롬 없음(vm) (`KNOBS=`·`AGE0=`·`SPEED_BEST=`·`SPEED_SLOW=`·`OUT=`) | 헤드리스 |
+| `probe_oneroom_sill_seasons.mjs` | ★ **원룸 창턱 받침 넷의 철별 DLI** — 기대값(placeVerdict 셈) 철 넷 × 등 0~3 · skyFor 로 걸어서 7일평균 자라는 날 % · 하네스 표 대조 · 이사 날 철 (`SEEDS=`·`YEARS=`·`CODE=`·`OUT=`) · 1초 | 헤드리스 |
 | `probe_cut_open_banjiha.mjs` | ★ **반지하에서 «잎 2장» 날 vs «✂ 실제로 열리는» 날** — D25 근거 (`LAMPS=`·`LAMP_DAY=`·`SEEDS=`) | 라이브 |
 | `probe_seedplant_oneroom.mjs` | ★ 원룸 «씨앗부터» 키운 그루의 잎·갈라짐·무늬 날 · 크롬 없음(vm · 로더는 probe_leaf_health_year 것을 빌림) | 헤드리스 |
 | `probe_cutting_firstleaf_oneroom.mjs` | ★ 들고 간 삽수가 원룸 자리마다 첫 잎까지 · propagation 규칙 그대로 · 크롬 없음 (`YD0=`) | 헤드리스 |
@@ -291,6 +292,21 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
             갈렸다(잎 밑동 최대 1.37cm · 대조로 잼). 받은 그대로 넘기게 고치고 «빛 방향 안 줌» 판(ppNoAz)을 test_species_room_zoom 에 더함
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
+
+### 2026-10-31 · 원룸 창턱 받침 넷 철별 DLI — chatOneroomBright «거기 넷은 등 없이도 자라» 조건 (총괄 10-31)
+
+```
+[잰 것] probe_oneroom_sill_seasons(light_adapter · real · yearDay0 135 · litHours 12) — 기대값 = 맑은 날 자연광 × 0.643 + 등
+              봄 등0/1        여름 등0/1      가을 등0/1      겨울 등0/1        (○ ≥2.7 몬스테라 · ◎ ≥3.78 무늬 삽수)
+  sill:0      3.19○ 5.75◎    4.28◎ 6.84◎    2.79○ 5.35◎    1.59× 4.15◎
+  sill:1      3.20○ 4.85◎    4.30◎ 5.95◎    2.80○ 4.45◎    1.60× 3.25○
+  sill:2      3.15○ 3.75○    4.23◎ 4.83◎    2.75○ 3.35○    1.58× 2.18×
+  sill:3      3.00○ 3.39○    4.03◎ 4.42◎    2.62× 3.01○    1.50× 1.89×
+  걸어서(20씨앗 × 3해) 등0 7일평균 ≥2.7 인 날: 봄 60~74% · 여름 89~96% · 가을 45~64% · 겨울 1%
+```
+> ★ 등 없이 넷 다 서는 철은 여름뿐이다. 하네스 판 이사 날은 135일 = 겨울 첫날(humanQ 10/11)이라, 원룸 첫 90일은 넷 다 문턱 밑이다.
+>   겨울에 등 1(바)이면 sill:0 · 1 둘만 서고, 넷 다 서려면 등 2(+ 집게)다. 옛 «등0 자라는 날 96%»는 여름 값이다.
+>   하네스 표(room_profile.oneroom)와 엔진의 차 0.000. 전문 `growth-oneroom-sill-seasons-20261031.md` · `growth-oneroom-sill-seasons.json`.
 
 ### 2026-10-25 · 10-30 · 회의 «요령 없이도 깨게» growth 몫 — ✂ 문을 무엇이 정하나 · 무늬 삽수 판매가 늦는 자리 (총괄 D90)
 
