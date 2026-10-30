@@ -1037,15 +1037,17 @@ export const SCRIPTS = {
      ⇒ ★ 그래서 「한참」으로 고치고, **왜 더 깎이는지**를 몬이가 말한다.
      ⚠ 수를 «안 박는다» — 「시루값이 먼저 나가고 첫 회전은 닷새 뒤」는 `harvestDays` 가 바뀌어도
        뜻이 안 낡는다. 몇 개인지·며칠인지는 화면이 말한다(§2.8). */
+  /* ★★ 2026-10-30 [plan] 총괄 D91 — siru16 «열여섯까지 늘린다»를 되살리며 글을 다시 썼다(sell_surplus «남는 건 판다» 뒤 · 다리는
+       questDoneSellSurplus 끝 줄 «시루를 더 늘리면 더 빨리 모여. 손이 닿는 만큼만.»).
+     ⛔ 안 되살린 것: «한참 더 늘려야 하루가 안 깎여» · «처음으로 버는 쪽이 돼»(본전 — «파나»에 걸린 말) · «첫 회전은 닷새 뒤»(몬이가 수를 말함).
+     참: 채소 판 돈이 이사비를 채운다(growth 83b1e728 · 자르기 문 지킨 판 · 반지하 들어온 돈 98% 채소) · 늘리는 동안 시루값·씨앗값이 먼저 나간다 ·
+       늘린 만큼 거두는 것도 는다(nudgeSiruPush 와 같은 말). 수 없음. */
   questSiru16: [
-    { who: 'moni',   face: 'teach', text: '**한참** 더 늘려야 하루가 안 깎여.' },
-    { who: 'jachwi', face: 'think', text: '지금까진 계속 줄고 있었구나.' },
-    { who: 'moni',   face: 'calm', text: '응. 조금씩. 그래서 티가 안 났어.' },
-    { who: 'jachwi', text: '지금도 빠듯한데.' },
-    { who: 'moni',   text: '늘리는 동안은 **더** 깎여. 시루값이 먼저 나가고 첫 회전은 닷새 뒤라서.' },
-    { who: 'jachwi', face: 'worry', text: '…그럼 지금보다 나빠진다는 거네.' },
-    { who: 'moni',   text: '한동안은. 그러고 나서 넘어가.' },
-    { who: 'moni',   face: 'teach', text: '거기까지 가면 처음으로 **버는 쪽**이 돼.' }
+    { who: 'jachwi', face: 'think', text: '팔아 보니 시루가 많을수록 낫겠네.' },
+    { who: 'moni',   face: 'teach', text: '응. 채소 판 돈이 이 방을 나가는 돈이야.' },
+    { who: 'moni',   text: '늘리는 동안은 시루값이 먼저 나가. 거두는 건 그 뒤야.' },
+    { who: 'jachwi', face: 'worry', text: '…그럼 한동안은 더 줄겠네.' },
+    { who: 'moni',   face: 'teach', text: '한동안은. 그래도 늘린 만큼 거두는 것도 늘어.' }
   ],
   /* ★★ 2026-10-30 [plan] 총괄 D90 ④ — **남는 건 판다**(quest.js §sell_surplus · siru16 자리).
      한 목소리(D90 ⑤): «하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 것은 판다.»
@@ -1066,13 +1068,15 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'proud', text: '쌓아 두기만 하면 그냥 쌓여. 돌려야 돈이야.' },
     { who: 'moni',   face: 'teach', text: '시루를 더 늘리면 더 빨리 모여. 손이 닿는 만큼만.' }
   ],
-  /* ⚠ 2026-10-30 D90 ④ — 아래 questSiru16 · questDoneSiru16 은 물린 줄(siru16)의 대사라 이제 안 뜬다.
-     «…줄지 않는다» 두 줄은 일어난 날의 사건(walletWeekUp · 8885af39)으로 옮겼다. 지우지 않고 둔다(물린 줄 규약 — siru_two 와 같음). */
+  /* ★ 2026-10-30 [plan] D91 — 끝 대사(끝 = 놓인 콩나물 시루 열여섯). 있던 세 줄은 안 되살렸다:
+       «…줄지 않는다. 오늘 처음이야.»·«여기서부터는 모으는 거야» — 지갑을 안 보는 자리라 거짓이 될 수 있었다(→ walletWeekUp 사건 · 8885af39) ·
+       «이 속도로 이사비를 모으려면 한참이야. 그건 다른 길이 있어.» — 이사는 돈 + 무늬 잎을 낸 적(tutorial.canMoveOut)이고 그 돈은 채소가 채운다
+       (자르기 문 지킨 판 · growth 83b1e728) ⇒ «다른 길»이 거짓이 됐다.
+     참: 시루를 다 놓았다 · 거둔 것을 팔면(조건) 늘린 만큼 빨리 모인다 · 체력 +1(siru16 원래 값 · «손이 늘었어»). */
   questDoneSiru16: [
-    { who: 'jachwi', face: 'happy', text: '…줄지 않는다. 오늘 처음이야.' },
-    { who: 'moni',   face: 'proud', text: '여기서부터는 모으는 거야. 버티는 게 아니라.' },
-    /* ★ 다음 축을 가리킨다 — 채소는 노가다고, 큰 것은 몬스테라다(박사님 확정) */
-    { who: 'moni',   text: '근데 이 속도로 이사비를 모으려면 한참이야. 그건 다른 길이 있어.' }
+    { who: 'jachwi', face: 'happy', text: '시루를 다 놨다.' },
+    { who: 'moni',   face: 'proud', text: '이제 거두는 대로 팔면 늘린 만큼 빨리 모여.' },
+    { who: 'moni',   face: 'teach', text: '손이 늘었어. 그래도 다 못 돌리겠으면 거두는 날을 엇갈려.' }
   ],
 
   /* ★★ 2026-10-08 D25 — 이 줄은 이제 «자를 수 있는 날»에 난다(quest.js §first_cut · 무늬이면서 다 자란 잎 ≥ 2).
@@ -3139,7 +3143,7 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
   radish5:      'questRadish5',
   /* ★ 2026-08-16 — 시루 늘리기 둘(실측 문턱 여덟·열여섯 · quest.js §②-b·②-c) */
   siru8:        'questSiru8',
-  siru16:       'questSiru16',          /* ⚠ 물린 줄(D90 ④) — 안 뜬다 */
+  siru16:       'questSiru16',          /* ★ 2026-10-30 D91 되살림(sell_surplus 뒤) */
   sell_surplus: 'questSellSurplus',     /* ★ 2026-10-30 D90 ④ */
   first_cut:    'questFirstCut',
   buy_lamp:     'questBuyLamp',
@@ -3201,7 +3205,7 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   siru5_cycle5: 'questDoneSiru5',
   radish5:      'questDoneRadish5',
   siru8:        'questDoneSiru8',
-  siru16:       'questDoneSiru16',      /* ⚠ 물린 줄(D90 ④) — 안 뜬다 */
+  siru16:       'questDoneSiru16',      /* ★ 2026-10-30 D91 되살림 */
   sell_surplus: 'questDoneSellSurplus', /* ★ 2026-10-30 D90 ④ */
   first_cut:    'questDoneFirstCut',
   buy_lamp:     'questDoneBuyLamp',

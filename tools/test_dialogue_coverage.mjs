@@ -1153,6 +1153,11 @@ check('대사 — 남는 건 판다(한 목소리 «하루 밥상 몫은 먹고 
     }
   const row = id => CHATTER.find(r => r.id === id);
   assert.ok(row('nudgeSurplusOffer') && row('nudgeSurplusPush'), '남는 건 판다 독촉 줄이 없습니다');
+  /* ★ D91 — 열여섯을 되살리며 «본전 · 줄지 않는다 · 다른 길»을 안 되살렸다 · 몬이는 수를 안 말한다 */
+  for (const id of ['questSiru16', 'questDoneSiru16']) for (const l of SCRIPTS[id]) {
+    assert.ok(!/본전|버는 쪽|안 깎여|줄지 않는다|다른 길/.test(l.text), `'${id}' 가 거둔 말을 되살렸습니다: ${l.text}`);
+    if (l.who === 'moni') assert.ok(!/[0-9]|닷새|열여섯|하나/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+  }
 });
 
 /* ★ 2026-10-30 [plan] 총괄 D90 ⑥ — 박사님 요령: 가르치지 않되 막지 않는다(«단 한 자리» 걷음 · 원리 한 줄은 비교만) */

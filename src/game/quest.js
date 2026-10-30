@@ -661,12 +661,12 @@ const MAIN_QUESTS = Object.freeze([
       .filter(p => p && p.kind === 'beansprout' && yes(p.placed)).length >= ctx.q.need.sirus
   }),
 
-  /* ②-c ★★★ 2026-10-30 [plan] 총괄 D90 ④ — **남는 건 판다**(«열여섯이면 버틴다» siru16 자리 · siru16 은 RETIRED_QUESTS 로 물렸다).
-     까닭(plan 답안 e8c818e2 §0-2 · §③): 반지하에서 들어온 돈의 98% 가 «남는 채소를 판 돈»이다(하네스 guide 씨앗 11 · D1–120 229.6만 중 225.6만).
-       본전을 가르는 것은 시루 «개수»가 아니라 «파나»다 — 시루 5 + 팔기(하네스)는 둘째 달 +22만 · 시루 16 + 안 팔기(비판 판)는 한 달 27kg 중
-       21kg 이 남고 지갑이 줄었다. 이사 날은 5 와 16 이 같다(136). 열여섯은 손일만 세 배였다.
-     ⇒ 박사님 08-16 이 이 자리에 줄을 내신 까닭(«100일째 돈 0원»)을 막는 손은 «팔기»다. 체력 +1 은 이 줄로 옮긴다(stamina.js).
-     ⚠ 박사님 확정 줄(08-16 «그 개수 달성하도록 (체력도 1 주고)»)을 바꾼 것이다 — 총괄 D90 위임 안 · 총괄이 박사님께 아뢴다.
+  /* ②-c ★★★ 2026-10-30 [plan] 총괄 D90 ④ · D91 — **남는 건 판다**(siru8 → 이 줄 → siru16 · 늘리기 → 팔기 → 더 늘리기).
+     까닭(plan 답안 e8c818e2 §0-2): 반지하에서 들어온 돈의 98% 가 «남는 채소를 판 돈»이다 — 안 팔면 시루가 몇이든 지갑이 준다
+       (비판 판: 시루 16 · 한 달 27kg 중 21kg 남음). 그래서 «판다»를 한 줄로 가르친다.
+     ⚠ D90 ④(f4352942)에서는 이 줄이 siru16 을 «대신»했다 — 근거 «시루 5 와 16 의 이사 날이 같다(136)»가 자르기 문을 안 지킨 옛 하네스 값이었다.
+       문을 지킨 판(growth 83b1e728 §3·§4): 할 일만 따라 시루 8 에서 멈춘 사람은 7/11 이 700일 안에 못 나가고(채소 판 돈 중앙 513만),
+       시루 16 이면 5/5 · 중앙 120일(833만). ⇒ D91(총괄): siru16 을 되살리고 이 줄은 그 앞에 둔다. 체력 +1 은 siru16 하나(원래 값) · 이 줄은 체력 없음.
      ⚠ 칸(pantrySoldCount · [core] 곳간 팔기 횟수 — 잉여 넘김 포함 · 삽수·그루 판매는 안 셈)이 null(배선 전)이면 안 열린다 — 열고 영영 안 끝나는 것보다 낫다.
      ⚠ 곳간이 이레치 밥상 몫을 넘었나(pantryOverKeepGrams · [core])를 알면 넘은 날에 연다(«쌓이네»가 참). 모르면 siru8 끝으로만.
      ⚠ 수(이레 · 몫 g)를 여기 안 적는다 — 이레는 core 가 하네스 PANTRY_KEEP 과 맞춰 정한다(D90 ⑤ ⚖). */
@@ -676,11 +676,35 @@ const MAIN_QUESTS = Object.freeze([
     ko: '남는 건 판다',
     teaches: ['하루 밥상 몫은 먹고, 그 위로 쌓이는 것은 판다', '반지하에서 돈이 들어오는 길은 채소다'],
     why: '밥상에 오르는 몫은 하루치뿐입니다. 그 위로 쌓이는 채소는 팔아야 돈이 됩니다.',
+    /* ★ D91 — 체력은 안 준다(총괄 · 체력 총량은 첫 플레이 뒤). 보상은 들어온 돈 그 자체 — 참: 곳간을 팔면 판 값이 지갑에 든다 */
+    reward: '판 돈이 지갑에 듭니다',
     todo: () => '남는 채소를 상점에서 팔아 보세요',
     after: 'siru8',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru8')) && s.pantrySoldCount != null
                        && (!(Number.isFinite(s.pantryOverKeepGrams) && s.pantryOverKeepGrams <= 0) || wasOpened(ctx, 'sell_surplus')),
     done:  s => s.pantrySoldCount != null && num(s.pantrySoldCount) >= 1
+  }),
+
+  /* ②-d ★★★ 2026-10-30 [plan] 총괄 D91 — **열여섯까지 늘린다**(siru16 되살림 · 박사님 08-16 «그 개수 달성하도록 (체력도 1 주고)» 그대로 — 수 · 체력 +1).
+     까닭(growth 83b1e728 §4): 자르기 문을 지킨 판에서 반지하 이사비는 채소 판 돈이 채운다 — 시루 수가 곧 이사 날이다(16 → 5/5 · 120일 · 8 → 7/11 못 감).
+     ⚠ 글은 08-16 의 «본전»(«열여섯이 살림의 본전이다» · «여기서부터 하루가 마이너스에서 플러스로») · «줄지 않는다»를 되살리지 않는다 —
+       본전은 «파나»에 걸려 있고(§sell_surplus), «줄지 않는다»는 일어난 날의 사건(walletWeekUp)이 말한다. why 는 총괄 D91 글.
+     ⚠ 열쇠: sell_surplus 를 끝낸 뒤. 단 sell_surplus 칸(pantrySoldCount)이 아직 없는 판(core 배선 전)은 그 줄이 안 열리므로
+       siru8 끝으로 연다 — 칸이 없다고 열여섯 길까지 막히면 D90 ④ 의 그 병이 도로 난다.
+     ⚠ «놓인 것만 센다»(박사님 08-24)는 그대로. */
+  Object.freeze({
+    id: 'siru16',
+    room: 'banjiha',   // ★ 2026-10-07 — 이사 «전»에만(§questRoomOk). 원룸은 콩나물 자리가 한 칸이다
+    ko: '열여섯까지 늘린다',
+    teaches: ['시루가 많을수록 채소 돈이 빨리 모인다'],
+    why: '채소 판 돈이 이 방을 나가는 돈입니다. 시루가 많을수록 빨리 모입니다.',
+    need: Object.freeze({ sirus: 16 }),
+    todo: q => `콩나물 시루를 ${q.need.sirus}개까지 늘리세요`,
+    after: 'sell_surplus',
+    opens: (s, ctx) => !!(ctx && (ctx.doneIds.includes('sell_surplus')
+                                  || (ctx.doneIds.includes('siru8') && s.pantrySoldCount == null))),
+    done:  (s, ctx) => arr(s.cropPots)
+      .filter(p => p && p.kind === 'beansprout' && yes(p.placed)).length >= ctx.q.need.sirus
   }),
 
   /* ③ ★ **자를 수 있게 된 순간**에 열린다 — 모주 잎이 둘이 된 날이다.
@@ -1486,28 +1510,6 @@ export const QUEST_PREVIEW = 3;
 /* ★ 물러난 줄 — 표에서는 뺐지만 «이름»은 남긴다. 옛 세이브의 questsTaken 과 「옛 표 vs 새 표」를 재는 자
    (probe_questorder)가 이 이름을 붙잡고 있다. 열리지도 뜨지도 않는다 — 정본은 QUESTS 뿐이다. */
 export const RETIRED_QUESTS = Object.freeze([
-  /* ★ 2026-10-30 [plan] 총괄 D90 ④ — **siru16 «열여섯이면 버틴다» 물림**(자리는 sell_surplus «남는 건 판다»).
-     까닭: 본전을 가르는 것은 개수가 아니라 팔기(§sell_surplus) · 열여섯은 손일만 세 배 · 이사 날은 5 와 같다(하네스 136).
-     이름은 남긴다(옛 세이브 questsTaken · probe 들이 붙잡고 있다). 열리지도 뜨지도 않는다. 아래는 물리기 전 정의 그대로. */
-  Object.freeze({
-    id: 'siru16',
-    room: 'banjiha',   // ★ 2026-10-07 — 이사 «전»에만(§questRoomOk). 원룸은 콩나물 자리가 한 칸이다
-    ko: '열여섯이면 버틴다',
-    teaches: ['열여섯이 살림의 본전이다'],
-    why: '여기서부터 하루가 마이너스에서 플러스로 돕니다. 그 전까지는 조금씩 깎입니다.',
-    need: Object.freeze({ sirus: 16 }),
-    todo: q => `콩나물 시루를 ${q.need.sirus}개까지 늘리세요`,
-    after: 'siru8',
-    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru8')),
-    /* ★★ 2026-08-24 박사님 확정: **"놓인것만 센다."**
-       예전에는 `cropPots` 를 그냥 셌다 — **가방에 쟁여 두기만 해도 줄이 닫혔다.**
-       이 줄이 가르치는 것은 「늘리면 하루가 는다」인데, **가방에 있는 시루는 아무것도 안 낸다.**
-       사 두기만 하고 배운 것이 되면 그건 가르친 것이 아니라 세어 준 것이다.
-       ⚠ `placed` 는 스냅샷이 이미 낸다(`first_play.cropPotPlaced`) — 새 칸이 아니다.
-       ⚠ 값은 한 톨도 안 건드렸다(여덟·열여섯 그대로). **세는 방식만** 바뀐다. */
-    done:  (s, ctx) => arr(s.cropPots)
-      .filter(p => p && p.kind === 'beansprout' && yes(p.placed)).length >= ctx.q.need.sirus
-  }),
   /* ★ 2026-09-02 ㉱ — siru_two 도 물러난다(박사님 「2개째는 «강제 가이드»로」). 문안 ㉮는 가이드 할 일로 옮겼다(game.html §siruNeed) */
   Object.freeze({
     id: 'siru_two',

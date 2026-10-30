@@ -277,8 +277,9 @@ const steps = [
   MS(46, { cropPots: [...bean(5), ...musun(1)], mealKinds: ['beansprout', 'musun'] }),
   MS(47, { cropPots: [...bean(5), ...musun(1)], mealKinds: ['beansprout', 'musun'] }),
   MS(48, { cropPots: [...bean(5), ...musun(5)], mealKinds: ['beansprout', 'musun'] }),
-  /* 여덟(놓인 것만 센다) · ★ 2026-10-30 D90 ④ 남는 건 판다(열여섯 물림) — 곳간이 이레치를 넘어 열리고 · 한 번 팔아 끝난다 */
-  MS(50, { cropPots: [...bean(8), ...musun(5)] }),
+  /* 여덟(놓인 것만 센다) · ★ 2026-10-30 D90 ④ · D91 남는 건 판다 → 열여섯 — 곳간이 이레치를 넘어 열리고 · 한 번 팔아 끝나면 열여섯이 열린다
+     (판 횟수 칸은 배선된 판처럼 0 부터 — null 이면 열여섯이 «칸 없는 판» 길로 siru8 뒤에 바로 열린다) */
+  MS(50, { cropPots: [...bean(8), ...musun(5)], pantrySoldCount: 0, pantryOverKeepGrams: 0 }),
   MS(51, { cropPots: [...bean(8), ...musun(5)], pantrySoldCount: 0, pantryOverKeepGrams: 2400 }),
   MS(56, { cropPots: [...bean(16), ...musun(5)], pantrySoldCount: 1, pantryOverKeepGrams: 0 }),
   /* ★ 2026-10-30 [plan] D90 ③ — 무늬 잎 하나가 다 자랐다(1/2) → 자르기까지(wait_varie) 열림 · 둘이 되는 60일에 끝(first_cut 과 같은 자) */
@@ -776,13 +777,18 @@ check('D90 ③ 자르기까지 — 셈 n/2 · 처음 열 때만 «아직» · �
   assert.equal(w.waiting, true); assert.equal(w.waitWhat, '무늬 잎이 다 자라기를 · 1/2');
 });
 
-/* ★ 2026-10-30 [plan] 총괄 D90 ④ — 남는 건 판다(siru16 자리): 칸을 모르면 안 열림 · 곳간이 이레치를 안 넘으면 안 열림 ·
-     한 번 팔면 끝 · 열여섯은 물림(표에서 빠지고 이름만) · 체력 +1 이 옮겨 옴 */
-check('D90 ④ 남는 건 판다 — 칸 모르면 안 열림 · 넘친 날에 열림 · 한 번 팔면 끝 · 열여섯 물림 · 체력 +1 옮김', () => {
-  const q = questOf('sell_surplus');
+/* ★ 2026-10-30 [plan] 총괄 D90 ④ · D91 — 남는 건 판다 → 열여섯까지 늘린다: 칸 모르면 안 열림 · 넘친 날에 열림 · 한 번 팔면 끝 ·
+     열여섯은 그 뒤(칸 없는 판은 siru8 뒤) · 체력 +1 은 siru16 하나 · 남는 건 판다는 «판 돈»이 보상 */
+check('D90 ④ · D91 남는 건 판다 → 열여섯 — 칸 모르면 안 열림 · 넘친 날 열림 · 한 번 팔면 끝 · 열여섯은 그 뒤 · 체력은 열여섯만', () => {
+  const q = questOf('sell_surplus'), q16 = questOf('siru16');
   assert.ok(q && q.room === 'banjiha' && q.after === 'siru8', 'sell_surplus 가 없거나 자리가 다릅니다');
-  assert.ok(!QUEST_IDS.includes('siru16') && RETIRED_QUESTS.some(r => r.id === 'siru16'), 'siru16 이 표에 남았거나 이름이 없어졌습니다');
-  assert.equal(STAMINA_RULES.quests.sell_surplus, 1, '체력 +1 이 안 옮겨 왔습니다');
+  assert.ok(q16 && QUEST_IDS.includes('siru16') && !RETIRED_QUESTS.some(r => r.id === 'siru16'), 'siru16 이 표에 없거나 물린 줄에 남았습니다');
+  assert.equal(q16.after, 'sell_surplus'); assert.equal(q16.need.sirus, 16);
+  assert.ok(QUEST_IDS.indexOf('sell_surplus') < QUEST_IDS.indexOf('siru16'), '차례가 늘리기 → 팔기 → 더 늘리기가 아닙니다');
+  assert.equal(STAMINA_RULES.quests.siru16, 1, '체력 +1 이 siru16 에 없습니다');
+  assert.ok(!(STAMINA_RULES.quests.sell_surplus > 0), '남는 건 판다에 체력이 붙었습니다(총괄 D91 — 체력 총량은 첫 플레이 뒤)');
+  assert.ok(typeof q.reward === 'string' && q.reward.trim(), '남는 건 판다의 보상 글이 없습니다');
+  assert.ok(!/본전|플러스|마이너스/.test(q16.why + q16.teaches.join(' ')), `열여섯이 «본전»을 되살렸습니다: ${q16.why}`);
   const b = newBoard(); const ctx = { doneIds: ['siru8'], S: b, q };
   assert.equal(!!q.opens(MS(51, { pantrySoldCount: null }), ctx), false, '칸을 모르는데 열립니다(열고 영영 안 끝남)');
   assert.equal(!!q.opens(MS(51, { pantrySoldCount: 0, pantryOverKeepGrams: 0 }), ctx), false, '곳간이 이레치를 안 넘었는데 «쌓이네»가 섭니다');
@@ -791,6 +797,11 @@ check('D90 ④ 남는 건 판다 — 칸 모르면 안 열림 · 넘친 날에 �
   assert.equal(!!q.done(MS(51, { pantrySoldCount: 0 })), false); assert.equal(!!q.done(MS(51, { pantrySoldCount: 1 })), true);
   assert.equal(!!q.done(MS(51, { pantrySoldCount: null })), false, '모르는데 끝납니다');
   assert.ok(questTodo(q, MS(51)).length <= 28);
+  /* 열여섯 — 팔기 뒤 · 칸 없는 판은 siru8 뒤(열여섯 길이 막히지 않게) */
+  const c16 = d => ({ doneIds: d, S: newBoard(), q: q16 });
+  assert.equal(!!q16.opens(MS(52, { pantrySoldCount: 0 }), c16(['siru8'])), false, '팔기 전에 열여섯이 열립니다');
+  assert.equal(!!q16.opens(MS(52, { pantrySoldCount: 1 }), c16(['siru8', 'sell_surplus'])), true, '팔았는데 열여섯이 안 열립니다');
+  assert.equal(!!q16.opens(MS(52, { pantrySoldCount: null }), c16(['siru8'])), true, '칸 없는 판에서 열여섯 길이 막힙니다');
 });
 
 /* ── 보고 ────────────────────────────────────────────────────────────── */

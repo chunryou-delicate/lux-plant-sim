@@ -26,14 +26,14 @@
 
 - probe_questchain 은 HEAD 와 같다(15/18 — 원래 빨강 셋은 plan 고침 전에도 있었다).
 
-## ④ 남는 건 판다(siru16 자리)
+## ④ 남는 건 판다 → 열여섯까지 늘린다(D91 — siru16 되살림 · 차례 siru8 → sell_surplus → siru16)
 
 | # | 손 | 쓰는 곳 |
 |---|---|---|
 | 1 | 스냅샷 칸 **`pantrySoldCount`** — 곳간(보유 채소)을 판 횟수 · 잉여 넘김 포함 · 삽수·그루 판매는 안 셈(`ts.crop.soldWon` 은 삽수까지 섞여 못 쓴다 · `fp.food.totalPantrySoldWon` 이 곳간 판 돈이다) | `sell_surplus` 끝(≥ 1). null 이면 줄이 **안 열린다** |
 | 2 | 스냅샷 칸 **`pantryOverKeepGrams`** — 곳간 g − 이레치 밥상 몫 g | `sell_surplus` 열림(> 0 일 때 · 모르면 siru8 끝으로만) |
-| 3 | 확인: `stamina.js` `sell_surplus: 1`(siru16 의 +1 을 옮김 · f4352942) | 체력 오름 날 |
-| 4 | 하네스 `follow`(5·8·16) — siru16 이 물려 이제 8 에서 멈춘다 | D90 ⑩ «사람 손»(시루 8 · 남으면 팜)과 맞음 |
+| 3 | ★ D91 — `stamina.js` 는 원래대로(체력 +1 은 siru16 하나 · sell_surplus 는 체력 없음 · 보상 글 «판 돈이 지갑에 듭니다») | — |
+| 4 | ★ D91 — siru16 이 sell_surplus 뒤에 다시 열린다(칸 pantrySoldCount 가 없는 판은 siru8 뒤에 바로) · 하네스 `follow` 는 다시 16 까지 | growth 가 그 판으로 다시 잼 |
 
 ## ⑤ 채소 한 목소리
 
