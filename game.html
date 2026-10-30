@@ -13500,7 +13500,12 @@ function closeMealPanel() {
 $('mealGo').onclick     = guard(() => { if (endingLockedNow()) { banner(CHAPTER_KO.locked, ''); return; } goNextDay(); });   /* D28 · D59 진로를 고르면 풀림 */
 $('mealCancel').onclick = guard(() => closeMealPanel());
 
-$('next').onclick = guard(() => {
+$('next').onclick = guard((ev) => {
+  /* ★ 2026-10-30 총괄 D90 버그 3 — 대사가 닫힌 뒤 0.7초 안의 «사람» 누름은 대사를 넘기던 손의 메아리라 듣지 않는다.
+       ⛔ Day 13 아침 대사를 상자 가운데로 넘기다 마지막 줄 뒤에 한 번 더 누르자, 바로 밑 넓은 [다음 날]에 맞아
+         묻지도 않고 하루가 넘어갔다 — 방금 온 시루를 못 놓고 하루를 잃음(비판 Claude ⑤ #4 · 밥상 창은 «어제와 같으면» 안 뜬다).
+       ⚠ 코드가 부르는 click()(isTrusted 거짓 · 검사·재현)은 그대로 통과한다 */
+  if (ev && ev.isTrusted && performance.now() - dlgClosedAt < NEXT_AFTER_TALK_MS) return;
   /* ★ 연출 중에 또 누르면 **건너뛰기**다 — 「안 먹히는 단추」로 두지 않는다.
        (덮개가 위를 덮고 있어 손가락으로는 덮개가 먼저 받는다. 이 갈래는 코드로
         부르는 길·키보드 길을 위한 것이다.) */
@@ -13703,10 +13708,14 @@ function paintSceneArt(line) {
   box.classList.add('on');
 }
 window.__sceneArt = () => { const b = $('sceneArt'), i = $('sceneArtImg'); return { on: !!(b && b.classList.contains('on')), src: i ? i.dataset.src || null : null }; };   /* 재는 손잡이 */
+/* ★ 2026-10-30 총괄 D90 버그 3 — 대사가 닫힌 때(§next 가 그 직후 누름을 거른다) · var — 부팅 차례가 바뀌어도 «초기화 전» 오류가 안 나게 */
+var dlgClosedAt = -1e9;
+const NEXT_AFTER_TALK_MS = 700;
 function dlgPaint() {
   const line = dlg.current();
   try { paintSceneArt(line); } catch (e) { console.warn('[원화]', e && e.message); }
   if (!line) {
+    if ($('stage').classList.contains('talking')) dlgClosedAt = performance.now();
     $('stage').classList.remove('talking'); refreshOverlays();
     /* ★ 2026-08-18 — 대사 줄이 비었다. 기다리던 한 달 가계부가 있으면 **여기서** 뜬다
        (§openMonthWhenQuiet — 대사를 덮지 않으려고 뒤로 미뤄 둔 것이다). */
@@ -14171,9 +14180,11 @@ async function bootRoomView() {
         return true;
       } catch { return false; }
     };
+    /* ★ 2026-10-30 총괄 D90 버그 3 — 첫 화분의 slotId 하나만 보지 않는다: 자유 좌표로 놓인 화분(free:{id})·둘째 화분도 몬스테라다(§potOfSlot 과 같은 열쇠 셋).
+         ⛔ 가방에서 끌어 받침에 놓은 몬스테라를 방에서 골라 [자세히]를 누르면 «자세히 볼 것이 없습니다»가 떴다(비판 Claude ⑤ #5) */
     window.__byeotIsPlantSlot = (id) => {
-      const p = pot0(S);
-      return !!(p && p.slotId && id && p.slotId === id);
+      if (!id) return false;
+      return (S.pots || []).some(p => p && (p.slotId === id || id === `free:${p.id}` || id === p.id));
     }; window.__io = io;
     /* ★ 2026-10-08 — 확대창이 열렸다(위 고전 스크립트 §__byeotZoom.open 이 부른다) → 「도착 뒤 연 적 있나」를 적는다 */
     window.__byeotZoomOpened = () => { try { noteZoomOpened(S); } catch { } };
