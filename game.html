@@ -12230,7 +12230,7 @@ function drawJourney() {
          ⚠ D50 — 칩 줄이 사슬 줄(next)과 같을 때만 머리에 「n/5」를 단다(다르면 머리와 몸이 다른 줄을 말한다) */
     questChain = (qv.chain && qv.next && qv.chip && qv.chip.id === qv.next.id) ? { index: qv.chain.index, total: qv.chain.total, id: qv.next.id, ko: qv.next.ko } : null;
     /* ★ 2026-10-08 [plan] b3a49dbc P3 — 새로 열린 줄(열린 날이 오늘·어제 · current 아님)을 48시간 칩 첫 줄로 */
-    questFresh = (Array.isArray(qv.fresh) && qv.fresh[0]) ? { id: qv.fresh[0].id, ko: qv.fresh[0].ko } : null;
+    questFresh = (Array.isArray(qv.fresh) && qv.fresh[0]) ? { id: qv.fresh[0].id, ko: qv.fresh[0].ko, todo: qv.fresh[0].todo || null } : null;
   } catch { questGoal = null; questChain = null; }
 
   /* ★ 2026-10-24 총괄 다듬기 6-2(core 뿌리 찾음) — 이사한 뒤엔 튜토리얼 줄(quest[fp.phase])로 절대 안 떨어진다.
@@ -12298,7 +12298,8 @@ function drawJourney() {
            칩 머리(<b>)가 「몇 번째 · 무엇」을 말하고, 사슬이 끝나면 예전 「📜 할 일」로 돌아간다.
            ⚠ 짧은 이름은 [plan] 낱말이 정본이다 — 여기 표는 D12 예시(「시루 놓기」)에 맞춘 임시 이름이고, 없는 id 는 퀘스트 ko 를 그대로 쓴다 */
       { const hb = chip.querySelector('b');
-        const SHORT = { place_siru: '시루 놓기', water_siru: '물 주기', first_harvest: '첫 수확',
+        /* ★ 2026-10-31 총괄 D90 종합5(#9) — water_siru 는 «물 주기»였는데 그 줄 할 일이 먼저 «씨앗을 심으세요»라 머리와 몸이 달랐다(줄 이름 «씨앗을 심고 물을 준다») */
+        const SHORT = { place_siru: '시루 놓기', water_siru: '심고 물 주기', first_harvest: '첫 수확',
                         order_seed: '씨앗 주문', monstera_home: '몬스테라 자리' };
         /* 차례: 초반 사슬(D12) > 새로 열린 줄(P3 · 「새 」) > 「할 일」 */
         if (hb) hb.textContent = questChain
@@ -12307,7 +12308,13 @@ function drawJourney() {
           : '📜 할 일'; }
       /* 「보이나」는 `offsetParent` 로 묻는다 — `style.display` 만 보면 부모가 감춘 것을 못 본다
          (바로 위 §plantsBox 가 쓰는 그 손과 같다). */
-      ct.textContent = line;
+      /* ★ 2026-10-31 총괄 D90 종합5(#9 · plan «칩은 한 줄의 ko + 그 줄의 todo») — 몸도 머리와 «같은 줄»에서.
+           ⛔ 머리 «새 여덟까지 늘린다»(새 줄) · 몸 «무순을 길러…»(지금 줄) / 머리 «5/5 · 씨앗 주문» · 몸 «창턱 화분받침으로 옮겼습니다…»(옮긴 직후 알림 —
+             그 말은 옮긴 순간 배너 · 식물 줄이 이미 한다). ⇒ 새 줄 머리면 몸은 그 줄 할 일 · 나머지는 할 일 줄(옮긴 직후 알림은 칩에 안 싣는다) */
+      const chipBody = questFresh && questFresh.todo ? questFresh.todo
+        : movedOutNow ? (questGoal || livingGoal || jobLine || '')
+        : (questGoal || livingGoal || (justMoved ? '' : quest[fp.phase]) || (justMoved ? line : '') || '');
+      ct.textContent = chipBody;
       /* ★ 켜는 셈은 **저쪽 한 벌**을 부른다(§syncQuestChip) — 여기서 다시 짓지 않는다.
          ⚠ 글자를 먼저 넣고 나서 물어야 한다. 그 함수가 「글자가 있나」부터 보기 때문이다. */
       try { window.__byeotQuestChipShould
@@ -12339,6 +12346,7 @@ function saveNow() {
   if (saveOff) return;          /* 끝내기로 나가는 중 — 지운 자리에 다시 쓰지 않는다 */
   if (!saveReady) return;                 // 부팅 중에는 저장하지 않는다(반쯤 선 상태를 굳히지 않게)
   let r;
+  { const t = talkNow(); if (t) S.talk = t; }   /* ★ 10-31 본 대사(§talkNow) */
   try { r = save.saveTo(localStorage, save.SAVE_KEY, S); }
   catch (e) { r = { ok: false, reason: 'storage', message: (e && e.message) || String(e) }; }
   if (r.ok || saveWarned) return;
@@ -12370,6 +12378,7 @@ async function resumeSave() {
     return false;
   }
   S = r.S;
+  restoreTalk(S.talk);   /* ★ 10-31 본 대사 — 칸 없는 옛 세이브는 처음부터 */
   $('room').value = S.home.room;
   $('mode').value = S.sim.mode;
   fillLamps(); fillSlots(); if (S.firstPlay && S.firstPlay.enabled) fillCropSlots();
@@ -13798,10 +13807,23 @@ function showGpuInfo() {
 /* ══ 대화 ═══════════════════════════════════════════════════════════════
    ★대사 순서는 계약이다 — Day 4 는 수확 → (식비는 화면이 숫자로) → 식물신 → 도착.
      dialogue.js 가 그 줄 세우기를 갖고 있고 여기서는 그리기만 한다. */
-const dlg = createDialogue();
+/* ★ 2026-10-31 총괄 D90 종합5 — «본 것»은 밖에 둔 Set 을 함께 쓴다(세이브 S.talk 로 되살린다 · §restoreTalk) */
+const DLG_SEEN = new Set();
+const dlg = createDialogue(DLG_SEEN);
 /* ★조용한 날을 세고 작은 말을 고른다. 예전엔 첫 플레이 세 가지만 하드코딩으로 읽어서
    월세·가을·식물등·성장 정지·이사가 전부 조용했다 — 대사는 있는데 화면이 안 읽었다. */
-const story = createStoryteller();
+let story = createStoryteller();   /* ★ 10-31 — 다시 켤 때 이력·마지막 날을 실어 새로 짓는다(§restoreTalk) */
+/* ★ 2026-10-31 총괄 D90 종합5(master-playtest-20261025 #8) — 본 대사를 세이브에 싣고(§saveNow) 다시 켤 때 되살린다.
+     ⛔ 다시 켜면 Day 5 · Day 12 대사가 한 번 더 돌고 Day 15 에 Day 1 잡담이 그대로 섰다 — 본 것·이력이 메모리에만 있었다 */
+function talkNow() {
+  try { return { seen: dlg.seenList(), recent: story.recent().slice(-400), lastDay: story.lastDays ? story.lastDays() : {} }; }
+  catch (e) { console.warn('[본 대사]', e && e.message); return null; }
+}
+function restoreTalk(t) {
+  DLG_SEEN.clear();
+  if (t && Array.isArray(t.seen)) for (const id of t.seen) DLG_SEEN.add(id);
+  story = createStoryteller(t ? { recent: t.recent || [], lastDay: t.lastDay || {} } : {});
+}
 /* 표정 키(대사가 쓰는 뜻) → 파일명. 3차 초상화부터는 대체로 같지만 몬이만 다르다
    (몬이의 '기뻐함'은 excited 다). 이름이 또 바뀌어도 대사는 안 고치게 여기서만 안다. */
 const FACE_FILE = {
@@ -19760,6 +19782,7 @@ $('reset').onclick = () => {
   S = newState({ room: keep.room, mode: 'novice', firstPlay: true, firstPlayRules: FIRST_RULES, tutorialRules: TUT_RULES,
                      staminaRules: STAMINA_RULES_NOW, startSeeds: 1 });
   S.lamps = keep.lamps;
+  restoreTalk(null);   /* ★ 10-31 새 판 — 본 대사도 처음부터 */
   noteTurn(null);
   arrivalSlotId = null;
   io.growth.reset();

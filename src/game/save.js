@@ -972,6 +972,21 @@ function migrateVarieSale(S, ts) {
      유도한다(oneroom.stageOf). 적어 두면 둘이 갈렸을 때 어느 쪽이 사실인지 알 수 없다.
    ⚠ `doneOnDay` 를 잃으면 **끝난 판이 다시 안 끝난 판**이 되고, 초보 모드도 다시 켜진다
      (propagation.isNoviceMode 가 이 값을 본다). 조용히 틀리는 유형이라 반드시 남긴다. */
+/* ★ 2026-10-31 총괄 D90 종합5(master-playtest-20261025 #8) — **본 대사**를 싣는다.
+     seen     한 번만 나는 대사(dialogue §createDialogue · REPEATABLE 밖)를 이미 띄웠나
+     recent   대사꾼이 낸 차례(§createStoryteller history — 잡담 고르기가 «가장 오래 안 나온 말»을 본다)
+     lastDay  줄마다 마지막 난 날(§repeatOk · 독촉 «이틀 잇달아» 막기)
+   ⛔ 안 실어서 다시 켜면 Day 5(씨앗 주문) · Day 12(몬스테라) 대사가 한 번 더 돌고, Day 15 에 Day 1 잡담 세 줄이 그대로 다시 섰다(총괄 판).
+   화면(game.html §saveNow)이 저장 직전 채운다 · 옛 세이브는 칸이 없다 → null(처음부터 — 예전 그대로) */
+const TALK_RECENT_MAX = 400;
+function packTalk(t) {
+  if (!t || typeof t !== 'object') return null;
+  const strs = (a, path) => needArr(a || [], path).map((v, i) => needStr(String(v), `${path}[${i}]`));
+  const lastDay = {};
+  for (const [k, v] of Object.entries(t.lastDay || {}))
+    if (Number.isFinite(v)) lastDay[String(k)] = needInt(Math.max(0, Math.round(v)), `talk.lastDay.${k}`, { min: 0 });
+  return { seen: [...new Set(strs(t.seen, 'talk.seen'))], recent: strs(t.recent, 'talk.recent').slice(-TALK_RECENT_MAX), lastDay };
+}
 function packStory(story) {
   if (!story) return null;
   const end = needObj(story.ending || {}, 'story.ending');
@@ -1305,6 +1320,8 @@ export function serialize(S, opt = {}) {
       /* ★ 2026-10-10 남녀·캐릭터 «추후 분기»의 길(hero_branch) — 칸 없는 판(옛 세이브 · 지금 판)은 null = 'f' · 'jachwi' */
       hero: packHero(S.hero),
       character: packCharacter(S.character),
+      /* ★ 2026-10-31 총괄 D90 종합5 — 본 대사(§packTalk) · 칸 없는 판은 null */
+      talk: packTalk(S.talk),
       firstPlay: packFirstPlay(S.firstPlay),
       story: packStory(S.story),
       tutorial: packTutorial(S.tutorial),
@@ -1775,7 +1792,8 @@ export function deserialize(raw, opt = {}) {
   S.jobShop = st.jobShop ? unpackJobShop(st.jobShop) : null;   /* D59 */
   S.jobCare = st.jobCare ? unpackJobCare(st.jobCare) : null;   /* B 돌봄 · 옛 세이브는 null */
   S.jobBreed = st.jobBreed ? unpackJobBreed(st.jobBreed) : null;   /* C 육종 · 옛 세이브는 null */
-  { const h = unpackHero(st.hero); if (h) S.hero = h; const c = packCharacter(st.character); if (c) S.character = c; }   /* 남녀·캐릭터 — 없으면 칸을 안 세운다(기본 'f' · 'jachwi') */
+  { const h = unpackHero(st.hero); if (h) S.hero = h; const c = packCharacter(st.character); if (c) S.character = c; }
+  { const t = packTalk(st.talk); if (t) S.talk = t; }   /* ★ 10-31 본 대사 — 없으면 칸을 안 세운다(처음부터 · 예전 그대로) */   /* 남녀·캐릭터 — 없으면 칸을 안 세운다(기본 'f' · 'jachwi') */
   if (S.species) for (const q of S.species.pots) q.at = q.at ? makeAt(q.at) : null;
   S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {
     const q = packCutting(c, i);

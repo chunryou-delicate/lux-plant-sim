@@ -4127,7 +4127,8 @@ export function createStoryteller(opt = {}) {
     if (ids.length) { quiet = 0; history.push(...ids); }
     return ids;
   }
-  return { turn, events, get quietDays() { return quiet; }, recent: () => [...history] };
+  /* ★ 2026-10-31 [core] 총괄 D90 종합5 — 줄마다 마지막 난 날을 밖에서 읽는다(화면이 세이브에 싣는다 · 다시 켤 때 opt.lastDay 로 되돌려 준다) */
+  return { turn, events, get quietDays() { return quiet; }, recent: () => [...history], lastDays: () => ({ ...lastDay }) };
 }
 
 /* ══ ★★ 표정 배정의 자 (2026-10-07 D15 · [plan] · 자: docs/handoff/plan-moni-faces.md ⓚ~ⓡ) ══════════
