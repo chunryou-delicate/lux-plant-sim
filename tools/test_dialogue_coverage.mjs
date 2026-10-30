@@ -45,7 +45,7 @@ import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, pot0, setPotSlot, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera,
-         beansproutReady } from '../src/game/first_play.js';
+         beansproutReady, cropSites } from '../src/game/first_play.js';   /* cropSites — ★ D92 이삿짐 판 */
 import {
   SCRIPTS, SPEAKERS, CHATTER, REPEATABLE, EVENT_SCRIPT,
   /* ★ 2026-08-17 — 퀘스트 대사 두 지도 (dialogue §5.5) */
@@ -644,6 +644,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     'rentAgain2', 'rentSoon2',
     /* ★ 2026-10-09 [plan] D43 — 원룸 도착(moved_in_oneroom) 날 들고 온 삽수가 가방에 있으면 scriptsForEvents 가 도착 장면 뒤에 붙인다 */
     'movedInBagCuttings',
+    /* ★ 2026-10-31 [plan] D92 — 같은 자리에 이삿짐(들고 온 채소)이 가방에 있으면 그 뒤에 */
+    'movedInBagCrops',
     /* ★ 2026-10-09 [plan] D45 — 새 종 사건 갈림(scriptOf): 교환 두 번째 물음·두 번째 거절 · 구근 싹 무늬/민무늬 */
     'ppTradeOfferAgain', 'ppTradeDeclinedLast', 'alSproutVarie', 'alSproutPlain',
     /* ★ 2026-10-09 [plan] D52 — 잠드는 날 구근(al_asleep corms > 0) · 두 번째 깸(al_wake first false) */
@@ -1212,6 +1214,50 @@ check('대사 — 상황을 모르던 여섯 줄(Day 8 «내일 아침» · 시�
   S.shop.orders = [...(S.shop.orders || []), { itemId: 'siru', qty: 3, arriveDay: 9 }];
   const c = chatterContextOf({ day: 5 }, S);
   assert.ok(c.siruBag >= 2 && c.siruIncoming === 3 && c.musunBag >= 1, JSON.stringify({ b: c.siruBag, i: c.siruIncoming, m: c.musunBag }));
+});
+
+/* ★ 2026-10-31 [plan] 총괄 D92 ㉠ — 이사 순간 작물은 다 이삿짐(가방 · 안 자람) · 창턱 넷은 삽수 · 몬스테라 몫.
+     첫날 차례: 삽수(창턱) → 채소(가구 위) · 이삿짐 줄은 «돌던» 작물만 센다(빈 용기는 안 침) · 옛 사실 «한 자리에 모인 시루 · 침대 옆 한 칸»을 안 되살림 */
+check('D92 이삿짐 — 이사 장면 끝 줄 차례 · 상태 줄 갈래 · 할 일 차례 · 옛 사실 안 되살림 · 몬이 수 없음', () => {
+  const S = newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES });
+  const ev = [{ id: 'moved_in_oneroom' }];
+  assert.ok(!scriptsForEvents(ev, S).includes('movedInBagCrops'), '가방에 돌던 작물이 없는데 이삿짐 줄이 붙습니다');
+  const pot = cropSites(S.firstPlay).flatMap(s => (s && s.pots) || [])[0];
+  assert.ok(pot, '판에 시루가 없습니다');
+  pot.slotId = null; pot.at = null; pot.startedOnDay = 0; pot.ageDays = 2; pot.harvested = false;
+  let out = scriptsForEvents(ev, S);
+  assert.equal(out[out.indexOf('movedInOneroom') + 1], 'movedInBagCrops', out.join(','));
+  S.cuttings = [{ id: 'cD92', status: 'rooting', method: 'water', at: null, slotId: null }];
+  out = scriptsForEvents(ev, S);
+  const m = out.indexOf('movedInOneroom');
+  assert.deepEqual(out.slice(m, m + 3), ['movedInOneroom', 'movedInBagCuttings', 'movedInBagCrops'], `창턱(삽수) 다음 가구(채소)가 아닙니다: ${out.join(',')}`);
+  assert.ok(chatterContextOf({ day: 5 }, S).bagCrops >= 1, '문맥 bagCrops 가 가방의 돌던 작물을 못 셉니다');
+  /* 상태 줄 — 첫 이레는 «Move» · 삽수가 가방이면 삽수 줄 차례 · 그 뒤는 이레에 한 번 */
+  const on = id => c => CHATTER.filter(r => r.id === id).some(r => { try { return !!r.when(c); } catch { return false; } });
+  const base = { movedOut: true, movedHome: false, bagCrops: 1, bagCuttings: 0 };
+  assert.equal(on('statusBagCropsMove')({ ...base, daysInOneroom: 3 }), true);
+  assert.equal(on('statusBagCropsMove')({ ...base, daysInOneroom: 3, bagCuttings: 1 }), false, '삽수가 가방인데 채소 줄이 먼저 섭니다');
+  assert.equal(on('statusBagCrops')({ ...base, daysInOneroom: 3 }), false);
+  assert.equal(on('statusBagCrops')({ ...base, daysInOneroom: 12 }), true);
+  assert.equal(on('statusBagCrops')({ ...base, bagCrops: null, daysInOneroom: 12 }), false, '모르는데 섭니다');
+  /* 할 일 — 삽수 › 몬스테라 › 채소 › 예전 글(칸을 모르면 그 갈래를 건너뜀) */
+  const q = questOf('oneroom_unpack');
+  const bagCrop = [{ kind: 'beansprout', placed: false, growing: true }];
+  const todo = s => q.todo(q, s);
+  assert.equal(todo({ bagCuttings: 1, bagPots: 1, cropPots: bagCrop }), '들고 온 삽수부터 창가에 놓으세요');
+  assert.equal(todo({ bagCuttings: 0, bagPots: 1, cropPots: bagCrop }), '몬스테라를 창가에 놓으세요');
+  assert.equal(todo({ bagCuttings: 0, bagPots: 0, cropPots: bagCrop }), '들고 온 채소를 가구 위에 올리세요');
+  assert.equal(todo({ bagCuttings: null, bagPots: null, cropPots: bagCrop }), '들고 온 채소를 가구 위에 올리세요');
+  assert.equal(todo({ bagCuttings: 0, bagPots: null, cropPots: [{ kind: 'beansprout', placed: false, growing: false }] }), '가방의 식물을 원룸에 놓으세요', '빈 용기를 이삿짐으로 셉니다');
+  for (const s of [{ bagCuttings: 0, bagPots: 1 }, { cropPots: bagCrop }]) assert.ok(todo(s).length <= 28);
+  /* 옛 사실 — 이사가 시루를 한 점에 몰던 때 · 방 데이터에서 빠진 칸 */
+  const T = id => SCRIPTS[id].map(l => l.text).join(' / ');
+  for (const id of ['chatOneroomDark', 'chatOneroomSiru', 'movedInOneroom'])
+    assert.ok(!/한 자리에 모여|거기뿐|침대 옆|한 칸|금방 찬다/.test(T(id)), `${id} 가 옛 사실을 말합니다: ${T(id)}`);
+  for (const id of ['movedInBagCrops', 'statusBagCropsMove', 'statusBagCrops', 'chatOneroomDark', 'chatOneroomSiru', 'movedInOneroom'])
+    for (const l of SCRIPTS[id]) if (l.who === 'moni')
+      assert.ok(!/[0-9]|하나|한 칸|둘|셋|넷|다섯|아홉|열여섯/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+  assert.ok(REPEATABLE.has('movedInBagCrops') && REPEATABLE.has('statusBagCrops') && REPEATABLE.has('statusBagCropsMove'));
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

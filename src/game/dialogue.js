@@ -1446,8 +1446,12 @@ export const SCRIPTS = {
   movedInOneroom: [
     { who: 'jachwi', face: 'surprise', text: '…창이 눈높이에 있네.' },
     { who: 'moni',   face: 'calm',   text: '높지. 지나가는 사람 발만 보이지는 않아.' },
-    { who: 'jachwi', text: '박스를 푸니까 금방 찬다. 놓을 데는 저기랑 비슷한가.' },
-    { who: 'moni',   face: 'teach', text: '한 칸 더 많아. 그건 별거 아니고 — 밝은 자리가 늘었어.' },
+    /* ★ 2026-10-31 [plan] 총괄 D92 ㉠ — 이사 순간 그루 · 삽수 · 작물은 다 가방(작물은 «이삿짐» · 놓을 때까지 안 자람)이고 방에 선 것은 창턱 받침뿐이다.
+       옛 줄 「박스를 푸니까 금방 찬다」 · 「한 칸 더 많아 … 밝은 자리가 늘었어」를 걷었다 — 빈 방이 보이는 화면과 어긋났고(chatOneroomEmpty «방이 안 찬다»와도),
+       «한 칸»은 옛 방 데이터(원룸 15칸) 수다. 원룸 자리는 창턱 넷 + 들고 온 가구 윗면이라(house 2e6a5723) «가구를 놓는 만큼»이 참이다.
+       «하늘이 더 보여»는 창이 눈높이로 올라온 것(첫 줄) — 철과 날씨에 안 걸린다(옛 «밝은 자리가 늘었어»는 겨울 이사 판에서 못 지킨다). */
+    { who: 'jachwi', text: '짐은 다 가방에 있고 방은 비었다. 놓을 데는 저기랑 비슷한가.' },
+    { who: 'moni',   face: 'teach', text: '자리는 가구를 놓는 만큼 생겨. 그리고 하늘이 더 보여.' },
     /* ★★ 2026-10-08 [plan] D1 — 「여긴 여덟이야」를 걷고 «계절이 흐르기 시작»을 넣었다.
        여덟은 위 주석대로 **novice(맑음·여름 고정) 로 센 수**다. D1(박사님)로 원룸 이사 때 빛의 초보가 꺼져(oneroom.js · sim.mode real)
        원룸의 빛은 날씨·계절을 탄다 — 맑은 날은 여덟, 고르면 다섯쯤(위 표의 ×0.643), 겨울엔 더 준다. 하나로 못 박을 수가 없어졌다.
@@ -1720,6 +1724,24 @@ export const SCRIPTS = {
   ],
   statusBagCuttingsMove: [
     { who: 'moni', face: 'teach', text: '들고 온 삽수는 가방에 있어. 창가에 놓아 줘 — 가방에선 하루가 안 가.' }
+  ],
+  /* ★★ 2026-10-31 [plan] 총괄 D92 ㉠ — **이삿짐(들고 온 채소).** 이사 순간 시루 · 재배판은 다 가방 «이삿짐»으로 들어가 놓을 때까지
+     자람 · 날 셈이 멈춘다(창턱 넷은 삽수 · 몬스테라 자리로 비워 둔다). 첫날 차례: 삽수 · 몬스테라 → 창턱(§movedInBagCuttings) · 가구 → 채소(이 줄).
+     ⚠ «가방엔 빈 용기만»(박사님 08-09)은 «가방에서 키우기» 막기다 — 이삿짐은 안 자라므로 그 규칙과 안 부딪힌다(회수 §recallCropPot 와 같은 꼴).
+     참인 조건: 칸 bagCrops = 가방에 든 «물을 받아 돌던» 작물(first_play cropPotList inBag && started · 아래 §chatterContext) ≥ 1 ·
+       원룸 이름 자리는 창턱 받침 넷뿐이고 나머지는 가구 윗면이다(house 2e6a5723 probe_oneroom_crop_seats — 기준 배치면 35칸).
+     «채소» = 시루 · 재배판 둘 다(어느 쪽만 들고 와도 참) · 몬이는 수를 안 말한다.
+     ⚠ D92 손(core) 전에는 이사가 작물을 방에 앉히므로 bagCrops 가 0 — 안 뜬다. */
+  movedInBagCrops: [
+    { who: 'moni', face: 'teach', text: '들고 온 채소는 가구부터 놓고 그 위에 올리자. 가방에선 안 자라.' }
+  ],
+  /* 둘째 날부터 첫 이레 — 아직 이삿짐이 가방에 있으면(삽수가 가방에 있는 날은 삽수 줄이 먼저 · 창턱 차례) */
+  statusBagCropsMove: [
+    { who: 'moni', face: 'teach', text: '들고 온 채소가 아직 가방에 있어. 가구 위에 올려 줘 — 가방에선 안 자라.' }
+  ],
+  /* 그 밖의 날 — 가방에 든 «돌던» 작물(이삿짐 · 손으로 회수한 것 둘 다). 화면 배너 «가방에 있는 동안에는 자라지 않습니다 — 다시 놓으면 이어서 자랍니다»와 같은 말 */
+  statusBagCrops: [
+    { who: 'moni', face: 'teach', text: '가방에 든 채소는 안 자라. 놓으면 이어서 자라.' }
   ],
   /* ═══ ★★ 2026-10-09 [plan] D45(총괄) — **새 식물 두 종: 핑크프린세스 «가위» · 알로카시아 «철»** ═══
      기록: 10-09 총괄 D45 · 후보는 docs/handoff/plan-newspecies-20261009.md §판단필요.
@@ -2584,20 +2606,25 @@ export const SCRIPTS = {
   ],
   /* ★★ 밝아진 대가 — 콩나물 자리가 아홉에서 하나가 됐다(실측).
      몬이가 위로하지 않는다. 세어 주고 만다. */
+  /* ★★ 2026-10-31 [plan] 총괄 D92 — 다시 썼다. 옛 「한 칸 있어. 침대 옆에.」(oneroom-nightstand:0)는 방 데이터에서 그 칸이 빠진 뒤
+     (원룸은 빈 방 · 가구는 가방에서 꺼내 놓는다 — house_rooms §oneroom.reference_layout.use) 어느 판에서도 참이 아니었다.
+     house 2e6a5723: 기준 배치에서 콩나물(≤0.3) 자리는 여름 등0 14 · 겨울 18 — 서랍장 · 협탁 윗면과 책상 먼 끝, 곧 «창에서 먼 가구 위»다.
+     참인 조건: 원룸 빛은 창에서 멀수록 준다(놓는 자리는 사람이 고른다 — 가구 이름을 안 박는다) · 빈 방에는 어두운 칸이 없다.
+     ⚠ 수를 안 말한다(몬이 규칙). 뜻은 그대로 «밝아진 값» — 저 방은 놓기만 하면 어두웠고, 여기는 어둠을 가구로 만든다. */
   chatOneroomDark: [
-    { who: 'jachwi', face: 'think', text: '시루 놓을 어두운 데를 찾는데 잘 안 보인다.' },
-    { who: 'moni',   face: 'teach', text: '한 칸 있어. 침대 옆에.' },
-    { who: 'jachwi', face: 'surprise', text: '한 칸?' },
-    { who: 'moni',   text: '저 방엔 아홉 칸이었어. 어두운 건 저 방이 제일 잘하던 거였고.' },
-    { who: 'jachwi', face: 'tired', text: '…밝아진 값을 콩나물로 내는구나.' }
+    { who: 'jachwi', face: 'think', text: '시루 놓을 어두운 데가 어디지.' },
+    { who: 'moni',   face: 'teach', text: '창에서 먼 가구 위. 여긴 어두운 자리도 가구로 만들어.' },
+    { who: 'jachwi', text: '저 방은 놓기만 하면 어두웠는데.' },
+    { who: 'moni',   face: 'calm', text: '그게 저 방이 제일 잘하던 거였지.' },
+    { who: 'jachwi', face: 'tired', text: '…밝아진 값이 이거구나.' }
   ],
-  /* ★ 이사가 시루를 **한 자리에 몰아 앉힌다** — `oneroom.reseatCrops` 가 `room.slots[0]` 으로
-     보내고, 원룸의 `slots[0]` 이 마침 그 유일한 어두운 칸(`oneroom-nightstand:0`)이다(실측).
-     즉 화면에서 실제로 시루가 한 자리에 겹쳐 서 있고, 이 말은 그것을 가리킨다. */
+  /* ★★ 2026-10-31 [plan] 총괄 D92 — 앞 두 줄(「시루가 다 한 자리에 모여 있다」 · 「어두운 칸이 거기뿐이라 그래」)을 걷었다.
+     옛 §reseatCrops 가 room.slots[0] 한 점에 몰아 앉히던 때의 말인데, 그 점이 창턱(oneroom-sill:0 · 가장 밝은 칸)으로 바뀐 뒤로 거짓이었고
+     D92 ㉠ 부터는 시루가 이삿짐으로 가방에 든다(한 자리에 안 선다).
+     남긴 두 줄의 참인 조건: 원룸 창턱은 여름 등0 기대 4.0~4.3 · 겨울 1.5~1.6 — 콩나물 «하얗고 아삭»(≤0.3)을 넘어 늘 초록 쪽이다(house 자 C) ·
+       «초록이 되고 쓰다»는 반지하 가방 카드 · 수확 품질이 이미 말한 것. */
   chatOneroomSiru: [
-    { who: 'jachwi', text: '시루가 다 한 자리에 모여 있다.' },
-    { who: 'moni',   face: 'teach', text: '어두운 칸이 거기뿐이라 그래.' },
-    { who: 'jachwi', face: 'think', text: '하나쯤 창가에 두면 안 되나.' },
+    { who: 'jachwi', face: 'think', text: '시루 하나쯤 창가에 두면 안 되나.' },
     { who: 'moni',   face: 'teach', text: '두면 초록이 되고 써. 그건 저 방에서 배웠잖아.' }
   ],
   /* ★ 진짜로 늘어난 것 — 등 없이 자라는 자리가 **1칸 → 8칸**(창턱 4 + 선반 4).
@@ -2945,6 +2972,8 @@ export const REPEATABLE = new Set(
              'cuttingVarieBright', 'cuttingVarieMid', 'cuttingVarieDark', 'nudgeSeedSow',
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
              'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove', 'movedInBagCuttings',
+             /* ★ 2026-10-31 [plan] D92 — 이삿짐(들고 온 채소) 줄 셋 */
+             'statusBagCrops', 'statusBagCropsMove', 'movedInBagCrops',
              /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 판마다 여러 번 난다(구근마다 싹 · 잎마다 경고). 교환·퀘스트는 한 번 */
              'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping', 'alAsleepCorms', 'alWakeAgain',
              /* ★ D55 — 그루마다·칸마다 한 번(core 가 거른다) — 그루가 여럿이면 여러 번 */
@@ -3493,6 +3522,15 @@ export function scriptsForEvents(events = [], S = null) {
       try { bag = (S && Array.isArray(S.cuttings) ? S.cuttings : []).filter(c => c && c.status !== 'dead' && c.method && !c.at && !c.slotId).length; } catch { bag = 0; }
       if (bag > 0) out.splice(m + 1, 0, 'movedInBagCuttings');
     } }
+  /* ★ 2026-10-31 [plan] D92 ㉠ — 이삿짐(들고 온 채소)이 가방에 있으면 그 뒤(삽수 줄이 있으면 삽수 줄 다음 — 창턱 먼저 · 가구 다음).
+     가방 = first_play cropPotList 의 inBag && started(물을 받아 돌던 것 · §chatterContext bagCrops 와 같은 자) */
+  { const m = out.indexOf('movedInOneroom');
+    if (m >= 0 && !out.includes('movedInBagCrops')) {
+      let bag = 0;
+      try { const fp = S && S.firstPlay;
+            bag = (fp && fp.enabled) ? (cropPotList(fp, S.day) || []).filter(r => r && r.inBag && r.started).length : 0; } catch { bag = 0; }
+      if (bag > 0) { const c = out.indexOf('movedInBagCuttings'); out.splice((c >= 0 ? c : m) + 1, 0, 'movedInBagCrops'); }
+    } }
   return out;
 }
 
@@ -3779,6 +3817,11 @@ export const CHATTER = [
   /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼). D43: 도착 날은 §movedInBagCuttings 가 말했으니 이튿날(1)은 쉬고 사흘째(2)부터 */
   { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
                                                               && fin(c.bagCuttings) && c.bagCuttings > 0 },
+  /* ★ 2026-10-31 [plan] D92 ㉠ — 이삿짐(들고 온 채소)이 아직 가방(첫 이레 · 삽수가 가방에 있으면 삽수 줄 차례 — 창턱 먼저) */
+  { id: 'statusBagCropsMove',   status: true, gap: 3, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
+                                                              && fin(c.bagCrops) && c.bagCrops > 0 && !(fin(c.bagCuttings) && c.bagCuttings > 0) },
+  { id: 'statusBagCrops',       status: true, gap: 7, when: c => fin(c.bagCrops) && c.bagCrops > 0
+                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
   /* ★ 2026-10-09 [plan] D45 — 알로카시아가 자는 동안(칸 alDormantNow · [core]) */
   { id: 'statusAlSleeping',     status: true, gap: 14, when: c => c.alDormantNow === true },
   { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0
@@ -3975,8 +4018,10 @@ export function chatterContext(turn = {}, S = null) {
         const rows = (fp && Number.isFinite(turn.day ?? (S && S.day))) ? (cropPotList(fp, turn.day ?? S.day) || []) : [];
         const bag = kind => rows.filter(r => r && r.kind === kind && r.inBag).length;
         return { siruBag: stockOf(S, 'siru') + bag('beansprout'), siruIncoming: incomingOf(S, 'siru'),
-                 musunBag: stockOf(S, 'sprout_tray') + bag('musun') };
-      } catch { return { siruBag: null, siruIncoming: null, musunBag: null }; }
+                 musunBag: stockOf(S, 'sprout_tray') + bag('musun'),
+                 /* ★ 2026-10-31 [plan] D92 — 가방에 든 «물을 받아 돌던» 작물(이삿짐 · 회수한 것) · 빈 용기는 안 센다 */
+                 bagCrops: fp ? rows.filter(r => r && r.inBag && r.started).length : null };
+      } catch { return { siruBag: null, siruIncoming: null, musunBag: null, bagCrops: null }; }
     })(),
     /* ★ 2026-10-10 [plan] D59 — 산 집(투룸 · 진로)으로 옮겼나 · 진로 · 가게 판(S.jobShop · [core] job_shop). 원룸 잡담·상태 줄은 산 집에선 쉰다 */
     movedHome: !!(S && ((S.home && S.home.room === 'tworoom') || (S.tutorial && S.tutorial.homeOwned))),

@@ -232,6 +232,8 @@ export function emptySnapshot() {
            monsteraGrowing: null,
            /* ★ 2026-10-09 D43 — 가방에 든(자리 없는) 안 죽은 삽수 수([core] turn.bagCuttings 와 같은 자). null = 「모른다」 */
            bagCuttings: null,
+           /* ★ 2026-10-31 D92 — 가방에 든 몬스테라 화분 수([core] · bagPlants 의 pots 와 같은 자 — 자리 · 좌표 없음). null = 「모른다」 */
+           bagPots: null,
            /* ★ 2026-10-09 D45 — 새 종([core] · null = 「모른다」 → 그 줄은 안 열리고 안 끝난다)
               ppPlants 살아 있는 핑크프린세스 그루 수 · ppPinkHoldCuts «산반·하프문 잎이 난 마디 바로 위»에서 자른 번 수(분홍 잎 마디는 안 침)
               alDormantNow 알로카시아 한 그루라도 자나(잎이 다 졌나) · alWokeCount 잠에서 깬 번 수 · alCormsFound 잠들 때 흙 속에서 찾은 구근 수(누적 · D52)
@@ -970,9 +972,14 @@ const ONEROOM_QUESTS = Object.freeze([
     reward: '원룸이 내 방이 됩니다',
     teaches: ['원룸은 자리를 «만드는» 방이다', '가방 안은 아무 자리도 아니다'],
     why: '들고 온 것은 가방에서 아무 일도 안 합니다. 놓아야 빛을 받습니다.',
-    /* ★ 2026-10-09 [plan] D43 — 들고 온 삽수가 가방에 있으면 할 일 머리를 «삽수부터»로(가방 삽수는 하루가 안 감 · D29). 칸 bagCuttings 는 [core] — 없으면 예전 글 */
-    todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
-      ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 원룸에 놓으세요',
+    /* ★ 2026-10-09 [plan] D43 — 들고 온 삽수가 가방에 있으면 할 일 머리를 «삽수부터»로(가방 삽수는 하루가 안 감 · D29). 칸 bagCuttings 는 [core] — 없으면 예전 글
+       ★ 2026-10-31 [plan] 총괄 D92 ㉠ — 첫날 차례 «삽수 · 몬스테라 → 창턱», «가구 → 채소». 이사 순간 작물은 다 이삿짐(가방 · 안 자람)이고 창턱 넷은 비어 있다.
+         몬스테라 화분 칸 bagPots 는 [core](가방에 든 화분 수 — bagPlants 의 pots 와 같은 자) — 모르면(null) 그 갈래를 건너뛴다.
+         이삿짐 = cropPots 중 안 놓였고(placed 거짓) 돌던 것(growing) — 빈 용기는 안 센다. «가구 위»: 원룸 이름 자리는 창턱뿐이고 나머지는 가구 윗면(house 2e6a5723) */
+    todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0) ? '들고 온 삽수부터 창가에 놓으세요'
+      : (s && Number.isFinite(s.bagPots) && s.bagPots > 0) ? '몬스테라를 창가에 놓으세요'
+      : arr(s && s.cropPots).some(p => p && !yes(p.placed) && yes(p.growing)) ? '들고 온 채소를 가구 위에 올리세요'
+      : '가방의 식물을 원룸에 놓으세요',
     opens: s => yes(s.movedOut),
     /* bagPlants — 가방에 든 그루·삽수·시루 수(가구는 안 센다 · 원룸 첫 장면의 «끝»과 같은 말) */
     done:  s => yes(s.movedOut) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
