@@ -4389,6 +4389,15 @@ function dimAt(cx, cy, r) {
    ⚠ 이 셈은 «짚는 것이 바뀌면» 0 으로 돌아간다(§hintAt). */
 const FENCE_GIVE_UP = 3;
 let fenceMiss = 0;
+/* ★ 2026-10-30 총괄 D90 버그 2 — «같은 걸음»을 요소가 아니라 이름으로 가른다(짚는 것의 id·data-buy·data-act + 말).
+     ⛔ 상점 줄은 그릴 때마다 새 요소로 갈린다 — 요소로 가르면 다시 그릴 때마다 셈이 0 으로 돌아가,
+       총괄 판 Day 31~33 에 울타리 밖을 열네 번 눌러도 «세 번이면 풂»이 안 먹었다(막힘 ①) */
+let fenceKey = null;
+function fenceKeyOf(el, say) {
+  if (!el) return 'point|' + (say || '');
+  const g = n => (el.getAttribute && el.getAttribute(n)) || '';
+  return (el.id || g('data-buy') || g('data-act') || String(el.className || el.tagName)) + '|' + (say || '');
+}
 {
   const knock = () => {
     const h = $('hint');
@@ -4524,8 +4533,9 @@ function hintAt(el, say) {
       if (pop && !pop.contains(el)) el = null;
     } catch { }
   }
-  /* ★ 짚는 것이 바뀌면 «막힌 셈»을 되돌린다 — 새 걸음에서는 울타리가 다시 선다(§FENCE_GIVE_UP) */
-  if (hintTargetEl !== el) fenceMiss = 0;
+  /* ★ 짚는 것이 바뀌면 «막힌 셈»을 되돌린다 — 새 걸음에서는 울타리가 다시 선다(§FENCE_GIVE_UP)
+       ★ 2026-10-30 — 같은 이름·같은 말이면 요소가 새로 그려졌어도 같은 걸음이다(§fenceKeyOf) */
+  { const k = el ? fenceKeyOf(el, say) : null; if (k !== fenceKey) { fenceMiss = 0; fenceKey = k; } }
   if (hintTargetEl && hintTargetEl !== el) hintTargetEl.classList.remove('hintTarget');
   if (!el) { h.classList.remove('on'); hintTargetEl = null; dimOff();
              hintFollow = null; hintFollowLoop(false); return; }
@@ -4581,8 +4591,8 @@ function hintAtPoint(cx, cy, say, r = 48, pointOf = null) {
       }
     }
   } catch { }
-  /* ★ 짚는 것이 «요소에서 점으로» 바뀌는 것도 새 걸음이다 — 막힌 셈을 되돌린다(§FENCE_GIVE_UP) */
-  if (hintTargetEl) fenceMiss = 0;
+  /* ★ 짚는 것이 «요소에서 점으로» 바뀌는 것도 새 걸음이다 — 막힌 셈을 되돌린다(§FENCE_GIVE_UP) · 2026-10-30 이름으로(§fenceKeyOf) */
+  { const k = fenceKeyOf(null, say); if (k !== fenceKey) { fenceMiss = 0; fenceKey = k; } }
   if (hintTargetEl) { hintTargetEl.classList.remove('hintTarget'); hintTargetEl = null; }
   if (typeof pointOf === 'function') {
     hintFollow = { el: null, pointOf, say, r };
@@ -6095,6 +6105,15 @@ function updateHint() {
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight;
   };
+  /* ★ 2026-10-30 총괄 D90 버그 2 — «네모가 화면 안»이 아니라 «그 점에서 정말 그것이 잡히나».
+       ⛔ 상점을 닫으면 시트가 접히며 상점 줄이 잘려 안 보이는데 네모는 화면 안에 남아, 손가락
+         «여기서 씨앗을 주문합니다 — 하루 뒤에 옵니다»가 [다음 날] 위 빈 곳(허공)을 짚었다(총괄 판 막힘 ①).
+       ⇒ 그 줄을 짚기 전에 가운데 점에서 무엇이 잡히나 묻는다(덮개·손가락은 pointer-events:none 이라 안 낀다) · 못 물으면 예전처럼 본다 */
+  const seenAt = (el) => {
+    if (!onScreen(el)) return false;
+    try { const q = el.getBoundingClientRect(); const hit = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
+          return !hit || hit === el || el.contains(hit); } catch { return true; }
+  };
   const crop = fp.beansprout, plant = fp.monstera;
   /* ★★★★ 2026-08-30 — **캐릭 이동을 «손가락»이 가르친다** (박사님 「캐릭이동 강제 가이드」 ·
      [Plan] 세 걸음 · 총괄 ⓐ).
@@ -6573,7 +6592,7 @@ function updateHint() {
     const buyBtn = $('shopList') && $('shopList').querySelector(`[data-buy="${seedNeed}"]`);
     /* ⚠ 「시트가 열렸나」로 안 묻는다 — 넓은 화면에서는 시트가 «클래스 없이» 늘 펴져 있어
        그 물음이 거짓이 되고, 상점 줄이 «화면에 보이는데도» 손가락이 통째로 사라졌다(실측). */
-    if (buyBtn && onScreen(buyBtn) && !buyBtn.disabled && !sheetCovers(buyBtn))
+    if (buyBtn && seenAt(buyBtn) && !buyBtn.disabled && !sheetCovers(buyBtn))
       return hintAt(buyBtn, '여기서 씨앗을 주문합니다 — 하루 뒤에 옵니다');
     { const door = shopDoor(); if (door) return hintAt(door, '씨앗을 사러 갑니다'); if (shopOpenNow) return hintAt(null); }   /* 재고 0 에 「미리」는 틀린 말(#11) */
   }
@@ -6615,7 +6634,7 @@ function updateHint() {
     if (go && onScreen(go) && !go.disabled)
       return hintAt(go, '개수를 정하고 [주문] — 시루는 이틀 뒤에 옵니다');
     const b = $('shopList') && $('shopList').querySelector(`[data-buy="siru"]`);
-    if (b && onScreen(b) && !b.disabled && !sheetCovers(b))
+    if (b && seenAt(b) && !b.disabled && !sheetCovers(b))
       return hintAt(b, '시루를 하나 더 주문합니다');   /* ★ 2026-09-06 총괄 — 「엇갈림」은 시루 «둘»에서 뺐다([plan] ⓩ·㉮ · 겪지 않은 어려움은 못 가르친다). 한 글자도 안 쓴다 */
     { const door = shopDoor(); if (door) return hintAt(door, '시루를 하나 더 사러 갑니다'); if (shopOpenNow) return hintAt(null); }
   }
@@ -6664,7 +6683,7 @@ function updateHint() {
     if (go && onScreen(go) && !go.disabled)
       return hintAt(go, `개수를 정하고 [주문] — ${musunNeed.ko}`);
     const b = $('shopList') && $('shopList').querySelector(`[data-buy="${musunNeed.id}"]`);
-    if (b && onScreen(b) && !b.disabled && !sheetCovers(b))
+    if (b && seenAt(b) && !b.disabled && !sheetCovers(b))
       return hintAt(b, `${josa(musunNeed.ko, '을', '를')} 주문합니다 — 무순은 판과 씨앗 둘이 필요합니다`);
     { const door = shopDoor(); if (door) return hintAt(door, `${josa(musunNeed.ko, '을', '를')} 사러 갑니다`); if (shopOpenNow) return hintAt(null); }
   }
@@ -9893,7 +9912,11 @@ function drawSow() {
   try { st = shopStatus(S); } catch { }
   /* ★거둔 시루만 다시 심는다 — `state.resowCrop` 과 같은 규칙이다.
      시차 판에서는 늘 일부만 거둬져 있어서, 전부를 요구하면 영영 못 심는다. */
-  const need = hv ? (hv.harvestedCount || 0) : 0;
+  /* ★ 2026-10-30 총괄 D90 버그 2 — «콩나물» 다시 심기는 «콩나물» 시루만 센다.
+       ⛔ hv.harvestedCount 는 종류 합계(무순 재배판 포함)라, 거둔 것이 무순 판뿐이어도 이 알약이 서고 누르면
+         무순 판을 골라 콩나물 심기에 넘겨 «[콩나물] 아직 수확하지 않았습니다»가 끝없이 났다(총괄 판 막힘 ②) */
+  const bsKind = hv && Array.isArray(hv.byKind) ? hv.byKind.find(x => x && x.kind === 'beansprout') : null;
+  const need = bsKind ? (bsKind.harvestedCount || 0) : 0;
   const seeds = st ? (st.stock.bean_seed || 0) : 0;
   /* ★★ **산 시루는 이 버튼이 안 세운다** (박사님 2026-08-08: "시루를 샀는데 자동 배치가
        되는데 이상하게 배치되고. 애초에 인벤에서 끌어서 배치하도록 해").
@@ -9910,7 +9933,9 @@ function drawSow() {
   /* ★ 잠그는 것을 **늘 먼저** 정한다 (2026-08-08 · drawWater §진짜 원인).
      말풍선이 누르는 길이 이 버튼이라, `disabled` 가 옛 값으로 굳으면 눌러도 삼켜진다.
      여기는 `markSays` 로 돌아가지는 않았지만 `!need` 로 돌아갔다 — 같은 함정이라 막는다. */
-  btn.disabled = !need || seeds < need;
+  /* ★ 2026-10-30 총괄 D90 버그 2 — 한 번에 하나를 심으므로 씨앗이 «하나라도» 있으면 심는다(씨앗 < 빈 시루면 있는 만큼).
+       ⛔ 씨앗 5 · 빈 시루 6 이면 «콩 씨앗이 6봉지 필요합니다 (5봉지 있음)»만 뜨고 눌러도 아무 일이 없어, 빈 시루가 열하나까지 놀았다(총괄 판 #3) */
+  btn.disabled = !need || seeds < 1;
   /* ★★ 2026-10-08 D19(총괄 · 중반 M1 «길을 끊기지 않게») — 씨앗이 «0개»이고 «오는 중»도 아니면 이 알약이 **주문 지름길**이 된다.
        ⛔ 났던 일(0~60일 199장): 첫 수확 뒤 씨앗을 안 사서 할 일이 「씨앗을 주문하세요」에 54일 멈췄고 몬스테라가 끝내 안 왔다.
        회색 「콩 씨앗이 없습니다」는 까닭만 말하고 길을 안 줬다 ⇒ 누르면 상점의 콩 씨앗 주문 창을 연다(빨간 오류 없이) */
@@ -9924,12 +9949,12 @@ function drawSow() {
   /* 씨앗이 모자라도 **버튼은 보인다** — 안 보이면 왜 못 심는지 알 길이 없다.
      회색으로 두고 사유를 말한다. */
   btn.textContent = buyIt ? `🛒 콩 씨앗 주문 · ${Number(buyIt.buyWon || 0).toLocaleString('ko-KR')}원`
-    : seeds < need
-    ? (seeds < 1 ? (coming ? '🌱 콩 씨앗이 오는 중입니다' : '🌱 콩 씨앗이 없습니다') : `🌱 콩 씨앗이 ${need}봉지 필요합니다 (${seeds}봉지 있음)`)
+    : seeds < 1
+    ? (coming ? '🌱 콩 씨앗이 오는 중입니다' : '🌱 콩 씨앗이 없습니다')
     /* ★ 2026-08-09 — 이것도 **한 번에 하나**다(거두기와 같은 이유 · 체력은 시루마다 1) */
     : (need > 1 ? `🌱 콩나물 다시 심기 (빈 시루 ${need}개 · 한 번에 하나)`
                 : '🌱 콩나물 다시 심기');
-  btn.title = seeds < need ? '콩 씨앗을 먼저 주문하세요' : '';
+  btn.title = seeds < 1 ? '콩 씨앗을 먼저 주문하세요' : '';
 }
 
 /* ══ 체력 — 오늘 손이 얼마나 남았나 (2026-08-05 · docs/stamina.md) ═════════
@@ -18907,13 +18932,25 @@ const reallyWaterPot = guard((pot) => {
   draw();
 });
 
+/* ★ 2026-10-30 총괄 D90 버그 2 — 어느 거둔 «콩나물» 시루를 심나 · 손이 닿는 것부터(방 뷰 reach — runAct 가 실제로 걷는 길).
+     ⛔ 걸음 열쇠가 늘 «첫 시루»(cropKey)였다 — 그 시루가 손 안 닿는 자리면 심을 시루와 상관없이 «가지는 못했습니다»가 났다 */
+function resowTarget() {
+  let rows = [];
+  try { rows = (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.harvested && x.kind === 'beansprout'); } catch { rows = []; }
+  const keyOf = x => x.slotId || (x.at ? `free:${x.id}` : null);
+  const reach = x => { const k = keyOf(x); if (!k || !roomView || typeof roomView.reach !== 'function') return true;
+                       try { const r = roomView.reach(k); return !r || r.ok !== false; } catch { return true; } };
+  const one = rows.find(reach) || rows[0] || null;
+  return one ? { id: one.id, key: keyOf(one) } : null;
+}
 $('resow').onclick = guard(() => {
   /* D19 — 씨앗이 없으면 이 알약은 주문 지름길이다(§drawSow dataset.buy) */
   const it = $('resow').dataset.buy;
   if (it) { try { window.__byeotSheet.open('shop'); } catch { } openBuyPanel(it); return; }
-  return doAct('sow', () => reallySow());
+  const one = resowTarget();
+  return doAct('sow', () => reallySow(one && one.id), one && one.key ? { key: one.key } : {});
 });
-const reallySow = guard(() => {
+const reallySow = guard((potId) => {
   /* ★ **`sirus` 를 안 넘긴다** (2026-08-08). 안 넘기면 `resowCrop` 이 지금 개수를 그대로 써서
      거둔 시루만 제자리에 다시 심는다 — 자리도 개수도 안 바뀐다. 그게 이 버튼의 전부다.
      ⚠ 산 시루를 여기서 얹지 마라. 그러면 새 시루가 **놓인 자리에 저절로** 붙고,
@@ -18921,7 +18958,8 @@ const reallySow = guard(() => {
        산 시루는 끌어다 놓을 때 선다 — `commitPlace` §산 시루. */
   /* ★★ 2026-08-09 — 거두기와 **같은 이유로** 한 시루만 심는다(체력은 시루마다 1) */
   let sowOne = null;
-  try { sowOne = (cropPotList(S.firstPlay, S.day) || []).find(x => x.harvested) || null; } catch { }
+  try { const rows = (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.harvested && x.kind === 'beansprout');   /* ★ 10-30 콩나물만(위 §resowTarget) */
+        sowOne = (potId && rows.find(x => x.id === potId)) || rows[0] || null; } catch { }
   const r = resowCrop(S, { slots: io.light.room.slots, size: io.light.room.size,
                            ...(sowOne ? { potIds: [sowOne.id] } : {}) });
   banner('콩나물을 다시 심었습니다', `시루 ${r.resown}개 · 씨앗 ${r.seedsUsed}봉지`);
