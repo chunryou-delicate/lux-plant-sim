@@ -4674,7 +4674,48 @@ function hintAvoidChip(h, hand, r) {
   /* ★ 2026-10-30 총괄 D72 버그 1 — 확인 바 안의 «다른» 단추도 비킨다. 손가락이 [다시 옮기기]를 짚게 되자 말풍선이 바로 위 [확인] 글을 덮었다(재현 판 corridor) */
   const sibs = [...document.querySelectorAll('#placeConfirm button')].map(shown)
     .filter(q => q && !(Math.abs(q.left - r.left) < 1 && Math.abs(q.top - r.top) < 1));
-  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('mealSay')), textBox($('questSub')), ...sibs].filter(Boolean);
+  /* ★ 2026-10-30 총괄 D90 버그 5 — 짚는 것이 «떠 있는 창»(.pop.on) 안이면 그 창의 글(글자가 차지한 자리 · 글 마디마다 Range)도 비킨다 — 짚는 그 단추 안 글은 뺀다.
+       ⛔ 주문 창 «500원 × 1개 = 500원 · 1일 뒤에»(말풍선 «개수를 정하고 [주문] — 내일 옵니다») · 보유 채소 팔기 창 «1kg을 7,000원에 팝니다…»(«여기를 눌러 보세요»)를
+         말풍선이 덮었다(총괄 판 #7 · 재서 잡음 — 가계부 숫자 · 가방 칸 제목도 같은 병). 밥상 창은 #mealSay 하나로 막았던 것(0a2ad853)을 창마다 이름 없이 한 자리에서 */
+  /* 그릇(창 · 시트) 안 글 마디마다 글자가 차지한 자리 — 짚는 단추 안 글은 빼고 · 짚는 것 둘레 near px 안만(시트는 글이 많아 프레임마다 다 재면 무겁다) */
+  const textRectsIn = (box, near) => {
+    const out = [];
+    try {
+      const tw = document.createTreeWalker(box, NodeFilter.SHOW_TEXT); let n;
+      while ((n = tw.nextNode())) {
+        if (!(n.textContent || '').trim()) continue;
+        const el = n.parentElement; if (!el || !el.offsetParent) continue;
+        const pr = el.getBoundingClientRect();
+        if (pr.bottom < r.top - near || pr.top > r.bottom + near || pr.right < r.left - near || pr.left > r.right + near) continue;
+        const rg = document.createRange(); rg.selectNodeContents(n);
+        for (const q of rg.getClientRects()) {
+          if (!q.width || !q.height) continue;
+          if (q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top) continue;   /* 짚는 단추 안 글 */
+          /* «정말 보이는» 글만 — 굴려서 창 밖으로 잘린 글 · 붙박은 단추 줄 밑에 깔린 글은 안 센다(그 점에서 잡히는 것이 그 글이 아니면).
+             ⚠ 안 거르면 밥상 창(360 에서 32px 굴림)의 잘린 끝줄이 단추 아래 빈 자리를 «글»로 막아, 말풍선이 다시 [이대로 다음 날] 위에 앉았다(10-30 재서 잡음) */
+          const top = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2);
+          if (!top || top === box || !(top === el || el.contains(top) || top.contains(el))) continue;   /* 그 점에서 창 바탕(그릇 자체)이 잡히면 잘린 글이다 */
+          out.push(q);
+        }
+      }
+    } catch { }
+    return out;
+  };
+  const popTexts = (() => {
+    try {
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const inBox = el => { const q = el.getBoundingClientRect(); return cx >= q.left && cx <= q.right && cy >= q.top && cy <= q.bottom; };
+      const pop = [...document.querySelectorAll('.pop.on')].find(inBox);
+      if (pop) return textRectsIn(pop, 400);
+      /* ★ 시트(가방·식물·상점 판) 안 대상이면 시트 글도 — 첫날 가방 칸을 짚는 말풍선 «끌거나 눌러서 방 안 어두운 자리에»가 «가방 · 2개» · «용기 ×1» 칸 이름을 덮었다 */
+      const sh = $('sheet');
+      if (sh && inBox(sh)) return textRectsIn(sh, 160);
+    } catch { }
+    return [];
+  })();
+  /* ★ 확인 바 제목(«여기에 둘까요?»)도 — 말풍선 «여기에 둘까요? — [확인]»이 그 제목 위에 앉았다(같은 재현 판 사진) */
+  const confirmWho = textBox($('placeConfirmWho'));
+  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...popTexts, confirmWho].filter(Boolean);
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
@@ -4713,12 +4754,25 @@ function hintAvoidChip(h, hand, r) {
   hb = h.getBoundingClientRect();
   if (!hitAny(hb) && !hit(hb, r) && hb.bottom <= innerHeight - 8) return;
   h.classList.remove('row');
-  /* ② 왼쪽 — 대상 왼쪽에 세운다(손이 오른쪽에서 가리킨다) */
-  h.classList.remove('below'); h.classList.add('side');
-  hand.textContent = '👉'; hand.style.left = '0px';
-  hb = h.getBoundingClientRect();
-  h.style.left = Math.max(8, r.left - 8 - hb.width) + 'px';
-  h.style.top = Math.min(innerHeight - 8 - hb.height / 2, Math.max(hb.height / 2 + 8, r.top + r.height / 2)) + 'px';
+  /* ② 왼쪽 — 대상 왼쪽에 세운다(손이 오른쪽에서 가리킨다)
+       ★ 2026-10-30 총괄 D90 버그 5 — 왼쪽에 자리가 없어 «짚는 그것» 위에 앉거나 비킬 글을 덮으면 오른쪽(손이 왼쪽에서 · toRight)으로.
+         ⛔ 첫날 가방 시루 칸(화면 왼쪽 끝)을 짚는 말풍선이 왼쪽으로 물러서다 화면 끝에 물려 그 칸 그림 위에 앉고, 손은 빈 데를 가리켰다(재현 판).
+         둘 다 안 맞으면 예전 그대로 왼쪽 */
+  h.classList.remove('below', 'row'); h.classList.add('side');
+  const sideAt = (right) => {
+    h.classList.toggle('toRight', right);
+    hand.textContent = right ? '👈' : '👉'; hand.style.left = '0px';
+    const w = h.getBoundingClientRect().width;
+    h.style.left = (right ? r.right + 8 : Math.max(8, r.left - 8 - w)) + 'px';
+    const hh0 = h.getBoundingClientRect().height;
+    h.style.top = Math.min(innerHeight - 8 - hh0 / 2, Math.max(hh0 / 2 + 8, r.top + r.height / 2)) + 'px';
+    return h.getBoundingClientRect();
+  };
+  const left = sideAt(false);
+  if (hit(left, r) || hitAny(left)) {
+    const right = sideAt(true);
+    if (right.right > innerWidth - 8 || hit(right, r) || hitAny(right)) sideAt(false);
+  }
 }
 /* ══ 조작 안내판 — 모든 조작을 한 화면에 (박사님 2026-08-03) ═══════════════
    손가락(updateHint)은 "다음에 할 일 하나"를 가리킨다. 이건 다른 것이다 —
