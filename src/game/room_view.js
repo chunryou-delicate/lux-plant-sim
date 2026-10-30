@@ -6447,6 +6447,33 @@ export async function createRoomView(canvas, opts = {}) {
     return { uid: g.userData.uid, preset: presetOfUid(g.userData.uid), x: r3((b.min.x + b.max.x) / 2), y: r3(b.min.y), z: r3((b.min.z + b.max.z) / 2),
              w: r3(b.max.x - b.min.x), d: r3(b.max.z - b.min.z), h: r3(b.max.y - b.min.y) };
   }
+  /* ★ 2026-10-30 [house] 총괄 D90 #1 — 화면 점 가까이(maxPx 안)의 «이름 붙은 자리» 하나(화면 거리로 가장 가까운 것).
+       광선을 안 쓴다 — 창턱 받침 둘레는 유리(광선이 지나감)·벽이라 surfaceAt 이 «벽에는 못 놓습니다»로 일찍 돌아가고 nearest 도 안 내서,
+       붙이기(game.html freePlace.snap · SNAP_PX 44)가 창턱에서 한 번도 안 걸렸다(폰에서 받침 윗면 약 12×10px 가 과녁 그대로).
+       px·py 는 surfaceAt 과 같은 client 좌표 · opt.maxPx(기본 44) · opt.potD(안 들어가는 자리는 뺌 · place.slotHolds) ·
+       opt.except(옮기는 화분이 원래 있던 자리 — 찼어도 빈 것으로 본다) · opt.freeOnly(기본 true · 찬 자리는 뺌 · slotOccupied 정본).
+       돌려주는 onUid·occIdx 는 그 자리를 낸 가구 것(surfaceAt 의 hit 과 같은 재료). 없으면 null. 붙일지는 부르는 쪽이 정한다 */
+  function slotNearScreenOf(px, py, opt = {}) {
+    if (!built || !slotById || !slotById.size) return null;
+    const maxPx = Number.isFinite(opt.maxPx) ? opt.maxPx : 44;
+    const potD = Number.isFinite(opt.potD) ? opt.potD : null;
+    const freeOnly = opt.freeOnly !== false;
+    const r = canvas.getBoundingClientRect();
+    let best = null;
+    for (const s of slotById.values()) {
+      if (potD != null && !slotHolds(s, potD)) continue;
+      if (freeOnly && s.slotId !== opt.except && slotOccupied(s.slotId)) continue;
+      const sp = slotScreenPos(s);
+      if (!sp) continue;
+      const d = Math.hypot(r.left + sp.x - px, r.top + sp.y - py);
+      if (d <= maxPx && (!best || d < best.distPx)) best = { s, distPx: d };
+    }
+    if (!best) return null;
+    const s = best.s, cut = s.slotId.lastIndexOf(':');
+    return { slotId: s.slotId, pos: { x: s.x, y: s.y, z: s.z }, onUid: cut > 0 ? s.slotId.slice(0, cut) : null,
+             occIdx: Number.isInteger(s.occIdx) ? s.occIdx : null,
+             maxPotD: Number.isFinite(s.maxPotD) ? s.maxPotD : null, distPx: +best.distPx.toFixed(1) };
+  }
 
   /* 그 가구가 화면 어디에 찍히나 — **캔버스 기준 CSS 픽셀**(screenPosOf 와 같은 규약).
      up=0 이면 **발밑**(바닥과 맞바꿀 수 있는 점 — 상대 끌기의 기준점),
@@ -10168,6 +10195,8 @@ export async function createRoomView(canvas, opts = {}) {
     /* 간판·판이 지금 선 자리(10-24 [house] · 읽기만) — { x, y, z 밑 가운데 · w, d, h } · 안 섰으면 null. 간판은 ready:false 면 그림을 받는 중(표의 자리) */
     signSpot() { try { return furnDress.propSpot('shop_sign'); } catch (e) { throw fail(e); } },
     boardSpot() { try { return boardSpotOf(); } catch (e) { throw fail(e); } },
+    /* 화면 점 가까이의 빈 이름 자리(10-30 [house] · D90 창턱 붙이기 · 읽기만) — { slotId, pos, onUid, occIdx, maxPotD, distPx } | null */
+    slotNearScreen(px, py, opt) { try { return slotNearScreenOf(px, py, opt || {}); } catch (e) { throw fail(e); } },
     previewFurnitureAt(uid, pos) { try { return previewFurnitureAt(uid, pos); } catch (e) { throw fail(e); } },
     clearFurniturePreview() { disposeFurnGhost(); },
     /* 실제로 옮긴다 — 방을 다시 조립하고 화분을 규칙대로 되돌린다(위 ⑧-b 주석).
