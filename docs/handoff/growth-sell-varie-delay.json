@@ -1,0 +1,622 @@
+{
+ "guide": {
+  "A_base": {
+   "move": 135,
+   "moveRange": "101~142",
+   "sold": "10/10",
+   "firstSale": 135,
+   "firstWon": 700000,
+   "kept": 44,
+   "cashAtMove": 488656,
+   "broke": "1/10",
+   "relief": 1,
+   "home": "10/10",
+   "homeDay": 375,
+   "cutThrow": 0,
+   "bjCuts": 3,
+   "perSeed": [
+    {
+     "seed": 2,
+     "move": 142,
+     "firstSale": 142,
+     "home": 410
+    },
+    {
+     "seed": 1,
+     "move": 137,
+     "firstSale": 137,
+     "home": 428
+    },
+    {
+     "seed": 4,
+     "move": 135,
+     "firstSale": 135,
+     "home": 364
+    },
+    {
+     "seed": 3,
+     "move": 133,
+     "firstSale": 133,
+     "home": 470
+    },
+    {
+     "seed": 5,
+     "move": 139,
+     "firstSale": 139,
+     "home": 375
+    },
+    {
+     "seed": 6,
+     "move": 134,
+     "firstSale": 134,
+     "home": 360
+    },
+    {
+     "seed": 7,
+     "move": 138,
+     "firstSale": 138,
+     "home": 480
+    },
+    {
+     "seed": 8,
+     "move": 101,
+     "firstSale": 83,
+     "home": 375
+    },
+    {
+     "seed": 9,
+     "move": 139,
+     "firstSale": 139,
+     "home": 320
+    },
+    {
+     "seed": 10,
+     "move": 135,
+     "firstSale": 135,
+     "home": 248
+    }
+   ]
+  },
+  "B_door": {
+   "move": 145,
+   "moveRange": "133~145",
+   "sold": "4/10",
+   "firstSale": 135,
+   "firstWon": 350000,
+   "kept": 0,
+   "cashAtMove": 35700,
+   "broke": "6/10",
+   "relief": 6,
+   "home": "10/10",
+   "homeDay": 360,
+   "cutThrow": 101,
+   "bjCuts": 3,
+   "perSeed": [
+    {
+     "seed": 2,
+     "move": 142,
+     "firstSale": 142,
+     "home": 410
+    },
+    {
+     "seed": 1,
+     "move": 135,
+     "firstSale": 135,
+     "home": 435
+    },
+    {
+     "seed": 3,
+     "move": 133,
+     "firstSale": 133,
+     "home": 360
+    },
+    {
+     "seed": 4,
+     "move": 145,
+     "firstSale": null,
+     "home": 343
+    },
+    {
+     "seed": 6,
+     "move": 145,
+     "firstSale": null,
+     "home": 340
+    },
+    {
+     "seed": 5,
+     "move": 145,
+     "firstSale": null,
+     "home": 477
+    },
+    {
+     "seed": 7,
+     "move": 145,
+     "firstSale": null,
+     "home": 450
+    },
+    {
+     "seed": 8,
+     "move": 145,
+     "firstSale": null,
+     "home": 450
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "firstSale": 140,
+     "home": 320
+    },
+    {
+     "seed": 10,
+     "move": 145,
+     "firstSale": null,
+     "home": 265
+    }
+   ]
+  },
+  "C_door_keepoff": {
+   "move": 145,
+   "moveRange": "130~145",
+   "sold": "4/10",
+   "firstSale": 135,
+   "firstWon": 350000,
+   "kept": 0,
+   "cashAtMove": 35700,
+   "broke": "6/10",
+   "relief": 6,
+   "home": "7/10",
+   "homeDay": 435,
+   "cutThrow": 101,
+   "bjCuts": 2,
+   "perSeed": [
+    {
+     "seed": 1,
+     "move": 135,
+     "firstSale": 135,
+     "home": 435
+    },
+    {
+     "seed": 2,
+     "move": 142,
+     "firstSale": 142,
+     "home": null
+    },
+    {
+     "seed": 4,
+     "move": 145,
+     "firstSale": null,
+     "home": 343
+    },
+    {
+     "seed": 3,
+     "move": 130,
+     "firstSale": 130,
+     "home": null
+    },
+    {
+     "seed": 5,
+     "move": 145,
+     "firstSale": null,
+     "home": 477
+    },
+    {
+     "seed": 6,
+     "move": 145,
+     "firstSale": null,
+     "home": 340
+    },
+    {
+     "seed": 7,
+     "move": 145,
+     "firstSale": null,
+     "home": 450
+    },
+    {
+     "seed": 8,
+     "move": 145,
+     "firstSale": null,
+     "home": 450
+    },
+    {
+     "seed": 10,
+     "move": 145,
+     "firstSale": null,
+     "home": 265
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "firstSale": 140,
+     "home": null
+    }
+   ]
+  },
+  "D_keepoff": {
+   "move": 110,
+   "moveRange": "100~120",
+   "sold": "10/10",
+   "firstSale": 91,
+   "firstWon": 350000,
+   "kept": 0,
+   "cashAtMove": 44530,
+   "broke": "10/10",
+   "relief": 10,
+   "home": "10/10",
+   "homeDay": 420,
+   "cutThrow": 0,
+   "bjCuts": 2,
+   "perSeed": [
+    {
+     "seed": 2,
+     "move": 110,
+     "firstSale": 94,
+     "home": 435
+    },
+    {
+     "seed": 1,
+     "move": 110,
+     "firstSale": 93,
+     "home": 420
+    },
+    {
+     "seed": 4,
+     "move": 110,
+     "firstSale": 91,
+     "home": 350
+    },
+    {
+     "seed": 3,
+     "move": 120,
+     "firstSale": 89,
+     "home": 450
+    },
+    {
+     "seed": 5,
+     "move": 110,
+     "firstSale": 95,
+     "home": 488
+    },
+    {
+     "seed": 6,
+     "move": 110,
+     "firstSale": 90,
+     "home": 380
+    },
+    {
+     "seed": 7,
+     "move": 110,
+     "firstSale": 94,
+     "home": 465
+    },
+    {
+     "seed": 8,
+     "move": 100,
+     "firstSale": 62,
+     "home": 475
+    },
+    {
+     "seed": 9,
+     "move": 110,
+     "firstSale": 95,
+     "home": 320
+    },
+    {
+     "seed": 10,
+     "move": 110,
+     "firstSale": 91,
+     "home": 366
+    }
+   ]
+  }
+ },
+ "nolamp": {
+  "A_base": {
+   "move": 135,
+   "moveRange": "90~135",
+   "sold": "1/10",
+   "firstSale": 90,
+   "firstWon": 350000,
+   "kept": 41,
+   "cashAtMove": 16900,
+   "broke": "10/10",
+   "relief": 10,
+   "home": "10/10",
+   "homeDay": 410,
+   "cutThrow": 0,
+   "bjCuts": 2,
+   "perSeed": [
+    {
+     "seed": 1,
+     "move": 135,
+     "firstSale": null,
+     "home": 410
+    },
+    {
+     "seed": 2,
+     "move": 135,
+     "firstSale": null,
+     "home": 450
+    },
+    {
+     "seed": 4,
+     "move": 135,
+     "firstSale": null,
+     "home": 410
+    },
+    {
+     "seed": 3,
+     "move": 135,
+     "firstSale": null,
+     "home": 475
+    },
+    {
+     "seed": 5,
+     "move": 135,
+     "firstSale": null,
+     "home": 410
+    },
+    {
+     "seed": 6,
+     "move": 135,
+     "firstSale": null,
+     "home": 415
+    },
+    {
+     "seed": 7,
+     "move": 135,
+     "firstSale": null,
+     "home": 380
+    },
+    {
+     "seed": 8,
+     "move": 90,
+     "firstSale": 90,
+     "home": 325
+    },
+    {
+     "seed": 10,
+     "move": 135,
+     "firstSale": null,
+     "home": 345
+    },
+    {
+     "seed": 9,
+     "move": 135,
+     "firstSale": null,
+     "home": 440
+    }
+   ]
+  },
+  "B_door": {
+   "move": 140,
+   "moveRange": "140~140",
+   "sold": "0/10",
+   "firstSale": null,
+   "firstWon": null,
+   "kept": 0,
+   "cashAtMove": 75800,
+   "broke": "5/10",
+   "relief": 5,
+   "home": "9/10",
+   "homeDay": 458,
+   "cutThrow": 267,
+   "bjCuts": 0,
+   "perSeed": [
+    {
+     "seed": 1,
+     "move": 140,
+     "firstSale": null,
+     "home": 500
+    },
+    {
+     "seed": 2,
+     "move": 140,
+     "firstSale": null,
+     "home": 475
+    },
+    {
+     "seed": 3,
+     "move": 140,
+     "firstSale": null,
+     "home": null
+    },
+    {
+     "seed": 4,
+     "move": 140,
+     "firstSale": null,
+     "home": 470
+    },
+    {
+     "seed": 5,
+     "move": 140,
+     "firstSale": null,
+     "home": 443
+    },
+    {
+     "seed": 6,
+     "move": 140,
+     "firstSale": null,
+     "home": 425
+    },
+    {
+     "seed": 7,
+     "move": 140,
+     "firstSale": null,
+     "home": 458
+    },
+    {
+     "seed": 8,
+     "move": 140,
+     "firstSale": null,
+     "home": 505
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "firstSale": null,
+     "home": 421
+    },
+    {
+     "seed": 10,
+     "move": 140,
+     "firstSale": null,
+     "home": 385
+    }
+   ]
+  },
+  "C_door_keepoff": {
+   "move": 140,
+   "moveRange": "140~140",
+   "sold": "0/10",
+   "firstSale": null,
+   "firstWon": null,
+   "kept": 0,
+   "cashAtMove": 75800,
+   "broke": "5/10",
+   "relief": 5,
+   "home": "9/10",
+   "homeDay": 458,
+   "cutThrow": 267,
+   "bjCuts": 0,
+   "perSeed": [
+    {
+     "seed": 1,
+     "move": 140,
+     "firstSale": null,
+     "home": 500
+    },
+    {
+     "seed": 2,
+     "move": 140,
+     "firstSale": null,
+     "home": 475
+    },
+    {
+     "seed": 4,
+     "move": 140,
+     "firstSale": null,
+     "home": 470
+    },
+    {
+     "seed": 3,
+     "move": 140,
+     "firstSale": null,
+     "home": null
+    },
+    {
+     "seed": 5,
+     "move": 140,
+     "firstSale": null,
+     "home": 443
+    },
+    {
+     "seed": 6,
+     "move": 140,
+     "firstSale": null,
+     "home": 425
+    },
+    {
+     "seed": 7,
+     "move": 140,
+     "firstSale": null,
+     "home": 458
+    },
+    {
+     "seed": 8,
+     "move": 140,
+     "firstSale": null,
+     "home": 505
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "firstSale": null,
+     "home": 421
+    },
+    {
+     "seed": 10,
+     "move": 140,
+     "firstSale": null,
+     "home": 385
+    }
+   ]
+  },
+  "D_keepoff": {
+   "move": 100,
+   "moveRange": "100~105",
+   "sold": "10/10",
+   "firstSale": 98,
+   "firstWon": 350000,
+   "kept": 0,
+   "cashAtMove": 5400,
+   "broke": "5/10",
+   "relief": 5,
+   "home": "9/10",
+   "homeDay": 447,
+   "cutThrow": 0,
+   "bjCuts": 2,
+   "perSeed": [
+    {
+     "seed": 1,
+     "move": 100,
+     "firstSale": 100,
+     "home": 495
+    },
+    {
+     "seed": 2,
+     "move": 105,
+     "firstSale": 101,
+     "home": 480
+    },
+    {
+     "seed": 3,
+     "move": 100,
+     "firstSale": 96,
+     "home": 500
+    },
+    {
+     "seed": 4,
+     "move": 100,
+     "firstSale": 98,
+     "home": 500
+    },
+    {
+     "seed": 5,
+     "move": 105,
+     "firstSale": 102,
+     "home": 440
+    },
+    {
+     "seed": 6,
+     "move": 100,
+     "firstSale": 97,
+     "home": 415
+    },
+    {
+     "seed": 7,
+     "move": 105,
+     "firstSale": 101,
+     "home": null
+    },
+    {
+     "seed": 8,
+     "move": 100,
+     "firstSale": 62,
+     "home": 404
+    },
+    {
+     "seed": 9,
+     "move": 105,
+     "firstSale": 102,
+     "home": 447
+    },
+    {
+     "seed": 10,
+     "move": 100,
+     "firstSale": 98,
+     "home": 415
+    }
+   ]
+  }
+ }
+}

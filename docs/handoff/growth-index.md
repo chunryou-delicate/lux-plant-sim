@@ -36,6 +36,7 @@
 | `probe_room_zoom_varie_skin.mjs` | 무늬 잎이 갈라진 판에서 «방»과 «확대»가 같은 그림을 쓰나 — 게임 하루 진행 260일 | 라이브 |
 | `probe_timetable_oneroom.mjs` | ★ **원룸 이사 뒤 X일까지 몇 장 · 무늬 몇 장 · 갈라진 무늬 몇 장** — D9 · core 경제 자와 맞댈 기준 (`PROFILE=`·`SLOT=`·`LAMPS=`·`SEEDS=`·`DAYS=`·`MOTHER_G=`·`OUT=`) | 라이브 |
 | `probe_m5_oneroom.mjs` | ★ **M5 원룸 생장 입력** — 자리 × 등 : 7일평균 · 잎2·잎3 날 · 갈라짐 · 무늬 밴드 (`LAMPS=`·`SLOTS=`·`SEEDS=`·`DAYS=`·`OUT=`) · 안 자라는 자리는 크롬 안 돌림 | 라이브 |
+| `probe_cut_open_knobs.mjs` | ★ **반지하 ✂ 문을 무엇이 정하나** — 잎3 남 · 중간잎 · 갈라짐 · 문 + 손잡이 후보(이 프로세스 GT 만) · 크롬 없음(vm) (`KNOBS=`·`AGE0=`·`SPEED_BEST=`·`SPEED_SLOW=`·`OUT=`) | 헤드리스 |
 | `probe_cut_open_banjiha.mjs` | ★ **반지하에서 «잎 2장» 날 vs «✂ 실제로 열리는» 날** — D25 근거 (`LAMPS=`·`LAMP_DAY=`·`SEEDS=`) | 라이브 |
 | `probe_seedplant_oneroom.mjs` | ★ 원룸 «씨앗부터» 키운 그루의 잎·갈라짐·무늬 날 · 크롬 없음(vm · 로더는 probe_leaf_health_year 것을 빌림) | 헤드리스 |
 | `probe_cutting_firstleaf_oneroom.mjs` | ★ 들고 간 삽수가 원룸 자리마다 첫 잎까지 · propagation 규칙 그대로 · 크롬 없음 (`YD0=`) | 헤드리스 |
@@ -290,6 +291,23 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
             갈렸다(잎 밑동 최대 1.37cm · 대조로 잼). 받은 그대로 넘기게 고치고 «빛 방향 안 줌» 판(ppNoAz)을 test_species_room_zoom 에 더함
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
+
+### 2026-10-25 · 10-30 · 회의 «요령 없이도 깨게» growth 몫 — ✂ 문을 무엇이 정하나 · 무늬 삽수 판매가 늦는 자리 (총괄 D90)
+
+```
+[잰 것] probe_cut_open_knobs(vm · 40판 · 반지하 sill:0 novice · 첫 그루) — 게임 날 · JSON growth-cut-open-knobs.json
+            잎3 남   잎3 중간잎(= 첫 기회 · 시간 자동)   잎3 갈라짐 중앙   ✂ 문 중앙(10%·90%)
+  등0        83       130                                170               217 (147 · 347)
+  등1(47일)  77       114                                130               134 (114 · 194)
+  손잡이(이 프로세스의 GT 만 덮음) ✂ 문 중앙 등0 · 등1 — gauge_lo 1.4: 155 · 134 · roll_lo 0.3: 140 · 118 · fail_reset 0.75: 155 · 124
+  [셈] 첫 그루 잎2·3 이 첫 기회에 갈라진다면: 130 · 114 (바닥 · 굴림 손잡이로는 이 아래로 못 감)
+  시간 축 가정(AGE0 60 · SPEED_BEST 1.5 · SPEED_SLOW 1.25)에서 바닥: 등1 102 · 103 · 106 / 등0 115 · 130 · 106
+```
+> ★ 반지하 이사 날은 ✂ 문이 아니라 **채소 돈**이 정한다(D90 바로잡음) — 하네스 nolamp 는 삽수 1/10 만 팔고 135일에 이사.
+> ★ 10-30 ③ — 하네스 자르기는 «무늬 잎이 다 자라야» 문을 안 탄다(propagation §takeCutting 이 varieMaturedLeaves 를 문 물음에 안 넣음 ·
+>   화면만 단추를 회색으로 막음 game.html:7840). 문을 지킨 판: guide 이사 145 · nolamp 140(반지하 무늬 판매 0/10) · nolamp 내 집 458(9/10).
+>   «하나 남김»(probe_branches.mjs:597)은 문을 지키면 이사 날에 안 걸리고, 끄면 guide 내 집이 늦어진다(360 → 435 · 7/10).
+>   전문 `growth-sell-varie-delay-20261030.md` · 씨앗별 `growth-sell-varie-delay.json`.
 
 ### 2026-10-24 · C 판 «무늬 육종» growth 몫 — AL 싹틈 사건 출처 · 품종 칸 다섯 «품종까지 날 수» 표 (총괄 D83 · plan-breed-career-spec §8)
 
