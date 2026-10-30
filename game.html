@@ -4661,7 +4661,10 @@ function hintAvoidChip(h, hand, r) {
   /* ★ 2026-10-24 다듬기 6-3 — 할 일 창 머리 줄(#questSub · 칭호 칩 «동네 식물 가게» · «· 단골 30명» · [진로 바꾸기])도 비킨다.
        줄 칸 전체가 아니라 «글이 차지한 자리»(Range)만 잰다 — 칸은 창 폭이라 [✕] 옆 빈자리까지 막는다 */
   const textBox = el => { if (!shown(el)) return null; try { const rg = document.createRange(); rg.selectNodeContents(el); const q = rg.getBoundingClientRect(); return q.width ? q : null; } catch (e) { return null; } };
-  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('mealSay')), textBox($('questSub'))].filter(Boolean);
+  /* ★ 2026-10-30 총괄 D72 버그 1 — 확인 바 안의 «다른» 단추도 비킨다. 손가락이 [다시 옮기기]를 짚게 되자 말풍선이 바로 위 [확인] 글을 덮었다(재현 판 corridor) */
+  const sibs = [...document.querySelectorAll('#placeConfirm button')].map(shown)
+    .filter(q => q && !(Math.abs(q.left - r.left) < 1 && Math.abs(q.top - r.top) < 1));
+  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('mealSay')), textBox($('questSub')), ...sibs].filter(Boolean);
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
@@ -6002,8 +6005,18 @@ function updateHint() {
            같은 판 Day 17 — 둘째 시루를 가방에서 꺼낼 때도 같은 일(확인 바만 서고 손가락 없음 · 세 번째 수확 못 함 · 10-08 판은 Day 18 에 끝).
            ⇒ 반지하(이사 전)에서 가방에서 «갓 꺼낸» 것(몬스테라·시루 · picked.before.fresh)은 예전처럼 [확인]을 짚는다 — 튜토의 다음 걸음
              (몬스테라 창턱 옮기기 · 시루 어두운 자리)이 그 뒤에 이어진다. 그 밖(옮기기 · 원룸 자유 놓기)은 E 그대로(경고가 말한다) */
-      const guidedFresh = !!(picked.before && picked.before.fresh && !(S.tutorial && S.tutorial.movedOut));
-      if (!guidedFresh && wn && wn.style.display !== 'none' && wn.textContent) return hintAt(null);
+      /* ★★ 2026-10-25 총괄 D72 버그 1 — 위 두 갈래(E: 경고면 손가락을 끔 · 10-09: 갓 꺼낸 것은 경고가 있어도 [확인])를 하나로:
+           경고가 붙었고 옮기면 나아지면(길 막힘 · 더 밝은 빈 칸이 따로 있음 — §placeConfirm.paint moveHelps) 손가락은 [다시 옮기기].
+           ⛔ 갓 꺼낸 것에 [확인]을 짚던 10-09 갈래가 «자라기엔 어둡습니다» · «시루 N에 못 갑니다» 창 위에서 사람을 막힘 쪽으로 이끌었다
+             (총괄 판 #2·#5 · 비판 Claude ⑤ #1·#3 — 손가락대로 [확인]한 시루가 손 안 닿는 자리에 서서 «다시 심기» 끝없는 오류).
+           ⚠ 손가락을 끄지 않는다(10-09 걸음: 손가락이 사라지면 튜토가 거기서 끊겼다) · 옮겨도 그대로인 경고(«여기가 제일 밝은데도»)는 [확인]
+           ⚠ 말은 새로 안 짓는다 — 경고 글이 «옮기려면 [다시 옮기기]»를 이미 말하고, 말풍선은 이미 쓰는 «여기를 눌러 보세요» */
+      const warned = !!(wn && wn.style.display !== 'none' && wn.textContent);
+      const again = $('placeAgain');
+      if (warned && placeConfirm.moveHelps && again) {
+        const ra = again.getBoundingClientRect();
+        if (ra.width > 0 && ra.height > 0) return hintAt(again, '여기를 눌러 보세요');
+      }
       if (r.width > 0 && r.height > 0) return hintAt(ok, '여기에 둘까요? — [확인]');
     }
   }
@@ -8047,7 +8060,7 @@ function potThumbOf(pot) {
 function startPhonePlacePotBag(potId) {
   const p = (S.pots || []).find(x => x && x.id === potId);
   if (!p) { banner('그 화분을 못 찾았습니다', '가방을 다시 확인해 주세요'); return { ok: false }; }
-  const spot = provisionalSpot();
+  const spot = provisionalSpot('pot');
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
                return { ok: false, why: 'no-spot' }; }
   let at = spot;
@@ -8062,8 +8075,14 @@ function startPhonePlacePotBag(potId) {
     r = setPotAt(S, p, at, placeOpt());
     /* ★ 가방에서 **처음 놓는** 길이다 — «옮기기»가 아니라고 알려 준다(first_play §firstPlace).
        ⚠ 안 알려 주면 「창턱」 유도가 영영 안 뜼고 등 얘기가 먼저 난다(2026-08-29 실측). */
-    if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId))
-      moveMonstera(S.firstPlay, r.slotId, { firstPlace: true });
+    /* ★ 2026-10-25 총괄 D72 버그 1 — 가방에서 꺼낸 몬스테라가 이제 가장 밝은 빈 칸(반지하 창턱)에 처음부터 선다.
+         그 «자라는 자리»에 처음 앉힌 것은 집을 잡은 것으로 친다(guide.moved — quest monstera_home · siru5_cycle5 가 보는 그 칸).
+         안 치면 «시루 다섯» 사슬이 영영 안 열린다(siru5_cycle5.opens = 시루 둘 놓임 && monsteraHomed).
+         ⚠ 어두운 데 처음 놓는 것은 예전처럼 옮김으로 안 센다(어두운 책상에 «놓기만» 해도 도장이 찍히던 2026-08-29 사고 — first_play §moveMonstera) */
+    if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId)) {
+      let grows = false; try { const b = growBandAt(r.slotId, false); grows = !!(b && !b.dark); } catch { grows = false; }
+      moveMonstera(S.firstPlay, r.slotId, { firstPlace: !grows });
+    }
     try { window.__byeotSheet.close(); } catch { }
     unlockAfterFix(); sfx.thud();
   } catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return { ok: false }; }
@@ -16301,9 +16320,19 @@ const placeConfirm = {
     if (!warn) return;
     /* ★ 2026-10-08 A·B — 빛 한 줄이 먼저다(그 그루의 삶이 걸린 말) · 길 막힘은 그 다음 */
     let dark = null; try { dark = placeLightWarn(placedGrowerAt(picked.slotId)); } catch { dark = null; }
-    const msg = [dark, reachWarningFor(picked.potId)].filter(Boolean).join(' · ');
+    const reach = reachWarningFor(picked.potId);
+    const msg = [dark, reach].filter(Boolean).join(' · ');
+    /* ★ 2026-10-25 총괄 D72 버그 1 — 옮기면 나아지나(손가락이 [다시 옮기기]를 짚을지 · §updateHint 확인 바 갈래):
+         길이 막혔거나(reach) · 더 밝은(자라는) «빈» 칸이 따로 있을 때. «여기가 제일 밝은데도» · «어디에도 밝은 데가 없다»면 옮겨도 그대로라 [확인] */
+    const helps = !!(reach || (dark && (() => {
+      try { const b = brightFreeSlot(picked.slotId), g = placedGrowerAt(picked.slotId); if (!b || !g || !g.obj) return false;
+            const there = growBandAt(b, g.variegated), here = growBandAt(g.obj.at ? g.obj : g.obj.slotId, g.variegated);
+            return !!(there && here && there.dli > here.dli + 1e-6 && (!there.dark || !here.dark)); } catch { return false; } })()));
+    const changed = warn.textContent !== (msg || '') || this.moveHelps !== helps;
+    this.moveHelps = helps;
     warn.textContent = msg || '';
     warn.style.display = msg ? '' : 'none';
+    if (changed) { try { updateHint(); } catch (e) { console.warn('[확인 바 손가락]', e && e.message); } }
   },
   tick: null,
   follow(on) {
@@ -16340,7 +16369,7 @@ function startPhonePlacePot(what) {
            '콩나물을 돌리면 몬스테라가 하나 옵니다 — 그 뒤에 심어 주세요');
     return { ok: false, why: 'first-play' };
   }
-  const spot = provisionalSpot();
+  const spot = provisionalSpot('pot');
   /* ⚠ 왜 못 했는지를 **돌려준다** — 안 돌려주면 밖에서 「눌렀는데 아무 일이 없다」밖에 안 보인다 */
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
                return { ok: false, why: 'no-spot' }; }
@@ -16378,7 +16407,7 @@ function startPhonePlacePot(what) {
 function startPhonePlaceCut(id) {
   const c = cuttingsOf(S).find(x => x && x.id === id);
   if (!c) { banner('그 삽수를 못 찾았습니다', '가방을 다시 열어 주세요'); return { ok: false, why: 'no-cut' }; }
-  const spot = provisionalSpot();
+  const spot = provisionalSpot('cutting');
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
                return { ok: false, why: 'no-spot' }; }
   let at = spot;
@@ -16410,7 +16439,7 @@ function speciesPlaceSub(q) {
 function startPhonePlaceSpecies(id) {
   const q = SPC.speciesPotOf(S, id);
   if (!q) { banner('그 식물을 못 찾았습니다', '가방을 다시 열어 주세요'); return { ok: false, why: 'no-species' }; }
-  const spot = provisionalSpot();
+  const spot = provisionalSpot('species');
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return { ok: false, why: 'no-spot' }; }
   let at = spot;
   if (typeof spot === 'string') {
@@ -16821,7 +16850,7 @@ function startPhonePlace(kind = 'beansprout') {
   const musun = kind === 'musun';
   const spare = musun ? spareContainerOf('musun') : spareSiru();
   if (spare <= 0) { banner(musun ? '가방에 빈 재배판이 없습니다' : '가방에 빈 시루가 없습니다', musun ? '상점에서 새싹 재배판을 주문해 주세요' : '상점에서 시루를 주문해 주세요'); return; }
-  const spot = provisionalSpot();
+  const spot = provisionalSpot(musun ? 'musun' : 'beansprout');
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return; }
   let r = null;
   /* ★ 2026-08-16 — 끌어 놓기와 **같은 낱말**(`sow:false`)이라야 두 손이 같은 일을 한다.
@@ -16885,7 +16914,46 @@ function startPhonePlace(kind = 'beansprout') {
      한눈에 읽힌다. 왼쪽·오른쪽 중 **비어 있는 쪽**을 고른다.
    ⚠ 구석을 못 쏘면 예전 길로 떨어진다(한가운데 → 추천 자리). 놓을 데를 못 찾아
      아무 일도 안 나는 것보다는 어디든 서는 것이 낫다. */
-function provisionalSpot() {
+/* ★ 2026-10-25 총괄 D72 버그 1 — 비어 있는 자리 이름들(방에 선 그루 · 게임 상태 둘 다 본다 · 자유 좌표 그루가 그 점 위에 서 있어도 찬 것) */
+function takenSlotIds() {
+  const taken = new Set();
+  try { for (const it of placedItemsForRoom()) if (it.slotId) taken.add(it.slotId); } catch { }
+  for (const x of [...(S.pots || []), ...(S.emptyPots || [])]) if (x && x.slotId) taken.add(x.slotId);
+  try { for (const q of SPC.speciesPotsOf(S)) if (q && q.slotId) taken.add(q.slotId); } catch { }
+  try {
+    const slots = io.light.room.slots || [];
+    for (const p of (roomView && roomView.plants ? roomView.plants() : [])) {
+      if (!p) continue;
+      if (p.key && !isFreeSlotId(p.key)) taken.add(p.key);
+      if (p.at) for (const s of slots) if (Math.hypot(p.at.x - s.x, p.at.y - s.y, p.at.z - s.z) < 0.05) taken.add(s.slotId);
+    }
+  } catch { }
+  return taken;
+}
+/* 그 빈 자리 곁에 사람이 가 설 수 있나 — 방 뷰의 자(roomView.reach · runAct 가 실제로 걷는 길)를 그대로 묻는다. 사람이 없으면(헤드리스) 모른다 = 막지 않는다 */
+function slotReachable(slotId) {
+  try { const r = roomView && roomView.reach ? roomView.reach(slotId) : null; return !r || r.ok !== false; } catch { return true; }
+}
+/* 빈 · 닿는 · 화분이 올라가는 자리 중 가장 밝은 칸 — 손가락·아래글이 보는 판정(§guideBrightSlot)과 같은 표(내일 빛 · slotFitsDiameter · ARRIVAL_POT_D)에서 «빈 칸»만 */
+function brightFreeSlot(exceptSlotId) {
+  try {
+    const rep = io.light.daily(S.day + 1, S).report;
+    const roomSlot = new Map((io.light.room.slots || []).map(s => [s.slotId, s]));
+    const taken = takenSlotIds();
+    const fits = rep.slots.filter(s => s.slotId !== exceptSlotId && !taken.has(s.slotId)
+                                    && slotFitsDiameter(roomSlot.get(s.slotId) || s, ARRIVAL_POT_D) && slotReachable(s.slotId));
+    const best = fits.sort((a, b) => b.dli - a.dli)[0];
+    return best ? best.slotId : null;
+  } catch { return null; }
+}
+/* what — 무엇을 놓나: 'beansprout'·'musun'(작물 · 바닥 구석이 먼저 — 박사님 2026-08-17) · 'pot'·'cutting'·'species'(빛을 먹고 자라는 그루) */
+function provisionalSpot(what = 'beansprout') {
+  /* ★★ 2026-10-25 총괄 D72 버그 1 — 몬스테라(가방 화분 · 빈 화분) · 삽수 · 새 식물은 «가장 밝은 빈 칸»부터(닿는 데만).
+       ⛔ 바닥 구석(아래 ①)은 어둡다 — 가방의 몬스테라를 누르면 «여기는 몬스테라가 자라기엔 어둡습니다» 창이 서고 손가락이 그 [확인]을 짚어,
+         손가락대로 한 사람의 몬스테라가 «날짜만 가는» 자리에 섰다(비판 Claude ⑤ #1 · 총괄 판 #5).
+       ⚠ 작물(시루·재배판)은 바닥 구석 그대로다(박사님 2026-08-17 «디폴트 위치를 좌측이나 우측 바닥으로») — 콩나물은 어두운 데가 맞다.
+       ⚠ 빈 칸이 없으면 옛 길(①②③)로 떨어진다 — 경고가 붙고 손가락은 [다시 옮기기](§updateHint 확인 바 갈래) */
+  if (what === 'pot' || what === 'cutting' || what === 'species') { const b = brightFreeSlot(); if (b) return b; }
   const potD = (() => { try { return potDOf('beansprout'); } catch { return 0.24; } })();
   /* ★ 2026-10-08 — 원룸은 방바닥에 시루를 못 놓는다(state §ONEROOM_FLOOR_KO · D16). 임시 자리도 «가구 위»에서 고른다 —
        바닥을 고르면 누르기로 놓기가 원룸에서 늘 「방바닥에는 못 놓습니다」로 막혔다 */
@@ -16911,12 +16979,23 @@ function provisionalSpot() {
     const hit = freePlace.surfaceAt(c.left + c.width / 2, c.top + c.height * 0.72, potD);
     if (hit && hit.ok) return atOf(hit);
   } catch { }
-  /* ③ 그래도 안 되면 빈 추천 자리 — 아무 데도 못 서는 것보다는 낫다 */
-  const taken = new Set();
-  try { for (const it of placedItemsForRoom()) if (it.slotId) taken.add(it.slotId); } catch { }
+  /* ③ 그래도 안 되면 빈 추천 자리 — 아무 데도 못 서는 것보다는 낫다
+     ★★ 2026-10-25 총괄 D72 버그 1 — «닿는가» · «이 작물 빛»으로 거른다.
+       ⛔ 앞 두 갈래가 막히면(바닥 구석이 다 찬 방) 후보 첫째(책상 2번 칸)를 닿는지 안 보고 줬다 — «여기 두면 이 시루 9에 못 갑니다»가
+         일곱 번 서고 손가락은 [확인] → 손 안 닿는 시루 → «다시 심기» 끝없는 오류(막힘 ② · 비판 Claude ⑤ #3 · 총괄 판 #2).
+         콩나물 시루를 방에서 제일 밝은 창턱에, 무순 재배판 넷을 다 창턱에 내밀기도 했다(총괄 판 #6).
+       ⇒ 닿는 빈 칸만(방 뷰 roomView.reach) · 그 작물이 제일 잘 되는 빛 띠 먼저(first_play §cropQualityOf — 끌며 읽는 그 등급) ·
+         같은 띠면 덜 밝은 데(콩나물은 어두울수록 · 무순은 최상 띠 안에서 덜 밝은 데 — 제일 밝은 칸은 몬스테라 몫으로 남는다).
+       ⚠ 닿는 빈 칸이 하나도 없으면 옛 길 그대로(경고가 말하고 손가락이 [다시 옮기기]를 짚는다) */
+  const taken = takenSlotIds();
   let list = [];
   try { list = cropCandidates(); } catch { }
-  for (const s of list) if (!taken.has(s.slotId)) return s.slotId;
+  const kindId = what === 'musun' ? 'musun' : 'beansprout';
+  const meals = s => { try { const q = cropQualityOf(kindId, s.dli); return (q && q.meals) || 0; } catch { return 0; } };
+  const free = list.filter(s => !taken.has(s.slotId));
+  const near = free.filter(s => slotReachable(s.slotId));
+  const pool = (near.length ? near : free).slice().sort((a, b) => (meals(b) - meals(a)) || (a.dli - b.dli));
+  if (pool.length) return pool[0].slotId;
   return list.length ? list[0].slotId : null;
 }
 /* ══════════════════════════════════════════════════════════════════════════
