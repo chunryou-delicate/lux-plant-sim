@@ -923,6 +923,18 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'curious', text: '떼서 늘리면 안 돼?' },
     { who: 'moni',   face: 'teach', text: '아직. 무늬 잎이 다 자라야 잘라도 돼. 다 자라면 내가 말해 줄게.' }
   ],
+  /* ★★ 2026-10-30 [plan] 총괄 D90 ③ — **자르기까지**(quest.js §wait_varie). 잎 셋을 끝낸 뒤 «언제 자르나»를 셈으로 보인다.
+     참인 조건: 열리는 판 = 다 자란 무늬 잎 < 2(«아직» 참) · 할 일 줄이 «다 자란 무늬 잎 n/2»를 보인다(«할 일 판에 찍혀» 참) ·
+       «다 차면» = need 에 닿으면(= first_cut 이 열리는 날). 수는 안 쓴다(«둘»은 할 일 칸이 말한다).
+     ⚠ 끝 대사는 한 줄 — 같은 날 questFirstCut(«무늬 잎이 다 자랐어 · 이제 잘라도 돼»)이 열린다. 거기서 또 길게 하면 두 번 말한다. */
+  questWaitVarie: [
+    { who: 'jachwi', face: 'curious', text: '이제 잘라도 돼?' },
+    { who: 'moni',   face: 'teach', text: '아직. 무늬 잎이 다 자라야 해.' },
+    { who: 'moni',   text: '다 자란 무늬 잎은 할 일 판에 찍혀. 다 차면 그때야.' }
+  ],
+  questDoneWaitVarie: [
+    { who: 'jachwi', face: 'surprise', text: '…다 찼다.' }
+  ],
   questDoneLeafThree: [
     /* ★ 2026-08-29 [Char]·[Plan] — 여기도 proud 다. 세 장을 세는 것은 «자랑»이지 «기쁨»이 아니다. */
     { who: 'jachwi', face: 'proud', text: '세 장.' },
@@ -2413,6 +2425,21 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think', text: '콩나물은 또 거뒀는데 얘는 그대로다.' },
     { who: 'moni',   face: 'teach', text: '콩나물은 날짜로 자라고, 얘는 빛으로 자라.' }
   ],
+  /* ★★ 2026-10-30 [plan] 총괄 D90 ③ — **첫 달 끝 «들이는 달»**(약속이 아니라 일어난 것만). 반지하 첫 달은 하네스도 사람도 지갑이 준다
+     (plan 답안 §0-2: D31 83.5만 · 사람 80만 · 84만). 「둘째 달부터 모인다」는 말하지 않는다 — «판다»에 걸린 말이라 안 파는 사람에겐 거짓.
+     참인 조건(§statusFirstMonth 줄): 반지하 · 29~45일 · 지갑 < 시작 돈(«더 줄었어») · 상점에 쓴 돈 > 0(«들인 값이 먼저 나가») · 한 번. */
+  statusFirstMonth: [
+    { who: 'jachwi', face: 'tired', text: '한 달이 지났는데 돈이 더 줄었어.' },
+    { who: 'moni',   face: 'teach', text: '첫 달은 들이는 달이야. 들인 값이 먼저 나가.' }
+  ],
+  /* ★★ 2026-10-30 [plan] 총괄 D90 ③ — **이레 지갑 첫 플러스**(사건 wallet_week_up · core 가 낸다: 지난 이레 지갑 변화가 처음으로 > 0 인 날 · 한 번).
+     있던 자리: questDoneSiru16 의 「…줄지 않는다. 오늘 처음이야.」/「여기서부터는 모으는 거야. 버티는 게 아니라.」 — 열여섯째를 «놓는» 날 떠서
+       지갑을 안 봤다(참인 조건 없음). ⇒ 일어난 날로 옮기고, 말을 «이번 주»로 좁혔다(하루가 아니라 이레 합이 오른 것이다).
+     참인 조건: 지난 이레 지갑 변화 > 0 이 처음(«이번 주는 안 줄었어 · 처음이야») · 끝 줄은 조건문(«이렇게 돌면») — 앞일을 장담 안 함. */
+  walletWeekUp: [
+    { who: 'jachwi', face: 'surprise', text: '…이번 주는 돈이 안 줄었어. 처음이야.' },
+    { who: 'moni',   face: 'proud', text: '이렇게 돌면 모이는 거야. 버티는 게 아니라.' }
+  ],
   statusWallet: [
     { who: 'jachwi', face: 'tired', text: '돈은 매일 줄고 잎은 그대로다.' },
     { who: 'moni',   face: 'calm', text: '잎은 줄지는 않아. 쌓이는 중이야.' }
@@ -2995,6 +3022,8 @@ export const EVENT_SCRIPT = Object.freeze({
   lamp_unlocked:       'lampUnlocked',
   lamp_bought:         'lampBought',
   lamp_skipped:        'lampSkipped',
+  /* ★ 2026-10-30 [plan] D90 ③ — 이레 지갑 첫 플러스(core 가 낸다 · 한 번) */
+  wallet_week_up:      'walletWeekUp',
 
   plant_stalled:       'plantStalled',
   plant_stalled_again: 'plantStalledAgain',
@@ -3098,7 +3127,8 @@ export const QUEST_OPEN_SCRIPT = Object.freeze({
      지도에서의 자리를 정의 순서와 맞춰 맨 뒤로 옮겼다 — 대사는 한 글자도 안 바꿨다.
      ⚠ 이 지도는 id 로만 찾으므로 자리를 옮겨도 동작이 안 바뀐다. **눈으로 읽히라고** 옮겼다 */
   leaf_two:     'questLeafTwo',
-  leaf_three:   'questLeafThree'
+  leaf_three:   'questLeafThree',
+  wait_varie:   'questWaitVarie'      /* ★ 2026-10-30 D90 ③ */
 });
 export const QUEST_DONE_SCRIPT = Object.freeze({
   /* ★★ 2026-08-16 — 초반 사슬 여덟의 완료 대사(§5.5-a) */
@@ -3151,7 +3181,8 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
 
   /* ★★ 2026-08-17 — 느린 줄 둘(위 §QUEST_OPEN_SCRIPT 의 같은 자리 참고) */
   leaf_two:     'questDoneLeafTwo',
-  leaf_three:   'questDoneLeafThree'
+  leaf_three:   'questDoneLeafThree',
+  wait_varie:   'questDoneWaitVarie'  /* ★ 2026-10-30 D90 ③ */
 });
 /* ★ 2026-10-24 [plan] 총괄 D85 ③ — 간판 한 자리(다른 진로 간판이 이미 선 판)의 간판 줄 대사. 사건 quest_opened/quest_done 의 kept(quest §keptOf)일 때만 */
 export const QUEST_OPEN_KEPT_SCRIPT = Object.freeze({ shop_sign: 'questShopSignKept', care_sign: 'questCareSignKept' });
@@ -3649,7 +3680,13 @@ export const CHATTER = [
   /* ⓖ 지갑 — 잎이 스무 날 그대로. 「돈은 매일 줄고」는 하루 지출이 늘 있어 참 · 「잎은 줄지는 않아」는 잎 떨굼 꺼짐(growth_tuning health.drop_enabled:false) */
   /* ★ 2026-10-09 [plan] 원룸 후반 13달 — 기다림 줄 넷의 간격을 늘렸다(게이지 30→120 · 쉬지 않고 30→90 · 시루 14→45 · 지갑 30→90).
      첫 기다림(반지하)을 채우려고 지은 줄인데, 원룸에선 모주가 드물게 잎을 내 조건이 늘 참이라 판당 14~29번 되풀이됐다([core] 6ebd882e). */
-  { id: 'statusWallet',   status: true, gap: 90, when: c => c.hasMonstera && fin(c.leafWaitDays) && c.leafWaitDays >= 20 },
+  /* ★ 2026-10-30 D90 ③ — «돈은 매일 줄고»는 지난 이레가 마이너스일 때만(오르는 판에선 «멀어진다»로 읽힌다 · plan 하네스 D118 +6.2만에 떴다).
+       walletWeekDelta 를 모르면(null · core 배선 전) 예전 그대로 */
+  { id: 'statusWallet',   status: true, gap: 90, when: c => c.hasMonstera && fin(c.leafWaitDays) && c.leafWaitDays >= 20
+                                            && !(fin(c.walletWeekDelta) && c.walletWeekDelta >= 0) },
+  /* ★ 2026-10-30 D90 ③ — 첫 달 끝 «들이는 달»(한 번) */
+  { id: 'statusFirstMonth', status: true, gap: 9999, when: c => !c.movedOut && fin(c.day) && c.day >= 29 && c.day <= 45
+                                            && fin(c.cashWon) && fin(c.startCashWon) && c.cashWon < c.startCashWon && c.shopSpentWon > 0 },
   /* ★ 2026-10-08 [plan] 단계 줄 — 막내 잎 단계가 바뀐 지 사흘 안(사건·독촉 날에 걸려도 다음 빈 날에 선다) · 한 단계 한 번(gap 20 — 다음 잎의 같은 단계는 다시) */
   { id: 'statusVarieHalf',    status: true, gap: 60, when: c => c.hasMonstera && c.varieMatured === 1 },
   { id: 'statusPhaseOpening', status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'spear_opening' && fin(c.phaseDays) && c.phaseDays <= 3 },
@@ -3820,6 +3857,10 @@ export function chatterContext(turn = {}, S = null) {
          (`plant_grow §canFenestrate` 가 7일평균으로 보는 것과 같은 이유). */
     fenestrating: !!(turn.slot && turn.slot.fenestrating),
     lampOwned: ts ? ts.lamp.owned : 0,
+    /* ★ 2026-10-30 D90 ③ — 첫 달 끝(§statusFirstMonth) · 이레 지갑(§statusWallet). 모르면 null(= 안 뜬다 / 예전 그대로) */
+    startCashWon: ts && ts.rules && Number.isFinite(ts.rules.startCashWon) ? ts.rules.startCashWon : null,
+    shopSpentWon: ts && ts.crop && Number.isFinite(ts.crop.spentWon) ? ts.crop.spentWon : null,
+    walletWeekDelta: Number.isFinite(turn.walletWeekDelta) ? turn.walletWeekDelta : null,
     /* ★ 2026-10-30 D90 — 방에 «단» 등. placed 가 없는 옛 세이브는 예전대로 owned(tutorial.js §lamp 와 같은 규약) */
     lampPlaced: ts ? (Number.isFinite(ts.lamp.placed) ? ts.lamp.placed : (ts.lamp.owned || 0)) : 0,
     movedOut: !!(ts && ts.movedOut),

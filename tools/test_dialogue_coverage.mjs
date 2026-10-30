@@ -1110,6 +1110,35 @@ check('대사 — 등: 안 단 등 독촉 · 원룸 등 잡담은 «단 등»으
   assert.equal(ctx({ owned: 1 }).lampPlaced, 1, 'placed 가 없는 옛 세이브는 owned 로');
 });
 
+/* ★ 2026-10-30 [plan] 총괄 D90 ③ — 첫 달 · 기다림 글: 약속 말고 «일어난 뒤» · 이레 지갑 · 자르기까지 */
+check('대사 — 첫 달 끝 «들이는 달» · 이레 지갑 첫 플러스 · statusWallet 은 이레가 마이너스일 때만 · 자르기까지(D90 ③)', () => {
+  const row = id => CHATTER.find(r => r.id === id);
+  const F = row('statusFirstMonth');
+  assert.ok(F && F.status && F.gap === 9999 && !REPEATABLE.has('statusFirstMonth'), '첫 달 줄은 상태 줄 · 한 번');
+  const c = o => ({ movedOut: false, day: 31, cashWon: 834500, startCashWon: 1500000, shopSpentWon: 120000, ...o });
+  assert.equal(F.when(c()), true, '첫 달 끝인데 안 섭니다');
+  assert.equal(F.when(c({ cashWon: 1600000 })), false, '돈이 늘었는데 «더 줄었어»가 섭니다');
+  assert.equal(F.when(c({ shopSpentWon: 0 })), false, '들인 것이 없는데 «들인 값»이 섭니다');
+  assert.equal(F.when(c({ day: 20 })), false, '한 달이 안 됐는데 섭니다');
+  assert.equal(F.when(c({ movedOut: true })), false, '이사 뒤에 섭니다');
+  assert.equal(F.when(c({ startCashWon: null })), false, '시작 돈을 모르는데 섭니다');
+  /* «둘째 달부터 모인다»는 약속하지 않는다 */
+  for (const id of ['statusFirstMonth', 'walletWeekUp'])
+    for (const l of SCRIPTS[id]) assert.ok(!/둘째 달|다음 달|모일 거|모인다/.test(l.text), `'${id}' 가 앞일을 장담합니다: ${l.text}`);
+  assert.equal(EVENT_SCRIPT.wallet_week_up, 'walletWeekUp');
+  assert.deepEqual(scriptsForEvents([{ id: 'wallet_week_up' }]), ['walletWeekUp']);
+  const W = row('statusWallet').when, base = { hasMonstera: true, leafWaitDays: 25 };
+  assert.equal(W({ ...base, walletWeekDelta: 62434 }), false, '이레가 플러스인데 «돈은 매일 줄고»가 섭니다');
+  assert.equal(W({ ...base, walletWeekDelta: -30000 }), true, '이레가 마이너스인데 안 섭니다');
+  assert.equal(W({ ...base, walletWeekDelta: null }), true, '모르면 예전 그대로여야 합니다');
+  /* 자르기까지 — 몬이는 수를 안 말한다(«둘»은 할 일 칸이) */
+  for (const id of ['questWaitVarie', 'questDoneWaitVarie'])
+    for (const l of SCRIPTS[id]) if (l.who === 'moni') assert.ok(!/[0-9]|둘|두 장|셋/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+  assert.equal(QUEST_OPEN_SCRIPT.wait_varie, 'questWaitVarie'); assert.equal(QUEST_DONE_SCRIPT.wait_varie, 'questDoneWaitVarie');
+  const ctx = chatterContextOf({ day: 31, walletWeekDelta: -5000 }, { tutorial: { rules: { startCashWon: 1500000 }, crop: { spentWon: 9000 }, lamp: { owned: 0 } } });
+  assert.equal(ctx.startCashWon, 1500000); assert.equal(ctx.shopSpentWon, 9000); assert.equal(ctx.walletWeekDelta, -5000);
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {

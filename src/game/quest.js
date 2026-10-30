@@ -834,6 +834,14 @@ const MAIN_QUESTS = Object.freeze([
      `leaf_two` 가 끝나면 `leaf_three` 가 열린다. 줄을 안 설 뿐 사슬은 그대로다.
    ⚠ `stageOfQuest` 는 이 둘을 이제 `'main'` 으로 본다(사슬 목록에서 빠졌으므로).
      그것도 사실에 맞다 — 첫 플레이는 잎 2장보다 **먼저** 끝난다(§긴 줄 ①). */
+/* ★ 2026-10-30 D90 ③ — 이 줄을 전에 연 적이 있나(_questOpen · 세이브에 실리는 questsOpenedOn). wait_varie 의 «처음 열 때만» 문에 쓴다 */
+const wasOpened = (ctx, id) => {
+  try {
+    const S = ctx && ctx.S;
+    return !!S && ((Array.isArray(S._questOpen) && S._questOpen.includes(id))
+                   || !!(S.stamina && S.stamina.questsOpenedOn && S.stamina.questsOpenedOn[id] != null));
+  } catch { return false; }
+};
 const SLOW_QUESTS = Object.freeze([
 
   /* ★★ **잎 두 장** — 박사님이 짚으신 그 구간의 앞끝이다.
@@ -866,6 +874,40 @@ const SLOW_QUESTS = Object.freeze([
     after: 'leaf_two',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('leaf_two')),
     done:  (s, ctx) => num(s.motherLeaves) >= ctx.q.need.leaves
+  })
+]);
+
+/* ★ 2026-10-30 [plan] — 느린 줄(SLOW_QUESTS)과 따로 둔다: «느린 줄»은 첫 플레이 둘레에 끝나는 잎 줄이고(probe_questchain C·D 가
+   첫 플레이를 실제로 굴려 «다 열리고 다 끝나나»를 센다), 자르기까지는 76~130일 줄이라 그 걸음에 안 닿는다. 표 차례는 느린 줄 바로 뒤. */
+const CUT_WAIT_QUESTS = Object.freeze([
+  /* ★★ 2026-10-30 [plan] 총괄 D90 ③ — **자르기까지**(기다림이 «보이게»).
+     까닭: leaf_three 가 끝나고 first_cut 이 열리기까지 할 일 칩이 비었다 — plan 하네스(guide · 씨앗 11 · e8c818e2 답안 §②)
+       D77–129 53일 chip null. 사람은 «언제 자르나»를 볼 곳이 없었다(문 글 «아직 이릅니다 — 무늬 잎이 다 자라야…»에 수가 없다).
+     ★ 자르기 문은 그대로다(무늬이면서 다 자란 잎 ≥ 2 · propagation.cutBlockedReason · 박사님 08-24). 이 줄은 «셈을 보여 주기»만 한다.
+     ⚠ 끝 = first_cut 이 열리는 자(motherVarieMatured — quest.js §first_cut opens)와 «같은 수». 두 벌로 재면 하루라도 어긋난다.
+     ⚠ 칸이 null(모른다 · 배선 전)이면 안 열린다. 이미 다 자란 판(옛 세이브 · first_cut 이 먼저 열린 판)은 건너뛴다(skips) —
+       열리자마자 끝나며 «아직»을 말하는 거짓을 안 낸다.
+     ⚠ 기다림 줄이다(사람 손으로 할 것이 없다) — nudge_wait §NUDGE_ALWAYS_WAIT 와 짝(독촉 안 함 · 칩은 «기다리는 중 — …»).
+     후보: ㉠ 할 일 줄(택함 · 칩·할 일 창이 같은 셈) ㉡ 확대창 글만 ㉢ 몬이 잡담만 — 까닭: 빈 칩 53일을 채우는 것이 목적이라 칩에 서야 한다. */
+  Object.freeze({
+    id: 'wait_varie',
+    room: 'banjiha',
+    ko: '무늬 잎이 다 자란다',
+    speaks: true,
+    reward: '자를 수 있게 됩니다',
+    teaches: ['무늬 잎이 다 자라야 자른다'],
+    why: '무늬 잎이 다 자라야 하나를 잘라도 그루에 하나가 남습니다.',
+    need: Object.freeze({ varieMatured: 2 }),
+    todo: (q, s) => `자르기까지 — 다 자란 무늬 잎 ${Math.min(num(s && s.motherVarieMatured), q.need.varieMatured)}/${q.need.varieMatured}`,
+    /* ★ 기다림 글(칩 «기다리는 중 — …»)에도 셈을 싣는다(§questView waitWhatOf) */
+    waitWhatOf: (q, s) => `무늬 잎이 다 자라기를 · ${Math.min(num(s && s.motherVarieMatured), q.need.varieMatured)}/${q.need.varieMatured}`,
+    after: 'leaf_three',
+    /* ⚠ stepQuests 는 «여는 조건이 참인 줄»만 끝났는지 본다 — 그래서 «< 2»는 처음 열 때만 걸고, 한 번 연 줄은 계속 연 채로 본다
+         (안 그러면 둘이 되는 날 여는 조건이 거짓이 되어 영영 안 끝난다 · test_quest ⑵ 에서 잡힘) */
+    opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('leaf_three')) && s.motherVarieMatured != null
+                       && (num(s.motherVarieMatured) < ctx.q.need.varieMatured || wasOpened(ctx, 'wait_varie')),
+    skips: s => s.motherVarieMatured != null && num(s.motherVarieMatured) >= 2,
+    done:  (s, ctx) => s.motherVarieMatured != null && num(s.motherVarieMatured) >= ctx.q.need.varieMatured
   })
 ]);
 
@@ -1387,7 +1429,7 @@ const SPECIES_QUESTS = Object.freeze([
      ①②의 어떤 줄도 「지금 할 일」이 못 된다 — 박사님이 짚으신 그 구멍이 거기서 났다. */
 /* ★ 2026-10-07 — 원룸 다섯 줄은 «느린 줄 앞»이다. 맨 뒤면 잎 줄이 영영 안 끝나는 판(그루째 판 판)에서
      원룸 줄이 「지금 할 일」이 못 된다 — 위 ③ 을 맨 뒤로 옮긴 것과 같은 까닭이다. 반지하에서는 방이 걸러 안 보인다. */
-export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...SHOP_QUESTS, ...CARE_QUESTS, ...BREED_QUESTS, ...SPECIES_QUESTS, ...SPECIES2_QUESTS]);
+export const QUESTS = Object.freeze([...FIRST_PLAY_CHAIN, ...MAIN_QUESTS, ...ONEROOM_QUESTS, ...SLOW_QUESTS, ...CUT_WAIT_QUESTS, ...SHOP_QUESTS, ...CARE_QUESTS, ...BREED_QUESTS, ...SPECIES_QUESTS, ...SPECIES2_QUESTS]);
 /* ★ 2026-10-24 [plan] D72 C — 육종 사슬(§BREED_QUESTS) */
 export const BREED_QUEST_IDS = Object.freeze(BREED_QUESTS.map(q => q.id));
 /* ★ 2026-10-23 [plan] D72 B — 돌봄 사슬(§CARE_QUESTS) */
@@ -1543,6 +1585,7 @@ export const QUEST_WAIT_WHAT = Object.freeze({
   node:          '무늬 삽수에 혹이 나기를',
   noVarieSource: '무늬 잎이 나기를',
   recutNode:     '키운 그루에 무늬 마디가 나기를',
+  varieMature:   '무늬 잎이 다 자라기를',          /* ★ 2026-10-30 D90 ③ wait_varie(줄의 waitWhatOf 가 셈을 붙인다) */
   grow:          '식물이 자라기를'
 });
 /* ★ 2026-10-09 [plan] D50 뒤(core 956eb6f5 걸어 봄) — «기다림»이지만 사람에게 «먼저 할 일»이 있는 열쇠. 이 줄 자체는 기다리지만
@@ -1555,7 +1598,7 @@ export const QUEST_WAIT_DO = Object.freeze({
    oneroom_settle_cutting)은 `grow` — 정확한 말은 [core] 가 waitReason 을 낼 때 선다 */
 const WAIT_ONE_REASON = Object.freeze({
   leaf_two: 'leaf', leaf_three: 'leaf', first_harvest: 'cropGrowing', oneroom_root_bright: 'cutRooting',
-  varie_bright: 'noVarieSource', oneroom_recut: 'recutNode'
+  varie_bright: 'noVarieSource', oneroom_recut: 'recutNode', wait_varie: 'varieMature'
 });
 
 export function questView(S, snapshot, opt = {}) {
@@ -1593,6 +1636,8 @@ export function questView(S, snapshot, opt = {}) {
     const it = all[all.length - 1];
     it.waiting = !!w;
     it.waitWhat = w ? (QUEST_WAIT_WHAT[w] || QUEST_WAIT_WHAT.grow) : null;
+    /* ★ 2026-10-30 D90 ③ — 줄이 셈을 가진 기다림 글을 내면 그것(wait_varie «무늬 잎이 다 자라기를 · n/2») · 던지면 표 글 그대로 */
+    if (w && typeof q.waitWhatOf === 'function') { try { const t = q.waitWhatOf(q, s); if (t) it.waitWhat = String(t); } catch { } }
     it.waitDo = w ? (QUEST_WAIT_DO[w] || null) : null;
     /* ★ 2026-10-24 [plan] D72 D 나머지 — 쉬는 줄 · 건너뛴 줄(잠긴 줄에만 · 열린 줄·끝낸 줄은 그대로) */
     const qJob = !isDone && !isOpen ? jobOfQuest(q.id) : null;

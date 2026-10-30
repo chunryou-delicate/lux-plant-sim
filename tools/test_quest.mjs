@@ -281,6 +281,8 @@ const steps = [
   MS(50, { cropPots: [...bean(8), ...musun(5)] }),
   MS(51, { cropPots: [...bean(8), ...musun(5)] }),
   MS(56, { cropPots: [...bean(16), ...musun(5)] }),
+  /* ★ 2026-10-30 [plan] D90 ③ — 무늬 잎 하나가 다 자랐다(1/2) → 자르기까지(wait_varie) 열림 · 둘이 되는 60일에 끝(first_cut 과 같은 자) */
+  MS(57, { cropPots: [...bean(16), ...musun(5)], motherVarieMatured: 1, motherVarieLeaves: 2 }),
   /* 가을 — 등이 풀린다 · 무늬 잎이 다 자랐다(D25 · 둘) — 등 → 자르기 → 무늬 차례로 하루씩 */
   MS(60, { ...LATE, motherVarieMatured: 2, motherVarieLeaves: 2 }),
   MS(61, { ...LATE, motherVarieMatured: 2, motherVarieLeaves: 2 }),
@@ -739,6 +741,39 @@ check('⑻ 간판 한 자리 — 돌봄 간판이 선 판의 가게 «간판» �
   const c3 = questView(b2, cs).all.find(a => a.id === 'care_sign');
   assert.equal(c3.ko, questOf('care_sign').kept.ko);
   assert.ok(/열까지/.test(c3.todo) && [...c3.todo].length <= TODO_MAX, `칩 글 — ${c3.todo}`);
+});
+
+/* ★ 2026-10-30 [plan] 총괄 D90 ③ — 자르기까지(wait_varie): 셈 n/2 · «아직»이 참인 판에서만 처음 열림 · 이미 다 자란 판은 건너뜀 ·
+     끝 = first_cut 이 열리는 자와 같은 수 · 기다림 글에도 셈 */
+check('D90 ③ 자르기까지 — 셈 n/2 · 처음 열 때만 «아직» · 다 자란 판은 건너뜀 · first_cut 과 같은 자', () => {
+  const q = questOf('wait_varie');
+  assert.ok(q && q.room === 'banjiha', 'wait_varie 가 없거나 반지하 줄이 아닙니다');
+  const t1 = questTodo(q, MS(57, { motherVarieMatured: 1 }));
+  assert.equal(t1, `자르기까지 — 다 자란 무늬 잎 1/${q.need.varieMatured}`);
+  assert.ok(t1.length <= 28, `할 일 글이 깁니다: ${t1}`);
+  /* 잎 셋을 끝낸 판 */
+  const b = newBoard(); b.stamina.questsTaken = ['leaf_two', 'leaf_three'];
+  const ctx = { doneIds: ['leaf_two', 'leaf_three'], S: b, q };
+  assert.equal(!!q.opens(MS(57, { motherVarieMatured: null }), ctx), false, '모르는데(null) 열립니다');
+  assert.equal(!!q.opens(MS(57, { motherVarieMatured: 1 }), ctx), true, '하나 자랐는데 안 열립니다');
+  assert.equal(!!q.opens(MS(57, { motherVarieMatured: 2 }), ctx), false, '처음부터 다 자랐는데 열립니다(«아직»이 거짓)');
+  /* 이미 다 자란 판 — 열지 않고 건너뛴다(«다음에 올 것»에서 빠짐) */
+  const v = questView(b, MS(130, { motherVarieMatured: 2, motherVarieLeaves: 2 }));
+  const row = v.all.find(a => a.id === 'wait_varie');
+  assert.equal(row.state, 'locked'); assert.equal(row.skipped, true, '다 자란 판인데 안 건너뜁니다');
+  /* 한 번 연 줄은 둘이 되는 날 끝난다(여는 조건이 계속 참) — first_cut 이 열리는 날과 같다 */
+  /* 다른 줄이 하루 하나 몫을 먼저 쓰지 않게 — 나머지는 다 끝낸 판 */
+  const others = QUEST_IDS.filter(id => id !== 'wait_varie' && id !== 'first_cut');
+  const b2 = newBoard(); b2.stamina.questsTaken = [...others];
+  stepQuests(b2, MS(57, { motherVarieMatured: 1 }));
+  assert.ok(b2._questOpen.includes('wait_varie'), '열리지 않았습니다');
+  const r = stepQuests(b2, MS(58, { motherVarieMatured: 2 }));
+  assert.ok(r.finished.includes('wait_varie'), '둘이 됐는데 안 끝납니다');
+  assert.equal(!!questOf('first_cut').opens(MS(58, { motherVarieMatured: 2 }), { doneIds: [], S: b2 }), true, 'first_cut 과 자가 다릅니다');
+  /* 기다림 글에 셈 */
+  const b3 = newBoard(); b3.stamina.questsTaken = [...others]; stepQuests(b3, MS(57, { motherVarieMatured: 1 }));
+  const w = questView(b3, MS(57, { motherVarieMatured: 1 }), { isWaiting: id => id === 'wait_varie' }).all.find(a => a.id === 'wait_varie');
+  assert.equal(w.waiting, true); assert.equal(w.waitWhat, '무늬 잎이 다 자라기를 · 1/2');
 });
 
 /* ── 보고 ────────────────────────────────────────────────────────────── */

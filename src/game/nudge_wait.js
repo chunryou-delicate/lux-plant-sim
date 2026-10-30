@@ -51,6 +51,9 @@ export function nudgeWaiting(S, id, day = (S && S.day)) {
    ⚠ 판정 갈래는 예전 nudgeWaiting 그대로다 — 까닭이 둘 이상인 줄은 «먼저 걸리는 쪽»을 낸다(아래 차례가 곧 말의 차례). */
 export function nudgeWaitReason(S, id, day = (S && S.day)) {
   if (NUDGE_ALWAYS_WAIT.includes(id)) return 'leaf';
+  /* ★ 2026-10-30 [plan] 총괄 D90 ③ — 자르기까지(wait_varie): 무늬 잎이 다 자라기를 — 늘 기다림(잎처럼 손으로 못 키운다).
+     열리는 판은 «다 자란 무늬 잎 < 2»뿐이고 다 자라면 그 자리에서 끝난다(quest.js §wait_varie). core 확인 바람 */
+  if (id === 'wait_varie') return 'varieMature';
   if (id === 'first_harvest') {
     const rows = cropRows(S, day);
     return rows.some(r => r && r.ready) ? null : 'cropGrowing';
