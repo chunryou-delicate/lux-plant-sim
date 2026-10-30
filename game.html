@@ -12302,7 +12302,7 @@ function drawJourney() {
       const line = $('quest').textContent || '';
       /* ★ 2026-10-08 D12(총괄 정함 · core 추천) — **첫날 진행 칩** 「1/5 · 시루 놓기」. 초반 사슬(FIRST_PLAY_CHAIN · 5줄)을 도는 동안만
            칩 머리(<b>)가 「몇 번째 · 무엇」을 말하고, 사슬이 끝나면 예전 「📜 할 일」로 돌아간다.
-           ⚠ 짧은 이름은 [plan] 낱말이 정본이다 — 여기 표는 D12 예시(「시루 놓기」)에 맞춘 임시 이름이고, 없는 id 는 퀘스트 ko 를 그대로 쓴다 */
+           ★ 짧은 이름 다섯은 plan 10-31 확인(각 줄 할 일 갈래와 대 봄) — 없는 id 는 퀘스트 ko 를 그대로 쓴다 */
       { const hb = chip.querySelector('b');
         /* ★ 2026-10-31 총괄 D90 종합5(#9) — water_siru 는 «물 주기»였는데 그 줄 할 일이 먼저 «씨앗을 심으세요»라 머리와 몸이 달랐다(줄 이름 «씨앗을 심고 물을 준다») */
         const SHORT = { place_siru: '시루 놓기', water_siru: '심고 물 주기', first_harvest: '첫 수확',
@@ -14621,20 +14621,35 @@ function endingStandRule() {
   if (S.home && S.home.room === 'tworoom' && signOnNow()) {
     let ss = null; try { ss = rv.signSpot ? rv.signSpot() : null; } catch (e) { ss = null; }
     const r = spotRect(ss) || spotRect({ x: -3.14, y: 0, z: -0.95, w: 0.5, d: 0.4, h: 0.85 });
-    if (r) keep.push({ ...r, id: 'sign' });
+    /* ★ 2026-10-31 총괄 D72(10-30) — 간판은 «가려도 된다»(soft): 넉넉함 셈(clear)에서 빼고 가린 것 목록(hits)에만 남긴다 */
+    if (r) keep.push({ ...r, id: 'sign', soft: true });
   }
+  /* ★ 2026-10-31 총괄 D72 — «가게 방»의 기준점: 판(boardSpot) → 간판(signSpot) → 간판 물러선 값. 칸막이(house_rooms partitions)가 있는 방에서 이 점과 같은 쪽이 가게 방이다 */
+  let shopRef = null;
+  try { const bs = rv.boardSpot ? rv.boardSpot() : null, ss = rv.signSpot ? rv.signSpot() : null;
+        shopRef = (bs && Number.isFinite(bs.x)) ? { x: bs.x, z: bs.z } : (ss && Number.isFinite(ss.x)) ? { x: ss.x, z: ss.z } : (S.home && S.home.room === 'tworoom' ? { x: -3.14, z: -0.95 } : null); }
+  catch (e) { shopRef = null; }
   const bodyOf = (x, z) => { const a = rv.worldToScreen(x, 0, z), b = rv.worldToScreen(x, 1.6, z); if (!a || !b) return null;
     const h = Math.max(1, a.y - b.y), w = h * 0.55; return { l: a.x - w / 2, r: a.x + w / 2, t: b.y, b: a.y }; };   /* 너비 — 머리칼까지(사진으로 잼) */
   const hit = (a, b) => !!(a && b && a.r > b.l && a.l < b.r && a.b > b.t && a.t < b.b);
   const gap = (bd, k) => Math.max(k.l - bd.r, bd.l - k.r, k.t - bd.b, bd.t - k.b);   /* 떨어진 만큼(+) · 겹치면 −(덜 겹친 축) */
-  const clear = bd => keep.length ? Math.min(...keep.map(k => gap(bd, k))) : 999;
+  const hard = keep.filter(k => !k.soft);   /* ★ 10-31 D72 — 간판(soft)은 넉넉함 셈에서 뺀다 */
+  const clear = bd => hard.length ? Math.min(...hard.map(k => gap(bd, k))) : 999;
   const inView = (bd, pad = 0) => bd.l >= cv.width * 0.08 && bd.r <= cv.width * 0.92 && bd.t >= 0 && bd.b <= dlgTop - 2 - pad;
   const grow = (q, m) => q && { l: q.l - m, r: q.r + m, t: q.t - m, b: q.b + m };
   /* pad — 고를 때는 초상 자리를 넓히고 대사 창 위로 띄워 잰다(걸음 끝이 한 뼘 어긋나도 얼굴·대사 창에 안 들어가게 · 10-24 C 에서 0.2m 어긋나 들어갔다) */
   const judge = (bd, pad = 0) => { if (!bd) return null; const c = clear(bd), v = inView(bd, pad), f = hit(bd, grow(faceR, pad)) || hit(bd, dlgR);
     const edge = Math.min(dlgTop - 2 - bd.b, gap(bd, faceR));   /* 대사 창 위 끝 · 초상까지 남은 틈(+) */
     return { inView: v, faceOrDlg: f, clear: Math.round(c), edge: Math.round(edge), ok: v && !f && c >= 12, hits: keep.filter(k => gap(bd, k) < 12).map(k => k.id) }; };
-  return { rv, cv, dlgTop, bodyOf, judge, faceR, dlgR, keep };
+  return { rv, cv, dlgTop, bodyOf, judge, faceR, dlgR, keep, shopRef };
+}
+/* ★ 2026-10-31 총괄 D72 — 그 점이 가게 방(§endingStandRule shopRef 와 칸막이 같은 쪽)인가 · 칸막이·기준점이 없으면 참(한 칸 방) */
+function endingInShop(p, shopRef) {
+  if (!p || !shopRef) return true;
+  let parts = [];
+  try { const d = houseRooms.rooms && houseRooms.rooms[S.home.room]; parts = (d && Array.isArray(d.partitions)) ? d.partitions : []; } catch (e) { parts = []; }
+  const sideOf = (q, o) => Math.sign((q.axis === 'z' ? o.z : o.x) - (+q.at || 0));
+  return parts.every(q => sideOf(q, p) === sideOf(q, shopRef));
 }
 /* 지금 선 자리를 그 규칙으로 잰다 — 걸음(probe_switch_walk)이 «화면 안 · 얼굴 밖 · 안 가림»을 같은 자로 본다 */
 function endingStandCheck() {
@@ -14642,7 +14657,7 @@ function endingStandCheck() {
   const me = (R.rv.characters() || []).find(c => c && c.id === 'jachwi');
   if (!me) return null;
   const j = R.judge(R.bodyOf(me.pos.x, me.pos.z));
-  return j && { ...j, x: +me.pos.x.toFixed(2), z: +me.pos.z.toFixed(2), walking: !!(R.rv.isWalking && R.rv.isWalking('jachwi')) };
+  return j && { ...j, x: +me.pos.x.toFixed(2), z: +me.pos.z.toFixed(2), inShop: endingInShop({ x: me.pos.x, z: me.pos.z }, R.shopRef), walking: !!(R.rv.isWalking && R.rv.isWalking('jachwi')) };
 }
 window.__byeotEndingStandCheck = () => endingStandCheck();   /* 재는 손잡이 */
 /* 고를 수 있는 자리 — 화면 격자 점마다 방 뷰가 «실제로 세울» 빈 칸(previewWalk · 걷지 않음)을 받아 그 자리 몸 네모로 잰다 · 길 길이는 칸막이 문을 거쳐 셈 */
@@ -14664,7 +14679,7 @@ function endingStandCands(R, me) {
       if (box && (Math.abs(t.x) > box.w / 2 - 0.3 || Math.abs(t.z) > box.d / 2 - 0.3)) continue;   /* 방 밖 바닥(창 너머) — floorPointAt 으로 물러섰을 때 */
       const key = t.x.toFixed(2) + ',' + t.z.toFixed(2); if (seen.has(key)) continue;
       const j = judge(bodyOf(t.x, t.z), 10); if (!j) continue;   /* 고를 때는 10px 넓혀 잰다 */
-      seen.set(key, { vx, vy, x: t.x, z: t.z, route: route(t), other: parts.some(q => sideOf(q, t) !== sideOf(q, here)), ...j });
+      seen.set(key, { vx, vy, x: t.x, z: t.z, route: route(t), other: parts.some(q => sideOf(q, t) !== sideOf(q, here)), inShop: endingInShop(t, R.shopRef), ...j });
     }
   } finally { if (rv.previewWalk) rv.previewWalk('jachwi', null, null); }   /* 미리보기 기둥은 같은 틀 안에서 지운다(그려지지 않는다) */
   return [...seen.values()];
@@ -14676,8 +14691,14 @@ function endingStandAside(skip = 0) {
   const me = (rv.characters() || []).find(c => c && c.id === 'jachwi' && c.walkable);
   if (!me) return null;
   const here = judge(bodyOf(me.pos.x, me.pos.z));
-  if (here && here.ok) return { moved: false, ...here };   /* 지금 자리가 셋 다 맞으면 그대로 */
-  const cand = endingStandCands(R, me).filter(c => c.inView && !c.faceOrDlg);   /* ①② 는 늘 지킨다 */
+  /* ★ 2026-10-31 총괄 D72(10-30) — 주인공은 가게 방 «안»에 선다(칸막이 너머 거실로 비켜서지 않는다 · 간판은 가려도 됨 — §endingStandRule soft).
+       잰 값(10-31 · 390×844 · swdump 세 끝맺음 · probe_endstand): 가게 방 빈 칸 118 중 ①② 지킴 13/13/16 · 간판만 가리면 맞음 가게 6 · 돌봄 6 · 육종 16
+       (예전 규칙(간판 포함)으론 셋 다 0 이라 늘 거실 쪽 x −0.13 으로 갔다). ⚠ 가게 방에 ①② 를 지키는 칸이 하나도 없으면 예전대로(칸막이 너머도) */
+  const hereIn = endingInShop({ x: me.pos.x, z: me.pos.z }, R.shopRef);
+  if (here && here.ok && hereIn) return { moved: false, ...here, inShop: true };   /* 지금 자리가 가게 방 · 셋 다 맞으면 그대로 */
+  const all = endingStandCands(R, me).filter(c => c.inView && !c.faceOrDlg);   /* ①② 는 늘 지킨다 */
+  const inRoom = all.filter(c => c.inShop);
+  const cand = inRoom.length ? inRoom : all;
   /* 넉넉함 = 지킬 것 · 대사 창 · 초상까지 가장 가까운 틈 — 40px 까지만 친다 · 그 위로는 길이 짧은 데(장면 동안 덜 걷게 · 총괄 사진 9f7263d2 A·B 는 진열대 앞을 가로질렀다)
        ⚠ 대사 창 틈을 안 치면 창 바로 위 자리를 골라 걸음 끝이 0.08m 어긋나자 창에 닿았다(10-24 가게 판 · 한 번 더 걸음) ·
          24px 로 자르면 초상 바로 옆(틈 3~5px)에 섰다 → 40px(360·390·430 × 세 끝맺음 아홉 판이 한 번 걸음에 틈 21px 넘게) */
@@ -14692,7 +14713,7 @@ function endingStandAside(skip = 0) {
     const end = Number.isFinite(r.x) && Number.isFinite(r.z) ? { x: r.x, z: r.z } : { x: k.x, z: k.z };
     const je = judge(bodyOf(end.x, end.z), 6);
     const res = { moved: true, ok: !!(je && je.ok), clear: je ? je.clear : k.clear, to: { x: +end.x.toFixed(2), z: +end.z.toFixed(2) },
-                  route: +k.route.toFixed(2), other: k.other, rank: skip + tried - 1, of: cand.length };
+                  route: +k.route.toFixed(2), other: k.other, inShop: endingInShop(end, R.shopRef), rank: skip + tried - 1, of: cand.length };
     if (!first) first = { k, res };
     if (je && (k.ok ? je.ok : (je.inView && !je.faceOrDlg))) return res;
   }
@@ -14701,13 +14722,21 @@ function endingStandAside(skip = 0) {
 }
 window.__byeotEndingStand = () => endingStandAside();   /* 재는 손잡이 */
 /* 재는 손잡이 — 지금 화면에서 고를 수 있는 빈 칸 셈(걷지 않음 · 고르는 손과 같은 자) · 같은 방 / 칸막이 너머 */
-window.__byeotEndingStandCands = () => { const R = endingStandRule(); if (!R) return null;
+/* ★ 2026-10-31 총괄 D72(10-30 «주인공은 가게 방 안 · 간판은 가려도 됨 · 나머지 규칙 그대로 · 방 안 자리가 없으면 카메라를 바꾸기 전 사진부터») —
+     재는 선택 둘(판정·걸음은 안 바뀐다): opt.ignore — 그 지킬 것(예 ['sign'])은 가려도 맞는 것으로 친 수(okIgnore) · opt.pts — 후보마다 발밑 화면 점(사진에 찍으려고) */
+window.__byeotEndingStandCands = (opt = {}) => { const R = endingStandRule(); if (!R) return null;
   const me = (R.rv.characters() || []).find(c => c && c.id === 'jachwi'); if (!me) return null;
   const all = endingStandCands(R, me);
+  const ign = new Set((opt && opt.ignore) || []);
+  const okIgn = c => c.inView && !c.faceOrDlg && (c.hits || []).every(h => ign.has(h));
+  const foot = c => { const q = R.rv.worldToScreen(c.x, 0, c.z); return q ? { x: Math.round(R.cv.left + q.x), y: Math.round(R.cv.top + q.y) } : null; };
+  const extra = { okIgnore: { same: all.filter(c => !c.other && okIgn(c)).length, other: all.filter(c => c.other && okIgn(c)).length, ignore: [...ign] },
+                  keep: (R.keep || []).map(k => k.id),
+                  ...(opt && opt.pts ? { pts: all.map(c => ({ ...foot(c), wx: +c.x.toFixed(2), wz: +c.z.toFixed(2), other: c.other, inShop: c.inShop, ok: c.ok, okIgnore: okIgn(c), view: c.inView && !c.faceOrDlg, clear: c.clear, hits: c.hits })) } : {}) };
   const best = f => all.filter(f).sort((a, b) => b.clear - a.clear).slice(0, 4).map(c => ({ x: +c.x.toFixed(2), z: +c.z.toFixed(2), clear: c.clear, route: +c.route.toFixed(2), hits: c.hits }));
   return { me: { x: +me.pos.x.toFixed(2), z: +me.pos.z.toFixed(2) }, free: all.length,
            same: { n: all.filter(c => !c.other).length, ok: all.filter(c => !c.other && c.ok).length, best: best(c => !c.other && c.inView && !c.faceOrDlg) },
-           other: { n: all.filter(c => c.other).length, ok: all.filter(c => c.other && c.ok).length, best: best(c => c.other && c.ok) } }; };
+           other: { n: all.filter(c => c.other).length, ok: all.filter(c => c.other && c.ok).length, best: best(c => c.other && c.ok) }, ...extra }; };
 /* 때 — 끝맺음 아침 차례가 오자마자 비켜서기 시작(대사 «전» · 초상·대사 창은 기억한 자리) → 대사가 서면 실제 자리로 다시 재어 어긋나면 다시 고름 →
    걷기가 끝나면 한 번 더 재고 어긋나면 다음 점(두 번까지). ⚠ 장면 첫 줄부터 걸어 가로지르면 대사 셋째 줄에도 진열대 앞을 걷고 있었다(10-24 걸음 사진) */
 function endingStandWhenSettled() {
@@ -14729,12 +14758,15 @@ function endingStandWhenSettled() {
       const target = (window.__byeotEndingStandLast || {}).to;
       let bad = c && !c.ok && !c.walking;
       if (c && c.walking && target) { const R = endingStandRule(); const j = R && R.judge(R.bodyOf(target.x, target.z)); bad = !!(j && !j.ok); }
+      /* ★ 2026-10-31 총괄 D72 — 가게 방 밖(거실)에 서 있고 가는 데도 밖이면 대사가 선 뒤 다시 고른다.
+           첫 고름은 대사 «전»(기억한 창 자리)이라 가게 방 칸을 놓칠 수 있다(가게 끝맺음 판에서 잡음 — 거실 x −0.13 에 섰다) */
+      if (c && !bad) { const R = endingStandRule(); const tIn = R ? (c.walking && target ? endingInShop(target, R.shopRef) : c.inShop !== false) : true; if (!tIn) bad = true; }   /* 걷는 중이면 가는 곳으로 잰다 */
       if (bad) { skip = 0; go('대사가 선 뒤 다시'); }
     }
     if (!walkingNow() && checkedTalk) {
       const c = endingStandCheck();
       window.__byeotEndingStandLast = { ...(window.__byeotEndingStandLast || {}), after: c, retry };
-      if (c && !c.ok && retry < 2) { retry++; go('걷기 뒤 다시'); }
+      if (c && (!c.ok || c.inShop === false) && retry < 2) { retry++; go('걷기 뒤 다시'); }   /* ★ 10-31 D72 — 가게 방 밖이면 한 번 더(가게 방 칸이 없으면 예전 고름 그대로 선다) */
       else { done(c && c.ok ? '맞음' : '다 해 봄'); return; }
     }
     setTimeout(tick, 250);
