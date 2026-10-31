@@ -14,7 +14,8 @@
      D 가구·벽 안으로는 못 간다
      E 걷는 동안에도 setDaylight(하루빛)이 계속 돈다
      F 화분을 가리고 서면 비켜선다
-     G 걷기 클립은 경량 파생본(35KB)을 쓴다 — 2.4MB 짜리를 안 받는다
+     G 걷기 클립 — 2.4MB 짜리를 안 받는다 · v2 몸은 몸 파일 안의 걷기 · 옛 몸은 경량 파생본(35KB)
+     G2 걸을 때 발뼈가 실제로 앞뒤로 움직인다(걷기 동작이 빠져 미끄러지면 잡힌다)
      N ★가서·하고·끝난다(actAt) — 가서 서서 끝난다 · 못 가는 자리면 실패한다 ·
         빨리감기에서는 연출을 건너뛴다 · **연출이 끝난 뒤에 논리가 돈다**
 ============================================================ */
@@ -169,6 +170,35 @@ async function walkFarFrom(page, id, ref) {
     const g = out[0];
     return { r: window.view.walkTo(${JSON.stringify(id)}, FX+g.dx, FY+g.dy), x:g.x, z:g.z };
   })()`);
+}
+
+/* 다시 걷게 보내고, 걷는 동안 rAF 마다 두 발뼈의 «몸 기준 앞뒤(z)»를 찍어 그 폭을 낸다(G2).
+   사람 루트는 픽 상자를 단 그룹이다(charKind 'person'). */
+async function footSwing(page, id, ref) {
+  const again = await walkFarFrom(page, id, ref);
+  if (!again || !again.r || again.r.ok !== true) return { why: `다시 걷게 못 했습니다: ${JSON.stringify(again && again.r)}` };
+  return JSON.parse(await page.eval(`new Promise(res => {
+    const id = ${JSON.stringify(id)}, THREE = window.THREE;
+    let root = null;
+    window.view.three.scene.traverse(o => { if (!root && o.userData && o.userData.isCharacterPick && o.parent && o.parent.userData.charKind === 'person') root = o.parent; });
+    const pick = re => { let b = null; if (root) root.traverse(o => { if (!b && o.isBone && re.test(o.name)) b = o; }); return b; };
+    const L = pick(/leftfoot$/i), R = pick(/rightfoot$/i);
+    if (!L || !R) { res(JSON.stringify({ why: '발뼈를 못 찾았습니다' })); return; }
+    const lz = [], rz = [], t0 = performance.now();
+    const tick = () => {
+      if (window.view.isWalking(id)) {
+        root.updateMatrixWorld(true);
+        lz.push(root.worldToLocal(L.getWorldPosition(new THREE.Vector3())).z);
+        rz.push(root.worldToLocal(R.getWorldPosition(new THREE.Vector3())).z);
+      }
+      if (performance.now() - t0 > 2500 || (lz.length > 5 && !window.view.isWalking(id))) {
+        const rg = a => a.length ? Math.max(...a) - Math.min(...a) : 0;
+        res(JSON.stringify({ walkN: lz.length, range: +Math.max(rg(lz), rg(rz)).toFixed(3) })); return;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  })`));
 }
 
 async function main() {
@@ -379,11 +409,25 @@ async function main() {
   ok('F-2 비켜서면 더 이상 안 가린다', wasOcc ? (nowOcc === false && stepped > 0.15) : true,
      `${nMoved}명 이동 · ${stepped.toFixed(2)}m · 아직가림=${nowOcc}`);
 
-  /* ── G 걷기 클립은 35KB 짜리 파생본을 쓴다 ── */
+  /* ── G 걷기 클립 — 2.4MB 원본은 안 받는다 · v2 몸은 몸 파일 안의 걷기를 쓴다 ──
+     ⚠ 11-01(char) 옛 G 는 «derived/char_clips 35KB 를 받는다»였다. 그건 옛 몸(lq) 길이다.
+       v2 주인공(기본 · v2_hero.js)은 걷기를 hero2.glb 안에 싣고 오고, 옛 클립은 «절대 얹지 않는다»(뼈 길이를 덮어 늘인다).
+       그래서 v2 판에서 light=false heavy=false 는 맞는 그림이었다 — 검사만 옛 계약에 남아 빨강이었다.
+       ⇒ 계약: ① 2.4MB 원본(lq/*_walking)은 어느 길에서도 안 받는다 ② v2 몸이면 따로 받는 걷기 파일이 없다 · 옛 몸이면 35KB 파생본.
+       ★ 파일 이름만 보면 «걷기 동작이 빠졌는데 검사는 초록»을 못 가른다 — 그건 아래 G2 가 발뼈로 잰다. */
+  const usedV2 = netUrls.some(u => /assets\/v2\/char\/hero2?\.glb/.test(u));
   const usedLight = netUrls.some(u => /derived\/char_clips\/char_\w+_walking\.glb/.test(u));
   const usedHeavy = netUrls.some(u => /characters\/3d\/lq\/char_\w+_walking\.glb/.test(u));
-  ok('G 걷기 클립 = assets/derived/char_clips (35KB). 2.4MB 원본을 안 받는다',
-     usedLight && !usedHeavy, `light=${usedLight} heavy=${usedHeavy}`);
+  ok('G 걷기 클립 — 2.4MB 원본을 안 받는다 · v2 몸은 몸 파일 안의 걷기(따로 안 받음) · 옛 몸은 35KB 파생본',
+     !usedHeavy && (usedV2 ? !usedLight : usedLight), `v2=${usedV2} light=${usedLight} heavy=${usedHeavy}`);
+
+  /* ── G2 ★ 걸을 때 발이 실제로 움직인다 (미끄러짐이 아니다) ──
+     걷기 클립이 안 물리면 몸은 서 있는 자세 그대로 바닥을 미끄러져 간다 — 자리·방향(C·K)은 그래도 다 초록이다.
+     몸 기준으로 두 발뼈의 앞뒤 폭을 잰다. 11-01 잰 값: hero2 0.39m · 옛 몸 0.49m · 서 있을 때 0.04m 안. */
+  const swing = await footSwing(page, 'jachwi', before);
+  ok('G2 걸을 때 발뼈가 앞뒤로 움직인다 (걷기 동작이 실제로 돈다)',
+     swing && swing.walkN > 10 && swing.range > 0.2, JSON.stringify(swing));
+  for (let i = 0; i < 80 && await page.eval(`window.view.isWalking('jachwi')`); i++) await sleep(100);
 
   /* ── 모니는 못 보낸다 ── */
   const moni = await page.eval(`(()=>{ const r=document.getElementById('roomCanvas').getBoundingClientRect();

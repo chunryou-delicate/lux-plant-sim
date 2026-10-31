@@ -12,6 +12,9 @@
        emoteWin    cheer 의 «팔이 가장 높은 3초» 구간 — 새 cheer(Motivational_Cheer)는 9초라 통째로 틀면 길다
        breakWin    잠깐 몸짓(scratch·nod·listen)에서 틀 구간 — core room_view IDLE_BREAK 가 그 구간만 튼다(10-09 core 청)
 ■ --update-extras <hero2.glb> : 다시 엮지 않고 extras 만 다시 잰다
+■ ⚠ 11-01 다시 엮었으면 발 고정을 다시 굽는다 — 걷기 최저점이 한 걸음에 5.1cm 오르내려 발이 뜨고 묻혔다(test_ground):
+     python tools/char/ground_lock_clip.py <hero2.glb> <hero2.glb> --clips=idle,walk --floor-from=idle
+   (diet_hero2.py 보다 뒤에 · walkMps 는 발 고정 전 값 0.729 를 그대로 둔다 — 다시 재면 디딤 구간이 달라져 +5% 로 나온다)
 ■ 자기시험 (--selftest) — 옛 hero.glb 의 crouch 로 손 높이 표를 다시 재 v2_hero 의 HAND 표가 나오는가
 
 쓰기

@@ -345,8 +345,26 @@ function markerHalf(potD) {
      **늘 0 이 나온다**(그렇게 나와서 "클립은 멀쩡하다"는 잘못된 결론을 한 번 냈다).
 
    ★ 전부 세지 않는다. 메시마다 GROUND_VERTS 점만 고른다 — 발바닥은 정점이 촘촘해서
-     성기게 훑어도 최저점이 몇 mm 안에서 잡힌다. 클립마다 한 번만 부르는 함수다. */
+     성기게 훑어도 최저점이 몇 mm 안에서 잡힌다. 클립마다 한 번만 부르는 함수다.
+   ⚠ 11-01(char) 정점이 많은 몸에서는 성긴 표본이 신발 밑창을 통째로 건너뛴다.
+     hero2(정점 27,621 · 걸음 125)는 최저점을 2.7cm 높게 잡아 서 있는 동안 발이 바닥에 1.7~2.8cm 묻혔다
+     (tools/test_ground A −1.6cm). ⇒ 바인드 자세에서 맨 아래 SOLE_BAND(키의 3%) 띠의 정점은 걸음 없이 다 본다.
+     서기·걷기·쪼그리기는 발이 제일 낮다. 눕기·앉기는 성긴 표본이 그대로 맡는다 — 후보를 더할 뿐이라 전보다 높게 잡는 일은 없다. */
 const GROUND_VERTS = 220;
+const SOLE_BAND = 0.03;
+const _soleIdx = new WeakMap();      // geometry → 발바닥 띠 정점 번호(메시마다 한 번 고른다)
+function soleIndices(n) {
+  const geo = n.geometry;
+  if (_soleIdx.has(geo)) return _soleIdx.get(geo);
+  const pos = geo.attributes.position, e = n.matrixWorld.elements;
+  const yOf = i => e[1] * pos.getX(i) + e[5] * pos.getY(i) + e[9] * pos.getZ(i) + e[13];   // 바인드 자세의 세계 높이
+  let lo = Infinity, hi = -Infinity;
+  for (let i = 0; i < pos.count; i++) { const y = yOf(i); if (y < lo) lo = y; if (y > hi) hi = y; }
+  const cut = lo + (hi - lo) * SOLE_BAND, idx = [];
+  for (let i = 0; i < pos.count; i++) if (yOf(i) <= cut) idx.push(i);
+  _soleIdx.set(geo, idx);
+  return idx;
+}
 function skinLowestY(root) {
   let lo = Infinity;
   const v = new THREE.Vector3();
@@ -358,6 +376,11 @@ function skinLowestY(root) {
     const pos = n.geometry.attributes.position;
     const step = Math.max(1, Math.floor(pos.count / GROUND_VERTS));
     for (let i = 0; i < pos.count; i += step) {
+      n.boneTransform(i, v);
+      v.applyMatrix4(n.matrixWorld);
+      if (v.y < lo) lo = v.y;
+    }
+    for (const i of soleIndices(n)) {
       n.boneTransform(i, v);
       v.applyMatrix4(n.matrixWorld);
       if (v.y < lo) lo = v.y;

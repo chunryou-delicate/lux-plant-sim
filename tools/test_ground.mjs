@@ -50,7 +50,10 @@ const BB = `(o) => { const THREE = window.THREE;
     const pos = n.geometry.attributes.position;
     if (n.isSkinnedMesh && typeof n.boneTransform === 'function') {
       n.skeleton.update();
-      const step = Math.max(1, Math.floor(pos.count / 900));
+      /* ⚠ 11-01(char) 전에는 메시마다 900점만 골랐다. hero2(정점 27,621)는 걸음 30 이라 걸을 때 디딘 발끝을
+           놓쳐 min.y 를 2cm 까지 높게 냈다(E «+2.06cm» 거짓 빨강 · 정점 전부로 재면 +0.54cm). 방뷰 skinLowestY 와
+           같은 구멍이다 — 검사는 느려도 되니 정점을 다 본다. */
+      const step = 1;
       for (let i = 0; i < pos.count; i += step) {
         n.boneTransform(i, v); b.expandByPoint(v.applyMatrix4(n.matrixWorld));
       }
@@ -108,6 +111,21 @@ async function main() {
 
   ok('B 몬이는 일부러 뜬다 (마스코트)',
      mascot && mascot.minY > 0.05, mascot ? `bb.min.y=${mascot.minY}m` : '—');
+
+  /* ── A3 서 있는 동안 내내 붙어 있다 ──
+     A 는 한 순간이다. 11-01(char): hero2 서기 클립은 최저점이 1.1cm 오르내려(발 고정 전) 재는 순간에 따라
+     A 가 붙었다 떴다 했다. 2.4초를 고루 찍어 그중 가장 먼 값을 본다. */
+  let standLo = Infinity, standHi = -Infinity;
+  for (let i = 0; i < 12; i++) {
+    const y = +(await page.eval(`(()=>{ let r=null; window.view.three.scene.traverse(o=>{
+      if (!r && o.userData && o.userData.isCharacterPick && o.parent && o.parent.userData.charKind==='person') r=o.parent; });
+      return r ? window.__bb(r).min.y : 0; })()`));
+    standLo = Math.min(standLo, y); standHi = Math.max(standHi, y);
+    await sleep(200);
+  }
+  ok('A3 서 있는 2.4초 내내 바닥에 붙는다 (|bb.min.y| ≤ 0.01m)',
+     Math.max(Math.abs(standLo), Math.abs(standHi)) <= 0.01,
+     `서 있는 동안 min.y ${standLo.toFixed(4)} ~ ${standHi.toFixed(4)}m`);
 
   /* ── 화분 ─────────────────────────────────────────────────────── */
   console.log('\n── 화분 ' + '─'.repeat(58));
@@ -187,9 +205,11 @@ async function main() {
     console.log('\n발바닥 보정 (클립 → model.position.y[m])');
     for (const [k, v] of Object.entries(gr.clips)) console.log(`  ${k.padEnd(16)} ${v}`);
   }
+  /* ⚠ 11-01(char) 옛 줄은 «두 값이 3cm 넘게 달라야 한다»였다 — 옛 몸 클립(idle +8.6cm · walking −2.8cm)에서만 맞는 대용이다.
+       hero2 는 발 고정을 «같은 바닥»으로 구웠다(tools/char/ground_lock_clip.py --floor-from=idle) — 걷기↔서기를 바꿀 때
+       몸이 내려앉지 않게 두 값이 일부러 같다. 그래서 «표에 두 칸이 다 재어져 있다»만 본다(한 값으로 뭉갰다면 walking 칸이 없다). */
   ok('E2 걸어 본 뒤 idle·walking **둘 다** 따로 재어 두었다 (한 값으로 안 뭉갠다)',
-     gr && gr.clips && gr.clips.idle != null && gr.clips.walking != null
-        && Math.abs(gr.clips.idle - gr.clips.walking) > 0.03,
+     gr && gr.clips && Number.isFinite(gr.clips.idle) && Number.isFinite(gr.clips.walking),
      gr ? `idle ${gr.clips.idle} · walking ${gr.clips.walking}` : '보정표가 없다');
 
   /* ── F 접지 그림자 ─────────────────────────────────────────────── */
