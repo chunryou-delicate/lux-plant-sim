@@ -206,6 +206,8 @@ export const QUEST_SCHEMA = 'quest/1';
                          «같은 자»(game.html varieMaturedLeavesNow). null = 「모른다」(배선 전) ⇒ first_cut 은 motherVarieLeaves 로 어림한다
      pantrySoldCount     ★ 10-30 D90 ④ 보유 채소(곳간)를 판 횟수 — 잉여 넘김 포함 · 삽수·그루 판매는 안 셈. null = 「모른다」 ⇒ sell_surplus 안 열림
      pantryOverKeepGrams ★ 10-30 D90 ④ 곳간 g − 이레치 밥상 몫 g(이레는 core 가 정함). null = 「모른다」
+                         ★ 10-31 D93 ① 이레치 밥상 몫 = 작물마다 하루 한 몫(mealPortionGrams) × 이레 · 새 꾸러미부터 판째로 남김(plan-to-core-d93 §1)
+     pantryLastSoldDay   ★ 10-31 D93 m5 곳간(보유 채소)을 마지막으로 판 날 — 잉여 넘김 포함(pantrySoldCount 와 같은 셈). null = 「모른다」 ⇒ sell_surplus 끝은 예전 그대로
 
    ══ ★★ 2026-08-16 신설 — **초반 사슬이 보는 칸 넷** (§초반 사슬) ══════════
      cropPots[].placed   그 용기가 방에 서 있나       (`first_play.cropPotPlaced(p)`)
@@ -228,6 +230,8 @@ export function emptySnapshot() {
            /* ★ 2026-10-30 D90 ④ — 남는 건 판다(§sell_surplus). [core] 곳간 팔기 횟수(잉여 넘김 포함 · 삽수·그루 판매 안 셈) ·
               곳간 − 이레치 밥상 몫(g). null = 「모른다」 → 줄이 안 열린다 / 넘었나는 안 본다 */
            pantrySoldCount: null, pantryOverKeepGrams: null,
+           /* ★ 2026-10-31 D93 m5 — 곳간을 마지막으로 판 날([core]). null = 「모른다」 → sell_surplus 끝은 판 횟수만 본다(예전 그대로) */
+           pantryLastSoldDay: null,
            /* ★ 2026-10-08 갈래 지도 4 — 자라는 자리에 놓였나(§monstera_home done). null = 「모른다」 */
            monsteraGrowing: null,
            /* ★ 2026-10-09 D43 — 가방에 든(자리 없는) 안 죽은 삽수 수([core] turn.bagCuttings 와 같은 자). null = 「모른다」 */
@@ -671,20 +675,33 @@ const MAIN_QUESTS = Object.freeze([
        시루 16 이면 5/5 · 중앙 120일(833만). ⇒ D91(총괄): siru16 을 되살리고 이 줄은 그 앞에 둔다. 체력 +1 은 siru16 하나(원래 값) · 이 줄은 체력 없음.
      ⚠ 칸(pantrySoldCount · [core] 곳간 팔기 횟수 — 잉여 넘김 포함 · 삽수·그루 판매는 안 셈)이 null(배선 전)이면 안 열린다 — 열고 영영 안 끝나는 것보다 낫다.
      ⚠ 곳간이 이레치 밥상 몫을 넘었나(pantryOverKeepGrams · [core])를 알면 넘은 날에 연다(«쌓이네»가 참). 모르면 siru8 끝으로만.
-     ⚠ 수(이레 · 몫 g)를 여기 안 적는다 — 이레는 core 가 하네스 PANTRY_KEEP 과 맞춰 정한다(D90 ⑤ ⚖). */
+     ⚠ 수(이레 · 몫 g)를 여기 안 적는다 — 이레는 core 가 하네스 PANTRY_KEEP 과 맞춰 정한다(D90 ⑤ ⚖).
+     ★★ 2026-10-31 [plan] 총괄 D93 ① 파는 말 한 규칙(plan-to-core-d93 §1) — «작물마다 이레치 밥상 몫(하루 한 몫 × 이레)은 남기고, 그 위로 쌓인 것은 판다.»
+       옛 teaches · why «하루 밥상 몫은 먹고 · 하루치뿐»은 «오늘 몫 말고는 판다»로 읽혀 밥상 판 «남은 700g은 파는 편이 낫습니다»와 같은 병을 냈다
+       (비판 둘째 판 M3 ① — 그 700g 은 다음 이틀 밥상이다). 참: 밥상에는 작물마다 하루 한 몫(first_play §cropMealPlan — 같은 작물 둘째 몫은 파는 값보다 낮아 안 먹음) ·
+       이레 ≥ 같은 작물 다음 수확(무순 한 바퀴 7일 · 콩나물 5일) — 이레치를 남기면 다음 수확 전에 밥상이 안 빈다.
+     ★ D93 m5 — 끝은 «줄이 열린 뒤에» 판 것만 친다(칸 pantryLastSoldDay · [core] · 열린 날은 stamina.questsOpenedOn — 끝 판정보다 먼저 적힌다 §questProgress).
+       옛 끝(판 횟수 ≥ 1)은 줄이 열리기 전에 판 사람에게 «열리는 그 걸음»에 끝나, 끝 대사 «팔았다. 지갑이 늘었어.»가 아무것도 안 판 날
+       (비판 둘째 판 Day 24 · 무순 거둔 날)에 떴다 — 그 판은 Day 18 · 22 에 팔았다. 칸이나 열린 날을 모르면 예전 그대로(판 횟수만). */
   Object.freeze({
     id: 'sell_surplus',
     room: 'banjiha',   // 이사 «전»에만 — 원룸은 콩나물 자리가 한 칸이다(siru16 과 같음)
     ko: '남는 건 판다',
-    teaches: ['하루 밥상 몫은 먹고, 그 위로 쌓이는 것은 판다', '반지하에서 돈이 들어오는 길은 채소다'],
-    why: '밥상에 오르는 몫은 하루치뿐입니다. 그 위로 쌓이는 채소는 팔아야 돈이 됩니다.',
+    teaches: ['다음 수확까지 먹을 몫은 남기고, 그 위로 쌓이는 것은 판다', '반지하에서 돈이 들어오는 길은 채소다'],
+    why: '밥상에는 작물마다 하루 한 몫이 오릅니다. 이레치 밥상 몫을 넘게 쌓인 채소는 팔아야 돈이 됩니다.',
     /* ★ D91 — 체력은 안 준다(총괄 · 체력 총량은 첫 플레이 뒤). 보상은 들어온 돈 그 자체 — 참: 곳간을 팔면 판 값이 지갑에 든다 */
     reward: '판 돈이 지갑에 듭니다',
     todo: () => '남는 채소를 상점에서 팔아 보세요',
     after: 'siru8',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('siru8')) && s.pantrySoldCount != null
                        && (!(Number.isFinite(s.pantryOverKeepGrams) && s.pantryOverKeepGrams <= 0) || wasOpened(ctx, 'sell_surplus')),
-    done:  s => s.pantrySoldCount != null && num(s.pantrySoldCount) >= 1
+    done:  (s, ctx) => {
+      if (!(s.pantrySoldCount != null && num(s.pantrySoldCount) >= 1)) return false;
+      const on = ctx && ctx.S && ctx.S.stamina && ctx.S.stamina.questsOpenedOn;
+      const openedOn = on && Number.isFinite(on.sell_surplus) ? on.sell_surplus : null;
+      if (openedOn == null || !Number.isFinite(s.pantryLastSoldDay)) return true;   /* 모르면 예전 그대로 */
+      return s.pantryLastSoldDay >= openedOn;
+    }
   }),
 
   /* ②-d ★★★ 2026-10-30 [plan] 총괄 D91 — **열여섯까지 늘린다**(siru16 되살림 · 박사님 08-16 «그 개수 달성하도록 (체력도 1 주고)» 그대로 — 수 · 체력 +1).
@@ -1623,6 +1640,9 @@ export const QUEST_WAIT_WHAT = Object.freeze({
   noVarieSource: '무늬 잎이 나기를',
   recutNode:     '키운 그루에 무늬 마디가 나기를',
   varieMature:   '무늬 잎이 다 자라기를',          /* ★ 2026-10-30 D90 ③ wait_varie(줄의 waitWhatOf 가 셈을 붙인다) */
+  /* ★ 2026-10-31 [plan] D93 m5 — crop_mix «한 상에 두 가지»(nudge_wait §crop_mix): 방에 놓은 무순 판이 도는 중 · 거둔 무순이 다음 밥상을 기다림 */
+  musunGrowing:  '무순이 자라기를',
+  musunMeal:     '거둔 무순이 밥상에 오르기를',
   grow:          '식물이 자라기를'
 });
 /* ★ 2026-10-09 [plan] D50 뒤(core 956eb6f5 걸어 봄) — «기다림»이지만 사람에게 «먼저 할 일»이 있는 열쇠. 이 줄 자체는 기다리지만

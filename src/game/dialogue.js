@@ -1056,9 +1056,12 @@ export const SCRIPTS = {
        **보유 채소 팔기** = 상점 단추 이름(game.html #sellPantry) · 끝 = 곳간을 한 번 팔았다(«지갑이 늘었어» — 판 돈이 지갑에 든다) ·
        «쌓아 두기만 하면 그냥 쌓여» = 곳간은 쉬지 않는다(first_play §pantryCapWon · spoiled 늘 0) ·
        «시루를 더 늘리면 더 빨리 모여» = 하네스 big(시루 16) 내 집 350일 vs 안내대로 375일 — «손이 닿는 만큼»은 체력 천장(siru5 가르침). 수 없음. */
+  /* ★ 2026-10-31 [plan] 총괄 D93 ① 파는 말 한 규칙 — «작물마다 이레치 밥상 몫은 남기고, 그 위로 쌓인 것은 판다»(plan-to-core-d93 §1).
+       옛 «하루 밥상에 오를 몫은 먹고»는 «오늘 몫 말고는 판다»로 읽혔다(비판 둘째 판 M3 ①). 몬이는 날수를 안 말하므로(«이레»도 수) 까닭으로 말한다:
+       참: 이레 ≥ 같은 작물 다음 수확(무순 7일 · 콩나물 5일) — 이레치 = «다음에 거둘 때까지 먹을 몫»(돌리는 시루·판이 있는 판) */
   questSellSurplus: [
     { who: 'jachwi', face: 'think', text: '채소가 자꾸 쌓이네.' },
-    { who: 'moni',   face: 'teach', text: '하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 건 팔아.' },
+    { who: 'moni',   face: 'teach', text: '다음에 거둘 때까지 먹을 몫은 두고, 그 위로 쌓이는 건 팔아.' },
     { who: 'moni',   text: '이 방에서 돈이 들어오는 길은 그거야.' },
     { who: 'jachwi', face: 'curious', text: '어디서 팔아?' },
     { who: 'moni',   face: 'teach', text: '상점에서 **보유 채소 팔기**를 눌러.' }
@@ -1075,7 +1078,8 @@ export const SCRIPTS = {
      참: 시루를 다 놓았다 · 거둔 것을 팔면(조건) 늘린 만큼 빨리 모인다 · 체력 +1(siru16 원래 값 · «손이 늘었어»). */
   questDoneSiru16: [
     { who: 'jachwi', face: 'happy', text: '시루를 다 놨다.' },
-    { who: 'moni',   face: 'proud', text: '이제 거두는 대로 팔면 늘린 만큼 빨리 모여.' },
+    /* ★ 2026-10-31 [plan] D93 ① — «거두는 대로 팔면»은 다 팔라는 말로 읽힌다(이레치 밥상 몫까지). 한 규칙: 남는 것만 판다 */
+    { who: 'moni',   face: 'proud', text: '이제 남는 걸 팔면 늘린 만큼 빨리 모여.' },
     { who: 'moni',   face: 'teach', text: '손이 늘었어. 그래도 다 못 돌리겠으면 거두는 날을 엇갈려.' }
   ],
 
@@ -3760,7 +3764,8 @@ export const CHATTER = [
     /* ★ 2026-10-30 [plan] 종합 5 — 시루 줄·한 상 줄의 «상점에 있어»는 가방·배송 중이 비었을 때만(아래 nudgeSiruBag · nudgeSiruComing · nudgeMixBag) */
     { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask
         && (!SIRU_NUDGE_QS.includes(q) || (!(c.siruBag > 0) && !(c.siruIncoming > 0)))
-        && (q !== 'crop_mix' || !(c.musunBag > 0)) },
+        /* ★ 2026-10-31 [plan] D93 m5(비판 둘째 판 Day 18) — 무순 판이 이미 방에 있으면(심었든 안 심었든) «상점에 있어»는 묵은 말 */
+        && (q !== 'crop_mix' || (!(c.musunBag > 0) && !(c.musunRoom > 0))) },
     { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry }
   ]),
   /* ★ 2026-10-30 [plan] 종합 5 — 위 «상점에 있어»의 짝(같은 날 창 · 하나만 참) */
@@ -4031,9 +4036,11 @@ export function chatterContext(turn = {}, S = null) {
         const bag = kind => rows.filter(r => r && r.kind === kind && r.inBag).length;
         return { siruBag: stockOf(S, 'siru') + bag('beansprout'), siruIncoming: incomingOf(S, 'siru'),
                  musunBag: stockOf(S, 'sprout_tray') + bag('musun'),
+                 /* ★ 2026-10-31 [plan] D93 m5 — 방에 놓인 무순 판(심었든 · 거둔 빈 판이든) */
+                 musunRoom: rows.filter(r => r && r.kind === 'musun' && r.placed).length,
                  /* ★ 2026-10-31 [plan] D92 — 가방에 든 «물을 받아 돌던» 작물(이삿짐 · 회수한 것) · 빈 용기는 안 센다 */
                  bagCrops: fp ? rows.filter(r => r && r.inBag && r.started).length : null };
-      } catch { return { siruBag: null, siruIncoming: null, musunBag: null, bagCrops: null }; }
+      } catch { return { siruBag: null, siruIncoming: null, musunBag: null, musunRoom: null, bagCrops: null }; }
     })(),
     /* ★ 2026-10-10 [plan] D59 — 산 집(투룸 · 진로)으로 옮겼나 · 진로 · 가게 판(S.jobShop · [core] job_shop). 원룸 잡담·상태 줄은 산 집에선 쉰다 */
     movedHome: !!(S && ((S.home && S.home.room === 'tworoom') || (S.tutorial && S.tutorial.homeOwned))),

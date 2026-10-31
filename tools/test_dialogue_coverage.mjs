@@ -45,7 +45,9 @@ import { createProfileLight } from '../src/game/room_profile.js';
 import { newState, pot0, setPotSlot, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { firstPlayRulesFromBalance, placeBeansprout, moveMonstera,
-         beansproutReady, cropSites } from '../src/game/first_play.js';   /* cropSites — ★ D92 이삿짐 판 */
+         beansproutReady, cropSites, addCropPot } from '../src/game/first_play.js';   /* cropSites — ★ D92 이삿짐 판 · addCropPot — ★ D93 무순 판 */
+import { nudgeWaitReason } from '../src/game/nudge_wait.js';                 /* ★ D93 m5 crop_mix 기다림 */
+import { QUEST_WAIT_WHAT } from '../src/game/quest.js';                       /* ★ D93 m5 기다림 글 열쇠 */
 import {
   SCRIPTS, SPEAKERS, CHATTER, REPEATABLE, EVENT_SCRIPT,
   /* ★ 2026-08-17 — 퀘스트 대사 두 지도 (dialogue §5.5) */
@@ -1152,9 +1154,10 @@ check('대사 — 첫 달 끝 «들이는 달» · 이레 지갑 첫 플러스 �
 });
 
 /* ★ 2026-10-30 [plan] 총괄 D90 ④ — 남는 건 판다: 한 목소리 · 상점 단추 이름 · 수 없음 · 장담 없음 */
-check('대사 — 남는 건 판다(한 목소리 «하루 밥상 몫은 먹고 그 위는 판다» · 상점 단추 이름 · 수 없음)(D90 ④)', () => {
+/* ★ 2026-10-31 [plan] D93 ① — 한 목소리가 «다음 수확까지 먹을 몫은 두고 그 위는 판다»로 바뀌었다(이레치 밥상 몫 · plan-to-core-d93 §1) */
+check('대사 — 남는 건 판다(한 목소리 «다음에 거둘 때까지 먹을 몫은 두고 그 위는 판다» · 상점 단추 이름 · 수 없음)(D90 ④ · D93 ①)', () => {
   assert.equal(QUEST_OPEN_SCRIPT.sell_surplus, 'questSellSurplus'); assert.equal(QUEST_DONE_SCRIPT.sell_surplus, 'questDoneSellSurplus');
-  assert.ok(SCRIPTS.questSellSurplus.some(l => /하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 건 팔아/.test(l.text)), '한 목소리 줄이 없습니다');
+  assert.ok(SCRIPTS.questSellSurplus.some(l => /다음에 거둘 때까지 먹을 몫은 두고, 그 위로 쌓이는 건 팔아/.test(l.text)), '한 목소리 줄이 없습니다');
   const html = readFileSync(U('../game.html'), 'utf8');
   const btn = (html.match(/id="sellPantry"[^>]*>([^<]+)</) || [])[1];
   assert.ok(btn && SCRIPTS.questSellSurplus.some(l => l.text.includes(btn.trim())), `상점 단추 이름(${btn})과 대사가 다릅니다`);
@@ -1268,6 +1271,56 @@ check('원룸 창턱 «등 없이도 자라» — 여름에만 · 몬이 수 없
   for (const season of ['winter', 'spring', 'autumn', undefined]) assert.equal(on({ ...o, season }), false, `${season} 에 섭니다`);
   for (const l of SCRIPTS.chatOneroomBright) if (l.who === 'moni')
     assert.ok(!/[0-9]|하나|둘|셋|넷|백 일/.test(l.text), `chatOneroomBright 몬이가 수를 말합니다: ${l.text}`);
+});
+
+/* ★ 2026-10-31 [plan] 총괄 D93 — 비판 둘째 판(playtest-critic2) plan 몫.
+     ① 파는 말 한 규칙: 몬이 · 할 일이 «오늘 몫 말고는 판다» · «거두는 대로 판다»를 안 말한다
+     m5 sell_surplus 끝은 «열린 뒤에 판» 것만(칸을 모르면 예전 그대로) · crop_mix 는 무순이 도는 동안 · 곳간 무순이 밥상을 기다리는 동안 기다림 ·
+        «무순도 상점에 있어»는 방에 무순 판이 있으면 안 섬 */
+check('D93 파는 말 한 규칙 · sell_surplus 끝은 열린 뒤 판 것 · crop_mix 무순 기다림 · 무순 «상점에 있어» 안 섬', () => {
+  /* ① 말 */
+  const T = id => SCRIPTS[id].map(l => l.text).join(' / ');
+  assert.ok(!/하루 밥상에 오를 몫은 먹고/.test(T('questSellSurplus')), `questSellSurplus 가 옛 규칙을 말합니다: ${T('questSellSurplus')}`);
+  assert.ok(!/거두는 대로 팔/.test(T('questDoneSiru16')), `questDoneSiru16 이 «다 팔라»로 읽힙니다: ${T('questDoneSiru16')}`);
+  for (const id of ['questSellSurplus', 'questDoneSellSurplus', 'questDoneSiru16'])
+    for (const l of SCRIPTS[id]) if (l.who === 'moni')
+      assert.ok(!/[0-9]|하나|(^|[^거])둘|셋|넷|다섯|이레|닷새|열여섯/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);   /* «거둘»의 둘은 수가 아니다 */
+  const ss = questOf('sell_surplus');
+  assert.ok(!/하루치뿐/.test(ss.why) && /이레치/.test(ss.why), `sell_surplus.why: ${ss.why}`);
+  assert.ok(!ss.teaches.some(t => /하루 밥상 몫은 먹고/.test(t)), `sell_surplus.teaches: ${ss.teaches.join(' / ')}`);
+  /* m5 끝 — 열린 날 20 */
+  const ctxOf = on => ({ doneIds: [], q: ss, S: { stamina: { questsOpenedOn: on } } });
+  assert.equal(ss.done({ pantrySoldCount: 2, pantryLastSoldDay: 18 }, ctxOf({ sell_surplus: 20 })), false, '열리기 전에 판 것으로 끝납니다');
+  assert.equal(ss.done({ pantrySoldCount: 3, pantryLastSoldDay: 21 }, ctxOf({ sell_surplus: 20 })), true, '열린 뒤에 팔았는데 안 끝납니다');
+  assert.equal(ss.done({ pantrySoldCount: 1, pantryLastSoldDay: 20 }, ctxOf({ sell_surplus: 20 })), true, '연 날 판 것이 안 칩니다');
+  assert.equal(ss.done({ pantrySoldCount: 2, pantryLastSoldDay: null }, ctxOf({ sell_surplus: 20 })), true, '칸을 모르면 예전 그대로여야 합니다');
+  assert.equal(ss.done({ pantrySoldCount: 2, pantryLastSoldDay: 18 }, ctxOf({})), true, '열린 날을 모르면 예전 그대로여야 합니다');
+  assert.equal(ss.done({ pantrySoldCount: 0, pantryLastSoldDay: null }, ctxOf({ sell_surplus: 20 })), false);
+  assert.equal(ss.done({ pantrySoldCount: null, pantryLastSoldDay: 25 }, ctxOf({ sell_surplus: 20 })), false, '횟수를 모르는데 끝납니다');
+  /* m5 crop_mix 기다림 — 열쇠는 할 일 글 표에 있어야 한다 */
+  for (const k of ['musunGrowing', 'musunMeal']) assert.ok(QUEST_WAIT_WHAT[k], `QUEST_WAIT_WHAT.${k} 가 없습니다`);
+  const S = newState({ mode: 'novice', room: 'banjiha', firstPlay: true, firstPlayRules: RULES });
+  S.day = 20;
+  const fp = S.firstPlay;
+  assert.equal(nudgeWaitReason(S, 'crop_mix', 20), null, '무순이 없는데 기다림입니다');
+  const p = addCropPot(fp, 'musun', { day: 15 });
+  assert.equal(nudgeWaitReason(S, 'crop_mix', 20), null, '가방 속 판(안 자람)을 기다림으로 칩니다');
+  p.slotId = 'banjiha-sill:0'; p.sown = true; p.startedOnDay = 16; p.ageDays = 3; p.harvested = false;
+  assert.equal(nudgeWaitReason(S, 'crop_mix', 20), 'musunGrowing', '방에서 도는 무순 판을 못 봅니다');
+  p.ageDays = 99;
+  assert.equal(nudgeWaitReason(S, 'crop_mix', 20), null, '익은 판(거두기가 할 일)을 기다림으로 칩니다');
+  p.harvested = true; p.startedOnDay = null; p.ageDays = 0;
+  fp.food.pantryLots = [{ kind: 'beansprout', day: 18, won: 3000, meals: 3 }, { kind: 'musun', day: 19, won: 2000, meals: 3 }];
+  assert.equal(nudgeWaitReason(S, 'crop_mix', 20), 'musunMeal', '곳간의 무순이 다음 밥상을 기다리는 것을 못 봅니다');
+  fp.food.pantryLots = [{ kind: 'musun', day: 19, won: 2000, meals: 3 }];
+  assert.equal(nudgeWaitReason(S, 'crop_mix', 20), null, '콩나물이 없는데(밥상이 두 가지가 안 됨) 기다림입니다');
+  /* «무순도 상점에 있어»는 방에 무순 판이 있으면 안 선다(거둔 빈 판이어도) */
+  const on = id => c => CHATTER.filter(r => r.id === id).some(r => { try { return !!r.when(c); } catch { return false; } });
+  const base = { nudge: { id: 'crop_mix', days: 2 }, musunBag: 0 };
+  assert.equal(on('nudgeMixOffer')({ ...base, musunRoom: 0 }), true);
+  assert.equal(on('nudgeMixOffer')({ ...base, musunRoom: 1 }), false, '방에 무순 판이 있는데 «상점에 있어»가 섭니다');
+  assert.equal(on('nudgeMixOffer')({ ...base, musunRoom: null }), true, '모르면 예전 그대로여야 합니다');
+  assert.equal(chatterContextOf({ day: 20 }, S).musunRoom, 1, '문맥 musunRoom 이 방의 무순 판을 못 셉니다');
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

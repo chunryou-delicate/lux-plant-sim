@@ -18,6 +18,7 @@
                              오늘 «문에 안 막힌» 자를 마디가 하나도 없어도 기다림 ← 2026-10-09 [plan] (loop §cutOpenCountOf)
      varie_bright            무늬 원천(무늬 잎 단 그루 + 안 죽은 무늬 삽수)이 0 이면 기다림 ← 2026-10-08 [plan] be02f66a
      oneroom_recut           키운 그루(established 삽수)에 자를 수 있는 무늬 마디가 없으면 기다림 ← 2026-10-09 [plan] D41 7abbc23d
+     crop_mix                방에 놓은 무순 판이 도는 중이거나 · 곳간에 무순과 콩나물이 다 있으면(다음 밥상에 둘 다 오름) 기다림 ← 2026-10-31 [plan] D93 m5
    ⚠ 그 밖의 퀘스트는 «할 수 있다»로 본다(false). 모르는 것을 기다림으로 치면 독촉이 영영 안 나온다 —
      그쪽이 «매일 독촉»보다 나쁘다(사람이 막혔는데 아무도 안 알려 준다).
    ⚠ 읽기만 한다. 상태를 안 바꾸고 세이브 칸도 없다.
@@ -57,6 +58,20 @@ export function nudgeWaitReason(S, id, day = (S && S.day)) {
   if (id === 'first_harvest') {
     const rows = cropRows(S, day);
     return rows.some(r => r && r.ready) ? null : 'cropGrowing';
+  }
+  /* ★ 2026-10-31 [plan] 총괄 D93 m5(비판 둘째 판 Day 18 · 23) — crop_mix «한 상에 두 가지»는 밥상에 두 작물이 오른 날 끝난다(quest §crop_mix mealKinds).
+       무순 판을 놓아 돌리는 동안 · 거둔 무순이 곳간에서 다음 밥상을 기다리는 동안은 사람이 할 것이 없다. 예전엔 «할 수 있다»라
+       무순이 자라는 이레 내내 «무순도 상점에 있어» · «할 일이 며칠째 그대로야. 막힌 데 있어?»가 났다(이미 심은 판에서).
+       ⚠ 익은 판이 있으면 기다림이 아니다(거두기가 할 일) · 가방 속 판은 안 센다(가방에선 안 자람 — «놓기»가 할 일 · nudgeMixBag) ·
+       곳간은 꾸러미 목록을 읽기만 한다(pantryLotsOf 는 목록을 총액에 맞추며 고친다 — 이 파일은 상태를 안 바꾼다) */
+  if (id === 'crop_mix') {
+    const rows = cropRows(S, day).filter(r => r && r.kind === 'musun');
+    if (rows.some(r => r.ready)) return null;
+    if (rows.some(r => r.growing)) return 'musunGrowing';
+    const food = S && S.firstPlay && S.firstPlay.food;
+    const lots = (food && Array.isArray(food.pantryLots)) ? food.pantryLots : [];
+    const has = k => lots.some(l => l && l.kind === k && Number(l.won) > 0);
+    return (has('musun') && has('beansprout')) ? 'musunMeal' : null;
   }
   if (id === 'order_seed') {
     /* ★ 2026-10-08 [plan] 갈래 지도 13·14 — «재고가 있다»를 기다림에서 뺐다: 씨앗을 사 두고 안 심은 판은 할 일이 있다(심기).
