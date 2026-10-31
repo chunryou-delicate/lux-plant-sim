@@ -293,6 +293,18 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-10-31 · D93 ⑤ M3 곳간 새 규칙 — 갈래 판 숫자 (총괄 · core 9710f644)
+
+```
+[잰 것] probe_branches(9710f644 고정 복사본 · humanQ · guide · g,1-10 · 700일 · 문 켬) — 새 규칙 / 옛 규칙(--legacy-pantry)
+  humanQ  이사 135 / 135 · 내 집 350 / 350 · 원룸 지갑 바닥 2,880 / 1,080 · 0원 7 / 7 · 굶음 0 / 0
+          곳간 반지하 중앙 9.9 / 10.5kg · 판 최대 20.8 / 21.0kg · 판 날 끝 4.6kg(콩 3.0 · 무 1.6) / 4.8kg(콩 4.0 · 무 0.8)
+          무순이 있던 판 날 754번 중 무순 0g 이 된 날 0 / 95
+  guide   씨앗 11개 모두 새 = 옛(지갑 · 곳간 날마다 같음) · 이사 145 · 내 집 360
+```
+> ★ 이사 · 내 집은 씨앗마다 같다. 곳간은 늘지 않고 조금 줄었다(콩나물 몫이 줄고 무순은 늘 1.6kg 남음).
+>   곳간 g 은 복사본에만 더한 측정 줄(pantryDaily)로 쟀다 — 더하기 전 판과 22판 다 같음. 전문 `growth-d93-pantry-20261031.md` · `growth-d93-pantry.json`.
+
 ### 2026-10-31 · D92 이사 짐 풀기 — 갈래 판 이사 뒤 숫자 (총괄 · core 083337c5 하네스 ㉰)
 
 ```

@@ -1,0 +1,1207 @@
+{
+ "what": "D93 ⑤ M3 곳간 새 규칙(작물마다 이레치 g · 남는 몫 먼저) vs --legacy-pantry(옛 14끼 · 앞에서 n판) — probe_branches 갈래 판",
+ "code": "9710f644 고정 복사본(git archive) · 측정 줄 하나(pantryDaily = 그날 끝 곳간 g [전체, 콩나물, 무순, 그 밖])만 더함 · 더하기 전과 22판 모두 cashDaily · moveDay · reach 같음",
+ "run": "node tools/probe_branches.mjs --persona humanQ,guide --seeds g,1-10 --days 700 --targets 5000000 --jobs 6 [--legacy-pantry] · 둘 다 exit=0",
+ "pantryUnit": "g · 반지하 = 이사 전날까지 · 원룸 = 이사 날 ~ 내 집 전날 · medOfMed = 판마다 날 중앙의 씨앗 중앙 · medOfMax = 판마다 최대의 씨앗 중앙 · maxOfMax = 가장 큰 판",
+ "saleDayNote": "판 날 = 닷새마다 파는 날 중 곳간이 전날보다 준 날(내 집 전까지) · 판 뒤 = 그날 끝",
+ "compare": {
+  "humanQ": {
+   "ko": "사람 손 · 할 일 사슬대로(시루 8 → 남는 건 판다 → 16 · 남는 채소 팖 · Day 45 공짜 등을 담)",
+   "new": {
+    "n": 11,
+    "move": {
+     "done": 11,
+     "med": 135,
+     "p90": 140
+    },
+    "home": {
+     "done": 11,
+     "med": 350,
+     "p90": 440
+    },
+    "oneroomBottom": {
+     "med": 2880,
+     "min": 642,
+     "atDaysAfterMoveMed": 0
+    },
+    "brokeAfterMove": 7,
+    "reliefAfterMove": 7,
+    "starved": 0,
+    "firstBroke": 0,
+    "cashAtMoveMed": 2880,
+    "pantrySoldWonMed": 7407000,
+    "sellHandsMed": 25,
+    "pantry": {
+     "banjiha_all": {
+      "medOfMed": 9900,
+      "medOfMax": 20800,
+      "maxOfMax": 20800
+     },
+     "banjiha_beansprout": {
+      "medOfMed": 7700,
+      "medOfMax": 16800,
+      "maxOfMax": 16800
+     },
+     "banjiha_musun": {
+      "medOfMed": 1600,
+      "medOfMax": 4000,
+      "maxOfMax": 4000
+     },
+     "oneroom_all": {
+      "medOfMed": 12400,
+      "medOfMax": 20800,
+      "maxOfMax": 20800
+     },
+     "oneroom_beansprout": {
+      "medOfMed": 10400,
+      "medOfMax": 16800,
+      "maxOfMax": 16800
+     },
+     "oneroom_musun": {
+      "medOfMed": 2200,
+      "medOfMax": 4000,
+      "maxOfMax": 4000
+     }
+    }
+   },
+   "old": {
+    "n": 11,
+    "move": {
+     "done": 11,
+     "med": 135,
+     "p90": 140
+    },
+    "home": {
+     "done": 11,
+     "med": 350,
+     "p90": 440
+    },
+    "oneroomBottom": {
+     "med": 1080,
+     "min": 946,
+     "atDaysAfterMoveMed": 0
+    },
+    "brokeAfterMove": 7,
+    "reliefAfterMove": 7,
+    "starved": 0,
+    "firstBroke": 0,
+    "cashAtMoveMed": 1080,
+    "pantrySoldWonMed": 7419200,
+    "sellHandsMed": 24,
+    "pantry": {
+     "banjiha_all": {
+      "medOfMed": 10500,
+      "medOfMax": 21000,
+      "maxOfMax": 21000
+     },
+     "banjiha_beansprout": {
+      "medOfMed": 9100,
+      "medOfMax": 18800,
+      "maxOfMax": 18800
+     },
+     "banjiha_musun": {
+      "medOfMed": 1400,
+      "medOfMax": 3400,
+      "maxOfMax": 3400
+     },
+     "oneroom_all": {
+      "medOfMed": 12600,
+      "medOfMax": 21000,
+      "maxOfMax": 21000
+     },
+     "oneroom_beansprout": {
+      "medOfMed": 11400,
+      "medOfMax": 18800,
+      "maxOfMax": 18800
+     },
+     "oneroom_musun": {
+      "medOfMed": 2000,
+      "medOfMax": 3400,
+      "maxOfMax": 3400
+     }
+    }
+   },
+   "cashDiffAfterMoveMed": {
+    "5": 600,
+    "10": 0,
+    "20": 300,
+    "30": 1500,
+    "60": 2400,
+    "90": 2100
+   },
+   "cashDiffOnDayMed": {
+    "30": 7000,
+    "60": 600,
+    "90": 1500,
+    "120": 1200
+   },
+   "perSeed": [
+    {
+     "seed": 5,
+     "move": [
+      135,
+      135
+     ],
+     "home": [
+      330,
+      330
+     ],
+     "bottom": [
+      2880,
+      1080
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      6949800,
+      6963200
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 4,
+     "move": [
+      135,
+      135
+     ],
+     "home": [
+      357,
+      357
+     ],
+     "bottom": [
+      2880,
+      1080
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      7526100,
+      7538900
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 3,
+     "move": [
+      133,
+      133
+     ],
+     "home": [
+      350,
+      350
+     ],
+     "bottom": [
+      220852,
+      218452
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      7407000,
+      7419200
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 1,
+     "move": [
+      135,
+      135
+     ],
+     "home": [
+      425,
+      425
+     ],
+     "bottom": [
+      303864,
+      302064
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      9155100,
+      9171100
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": "g",
+     "move": [
+      135,
+      135
+     ],
+     "home": [
+      410,
+      410
+     ],
+     "bottom": [
+      2880,
+      1080
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      8804200,
+      8819600
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 2,
+     "move": [
+      140,
+      140
+     ],
+     "home": [
+      505,
+      505
+     ],
+     "bottom": [
+      53886,
+      51486
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      11022300,
+      11043700
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 10,
+     "move": [
+      135,
+      135
+     ],
+     "home": [
+      255,
+      255
+     ],
+     "bottom": [
+      2880,
+      1080
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      5192900,
+      5199700
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 6,
+     "move": [
+      140,
+      140
+     ],
+     "home": [
+      330,
+      330
+     ],
+     "bottom": [
+      642,
+      946
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      6949800,
+      6963200
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 9,
+     "move": [
+      140,
+      140
+     ],
+     "home": [
+      313,
+      313
+     ],
+     "bottom": [
+      354134,
+      348634
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      6479800,
+      6491000
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 7,
+     "move": [
+      135,
+      135
+     ],
+     "home": [
+      440,
+      440
+     ],
+     "bottom": [
+      2880,
+      1080
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      9494800,
+      9511800
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    },
+    {
+     "seed": 8,
+     "move": [
+      135,
+      135
+     ],
+     "home": [
+      323,
+      323
+     ],
+     "bottom": [
+      2880,
+      1080
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      6711600,
+      6722800
+     ],
+     "pantryMaxBanjiha": [
+      20800,
+      21000
+     ],
+     "pantryMaxOneroom": [
+      20800,
+      21000
+     ]
+    }
+   ]
+  },
+  "guide": {
+   "ko": "안내대로",
+   "new": {
+    "n": 11,
+    "move": {
+     "done": 11,
+     "med": 145,
+     "p90": 150
+    },
+    "home": {
+     "done": 11,
+     "med": 360,
+     "p90": 450
+    },
+    "oneroomBottom": {
+     "med": 58810,
+     "min": 2700,
+     "atDaysAfterMoveMed": 1
+    },
+    "brokeAfterMove": 6,
+    "reliefAfterMove": 6,
+    "starved": 0,
+    "firstBroke": 0,
+    "cashAtMoveMed": 58810,
+    "pantrySoldWonMed": 7603800,
+    "sellHandsMed": 25,
+    "pantry": {
+     "banjiha_all": {
+      "medOfMed": 14900,
+      "medOfMax": 25800,
+      "maxOfMax": 25800
+     },
+     "banjiha_beansprout": {
+      "medOfMed": 12700,
+      "medOfMax": 21800,
+      "maxOfMax": 21800
+     },
+     "banjiha_musun": {
+      "medOfMed": 2200,
+      "medOfMax": 4200,
+      "maxOfMax": 4200
+     },
+     "oneroom_all": {
+      "medOfMed": 17400,
+      "medOfMax": 25800,
+      "maxOfMax": 25800
+     },
+     "oneroom_beansprout": {
+      "medOfMed": 15400,
+      "medOfMax": 21800,
+      "maxOfMax": 21800
+     },
+     "oneroom_musun": {
+      "medOfMed": 2600,
+      "medOfMax": 4000,
+      "maxOfMax": 4000
+     }
+    }
+   },
+   "old": {
+    "n": 11,
+    "move": {
+     "done": 11,
+     "med": 145,
+     "p90": 150
+    },
+    "home": {
+     "done": 11,
+     "med": 360,
+     "p90": 450
+    },
+    "oneroomBottom": {
+     "med": 58810,
+     "min": 2700,
+     "atDaysAfterMoveMed": 1
+    },
+    "brokeAfterMove": 6,
+    "reliefAfterMove": 6,
+    "starved": 0,
+    "firstBroke": 0,
+    "cashAtMoveMed": 58810,
+    "pantrySoldWonMed": 7603800,
+    "sellHandsMed": 25,
+    "pantry": {
+     "banjiha_all": {
+      "medOfMed": 14900,
+      "medOfMax": 25800,
+      "maxOfMax": 25800
+     },
+     "banjiha_beansprout": {
+      "medOfMed": 12700,
+      "medOfMax": 21800,
+      "maxOfMax": 21800
+     },
+     "banjiha_musun": {
+      "medOfMed": 2200,
+      "medOfMax": 4200,
+      "maxOfMax": 4200
+     },
+     "oneroom_all": {
+      "medOfMed": 17400,
+      "medOfMax": 25800,
+      "maxOfMax": 25800
+     },
+     "oneroom_beansprout": {
+      "medOfMed": 15400,
+      "medOfMax": 21800,
+      "maxOfMax": 21800
+     },
+     "oneroom_musun": {
+      "medOfMed": 2600,
+      "medOfMax": 4000,
+      "maxOfMax": 4000
+     }
+    }
+   },
+   "cashDiffAfterMoveMed": {
+    "5": 0,
+    "10": 0,
+    "20": 0,
+    "30": 0,
+    "60": 0,
+    "90": 0
+   },
+   "cashDiffOnDayMed": {
+    "30": 0,
+    "60": 0,
+    "90": 0,
+    "120": 0
+   },
+   "perSeed": [
+    {
+     "seed": "g",
+     "move": [
+      145,
+      145
+     ],
+     "home": [
+      350,
+      350
+     ],
+     "bottom": [
+      3396,
+      3396
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      7372000,
+      7372000
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 2,
+     "move": [
+      142,
+      142
+     ],
+     "home": [
+      410,
+      410
+     ],
+     "bottom": [
+      199466,
+      199466
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      8769200,
+      8769200
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 4,
+     "move": [
+      145,
+      145
+     ],
+     "home": [
+      343,
+      343
+     ],
+     "bottom": [
+      3396,
+      3396
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      7140200,
+      7140200
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 1,
+     "move": [
+      135,
+      135
+     ],
+     "home": [
+      435,
+      435
+     ],
+     "bottom": [
+      149464,
+      149464
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      9358900,
+      9358900
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 3,
+     "move": [
+      133,
+      133
+     ],
+     "home": [
+      360,
+      360
+     ],
+     "bottom": [
+      65852,
+      65852
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      7603800,
+      7603800
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 6,
+     "move": [
+      150,
+      150
+     ],
+     "home": [
+      346,
+      346
+     ],
+     "bottom": [
+      180794,
+      180794
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      7259900,
+      7259900
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 5,
+     "move": [
+      145,
+      145
+     ],
+     "home": [
+      477,
+      477
+     ],
+     "bottom": [
+      3396,
+      3396
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      10279100,
+      10279100
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 10,
+     "move": [
+      150,
+      150
+     ],
+     "home": [
+      269,
+      269
+     ],
+     "bottom": [
+      58810,
+      58810
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      5392100,
+      5392100
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 9,
+     "move": [
+      140,
+      140
+     ],
+     "home": [
+      320,
+      320
+     ],
+     "bottom": [
+      199134,
+      199134
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      6676600,
+      6676600
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 7,
+     "move": [
+      145,
+      145
+     ],
+     "home": [
+      450,
+      450
+     ],
+     "bottom": [
+      2700,
+      2700
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      9703400,
+      9703400
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    },
+    {
+     "seed": 8,
+     "move": [
+      145,
+      145
+     ],
+     "home": [
+      445,
+      445
+     ],
+     "bottom": [
+      2700,
+      2700
+     ],
+     "starved": [
+      null,
+      null
+     ],
+     "soldWon": [
+      9583700,
+      9583700
+     ],
+     "pantryMaxBanjiha": [
+      25800,
+      25800
+     ],
+     "pantryMaxOneroom": [
+      25800,
+      25800
+     ]
+    }
+   ]
+  }
+ },
+ "saleDays": {
+  "humanQ": {
+   "identicalSeeds": 0,
+   "new": {
+    "saleDays": 787,
+    "afterSaleGramsMed": 4600,
+    "afterSaleGramsMin": 800,
+    "afterSaleGramsMax": 4800,
+    "afterSaleBeansproutMed": 3000,
+    "afterSaleMusunMed": 1600,
+    "saleDaysWithMusun": 754,
+    "saleDaysMusunToZero": 0
+   },
+   "old": {
+    "saleDays": 787,
+    "afterSaleGramsMed": 4800,
+    "afterSaleGramsMin": 800,
+    "afterSaleGramsMax": 5000,
+    "afterSaleBeansproutMed": 4000,
+    "afterSaleMusunMed": 800,
+    "saleDaysWithMusun": 754,
+    "saleDaysMusunToZero": 95
+   }
+  },
+  "guide": {
+   "identicalSeeds": 11,
+   "new": {
+    "saleDays": 821,
+    "afterSaleGramsMed": 9600,
+    "afterSaleGramsMin": 800,
+    "afterSaleGramsMax": 9600,
+    "afterSaleBeansproutMed": 8000,
+    "afterSaleMusunMed": 1600,
+    "saleDaysWithMusun": 788,
+    "saleDaysMusunToZero": 0
+   },
+   "old": {
+    "saleDays": 821,
+    "afterSaleGramsMed": 9600,
+    "afterSaleGramsMin": 800,
+    "afterSaleGramsMax": 9600,
+    "afterSaleBeansproutMed": 8000,
+    "afterSaleMusunMed": 1600,
+    "saleDaysWithMusun": 788,
+    "saleDaysMusunToZero": 0
+   }
+  }
+ },
+ "humanQ_g_days": {
+  "20": {
+   "new": {
+    "pantry": [
+     3000,
+     3000,
+     0,
+     0
+    ],
+    "cash": 1095200
+   },
+   "old": {
+    "pantry": [
+     5000,
+     5000,
+     0,
+     0
+    ],
+    "cash": 1081200
+   }
+  },
+  "25": {
+   "new": {
+    "pantry": [
+     3200,
+     3000,
+     200,
+     0
+    ],
+    "cash": 1094400
+   },
+   "old": {
+    "pantry": [
+     4200,
+     4000,
+     200,
+     0
+    ],
+    "cash": 1087400
+   }
+  },
+  "30": {
+   "new": {
+    "pantry": [
+     3600,
+     3000,
+     600,
+     0
+    ],
+    "cash": 1081000
+   },
+   "old": {
+    "pantry": [
+     4600,
+     4000,
+     600,
+     0
+    ],
+    "cash": 1074000
+   }
+  },
+  "59": {
+   "new": {
+    "pantry": [
+     20000,
+     16800,
+     3200,
+     0
+    ],
+    "cash": 1080568
+   },
+   "old": {
+    "pantry": [
+     20200,
+     17800,
+     2400,
+     0
+    ],
+    "cash": 1079968
+   }
+  },
+  "60": {
+   "new": {
+    "pantry": [
+     4600,
+     3000,
+     1600,
+     0
+    ],
+    "cash": 1192630
+   },
+   "old": {
+    "pantry": [
+     4800,
+     4000,
+     800,
+     0
+    ],
+    "cash": 1192030
+   }
+  },
+  "61": {
+   "new": {
+    "pantry": [
+     9900,
+     7700,
+     2200,
+     0
+    ],
+    "cash": 986492
+   },
+   "old": {
+    "pantry": [
+     10100,
+     8700,
+     1400,
+     0
+    ],
+    "cash": 985892
+   }
+  },
+  "99": {
+   "new": {
+    "pantry": [
+     20800,
+     16800,
+     4000,
+     0
+    ],
+    "cash": 1524848
+   },
+   "old": {
+    "pantry": [
+     21000,
+     17800,
+     3200,
+     0
+    ],
+    "cash": 1523348
+   }
+  },
+  "100": {
+   "new": {
+    "pantry": [
+     4600,
+     3000,
+     1600,
+     0
+    ],
+    "cash": 1635710
+   },
+   "old": {
+    "pantry": [
+     4600,
+     3000,
+     1600,
+     0
+    ],
+    "cash": 1634810
+   }
+  },
+  "104": {
+   "new": {
+    "pantry": [
+     19200,
+     16800,
+     2400,
+     0
+    ],
+    "cash": 1608358
+   },
+   "old": {
+    "pantry": [
+     19200,
+     16800,
+     2400,
+     0
+    ],
+    "cash": 1607458
+   }
+  },
+  "105": {
+   "new": {
+    "pantry": [
+     4600,
+     3000,
+     1600,
+     0
+    ],
+    "cash": 1714020
+   },
+   "old": {
+    "pantry": [
+     4800,
+     4000,
+     800,
+     0
+    ],
+    "cash": 1712520
+   }
+  }
+ }
+}
