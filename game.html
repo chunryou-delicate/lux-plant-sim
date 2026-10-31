@@ -592,6 +592,8 @@
     background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
   .cutRow.warn{background:rgba(240,138,114,.10);border-color:rgba(240,138,114,.28)}
   .cutRow .nm{flex:1;min-width:0;font-size:12.5px;color:rgba(255,255,255,.86)}
+  /* ★ 2026-11-01 비판 넷째 판 ⑥ — 줄 안 단추는 제 폭(전역 .primary 의 width:100% · margin-top 이 [분갈이]를 줄 폭으로 늘렸다 · 포트 없을 때 [내놓기]가 밖으로) */
+  .cutRow button{width:auto;flex:0 0 auto;margin-top:0;white-space:nowrap}
   .cutRow .nm small{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
   .cutRow .won{font-weight:700;font-size:12.5px;color:var(--gold);white-space:nowrap;text-align:right}
   /* ★★ 2026-08-23 — **자르면 모주가 얼마 깎이나** (plan 판단 · 「막지 않고 대가를 보여 준다」).
@@ -1579,7 +1581,7 @@
        오누름(날이 넘어감)을 냈다. 넓은 판은 시트가 늘 펴져 'open' 표가 없어 그대로다. 시트를 닫으면 돌아온다 */
   html.sheetopen #next{visibility:hidden;pointer-events:none}
   /* 물·거두기·다시 심기 — 왼쪽 아래에 세로로 쌓인다. 한 번에 하나둘뿐이라 안 넘친다 */
-  #waterCrop, #harvestCrop, #waterPot, #resow{
+  #waterCrop, #harvestCrop, #waterPot, #resow, #sellSurplusBtn{
     position:absolute;left:12px;z-index:26;
     width:auto;min-width:0;max-width:58vw;padding:0 14px;height:50px;border-radius:25px;
     font-size:13px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.5);
@@ -1588,6 +1590,9 @@
   #harvestCrop{ bottom:12px }
   #waterPot   { bottom:70px }
   #resow      { bottom:128px }
+  #sellSurplusBtn{ bottom:186px;background:linear-gradient(180deg,#ffe3a8,#e9c27a);color:#3a2708;border:0 }   /* ★ D99 ⑨ */
+  #stage.talking #sellSurplusBtn{opacity:0;pointer-events:none;transition:opacity .15s}
+  html.homescene #sellSurplusBtn{visibility:hidden!important}
   /* ★ 2026-10-31 총괄 D95 ① — 괄호 꼬리(«(12개 중 11개 · 체력 11)» · «(3일째 멈춰 있습니다)»)는 **둘째 줄에 작게**(§twoLine).
        ⛔ 한 줄이면 58vw(390 폭 226px)를 넘어 «…»로 잘렸다 — 묶음의 수 · 체력이 안 보였다(core 자 probe_d95_short · 거두기 261px · 심기 344px) */
   #waterCrop, #harvestCrop, #waterPot, #resow{line-height:1.2}
@@ -2032,6 +2037,8 @@
     <button id="waterCrop" style="display:none">💧 콩나물에 물 주기</button>
     <button id="waterPot" style="display:none">💧 몬스테라에 물 주기</button>
     <button id="resow" style="display:none">🌱 콩나물 다시 심기</button>
+    <!-- ★ 2026-11-01 비판 넷째 판 ⑨ — 남는 몫이 있을 때만 · 누르면 판매 창(남는 판 수로) 바로 — [상점] → [보유 채소 팔기] → [팔기] 세 누름을 둘로 -->
+    <button id="sellSurplusBtn" style="display:none">🧺 남는 채소 팔기</button>
     <button id="next" disabled>다음 날 ▸</button>
     <!-- ★ 첫걸음 쪽지 — 「할 수 있는 것」을 그 손이 닿은 순간에 한 번만 (§coach · CSS 주석에 규율) -->
     <div id="coach" role="status" aria-live="polite">
@@ -7782,7 +7789,7 @@ function drawMonthPanel() {
       ? ` (지난달은 ${r.prevDays}일뿐이라 견주지 않습니다)`
       /* ★ D99 §5-4 — 덩이(이사비 · 긴급지원)가 있던 달은 그것을 뺀 순이익으로 견준다 */
       : (Number.isFinite(r.lumpNet) && r.lumpNet !== 0)
-      ? (() => { const parts = [(r.move || 0) > 0 ? '이사비' : null, (r.relief || 0) > 0 ? '긴급지원' : null].filter(Boolean).join(' · ');
+      ? (() => { const parts = [(r.move || 0) > 0 ? '이사비' : null, (r.relief || 0) > 0 ? '긴급자금' : null].filter(Boolean).join(' · ');
                  const lk = josa(parts, '을', '를'); const d = r.netAdj - r.prevNet;
                  return d > 0 ? ` ${lk} 빼면 지난달보다 ${won(d)} 나아졌습니다.` : d < 0 ? ` ${lk} 빼면 지난달보다 ${won(-d)} 나빠졌습니다.` : ` ${lk} 빼면 지난달과 같습니다.`; })()
       : ` 지난달은 ${r.prevNet >= 0 ? '+' : '−'}${won(Math.abs(r.prevNet))}이었으니 ` +
@@ -7804,7 +7811,7 @@ function drawMonthPanel() {
     + row('채소 판 것', won(r.veg))
     + row('식물 판 것', won(r.plant))
     + (r.income > 0 ? row('그 밖', won(r.income)) : '')
-    + ((r.relief || 0) > 0 ? row('긴급지원', won(r.relief)) : '')         /* ★ D99 §5-4 */
+    + ((r.relief || 0) > 0 ? row('긴급자금', won(r.relief)) : '')         /* ★ D99 §5-4 · plan 2fd71053 «긴급자금»(사건 글과 같은 이름) */
     + ((r.gift || 0) > 0 ? row('밥 한 몫 값 (이웃)', won(r.gift)) : '')   /* ★ D96 뒷일 · D99 §5-4 */
     + head('아낀 돈')
     /* ★ 이 줄은 **나간 돈에서 이미 빠진 값**이다 — 또 더하면 두 번 센다. 그래서 초록이다 */
@@ -10609,6 +10616,35 @@ function drawSow() {
   const buyIt = (need > 0 && seeds < 1 && !coming) ? buyItemOf(seedId) : null;
   if (buyIt) { btn.disabled = false; btn.dataset.buy = seedId; }
   else delete btn.dataset.buy;
+  /* ★★ 2026-11-01 비판 넷째 판 ⑦ — 씨앗이 0 이 된 «그날» 주문 단추가 떠서(배송 하루) 시루가 하루씩 비었다(B 판 다섯 번).
+       ⇒ 지금 심을 일이 없거나 씨앗이 지금 몫은 되는 판에서, 내일 심을 몫(거둔 것 + 익은 것 + 내일 익을 것)보다 씨앗(+ 오는 중)이 적으면
+         그 종류(콩 · 무) 🛒 지름길을 미리 세운다. 누르면 주문 창(개수는 사람이 고름 · 자동 주문 아님) */
+  if (!buyIt && !(need > 0 && seeds >= 1)) {
+    let early = null;
+    try {
+      const rows = cropPotList(S.firstPlay, S.day) || [];
+      /* 첫 수확 전(튜토가 «씨앗을 사러» 가르치기 전)엔 안 띄운다 — 씨앗 주문 손가락(§seedNeed)과 같은 문 */
+      if (!(((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 1)) throw 0;
+      for (const kind of ['beansprout', 'musun']) {
+        let kk = null; try { kk = cropKindOf(kind); } catch { kk = null; }
+        const sid = (kk && kk.seedItemId) || (kind === 'musun' ? 'radish_seed' : 'bean_seed');
+        const mine = rows.filter(r => r && r.kind === kind && r.placed);
+        if (!mine.length) continue;
+        const want = mine.filter(r => r.harvested || r.ready || (r.growing && Number.isFinite(r.daysLeft) && r.daysLeft <= 1)).length;
+        const have = (st ? (st.stock[sid] || 0) : 0)
+                   + (st ? (st.orders || []).filter(o => o && o.itemId === sid && o.daysLeft >= 0).reduce((a, o) => a + (o.qty || 1), 0) : 0);
+        if (want > 0 && have < want) { const it = buyItemOf(sid); if (it) { early = { sid, it, kind, ko: SEED_KO[sid] || '씨앗' }; break; } }
+      }
+    } catch { early = null; }
+    if (early) {
+      btn.disabled = false; btn.dataset.buy = early.sid; btn.dataset.kind = early.kind;
+      btn.style.display = '';
+      btn.textContent = `🛒 ${early.ko} 주문 · ${Number(early.it.buyWon || 0).toLocaleString('ko-KR')}원 (내일 심을 씨앗이 모자랍니다)`;
+      twoLine(btn);
+      btn.title = '';
+      return;
+    }
+  }
   /* 거두기·물주기와 **같은 규칙** — 심는 말풍선이 떠 있으면 아래 버튼은 안 뜬다 (2026-08-06) */
   /* ★★ 2026-10-31 총괄 D95 ① — **둘 이상이면 말풍선이 있어도 뜬다.** 말풍선은 한 그루 · 이 단추는 묶음이라 이제 «같은 일»이 아니다
        (2026-08-06 «같은 일을 두 곳에서 말하지 않는다»의 까닭이 풀렸다). 하나뿐이면 예전대로 말풍선에 맡긴다 */
@@ -12363,6 +12399,7 @@ function refreshOverlays() {
   try { drawSiruBadges(); } catch (e) { console.warn('[시루 표지]', e && e.message); }   /* 말풍선 «뒤» — 말풍선이 뜬 시루는 표지를 숨긴다 */
   try { drawHarvest(); } catch (e) { console.warn('[거두기]', e && e.message); }
   try { drawSow(); }     catch (e) { console.warn('[심기]', e && e.message); }
+  try { drawSellSurplusBtn(); } catch (e) { console.warn('[남는 채소 단추]', e && e.message); }   /* ★ D99 ⑨ */
   try { drawWater(); }  catch (e) { console.warn('[물주기]', e && e.message); }
   /* ★ §G-18 — [다음 날]이 「며칠 남았나」를 말한다. 물주기·거두기 **뒤**에 둔다:
      오늘 할 일이 있으면 아무 말도 안 얹는데, 그 판정이 위 둘과 같은 사실을 봐야 한다 */
@@ -20618,6 +20655,21 @@ function drawPantrySale() {
   $('pantryGo').disabled = !ps.canSell;
 }
 
+/* ★ 2026-11-01 비판 넷째 판 ⑨ — 남는 몫(이레치 밥상 몫 위)이 있을 때만 서는 바닥 단추 · 판매 창을 남는 판 수로 바로 연다(값 · 셈은 판매 창 그대로) */
+function drawSellSurplusBtn() {
+  const b = $('sellSurplusBtn'); if (!b) return;
+  let sur = null; try { sur = pantrySurplusOf(null); } catch { sur = null; }
+  const on = !!(sur && sur.lots > 0) && !pantrySellOpen;
+  b.style.display = on ? '' : 'none';
+  if (on) { b.textContent = `🧺 남는 채소 ${sur.lots}판 팔기 (${Math.round(sur.won || 0).toLocaleString('ko-KR')}원)`; twoLine(b); }
+}
+$('sellSurplusBtn').onclick = guard(() => {
+  pantrySellOpen = true;
+  pantrySellKind = null;
+  pantrySellN = pantrySellDefaultN();
+  drawPantrySale();
+  drawSellSurplusBtn();
+});
 $('sellPantry').onclick = guard(() => {
   /* ★ 누르면 바로 안 판다 — **고르는 자리가 먼저 뜬다**(박사님 요청) */
   pantrySellOpen = !pantrySellOpen;
