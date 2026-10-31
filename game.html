@@ -6493,6 +6493,118 @@ function updateHint() {
     /* 끝 — 손가락 없음. 그 뒤는 원룸 퀘스트 몫 */
     return hintAt(null);
   }
+  /* ══ ★★★ 2026-10-31 총괄 D93 ② M1 — **손가락 차례: 지금 할 수 있는 돌봄 > 사기 > 다음 날** ══════════════════
+       ⛔ 돌봄 갈래(말풍선 · 아래 [거두기] · [물])가 사는 갈래(씨앗 · 시루 · 무순) «뒤»에 있었고 [다시 심기] 알약은 아예 안 짚었다 —
+         비판 둘째 판(지난 판과 같은 Day 12): 씨앗이 와 초록 «🌱 콩나물 다시 심기»가 떠 있는데 손가락은 «시루는 내일 옵니다 — 하루를 넘기세요»로 [다음 날] ·
+         Day 16 빈 시루 셋인데 «시루를 하나 더 사러» · Day 17 콩 씨앗 둘이 있는데 «씨앗을 사러». 옳은 단추는 울타리에 두 번씩 막혔다.
+       ⇒ 이 덩이를 «둘째 시루 놓기»(가방 칸) · 몬스테라 · 등 · 씨앗 · 시루 · 무순 갈래 «앞»으로 옮겼다(속은 그대로 · 아래 [다시 심기] 한 줄만 더함).
+         울타리는 그대로다 — 손가락이 옳은 것을 짚으면 안 막힌다. 원룸 첫 장면 갈래(위)는 늘 거기서 끝나는 원룸 퀘스트 몫이라 안 건드린다.
+         자로 잡은 것(core 자 probe_m1 · 하네스 D16 판): 주문한 시루가 가방에 온 18~23일 «둘째 시루 놓기» 갈래가 «가방을 열어 보세요»를 짚어 익은 시루 일곱이 닷새를 놀았다.
+       ⚠ 첫 시루를 아직 안 놓은 판(첫날 가르침)엔 돌봄 거리가 없어 그 갈래가 그대로 선다.
+       ⚠ 옛 걱정(«씨앗이 없습니다» 말풍선은 눌러도 못 산다 → 막다른 길)은 §markLive 가 막는다 — «심기»는 씨앗이 있을 때만 산다(10-08).
+         «지금 되는» 돌봄이 없을 때만 아래 사는 갈래 · [다음 날]로 내려간다 */
+  /* ★★ **식물 위 말풍선을 먼저 가리킨다** (2026-08-06 박사님:
+     "밑에 물주기 버튼은 없애고 식물에 물주기 버튼에 손가락 가이드 표기해 줘").
+     ⚠ 예전에는 아래 버튼과 말풍선이 **둘 다** 떠서 같은 일을 두 번 말했고,
+       손가락은 아래를 가리켰다 — 정작 눌러야 할 것은 식물 위에 있는데.
+     ⇒ 말풍선이 떠 있으면 **그걸** 가리킨다. 그러면 손가락이 곧 "어디를 눌러라"가 된다.
+     ⚠ 말풍선이 없을 때(가려졌거나 방이 안 떴을 때)는 아래 버튼으로 떨어진다 —
+       안 그러면 안내가 통째로 사라진다. */
+  /* ★★★ 2026-08-17 — **두 바퀴를 넘기면 거두기·물주기 손가락을 뗀다** (박사님:
+       *"퀘스트 끝난 다음엔 「거둘 때가 됐음」 손가락이 안 나오게 해."*)
+     ══════════════════════════════════════════════════════════════════
+     ⚠ 사진의 상황: Day 24 · 할 일은 「무순을 길러 콩나물과 한 상에 올리세요」인데 손가락은
+       **콩나물 [거두기]**를 가리키고 있었다. 거두는 법은 이미 스무 날 전에 배웠다 —
+       그 손가락은 안내가 아니라 **지금 할 일을 가리는 장식**이다.
+     ★ [다음 날] 손가락을 두 바퀴로 되돌린 것과 **같은 규율**이다(§taughtCycles).
+       손가락은 **모르는 것**에만 쓴다.
+     ⚠ 말풍선은 그대로 뜬다 — 없애는 것은 **손가락**뿐이다. 거둘 것이 있다는 사실은
+       여전히 그 자리에 적혀 있고, 다만 화면이 그리로 끌지 않는다. */
+  const taughtBasics = (() => {
+    try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 2; }
+    catch { return false; }
+  })();
+  /* ★★★★ 2026-08-30 — **단추가 서 있으면 «단추»를 짚는다. 말풍선은 «문»일 뿐이다.**
+     ══════════════════════════════════════════════════════════════════
+     ⛔ 예전에는 말풍선을 «먼저» 짚었다. 그런데 말풍선을 누르면 카드가 열리고,
+       할 일을 하는 것은 그 안의 [물 주기]·[거두기] «단추»다.
+       ⇒ 카드가 열려도 손가락은 여전히 말풍선을 짚었고, 그것을 다시 누르면 카드가 닫힌다.
+       ⇒ ⇒ ★ 손가락을 그대로 따라가면 **열고 닫기를 되풀이할 뿐 물이 안 들어간다.**
+         실측(probe_force5 · 390×844): Day 1 에 말풍선만 서른여덟 번 짚었다.
+         울타리가 선 뒤로는 그 사이 다른 것을 누를 수도 없다 — 그러면 판이 «멈춘다».
+     ★ 그러니 차례를 뒤집는다: **할 수 있는 일이 있으면 그 단추**, 없을 때만 말풍선(문).
+       ⚠ 말풍선은 그대로 뜬다 — 바뀌는 것은 «손가락이 무엇을 짚나»뿐이다. */
+  /* ★★★★ 2026-08-31 — **말풍선을 «먼저» 짚는다 — 다만 «할 수 있는» 말풍선만.**
+     ══════════════════════════════════════════════════════════════════
+     박사님(그림과 함께): *"★ 최초 콩나물 거둘 때 ⇒ «시루에 수확 버튼»에 손가락 가이드를 해야지.
+       ⇒ ⛔ «좌측 하단»이 아니라"*
+     ★ 까닭이 분명하다 — 왼쪽 아래 단추는 **「어느 시루인지」를 안 말한다.** 곧 시루가 다섯이 된다.
+       이 게임은 **자리가 곧 뜻**이라, 손가락은 방을 가리켜야 한다.
+     ⚠⚠ 그런데 어제 이 차례를 **거꾸로** 돌려놨었다. 까닭도 실측이었다:
+       말풍선이 하는 일은 아래 단추를 누르는 것인데(§「눌러도 안 먹는다」의 진짜 원인),
+       그 단추가 잠겨 있으면 **아무 일도 안 나고** 손가락은 그대로 남는다 —
+       실측에서 Day 1 에 말풍선만 «서른여덟 번» 짚었다.
+     ⇒ ★★ 그러니 **둘 다** 세운다. 가르는 자는 「그 말풍선이 시키는 일이 «지금 되는가»」다:
+       코어(`cropPotList`)가 「익었다·물이 필요하다·심어야 한다」고 한 것만 문으로 쓴다.
+       ⇒ 되면 말풍선(방 안 · 어느 것인지 말한다), 안 되면 아래로 내려가 단추가 맡는다.
+     ⚠ 「어느 시루인가」를 박지 않는다 — 말풍선 여럿 중 **할 일이 살아 있는 것**을 고른다.
+     ⚠ 말은 새로 안 짓는다 — 이미 쓰던 그 줄들이다. */
+  const markLive = (ko) => {
+    try {
+      /* ★ 2026-09-04 — 몬스테라 물 말풍선도 «산다»(아래 [몬스테라 물] 단추가 살아 있을 때). 폰 실측 d19~23: 이 말풍선이 시트에 가린 채
+         한 자리를 차지해 익은 시루의 말풍선이 못 떴고, 아래 단추들은 시트 뒤 화면 밖이라 손가락이 통째로 없었다. */
+      if (/몬스테라/.test(ko)) { const w = $('waterPot'); return !!(w && !w.disabled); }
+      if (/거두/.test(ko)) return cropRows.some(r => r && r.ready);
+      if (/물/.test(ko))   return cropRows.some(r => r && r.needsWater);
+      /* ★ 2026-10-08 (총괄 중반 정리 ③ · #8 같은 자리) — 「심기」는 «씨앗이 있을 때만» 산다. 재고를 안 봐서 씨앗 0 인 날에도
+           「심」 말풍선이 살아, 시트가 가리면 「할 일이 가려졌습니다」가 53번 떴다(0~60일). 씨앗이 없으면 아래 주문 지름길(D19)이 맡는다 */
+      if (/심/.test(ko))   return cropRows.some(r => {
+        if (!(r && (r.needsSow || r.needsResow))) return false;
+        try { const k = cropKindOf(r.kind); return !k || !k.seedItemId || stockOf(S, k.seedItemId) >= 1; } catch { return true; }
+      });
+    } catch { }
+    return false;
+  };
+  /* ★ 2026-09-04 — 세팅 끝 «뒤»에는 두 바퀴 규율(§taughtBasics)을 «안 건다»: 새 시루는 아직 안 심겨 있고, 손가락이 그것을 짚어야
+     한다(총괄: 「d13 ⇒ 새 시루 심기(말풍선) → 물 → [다음 날]」). 덮개는 없다(§hintNoDim). */
+  const pointStill = !taughtBasics || settingDone;
+  /* ★ 2026-09-04 — **손이 바쁜 동안(사람이 물 주러·거두러 가는 중) 말풍선 손가락은 쉰다.** 실측(두 판 d18): 몬스테라 물 말풍선을 누르고
+     사람이 가는 중에 손가락이 곧장 거두기 말풍선을 짚었다 — 그 누름은 안 먹으니(§줄 서기) 같은 자리를 여섯 번 짚는 꼴. */
+  /* ★ 2026-10-31 D93 ② — 이 덩이가 앞으로 오면서 «바쁘면 손가락 없음»을 여기서 하면 아래 사는 갈래(«씨앗을 사러» 등)까지 꺼진다
+       (core 자 probe_core_d11_13 D13 · 6일: 거두러 가는 동안 손가락이 없어 [다음 날]만 눌러 막힘). ⇒ 여기선 돌봄 손가락만 건너뛰고,
+       «손가락 없음»은 예전 자리(사는 갈래 뒤 · [다음 날] 앞 — 아래 §careActing)에서 그대로 한다 */
+  const careActing = !!($('marks') && $('marks').querySelector('.mark.acting'));
+  if (!careActing && pointStill && $('marks')) {
+    for (const el of $('marks').querySelectorAll('.mark')) {
+      const ko = (el.getAttribute('aria-label') || el.textContent || '').replace(/^[^가-힣]+/, '');
+      if (!markLive(ko)) continue;
+      if (!onScreen(el)) continue;
+      /* ★ 시트가 말풍선을 가리면 «닫는 길»을 짚는다(폰 실측 d13~16: 손가락 없음) */
+      if (sheetCovers(el)) { const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR); continue; }
+      return hintAt(el, /거두/.test(ko) ? '거둘 때가 됐습니다'
+                      : /몬스테라/.test(ko) ? '몬스테라에 물을 줍니다'
+                      : /물/.test(ko)   ? '물을 주면 자라기 시작합니다'
+                      : ko || '여기를 눌러 보세요');
+    }
+  }
+  /* 말풍선이 못 맡을 때만 아래 단추다 — 가려졌거나, 그 일이 지금 안 되는 때다 */
+  const btnHarvest = $('harvestCrop'), btnWater = $('waterCrop');
+  /* ★ 2026-09-04 — 가려진 단추도 «닫는 길»(§sheetCloseDoor). 폰 실측 d19~23: 둘째 시루가 익었는데 말풍선은 몬스테라 물이 차지하고
+     (한 번에 하나) 아래 [거두기]는 시트 밑이라 손가락이 없었다. */
+  for (const [b, say] of [[btnHarvest, '거둘 때가 됐습니다'], [btnWater, '물을 주면 자라기 시작합니다']]) {
+    if (careActing) break;
+    if (!(pointStill && onScreen(b) && !b.disabled && sheetCovers(b))) continue;
+    if (/거두/.test(say) ? !markLive('거두') : !markLive('물')) continue;
+    const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR);
+  }
+  if (!careActing && pointStill && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest))
+    return hintAt(btnHarvest, '거둘 때가 됐습니다');
+  if (!careActing && pointStill && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater))
+    return hintAt(btnWater, '물을 주면 자라기 시작합니다');
+  /* ★ D93 ② — [다시 심기] 알약도 돌봄이다(그 종류 씨앗이 있을 때만 — 주문 지름길(dataset.buy)이면 «사기»라 아래 갈래 몫) */
+  const btnResow = $('resow');
+  if (!careActing && pointStill && btnResow && onScreen(btnResow) && !btnResow.disabled && !btnResow.dataset.buy && !sheetCovers(btnResow) && markLive('심'))
+    return hintAt(btnResow, '여기를 눌러 보세요');
   if ((!placedOne || needPlaceSecond) && fpLive) {
     /* ★ 2026-08-10 — 가리키는 것은 이제 **가방 격자의 시루 칸**이다(id 는 그대로 `cropThumb`).
        칸이 없으면(빈 시루 0개) `onScreen(null)` 이 false 라 아래 [가방]으로 떨어진다. */
@@ -6821,100 +6933,8 @@ function updateHint() {
       return hintAt(b, `${josa(musunNeed.ko, '을', '를')} 주문합니다 — 무순은 판과 씨앗 둘이 필요합니다`);
     { const door = shopDoor(); if (door) return hintAt(door, `${josa(musunNeed.ko, '을', '를')} 사러 갑니다`); if (shopOpenNow) return hintAt(null); }
   }
-  /* ★★ **식물 위 말풍선을 먼저 가리킨다** (2026-08-06 박사님:
-     "밑에 물주기 버튼은 없애고 식물에 물주기 버튼에 손가락 가이드 표기해 줘").
-     ⚠ 예전에는 아래 버튼과 말풍선이 **둘 다** 떠서 같은 일을 두 번 말했고,
-       손가락은 아래를 가리켰다 — 정작 눌러야 할 것은 식물 위에 있는데.
-     ⇒ 말풍선이 떠 있으면 **그걸** 가리킨다. 그러면 손가락이 곧 "어디를 눌러라"가 된다.
-     ⚠ 말풍선이 없을 때(가려졌거나 방이 안 떴을 때)는 아래 버튼으로 떨어진다 —
-       안 그러면 안내가 통째로 사라진다. */
-  /* ★★★ 2026-08-17 — **두 바퀴를 넘기면 거두기·물주기 손가락을 뗀다** (박사님:
-       *"퀘스트 끝난 다음엔 「거둘 때가 됐음」 손가락이 안 나오게 해."*)
-     ══════════════════════════════════════════════════════════════════
-     ⚠ 사진의 상황: Day 24 · 할 일은 「무순을 길러 콩나물과 한 상에 올리세요」인데 손가락은
-       **콩나물 [거두기]**를 가리키고 있었다. 거두는 법은 이미 스무 날 전에 배웠다 —
-       그 손가락은 안내가 아니라 **지금 할 일을 가리는 장식**이다.
-     ★ [다음 날] 손가락을 두 바퀴로 되돌린 것과 **같은 규율**이다(§taughtCycles).
-       손가락은 **모르는 것**에만 쓴다.
-     ⚠ 말풍선은 그대로 뜬다 — 없애는 것은 **손가락**뿐이다. 거둘 것이 있다는 사실은
-       여전히 그 자리에 적혀 있고, 다만 화면이 그리로 끌지 않는다. */
-  const taughtBasics = (() => {
-    try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 2; }
-    catch { return false; }
-  })();
-  /* ★★★★ 2026-08-30 — **단추가 서 있으면 «단추»를 짚는다. 말풍선은 «문»일 뿐이다.**
-     ══════════════════════════════════════════════════════════════════
-     ⛔ 예전에는 말풍선을 «먼저» 짚었다. 그런데 말풍선을 누르면 카드가 열리고,
-       할 일을 하는 것은 그 안의 [물 주기]·[거두기] «단추»다.
-       ⇒ 카드가 열려도 손가락은 여전히 말풍선을 짚었고, 그것을 다시 누르면 카드가 닫힌다.
-       ⇒ ⇒ ★ 손가락을 그대로 따라가면 **열고 닫기를 되풀이할 뿐 물이 안 들어간다.**
-         실측(probe_force5 · 390×844): Day 1 에 말풍선만 서른여덟 번 짚었다.
-         울타리가 선 뒤로는 그 사이 다른 것을 누를 수도 없다 — 그러면 판이 «멈춘다».
-     ★ 그러니 차례를 뒤집는다: **할 수 있는 일이 있으면 그 단추**, 없을 때만 말풍선(문).
-       ⚠ 말풍선은 그대로 뜬다 — 바뀌는 것은 «손가락이 무엇을 짚나»뿐이다. */
-  /* ★★★★ 2026-08-31 — **말풍선을 «먼저» 짚는다 — 다만 «할 수 있는» 말풍선만.**
-     ══════════════════════════════════════════════════════════════════
-     박사님(그림과 함께): *"★ 최초 콩나물 거둘 때 ⇒ «시루에 수확 버튼»에 손가락 가이드를 해야지.
-       ⇒ ⛔ «좌측 하단»이 아니라"*
-     ★ 까닭이 분명하다 — 왼쪽 아래 단추는 **「어느 시루인지」를 안 말한다.** 곧 시루가 다섯이 된다.
-       이 게임은 **자리가 곧 뜻**이라, 손가락은 방을 가리켜야 한다.
-     ⚠⚠ 그런데 어제 이 차례를 **거꾸로** 돌려놨었다. 까닭도 실측이었다:
-       말풍선이 하는 일은 아래 단추를 누르는 것인데(§「눌러도 안 먹는다」의 진짜 원인),
-       그 단추가 잠겨 있으면 **아무 일도 안 나고** 손가락은 그대로 남는다 —
-       실측에서 Day 1 에 말풍선만 «서른여덟 번» 짚었다.
-     ⇒ ★★ 그러니 **둘 다** 세운다. 가르는 자는 「그 말풍선이 시키는 일이 «지금 되는가»」다:
-       코어(`cropPotList`)가 「익었다·물이 필요하다·심어야 한다」고 한 것만 문으로 쓴다.
-       ⇒ 되면 말풍선(방 안 · 어느 것인지 말한다), 안 되면 아래로 내려가 단추가 맡는다.
-     ⚠ 「어느 시루인가」를 박지 않는다 — 말풍선 여럿 중 **할 일이 살아 있는 것**을 고른다.
-     ⚠ 말은 새로 안 짓는다 — 이미 쓰던 그 줄들이다. */
-  const markLive = (ko) => {
-    try {
-      /* ★ 2026-09-04 — 몬스테라 물 말풍선도 «산다»(아래 [몬스테라 물] 단추가 살아 있을 때). 폰 실측 d19~23: 이 말풍선이 시트에 가린 채
-         한 자리를 차지해 익은 시루의 말풍선이 못 떴고, 아래 단추들은 시트 뒤 화면 밖이라 손가락이 통째로 없었다. */
-      if (/몬스테라/.test(ko)) { const w = $('waterPot'); return !!(w && !w.disabled); }
-      if (/거두/.test(ko)) return cropRows.some(r => r && r.ready);
-      if (/물/.test(ko))   return cropRows.some(r => r && r.needsWater);
-      /* ★ 2026-10-08 (총괄 중반 정리 ③ · #8 같은 자리) — 「심기」는 «씨앗이 있을 때만» 산다. 재고를 안 봐서 씨앗 0 인 날에도
-           「심」 말풍선이 살아, 시트가 가리면 「할 일이 가려졌습니다」가 53번 떴다(0~60일). 씨앗이 없으면 아래 주문 지름길(D19)이 맡는다 */
-      if (/심/.test(ko))   return cropRows.some(r => {
-        if (!(r && (r.needsSow || r.needsResow))) return false;
-        try { const k = cropKindOf(r.kind); return !k || !k.seedItemId || stockOf(S, k.seedItemId) >= 1; } catch { return true; }
-      });
-    } catch { }
-    return false;
-  };
-  /* ★ 2026-09-04 — 세팅 끝 «뒤»에는 두 바퀴 규율(§taughtBasics)을 «안 건다»: 새 시루는 아직 안 심겨 있고, 손가락이 그것을 짚어야
-     한다(총괄: 「d13 ⇒ 새 시루 심기(말풍선) → 물 → [다음 날]」). 덮개는 없다(§hintNoDim). */
-  const pointStill = !taughtBasics || settingDone;
-  /* ★ 2026-09-04 — **손이 바쁜 동안(사람이 물 주러·거두러 가는 중) 말풍선 손가락은 쉰다.** 실측(두 판 d18): 몬스테라 물 말풍선을 누르고
-     사람이 가는 중에 손가락이 곧장 거두기 말풍선을 짚었다 — 그 누름은 안 먹으니(§줄 서기) 같은 자리를 여섯 번 짚는 꼴. */
-  if ($('marks') && $('marks').querySelector('.mark.acting')) return hintAt(null);
-  if (pointStill && $('marks')) {
-    for (const el of $('marks').querySelectorAll('.mark')) {
-      const ko = (el.getAttribute('aria-label') || el.textContent || '').replace(/^[^가-힣]+/, '');
-      if (!markLive(ko)) continue;
-      if (!onScreen(el)) continue;
-      /* ★ 시트가 말풍선을 가리면 «닫는 길»을 짚는다(폰 실측 d13~16: 손가락 없음) */
-      if (sheetCovers(el)) { const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR); continue; }
-      return hintAt(el, /거두/.test(ko) ? '거둘 때가 됐습니다'
-                      : /몬스테라/.test(ko) ? '몬스테라에 물을 줍니다'
-                      : /물/.test(ko)   ? '물을 주면 자라기 시작합니다'
-                      : ko || '여기를 눌러 보세요');
-    }
-  }
-  /* 말풍선이 못 맡을 때만 아래 단추다 — 가려졌거나, 그 일이 지금 안 되는 때다 */
-  const btnHarvest = $('harvestCrop'), btnWater = $('waterCrop');
-  /* ★ 2026-09-04 — 가려진 단추도 «닫는 길»(§sheetCloseDoor). 폰 실측 d19~23: 둘째 시루가 익었는데 말풍선은 몬스테라 물이 차지하고
-     (한 번에 하나) 아래 [거두기]는 시트 밑이라 손가락이 없었다. */
-  for (const [b, say] of [[btnHarvest, '거둘 때가 됐습니다'], [btnWater, '물을 주면 자라기 시작합니다']]) {
-    if (!(pointStill && onScreen(b) && !b.disabled && sheetCovers(b))) continue;
-    if (/거두/.test(say) ? !markLive('거두') : !markLive('물')) continue;
-    const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR);
-  }
-  if (pointStill && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest))
-    return hintAt(btnHarvest, '거둘 때가 됐습니다');
-  if (pointStill && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater))
-    return hintAt(btnWater, '물을 주면 자라기 시작합니다');
+  /* ★ 2026-09-04 — **손이 바쁜 동안(사람이 물 주러·거두러 가는 중) 말풍선 손가락은 쉰다** — D93 ② 로 돌봄 덩이가 앞으로 가서 문만 여기 남는다(§careActing) */
+  if (careActing) return hintAt(null);
   /* ★★ 2026-08-11 — **몬스테라 물주기도 손이 가는 일이다.**
      말풍선(`potMarks`)은 **마른 뒤에만** 뜨는데 아래 버튼(`#waterPot`)은
      「마를 때가 됐다」부터 뜬다. 그 사이 며칠 동안 화면에는 눌러야 할 버튼이 서 있는데
