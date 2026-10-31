@@ -30,11 +30,46 @@ export function findChrome() {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+/* ★★ 2026-10-31 총괄(박사님 «CPU 가 왤케 · 렉먹어») — **기본 GL 을 그래픽카드(ANGLE d3d11)로 바꿨다.**
+     ⛔ swiftshader(소프트웨어 GL)는 game.html 390×844 에서 14fps 에 크롬이 16코어의 61% 를 먹었다 — 검사 하나가 컴퓨터 전체를 100% 로 올려
+       박사님 다른 프로그램이 버벅였다. d3d11 은 65fps · 크롬 CPU 거의 0%(총괄 잼 · 렌더러 «ANGLE (NVIDIA GeForce RTX 3090 … D3D11)»).
+     · CDP_GL=soft(또는 swiftshader) 면 예전 소프트웨어 GL 로 띄운다(그래픽카드 없는 기계 · 옛 판과 같은 GL 로 견줄 때).
+     · CDP_GL=gpu 는 예전처럼 그래픽카드(이제 기본과 같다).
+     · ★ 그래픽카드로 WebGL 이 안 열리면(컨텍스트 null · 렌더러가 SwiftShader) **스스로 swiftshader 로 다시 띄운다** — 방이 통째로 안 뜨는 판을 막는다(아래 §launch).
+     ⚠ 화면 사진의 픽셀을 세는 자 · 성능 전후 비교는 «같은 GL» 끼리 견준다(page.gl 에 무엇으로 떴는지 적힌다) */
+const GL_ARGS = Object.freeze({
+  gpu:  ['--use-gl=angle', '--use-angle=d3d11', '--ignore-gpu-blocklist', '--enable-gpu-rasterization'],
+  soft: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+});
+export function glWanted() {
+  const v = String(process.env.CDP_GL || '').toLowerCase();
+  return (v === 'soft' || v === 'swiftshader' || v === 'software') ? 'soft' : 'gpu';
+}
+/* WebGL 렌더러 이름 — 컨텍스트가 안 열리면 null */
+const GL_PROBE = `(()=>{ try { const c=document.createElement('canvas'); const gl=c.getContext('webgl2')||c.getContext('webgl'); if(!gl) return null;
+  const d=gl.getExtension('WEBGL_debug_renderer_info'); return String(d ? gl.getParameter(d.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)); } catch(e) { return null; } })()`;
+
 /* 헤드리스 크롬을 띄우고 CDP 소켓을 연다.
    opts.width/height  창 크기(폰 세로는 390×844)
    opts.dpr           devicePixelRatio (폰은 3 이지만 측정은 2 로 둔다)
-   opts.throttle      { cpu, netKbps } 폰 흉내. 안 주면 데스크톱 그대로 */
+   opts.throttle      { cpu, netKbps } 폰 흉내. 안 주면 데스크톱 그대로
+   돌려받는 page.gl = 'gpu' | 'soft' · page.glRenderer = WebGL 렌더러 이름 */
 export async function launch(opts = {}) {
+  const want = glWanted();
+  const page = await launchGL(opts, want);
+  let r = null; try { r = await page.eval(GL_PROBE, false); } catch { r = null; }
+  if (want === 'gpu' && (!r || /swiftshader/i.test(r))) {
+    console.warn(`[test_cdp] 그래픽카드로 WebGL 이 안 열려(${r || '컨텍스트 없음'}) swiftshader 로 다시 띄웁니다`);
+    await page.close();
+    const p2 = await launchGL(opts, 'soft');
+    let r2 = null; try { r2 = await p2.eval(GL_PROBE, false); } catch { r2 = null; }
+    p2.gl = 'soft'; p2.glRenderer = r2;
+    return p2;
+  }
+  page.gl = want; page.glRenderer = r;
+  return page;
+}
+async function launchGL(opts, gl) {
   const chrome = findChrome();
   const port = 9222 + Math.floor(Math.random() * 400);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'byeot-cdp-'));
@@ -43,12 +78,9 @@ export async function launch(opts = {}) {
     '--no-first-run', '--no-default-browser-check', '--disable-extensions',
     '--disable-background-timer-throttling', '--disable-renderer-backgrounding',
     '--hide-scrollbars', '--mute-audio',
-    /* ★ 소프트웨어 GL 을 강제한다. 헤드리스에서 GPU 가 없으면 WebGL 컨텍스트가
-       아예 안 열려 방이 통째로 안 뜬다(실제로 안 떴다). */
-    /* ★ 2026-10-09 (core · 성능 재기) — CDP_GL=gpu 면 이 기계의 하드웨어 GPU(ANGLE d3d11)로 띄운다. 기본은 그대로 소프트웨어 GL */
-    ...(process.env.CDP_GL === 'gpu'
-      ? ['--use-gl=angle', '--use-angle=d3d11', '--ignore-gpu-blocklist', '--enable-gpu-rasterization']
-      : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']),
+    /* ★ GL — 기본 그래픽카드(d3d11) · CDP_GL=soft 면 소프트웨어(swiftshader). 헤드리스에서 GL 이 아예 없으면 WebGL 컨텍스트가
+       안 열려 방이 통째로 안 뜬다(실제로 안 떴다) — 그래서 §launch 가 그래픽카드로 안 열리면 소프트웨어로 다시 띄운다(2026-10-31) */
+    ...GL_ARGS[gl === 'soft' ? 'soft' : 'gpu'],
     `--window-size=${opts.width || 390},${opts.height || 844}`,
     'about:blank'
   ];
