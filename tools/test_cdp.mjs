@@ -16,6 +16,22 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import net from 'node:net';
+/* ★ 2026-11-01 총괄 F — 디버그 포트는 9700~9999 에서 고르고, 이미 쓰이면 다른 수로(최대 열 번).
+     ⛔ 예전 9222~9621 은 시험 서버(core 9300 · 94xx · 총괄 9321 · 9323 · 9324 · 9331 · 비판 크롬 9431)와 겹쳐 «크롬이 안 떴습니다»가 났다(cb92138a 회귀에서 9300 이 걸림) */
+const portFree = (port) => new Promise((res) => {
+  const s = net.createServer();
+  s.once('error', () => res(false));
+  s.once('listening', () => s.close(() => res(true)));
+  s.listen(port, '127.0.0.1');
+});
+async function pickDebugPort() {
+  for (let i = 0; i < 10; i++) {
+    const p = 9700 + Math.floor(Math.random() * 300);
+    if (await portFree(p)) return p;
+  }
+  return 9700 + Math.floor(Math.random() * 300);
+}
 
 const CHROME_CANDIDATES = [
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -71,7 +87,7 @@ export async function launch(opts = {}) {
 }
 async function launchGL(opts, gl, attempt = 1) {   /* attempt — ★ 2026-11-01 총괄 F: 못 뜨면 다른 포트로 한 번 더 */
   const chrome = findChrome();
-  const port = 9222 + Math.floor(Math.random() * 400);
+  const port = await pickDebugPort();   /* ★ 2026-11-01 총괄 F — 9700~9999 · 비어 있는 수 */
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'byeot-cdp-'));
   const args = [
     '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`,
