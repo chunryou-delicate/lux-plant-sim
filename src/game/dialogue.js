@@ -1185,10 +1185,14 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'surprise', text: '무늬가 자리를 타?' },
     { who: 'moni',   face: 'teach', text: '밝은 데서 뿌리내린 애가 더 좋은 무늬를 내. 어두우면 흔한 게 나오고.' }
   ],
+  /* ★★ 2026-11-01 [plan] D99 ④ — 이 줄은 이제 무늬 삽수가 «어디서든» 뿌리내리면 끝난다([core] quest.js varie_bright done · 비판 넷째 판 ⑤#7
+       반지하 밝은 빈자리가 없어 19일 멈춤). 예전 «그 자리에서 뿌리내렸네 … 값이 달라져»는 밝은 자리만 전제한 말이었다.
+     참: 뿌리낸 날(또는 그 뒤 처음 잰 날) 그 자리 빛 띠가 무늬 소질을 정한다(propagation §resolveVarieLight · 한 번 정하면 안 바뀜).
+       그날 어떤 띠였는지는 바로 뒤 cuttingVarieBright · Mid · Dark 가 말한다 — 여기서는 띠를 말하지 않는다 */
   questDoneVarieBright: [
-    { who: 'moni',   face: 'proud', text: '그 자리에서 뿌리내렸네.' },
-    { who: 'jachwi', face: 'curious', text: '그래서?' },
-    { who: 'moni',   face: 'teach', text: '값이 달라져. 얼마나 다른지는 내놔 보면 알아.' }
+    { who: 'moni',   face: 'proud', text: '뿌리를 냈네.' },
+    { who: 'jachwi', face: 'curious', text: '무늬는?' },
+    { who: 'moni',   face: 'teach', text: '뿌리낸 자리 빛이 정했어. 내놔 보면 알아.' }
   ],
 
   /* ⑤ ★★★ **이 게임에서 제일 중요한 대사다.** 안 말하면 영영 모른다.
@@ -1250,7 +1254,8 @@ export const SCRIPTS = {
   ],
   /* ★ 2026-10-09 [plan] D41 — 원룸 줄기는 «키워서 늘리기». 첫 줄이 «하나는 팔지 말고 키우라»를 먼저 말한다 */
   questOneroomSettleCutting: [
-    { who: 'moni',   face: 'teach',   text: '하나는 팔지 말고 키워 봐. 혹이 나면 흙으로 옮겨.' },
+    /* ★ 2026-11-01 [plan] D99 ① — 몬이 수(«하나») 뺌 · 한 규칙(남길 건 남기고 늘어난 것부터 판다)과 같은 말 */
+    { who: 'moni',   face: 'teach',   text: '다 팔지는 말고 키워 봐. 혹이 나면 흙으로 옮겨.' },
     { who: 'jachwi', face: 'curious', text: '혹?' },
     { who: 'moni',   face: 'teach',   text: '뿌리 끝에 동그랗게 나. 그게 보이면 옮길 때야.' }
   ],
@@ -1269,19 +1274,28 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'proud',    text: '이제 이 화분대가 네 밭이야.' }
   ],
   /* ★ 2026-10-09 [plan] D41 — ③·다시 자르기의 «무엇을»(D19) */
-  nudgeSettleOffer: [ { who: 'moni', face: 'teach', text: '무늬 삽수 하나는 팔지 말고 흙에 옮겨 키워 봐.' } ],
+  /* ★ 2026-11-01 [plan] D99 ① — 몬이 수(«하나») 뺌 */
+  nudgeSettleOffer: [ { who: 'moni', face: 'teach', text: '무늬 삽수를 다 팔지 말고 흙에 옮겨 키워 봐.' } ],
   nudgeSettlePush:  [ { who: 'moni', face: 'teach', text: '키운 그루가 늘어야 무늬도 늘어.' } ],
   nudgeRecutOffer:  [ { who: 'moni', face: 'teach', text: '키운 그루에서 무늬 마디를 잘라 봐. 그게 늘리는 거야.' } ],
   nudgeRecutPush:   [ { who: 'moni', face: 'teach', text: '자를 마디가 있으면 잘라 둬. 그루가 하나씩 늘어.' } ],
   questOneroomSell: [
     /* ★ 2026-10-09 [plan] — 이 줄은 이제 «뿌리낸 뒤»(②)에 열린다(quest.js §oneroom_sell). 「늘렸으면」은 늘린 적 없는 사람에게 거짓 */
-    { who: 'moni',   face: 'teach',   text: '뿌리냈으면 이제 내놓아도 돼.' },
+    /* ★★ 2026-11-01 [plan] D99 ① (비판 넷째 판 ④ «남겨 두자 → 팔지 말고 키우자 → 사흘 뒤 내놓아도 돼» — 날마다 방향이 바뀜) —
+         한 규칙 «남길 건 남기고, 늘어난 것부터 판다». 예전 첫 줄 «뿌리냈으면 이제 내놓아도 돼»는 뿌리낸 삽수가 하나뿐인 날(② 끝 = 이 줄 열림)에
+         그 하나를 팔라고 들렸다 — 바로 앞 statusOneroomCutSill · questOneroomSettleCutting «다 팔지는 말자»와 반대.
+       참: 이 줄이 열리는 날 몇 개를 가졌든 «남길 건 남기고»는 참이다(파는 몫 = 늘어난 것). 할 일 글(quest.js todo)은 [core] 가 수로 가른다(plan-to-core-d99 §1) */
+    { who: 'moni',   face: 'teach',   text: '키울 삽수는 남겨 두고, 늘어난 것부터 팔자.' },
     { who: 'jachwi', face: 'think',   text: '…아깝긴 한데.' },
-    { who: 'moni',   face: 'calm',    text: '남겨 둘 그루는 남겨. 파는 건 그다음 거야.' }
+    { who: 'moni',   face: 'calm',    text: '남긴 그루에서 또 늘리면 돼.' }
   ],
   questDoneOneroomSell: [
     { who: 'jachwi', text: '팔렸다.' },
-    { who: 'moni',   face: 'teach',   text: '밝은 데서 뿌리낸 만큼 값이 붙은 거야.' }
+    /* ★★ 2026-11-01 [plan] D99 ② — 예전 «밝은 데서 뿌리낸 만큼 값이 붙은 거야»는 어두운 데서 뿌리낸 산반을 판 날에도 섰다(비판 넷째 판 ④ · 거짓).
+         후보: ㉠ 판 것이 밝은 데서 뿌리낸 것일 때만(core 가 판 것의 띠를 사건에 실음) · ㉡ 늘 참인 말 하나 ⇒ 고른 것 ㉡.
+         까닭: 밝은 데서 뿌리내려도 산반이 35%라(varie_grades.json lightGrade.bright) «밝아서 값이 붙었다»는 ㉠ 조건에서도 거짓일 수 있다.
+       참: 등급 확률이 빛 띠로 오른다(dark 산반 .80 · mid .55 · bright .35 — 비싼 무늬 하프문 · 풀문 몫이 는다) */
+    { who: 'moni',   face: 'teach',   text: '뿌리낸 자리가 밝을수록 비싼 무늬가 잘 나.' }
   ],
   questOneroomHomeFund: [
     /* ★ 2026-10-31 [plan] D97 — 몬이 수(«하나») 뺌 */
@@ -1712,6 +1726,11 @@ export const SCRIPTS = {
   nudgeCutPush:       [ { who: 'moni', face: 'teach', text: '잘라도 안 죽어. 자른 마디가 새 그루가 돼.' } ],
   nudgeVarieOffer:    [ { who: 'moni', face: 'teach', text: '무늬 있는 마디는 밝은 데서 뿌리내려야 좋은 무늬가 나.' } ],
   nudgeVariePush:     [ { who: 'moni', face: 'teach', text: '무늬 마디를 잘라서 밝은 자리에 꽂아 봐.' } ],
+  /* ★★ 2026-11-01 [plan] D99 ④ (비판 넷째 판 ⑤#7 — 이미 잘라 놓은 뒤에도 «잘라서 꽂아 봐») — 위 줄은 뿌리내리는 무늬 삽수가 «없을» 때만(§CHATTER).
+     참 · Wait: 방에 놓인 무늬 삽수가 뿌리내리는 중(status rooting · at|slotId) — 뿌리내림은 빛과 무관하게 날이 가면 난다(propagation §stepCuttings ①) ·
+       등급 확률은 밝을수록 좋다(lightGrade). 참 · Bag: 뿌리내리는 무늬 삽수가 가방에만 있다 — 가방에선 날이 안 간다(§stepCuttings «방에 안 놓인 삽수는 하루가 안 간다») */
+  nudgeVarieWait:     [ { who: 'moni', face: 'teach', text: '뿌리낼 때까지 기다려. 밝을수록 무늬가 좋아.' } ],
+  nudgeVarieBag:      [ { who: 'moni', face: 'teach', text: '가방에선 뿌리가 안 나. 방에 놓아 줘.' } ],
   nudgeSellOffer:     [ { who: 'moni', face: 'teach', text: '무늬 삽수는 값이 나가. 내놓아 봐.' } ],
   /* ★ 2026-10-10 [plan] 총괄 ⓐ — «팔아야»는 반쯤 거짓(이사 문은 돈 — 파는 것은 돈을 모으는 한 길). 열림이 «둘 이상»이라 하나를 팔아도 하나가 남는다 */
   /* ★ 2026-10-31 [plan] 총괄 D95 ② — 몬이가 «하나»를 말했다(수) · 한 목소리 «크게»(monsteraArrived «이사비에서 크게 버는 쪽») */
@@ -1749,7 +1768,8 @@ export const SCRIPTS = {
        D27 의 «무늬 원천 0» 갈래는 무늬 모주가 있으면 안 서서 이 판이 아무 말 없이 갔다.
      ⚠ «할 수 없는 일을 시키지 않는다» — [core] 는 «오늘 자를 수 있는 무늬 마디가 있을 때»만 낸다(아니면 말 없음). 막지 않는다(사람이 누른다). 수는 안 말한다. */
   moveNoCutting: [
-    { who: 'moni', face: 'teach', text: '무늬 삽수 하나는 잘라 들고 가자. 원룸에선 모주가 잎을 천천히 내.' }
+    /* ★ 2026-11-01 [plan] D99 ① — 몬이 수(«하나») 뺌 */
+    { who: 'moni', face: 'teach', text: '무늬 삽수를 잘라 들고 가자. 원룸에선 모주가 잎을 천천히 내.' }
   ],
   /* ★ 2026-10-10 [plan] D27 갈래 셋 — **이사 «전» 마지막 무늬 삽수를 팔려 할 때** 한 줄(사건 `sell_keep_one` · [core] 팔기 확인 · D22 결 · 막지 않음).
      까닭([core] guide g·1-9): 이사 날 9/10 판이 «무늬 삽수 0 · 자를 무늬 마디 0 · 무늬 모주 있음» — 이사 둘째 축(무늬를 판 적)을 채우느라 다 팔았고,
@@ -1876,7 +1896,8 @@ export const SCRIPTS = {
   /* ★ 2026-10-09 [plan] D41 — 둘째 줄: 들고 온 무늬 삽수를 이사 직후 다 팔면 원룸에서 늘릴 게 없다([core] 갈래 판 안내대로 9/10) */
   statusOneroomCutSill: [
     { who: 'moni', face: 'teach', text: '무늬 삽수는 창턱에 둬. 등 밑이면 더 빨라.' },
-    { who: 'moni', face: 'teach', text: '하나는 팔지 말고 키우자. 거기서 또 자를 수 있어.' }
+    /* ★ 2026-11-01 [plan] D99 ① — 몬이 수(«하나») 뺌 · 참: 남긴 삽수를 흙에 옮겨 자리 잡으면 거기서 무늬 마디를 다시 자른다(oneroom_recut) */
+    { who: 'moni', face: 'teach', text: '다 팔지는 말자. 키워서 또 자르자.' }
   ],
   /* ★ 2026-10-08 [plan] 갈래 지도 9 — 등을 «단 날» 그 밑에 몬스테라·삽수가 하나도 없을 때([core] dc13269d `lamp_under_empty`).
      ⚠ 「아무것도 없어」 = 식물이 없다는 뜻(가구는 셈 밖). 칸 이름은 화면(로그)이 말한다. 등마다 날 수 있어 되풀이된다.
@@ -2514,7 +2535,8 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think',    text: '뿌리 낸 무늬 몬스테라 하나랑 바꾸자고 한다.' },
     /* ★ 2026-10-10 [plan] — 얻는 것과 내주는 것을 «둘 다» 말한다(어느 쪽으로도 밀지 않는다). [core] 가게 판: 교환을 받아 PP 를 남긴 가게는
        0원 1/10 · 안 받은 가게(구근만 삼)는 7/10 — 종이 늘면 팔 것이 는다. 다만 무늬 삽수 하나가 간다(원룸 «키워서 늘리기»의 밑천). 수는 안 말한다 */
-    { who: 'moni',   face: 'teach',    text: '종이 하나 늘면 키울 것도 팔 것도 늘어. 대신 무늬 삽수 하나는 가.' },
+    /* ★ 2026-11-01 [plan] D99 ① — 몬이 수(«하나» 둘) 뺌 · 뜻 그대로(얻는 것 · 내주는 것 둘 다) */
+    { who: 'moni',   face: 'teach',    text: '새 종이 늘면 키울 것도 팔 것도 늘어. 대신 무늬 삽수를 내줘야 해.' },
     { who: 'moni',   face: 'curious',  text: '네가 키운 걸 내주는 거네. 바꿀래?' }
   ],
   ppTradeOfferAgain: [
@@ -3169,6 +3191,8 @@ export const REPEATABLE = new Set(
     /* ★ 2026-10-08 [plan] D19 — 퀘스트별 두 줄(권함 · 미는 말)도 되풀이된다. 「이틀 잇달아」는 §pickNudge 가 막는다 */
     .concat(['nudgeLampOffer', 'nudgeMonsteraOffer', 'nudgeMonsteraPush', 'nudgeMixOffer', 'nudgeMixPush',
              'nudgeCutOffer', 'nudgeCutPush', 'nudgeVarieOffer', 'nudgeVariePush', 'nudgeSellOffer', 'nudgeSellPush',
+             /* ★ 2026-11-01 [plan] D99 ④ — 밝은 데서 뿌리내리기 미는 말의 갈래 둘(놓인 삽수 기다림 · 가방 삽수) */
+             'nudgeVarieWait', 'nudgeVarieBag',
              'nudgeHarvestPush', 'nudgeSeedPush'])
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
              /* ★ 2026-10-31 [plan] D95 ⑨ — 반지하 겨울 멈춤도 plantStalledWinter 처럼 멈출 때마다(같은 사건 갈래) */
@@ -4032,8 +4056,15 @@ export const CHATTER = [
         && (!SIRU_NUDGE_QS.includes(q) || (!(c.siruBag > 0) && !(c.siruIncoming > 0)))
         /* ★ 2026-10-31 [plan] D93 m5(비판 둘째 판 Day 18) — 무순 판이 이미 방에 있으면(심었든 안 심었든) «상점에 있어»는 묵은 말 */
         && (q !== 'crop_mix' || (!(c.musunBag > 0) && !(c.musunRoom > 0))) },
-    { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry }
+    { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry
+        /* ★ 2026-11-01 [plan] D99 ④ — «잘라서 꽂아 봐»는 뿌리내리는 무늬 삽수가 방에도 가방에도 없을 때만(아래 nudgeVarieWait · nudgeVarieBag) */
+        && (q !== 'varie_bright' || (!(c.varieRootingPlaced > 0) && !(c.varieRootingBag > 0))) }
   ]),
+  /* ★ 2026-11-01 [plan] D99 ④ — 위 varie_bright 미는 말의 짝(같은 날 창 · 하나만 참). 칸은 §chatterContext(S.cuttings 에서 바로 셈) */
+  { id: 'nudgeVarieWait', nudge: true, when: c => !!c.nudge && c.nudge.id === 'varie_bright' && c.nudge.days >= NUDGE_DAYS.worry
+                                          && c.varieRootingPlaced > 0 },
+  { id: 'nudgeVarieBag',  nudge: true, when: c => !!c.nudge && c.nudge.id === 'varie_bright' && c.nudge.days >= NUDGE_DAYS.worry
+                                          && !(c.varieRootingPlaced > 0) && c.varieRootingBag > 0 },
   /* ★ 2026-10-30 [plan] 종합 5 — 위 «상점에 있어»의 짝(같은 날 창 · 하나만 참) */
   { id: 'nudgeSiruBag',    nudge: true, when: c => !!c.nudge && SIRU_NUDGE_QS.includes(c.nudge.id) && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask
                                           && c.siruBag > 0 },
@@ -4294,6 +4325,14 @@ export function chatterContext(turn = {}, S = null) {
       ? S.cuttings.filter(c => c && c.status !== 'dead' && c.varieFromCut).length : null; } catch { return null; } })(),
     /* ★ 2026-10-09 [plan] D29 — 가방에 든 안 죽은 삽수 수([core] turn.bagCuttings). 모르면 null */
     bagCuttings: (turn && Number.isFinite(turn.bagCuttings)) ? turn.bagCuttings : null,
+    /* ★ 2026-11-01 [plan] D99 ④ — 뿌리내리는 중인 무늬 삽수(varieFromCut · status rooting) — 방에 놓인 것(at|slotId) · 가방(둘 다 없음). S 가 없으면 null */
+    ...(() => {
+      try {
+        if (!S || !Array.isArray(S.cuttings)) return { varieRootingPlaced: null, varieRootingBag: null };
+        const r = S.cuttings.filter(c => c && c.varieFromCut && c.status === 'rooting');
+        return { varieRootingPlaced: r.filter(c => c.at || c.slotId).length, varieRootingBag: r.filter(c => !c.at && !c.slotId).length };
+      } catch { return { varieRootingPlaced: null, varieRootingBag: null }; }
+    })(),
     /* ★ 2026-10-30 [plan] 종합 5 — 가방의 빈 시루(상점 재고 + 아직 안 놓은 개체 — first_play §idleCropPots 의 «둘을 더해 센다») ·
        배송 중인 시루 · 가방의 무순 판. 못 읽으면 null(= 예전 그대로 «상점에 있어») */
     ...(() => {
