@@ -1,18 +1,21 @@
 # house — 비판 둘째 판 물음 둘: 단 식물등이 안 보인다 · 방울·꼬리표가 포개진다 (2026-10-31)
 
-총괄 지시(10-31) — `docs/handoff/playtest-critic2-20261031.md` M4 ① · m4. 재기만 했다. 고친 것 없음.
+총괄 지시(10-31) — `docs/handoff/playtest-critic2-20261031.md` M4 ① · m4. 처음에는 재기만 했다(69f1dfe0).
+그 뒤 총괄이 (가)를 정해, 등 그림만 고쳤다(§1 «고침 (가)»). 나머지는 core 몫이다.
 
 - 판: 비판 판 크롬 저장소에서 꺼낸 **그 세이브**(Day 50 · 반지하 · 벽부형 등 1개 단 판 · 작물 21)를 지금 HEAD 로 켰다.
   등·방 그리기 코드(`src/game/room_view.js` · `src/render3d/*` · `data/house_rooms.json` · `data/furniture_presets.json`)는 비판 판 8b2c6f41 과 HEAD 사이에 바뀐 줄이 없다.
 - 자: `tools/probe_lamp_tags_seen.mjs` (폰 390×844 dpr2 · 비판 판 운전기와 같은 흉내 · 기본 카메라 az 0.785 · el 0.86 · 값·자리 손질 0)
   `SAVE=<세이브> BYEOT_URL=http://127.0.0.1:9331 OUT=<사진 폴더> node tools/probe_lamp_tags_seen.mjs` → exit=0
-- 사진: `docs/handoff/img/house_critic2_lamp_onoff.jpg` (왼쪽 등 그대로 · 오른쪽 등 메시만 끔 · 같은 자리 같은 배율)
+- 사진: `docs/handoff/img/house_critic2_lamp_onoff.jpg` (고치기 전 · 왼쪽 등 그대로 · 오른쪽 등 메시만 끔 · 같은 자리 같은 배율)
+  · 고친 뒤 전후: `docs/handoff/img/house_critic2_lamp_before_after.jpg`(꼬리표 서기 전) · `…_before_after_tags.jpg`(꼬리표 선 뒤) — 왼쪽 전 · 오른쪽 후
 
 ## 1. 벽부형 식물등이 방 그림에 안 보인다
 
 **그려지기는 한다.** 등(`banjiha-growlight-bar` · 창 위 벽 · y 2.15)은 3D 그룹이 서 있고(visible) 기본 카메라 안에 든다.
-등 메시만 끄고 같은 자리를 찍어 견주면 그 상자 안 약 600 CSS px² 가 바뀐다(밝기 12 넘게 · 막대와 둘레 보랏빛).
-카메라를 돌리지 않아도 보이는 자리다.
+등 메시만 끄고 같은 자리를 찍어 견주면 그 상자가 바뀐다. 카메라를 돌리지 않아도 보이는 자리다.
+⚠ 69f1dfe0 에 적은 «약 600 CSS px²» 는 틀린 값이었다. 자가 PNG 를 4바이트(RGBA)로만 풀었는데 크롬 사진은 3바이트(RGB)로 온다.
+  고친 자로 다시 세면, 등 상자(87×70 장치 px) 안에서 등이 보탠 밝은 픽셀(밝기 > 190 · 켬−끔)은 **188** 이다. 사진 사이 흔들림은 2 px 다.
 
 그런데 사람 눈에는 안 읽힌다. 까닭은 셋이다.
 
@@ -29,6 +32,29 @@
   `userData.size` 와 발광점(house.js §emitY = size.h×0.92)은 그대로 두므로 조도 값은 바뀌지 않아야 한다. 고친 뒤 test_measured_fresh · test_floorlight 로 확인한다.
 - (나) core · 단 순간 그 등을 짚는다. `roomView.highlightFurniture('banjiha-growlight-bar')`(또는 `focusFurniture`)를 몇 초 부른다. M4 ① «확인 창 없이 달림» 고침과 같은 함수에 들어간다.
 - 자리는 옮기지 않는다. 창턱 등1 7.07(G-16 · 갈라짐 문턱 6.0 을 넘는 값)이 이 자리에서 나온다.
+
+**고침 (가) — 그림만 (10-31 · 총괄 지시)**
+- `src/render3d/furniture_pastel.js` §growlight_bar 의 메시만 바꿨다.
+  - 몸통을 0.040 m 로 조금 두껍게 했다.
+  - **앞면(방 쪽 +Z)에 발광 띠**를 붙였다. 이것이 갓(`lampShade`)이다.
+  - 밑면 띠는 예전 자리에 둔다. 두 띠는 한 재질을 같이 쓴다. room_view 가 갓 재질 하나의 emissive 로 켜고 끄기 때문이다.
+  - 양 끝에 어두운 마개(`#6f757c`)를 달아, 막대 끝이 보이게 했다.
+- `data/furniture_presets.json` growlight_bar `color` `#dfe3e6` → `#f6f4ef`(밝은 흰색). 빌더 기본값이 아니라 프리셋이 색을 넘기므로 여기서 바꿨다.
+- 그대로 둔 것:
+  - `userData.size`(0.7×0.05×0.06) · mount · ppfd · coverage
+  - 발광점(house.js §emitY = size.h×0.92)
+  - 가림: occluders 는 이름에 light 가 든 가구를 뺀다.
+  - 충돌: h 0.05 ≤ 0.20 이라 안 든다.
+  - 새 생성(Higgsfield · Meshy) 없음.
+- 빛 셈 확인 — 고치기 전·후 둘 다 exit=0 이다.
+  - `test_measured_fresh` 12/12 → 12/12. 뒤 판은 «data/furniture_presets.json 커밋 안 된 수정이 닿았는데 값은 같다» 한 줄만 늘었다.
+  - `test_floorlight` 9/9 → 9/9 (출력이 한 자도 같다).
+  - 갓 켜고 끄기 `test_lampswitch` 38/38 (고친 뒤).
+- 사진(같은 세이브 · 같은 카메라 az 0.785/el 0.86 · 같은 장치 픽셀 상자 · 2배):
+  - 고치기 전: 창틀과 같은 회색 사선이었다.
+  - 고친 뒤: **흰 관 + 어두운 두 끝**이라 창틀 위에 따로 달린 등으로 읽힌다.
+  - 등이 보탠 밝은 픽셀은 **188 → 382**(켬−끔 · 밝기 > 190)이다. 판 사이 시계 차가 있어 끔 쪽 바탕이 116 → 62 로 달랐다 — 숫자보다 사진이 증거다.
+- 남는 것: 꼬리표가 선 뒤에는 여전히 «시루 1 · 재배판 3 …» · «🌱 3/5» 가 막대 대부분을 덮는다(`…_before_after_tags.jpg`). 창 쪽(오른 아래) 끝과 마개만 보인다 — (나)와 방울·꼬리표 비키기(core)가 풀 몫이다.
 
 ## 2. 방울·꼬리표가 한 점에 포개진다 · 16개 중 몇 개만 보인다
 

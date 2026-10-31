@@ -1130,16 +1130,25 @@ B.growlight_clip=(o)=>{
   return g;
 };
 
-/* ★ 식물등 — 바(선반 밑 부착) */
+/* ★ 식물등 — 바(선반 밑 부착)
+   ★ 2026-10-31 [house] 총괄(비판 둘째 판 M4 ①) — 그림만 고쳤다. 예전엔 몸통이 창틀과 같은 회색이고 발광 띠가 밑면뿐이라
+     49° 로 내려다보는 폰 기본 카메라에서 «창틀 한 줄»로 읽혔다(tools/probe_lamp_tags_seen.mjs · 31×22px 상자 안 3~4px 사선).
+     ⇒ 몸통을 밝은 흰색으로 · 발광 띠를 방 쪽 앞면(+Z)에도 · 양 끝 마개를 어둡게(막대 끝이 보이게).
+     ⚠ userData.size · mount · ppfd · coverage 는 그대로다 — 발광점(house.js §emitY)·가림(occluders 는 이름에 light 가 든 가구를 뺀다)·충돌(h 0.05 ≤ 0.20)이
+       모두 size 와 rig 만 본다. 띠 둘은 한 재질을 같이 쓴다 — room_view 가 갓(lampShade) 재질 하나의 emissive 로 켜고 끈다. */
 B.growlight_bar=(o)=>{
   const w=o.w??0.7;
   const g=new THREE.Group();
-  const m=furnMat(o.color??'#dfe3e6','satin');
-  g.add(bx(w,0.035,0.06,m,0,0.018,0));
-  const led=new THREE.Mesh(new THREE.BoxGeometry(w-0.06,0.012,0.045),
-    new THREE.MeshStandardMaterial({ color:col(o.accent??'#f4ecff'), emissive:col(o.accent??'#cbb0ea'),
-      emissiveIntensity:0.95, roughness:0.25 }));
-  led.position.y=-0.004; g.add(led);
+  const m=furnMat(o.color??'#f6f4ef','satin');
+  g.add(bx(w,0.040,0.06,m,0,0.022,0));
+  const cap=furnMat('#6f757c','satin');
+  g.add(bx(0.022,0.046,0.064,cap,-(w/2-0.011),0.022,0), bx(0.022,0.046,0.064,cap,(w/2-0.011),0.022,0));
+  const ledMat=new THREE.MeshStandardMaterial({ color:col(o.accent??'#f4ecff'), emissive:col(o.accent??'#cbb0ea'),
+      emissiveIntensity:0.95, roughness:0.25 });
+  const led=new THREE.Mesh(new THREE.BoxGeometry(w-0.06,0.024,0.006),ledMat);   // 앞면(방 쪽) 띠 — 갓
+  led.position.set(0,0.022,0.031); g.add(led);
+  const under=new THREE.Mesh(new THREE.BoxGeometry(w-0.06,0.008,0.045),ledMat); // 밑면 띠(빛 나가는 쪽) — 예전 그 자리
+  under.position.y=-0.002; g.add(under);
   g.userData.size={w,h:0.05,d:0.06}; g.userData.mount='under-shelf';
   g.userData.grow=true; g.userData.ppfd=o.ppfd??180; g.userData.coverage=o.coverage??0.5;
   g.userData.lampShade=led;

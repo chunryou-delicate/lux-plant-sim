@@ -9,6 +9,10 @@
      A 등 — 3D 그룹이 서 있나(visible) · 화면 상자 몇 px · 3D 가림(빛살) · DOM 가림(꼬리표·방울·말풍선) · 등 메시만 끈 사진과 그 상자 안 픽셀 차
      B 꼬리표 — 시루·재배판 몇 개 · 낱개로 보이는 것 · 묶음(3개 이상 44×20px 안) · 숨은 까닭
      C 방울 — 몇 개 · 화면 같은 점(3px 안)에 몇 개씩 · 그 그루들의 자리 이름과 발밑 좌표
+   ★ 전후 칸(10-31 총괄 · growlight_bar 그림 고침): BEFORE=<고치기 전 판의 OUT 폴더> 를 주면 같은 세이브 · 같은 카메라 · 같은 픽셀 크기로
+     등 둘레를 잘라 나란히 붙인다 — OUT/pair_lamp.png(꼬리표 서기 전) · OUT/pair_tags.png(꼬리표 선 뒤). 왼쪽이 BEFORE, 오른쪽이 이 판.
+     등 상자 안 «밝은 픽셀»(밝기 > 190)을 메시 켬/끔으로 센다 — 켬−끔 이 «등이 화면에 보탠 밝은 점»이다(창 유리처럼 원래 밝은 것은 끔 쪽에도 있어 빠진다).
+     «바뀐 픽셀»은 사진 사이 게임 시계가 흘러 생기는 흔들림이 섞이므로, 등을 다시 켠 사진과 견준 흔들림(noise)도 같이 적는다.
 ============================================================ */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,30 +26,59 @@ const LAMP = process.env.LAMP || 'banjiha-growlight-bar';
 const SAVE = fs.readFileSync(SAVEF, 'utf8');
 const J = v => JSON.stringify(v);
 
-/* PNG 를 풀어 RGBA 로 — 등 메시 켜고/끈 두 장을 상자 안에서 견준다 */
+/* PNG 를 풀어 RGBA 로 — 등 메시 켜고/끈 두 장을 상자 안에서 견준다
+   ⚠ 크롬 사진은 RGB(색 형식 2 · 3바이트)로 온다. 처음 판(69f1dfe0)은 4바이트로만 풀어 «바뀐 픽셀» 수가 틀렸다(10-31 전후 칸에서 잡음) */
 function decodePNG(buf) {
-  let off = 8, w = 0, h = 0; const idat = [];
+  let off = 8, w = 0, h = 0, depth = 8, ctype = 6; const idat = [];
   while (off + 8 <= buf.length) {
     const len = buf.readUInt32BE(off), type = buf.toString('ascii', off + 4, off + 8);
-    if (type === 'IHDR') { w = buf.readUInt32BE(off + 8); h = buf.readUInt32BE(off + 12); }
+    if (type === 'IHDR') { w = buf.readUInt32BE(off + 8); h = buf.readUInt32BE(off + 12); depth = buf[off + 16]; ctype = buf[off + 17]; if (buf[off + 20]) throw new Error('PNG 겹침(interlace)은 못 푼다'); }
     else if (type === 'IDAT') idat.push(buf.subarray(off + 8, off + 8 + len));
     else if (type === 'IEND') break;
     off += 12 + len;
   }
-  const raw = zlib.inflateSync(Buffer.concat(idat)), bpp = 4, stride = w * bpp, px = Buffer.alloc(h * stride);
+  if (depth !== 8 || (ctype !== 2 && ctype !== 6)) throw new Error(`PNG 형식 ${ctype}/${depth} 는 못 푼다`);
+  const raw = zlib.inflateSync(Buffer.concat(idat)), bpp = ctype === 6 ? 4 : 3, stride = w * bpp, row = Buffer.alloc(h * stride);
   for (let y = 0; y < h; y++) {
     const f = raw[y * (stride + 1)], src = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
     for (let x = 0; x < stride; x++) {
-      const a = x >= bpp ? px[y * stride + x - bpp] : 0, b = y ? px[(y - 1) * stride + x] : 0, c = (x >= bpp && y) ? px[(y - 1) * stride + x - bpp] : 0;
+      const a = x >= bpp ? row[y * stride + x - bpp] : 0, b = y ? row[(y - 1) * stride + x] : 0, c = (x >= bpp && y) ? row[(y - 1) * stride + x - bpp] : 0;
       let v = src[x];
       if (f === 1) v += a; else if (f === 2) v += b; else if (f === 3) v += (a + b) >> 1;
       else if (f === 4) { const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c); v += (pa <= pb && pa <= pc) ? a : pb <= pc ? b : c; }
-      px[y * stride + x] = v & 255;
+      row[y * stride + x] = v & 255;
     }
   }
+  if (bpp === 4) return { w, h, px: row };
+  const px = Buffer.alloc(w * h * 4, 255);
+  for (let i = 0, j = 0; i < w * h; i++, j += 3) { px[i * 4] = row[j]; px[i * 4 + 1] = row[j + 1]; px[i * 4 + 2] = row[j + 2]; }
   return { w, h, px };
 }
+/* 등 상자(장치 픽셀 q)에서 켬/끔 견줌 — 밝은 픽셀(밝기 > 190) 켬·끔 · 밝기 24 넘게 바뀐 픽셀 · on2(다시 켠 사진)가 있으면 흔들림 */
+function lampStats(on, off, q, on2 = null) {
+  let diff = 0, noise = 0, n = 0, bOn = 0, bOff = 0;
+  for (let y = q.y0; y < q.y1; y++) for (let x = q.x0; x < q.x1; x++) {
+    n++; const a = lum(on, x, y); if (Math.abs(a - lum(off, x, y)) > 24) diff++; if (on2 && Math.abs(a - lum(on2, x, y)) > 24) noise++;
+    if (a > 190) bOn++; if (lum(off, x, y) > 190) bOff++; }
+  return { box: `${q.x1 - q.x0}×${q.y1 - q.y0}`, brightOn: bOn, brightMeshOff: bOff, lampBright: bOn - bOff, changed: diff, noise: on2 ? noise : null, of: n };
+}
 const lum = (im, x, y) => { const i = (y * im.w + x) * 4; return 0.299 * im.px[i] + 0.587 * im.px[i + 1] + 0.114 * im.px[i + 2]; };
+function encodePNG(w, h, rgba) {
+  const raw = Buffer.alloc(h * (w * 4 + 1));
+  for (let y = 0; y < h; y++) { raw[y * (w * 4 + 1)] = 0; rgba.copy(raw, y * (w * 4 + 1) + 1, y * w * 4, (y + 1) * w * 4); }
+  const chunk = (t, d) => { const len = Buffer.alloc(4); len.writeUInt32BE(d.length); const td = Buffer.concat([Buffer.from(t, 'ascii'), d]);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(zlib.crc32(td) >>> 0); return Buffer.concat([len, td, crc]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+/* 두 사진의 같은 자리(장치 픽셀 상자)를 잘라 k 배(가까운 점)로 키워 나란히 — 사이 8px 흰 띠 */
+function pairPNG(a, b, box, k = 3) {
+  const w = box.x1 - box.x0, h = box.y1 - box.y0, W = w * k * 2 + 8, H = h * k, out = Buffer.alloc(W * H * 4, 255);
+  [a, b].forEach((im, j) => { for (let y = 0; y < H; y++) for (let x = 0; x < w * k; x++) {
+    const sx = box.x0 + Math.floor(x / k), sy = box.y0 + Math.floor(y / k), si = (sy * im.w + sx) * 4, di = (y * W + j * (w * k + 8) + x) * 4;
+    im.px.copy(out, di, si, si + 4); } });
+  return encodePNG(W, H, out);
+}
 
 let stage = '크롬 띄우기', page = null, code = 0;
 try {
@@ -107,19 +140,18 @@ try {
     /* 등 메시만 끈다(그룹은 둔다 — 그룹을 끄면 lampIsOn 이 거짓이라 광원까지 꺼져 방 전체가 바뀐다) */
     const pad = 6, cl = { x: Math.max(0, A.canvas.left + A.screen.x0 - pad), y: Math.max(0, A.canvas.top + A.screen.y0 - pad) };
     cl.w = Math.min(390 - cl.x, A.screen.w + 2 * pad); cl.h = Math.min(844 - cl.y, A.screen.h + 2 * pad);
-    const snap = async () => decodePNG(Buffer.from((await page.send('Page.captureScreenshot', { format: 'png', clip: { x: cl.x, y: cl.y, width: cl.w, height: cl.h, scale: 1 } })).data, 'base64'));
+    const shotImg = async f => { const b = Buffer.from((await page.send('Page.captureScreenshot', { format: 'png' })).data, 'base64');
+      if (OUT && f) { fs.mkdirSync(OUT, { recursive: true }); fs.writeFileSync(path.join(OUT, f), b); } return decodePNG(b); };
     const setMesh = on => page.eval(`(()=>{ let node=null; window.__rv.three.scene.traverse(o=>{ if(!node && o.userData && o.userData.uid==='${LAMP}' && o.children.length) node=o; });
       node.traverse(o=>{ if(o!==node && o.isMesh) o.visible=${on ? 'true' : 'false'}; }); window.__rv.setIdleFps(30); return true; })()`);
-    const full = async f => { if (OUT) { fs.mkdirSync(OUT, { recursive: true }); await page.shot(path.join(OUT, f)); } };
-    await full('lamp_on.png');
-    const on = await snap();
+    const on = await shotImg('lamp_on.png');
     await setMesh(false); await sleep(1500);
-    const off = await snap(); await full('lamp_meshoff.png');
-    await setMesh(true); await sleep(800);
-    let diff = 0, dmax = 0, n = 0; const W = Math.min(on.w, off.w), H = Math.min(on.h, off.h);
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { n++; const d = Math.abs(lum(on, x, y) - lum(off, x, y)); if (d > 12) diff++; if (d > dmax) dmax = d; }
-    px = { clipCss: cl, devPx: `${W}×${H}`, changed: diff, of: n, maxDelta: +dmax.toFixed(1), changedCss2: +(diff / 4).toFixed(1) };
-    console.log('A 등 메시 켬/끔 — 상자(+6px) 안 장치 픽셀 중 밝기 12 넘게 바뀐 것', J(px));
+    const off = await shotImg('lamp_meshoff.png');
+    await setMesh(true); await sleep(1500);
+    const on2 = await shotImg('lamp_on2.png');
+    const q = { x0: Math.round(cl.x * 2), y0: Math.round(cl.y * 2), x1: Math.round((cl.x + cl.w) * 2), y1: Math.round((cl.y + cl.h) * 2) };
+    px = { clipCss: cl, q, ...lampStats(on, off, q, on2) };
+    console.log('A 등 메시 켬/끔 — 상자(+6px) 장치 픽셀 · 밝은(>190) 켬/끔 · 바뀐(>24) · 흔들림(켬/다시 켬)', J(px));
   }
 
   /* ── B 꼬리표 · C 방울 ── */
@@ -169,6 +201,21 @@ try {
   console.log('창턱 이름 자리', J(BC.sill));
   console.log('B 묶음 흉내(44×20px · 셋 이상 하나)', J(BC.sim));
   if (OUT) await page.shot(path.join(OUT, 'tags.png'));
+  const BEFORE = process.env.BEFORE || null;
+  if (BEFORE && OUT && A.found) {   /* 같은 상자(이 판의 등 화면 상자 ±40 CSS px)를 두 판에서 잘라 나란히 */
+    const k2 = 2, m = 40, box = { x0: Math.max(0, Math.floor((A.canvas.left + A.screen.x0 - m) * k2)), y0: Math.max(0, Math.floor((A.canvas.top + A.screen.y0 - m) * k2)) };
+    box.x1 = Math.min(780, Math.ceil((A.canvas.left + A.screen.x1 + m) * k2)); box.y1 = Math.min(1688, Math.ceil((A.canvas.top + A.screen.y1 + m) * k2));
+    for (const [f, o] of [['lamp_on.png', 'pair_lamp.png'], ['tags.png', 'pair_tags.png']]) {
+      const a = decodePNG(fs.readFileSync(path.join(BEFORE, f))), b = decodePNG(fs.readFileSync(path.join(OUT, f)));
+      if (a.w !== b.w || a.h !== b.h) { console.log(`FAIL  전후 사진 크기가 다르다 ${f} ${a.w}×${a.h} ≠ ${b.w}×${b.h}`); code = 1; continue; }
+      fs.writeFileSync(path.join(OUT, o), pairPNG(a, b, box, 2));
+    }
+    /* 같은 자(이 판 등 상자 q)로 BEFORE 의 켬/끔 두 장도 잰다 */
+    if (px) { const rd = (d, f) => { const p = path.join(d, f); return fs.existsSync(p) ? decodePNG(fs.readFileSync(p)) : null; };
+      const st = d => lampStats(rd(d, 'lamp_on.png'), rd(d, 'lamp_meshoff.png'), px.q, rd(d, 'lamp_on2.png'));
+      console.log('등 상자 켬/끔 — 전', J(st(BEFORE)), '· 후', J(st(OUT))); }
+    console.log('전후 칸', J({ box, files: ['pair_lamp.png', 'pair_tags.png'].map(f => path.join(OUT, f)) }));
+  }
 } catch (e) {
   code = 1; console.log(`FAIL  던짐 — ${stage} 단계: ${String((e && e.message) || e).slice(0, 400)}`);
 } finally { if (page) { try { await page.close(); } catch { /* 이미 닫힘 */ } } }
