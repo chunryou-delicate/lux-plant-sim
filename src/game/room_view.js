@@ -2210,6 +2210,50 @@ export async function createRoomView(canvas, opts = {}) {
     return true;
   }
 
+  /* ★ 콩나물 포기를 «GLB 메시마다 한 메시»로 합친다 (2026-11-01 · [house] · 총괄 · test_perf_budget B «시루 하나당 +68콜»)
+     ------------------------------------------------------------
+     예전: 포기마다 GLB 를 clone 해 따로 세웠다. 콩나물 GLB 한 포기가 메시 4개라 다 자란 시루 하나가
+       16포기 × 4 = 64콜(+ 시루 3 · 콩 판 1 = 68)이었다. 게임은 시루를 하나씩 세우므로 시루 16개면 그루만 1,100콜이다.
+       47 → 68 은 66508ad9(10-08 · 포기 4~11 → 6~16 · 콩 판)에서 늘었다(고정 복사본 c15c59d1 47 · 66508ad9 68 · 0b3830a0 68).
+     지금: 포기 자리(행렬)만 모아, GLB 메시 하나마다 꼭짓점을 그 행렬들로 옮겨 «한 기하»로 붙인다.
+       재질은 위에서 복제한 그대로라 그림은 같고 메시 수만 준다 ⇒ 다 자란 시루 하나 3 + 1 + 4 = 8콜.
+     ★ 합친 메시들은 한 묶음에 넣고 `userData.sprouts` 에 포기 수를 적는다 — 그루 자식 수로 포기를 세던
+       검사(test_multisiru ①-D · test_musun_view ①-A)가 이 수를 읽는다.
+     ⚠ 합친 기하는 이 그루 몫이다 — disposeObject 가 버려도 GLB 캐시 기하는 안 다친다.
+     ⚠ 원본에 normal 이 없으면(콩나물 GLB) 합친 기하에도 안 넣는다 — GLTFLoader 가 그 재질을 flatShading 으로 둔다. */
+  function mergeSprouts(body, xforms) {
+    const bundle = new THREE.Group();
+    bundle.userData.sprouts = xforms.length;
+    if (!xforms.length) return bundle;
+    body.updateMatrixWorld(true);
+    const M = new THREE.Matrix4(), N = new THREE.Matrix3(), v = new THREE.Vector3();
+    body.traverse(m => {
+      if (!m.isMesh || !m.geometry || Array.isArray(m.material)) return;
+      const P = m.geometry.attributes.position, NA = m.geometry.attributes.normal, I = m.geometry.index;
+      const nv = P.count, ni = I ? I.count : nv, kk = xforms.length;
+      const pos = new Float32Array(nv * 3 * kk), nor = NA ? new Float32Array(nv * 3 * kk) : null;
+      const idx = new (nv * kk > 65535 ? Uint32Array : Uint16Array)(ni * kk);
+      xforms.forEach((T, s) => {
+        M.multiplyMatrices(T, m.matrixWorld);
+        N.getNormalMatrix(M);
+        for (let i = 0; i < nv; i++) {
+          v.fromBufferAttribute(P, i).applyMatrix4(M).toArray(pos, (s * nv + i) * 3);
+          if (nor) v.fromBufferAttribute(NA, i).applyMatrix3(N).normalize().toArray(nor, (s * nv + i) * 3);
+        }
+        for (let j = 0; j < ni; j++) idx[s * ni + j] = s * nv + (I ? I.getX(j) : j);
+      });
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      if (nor) geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      geo.setIndex(new THREE.BufferAttribute(idx, 1));
+      const one = new THREE.Mesh(geo, m.material);
+      one.castShadow = m.castShadow;
+      one.receiveShadow = m.receiveShadow;
+      bundle.add(one);
+    });
+    return bundle;
+  }
+
   async function buildBeansprout(spec, limit) {
     const p01 = clamp(spec.progress01 ?? 1, 0, 1);
     const g = new THREE.Group();
@@ -2287,17 +2331,18 @@ export async function createRoomView(canvas, opts = {}) {
     const sprH = rim * (0.5 + 1.2 * p01);                        // 이 시루에서 콩나물 키(m)
     const k = want / SIRU_D;
     const n = Math.round(lerp(6, 16, p01));
-    let made = 0;
+    /* 포기 자리(행렬)만 모으고 한 번에 합친다(§mergeSprouts) — 자리·배율·기울기는 예전 clone 과 같은 값 · 같은 차례 */
+    const tmp = new THREE.Object3D(), xforms = [];
     for (const o of cl.offs) for (let i = 0; i < n; i++) {
-      const c = made++ === 0 ? body : body.clone(true);
       const a = (i / n) * Math.PI * 2 + i * 0.7;
       const r = want * 0.30 * Math.sqrt((i + 0.4) / n);
-      c.scale.set(k * 1.8, sprH / nativeH, k * 1.8);
-      c.position.set(o.x * want + Math.cos(a) * r, rim * 0.6 - nb.min.y * (sprH / nativeH), o.z * want + Math.sin(a) * r);
-      c.rotation.y = a;
-      c.rotation.z = (Math.random() - 0.5) * 0.18;
-      g.add(c);
+      tmp.scale.set(k * 1.8, sprH / nativeH, k * 1.8);
+      tmp.position.set(o.x * want + Math.cos(a) * r, rim * 0.6 - nb.min.y * (sprH / nativeH), o.z * want + Math.sin(a) * r);
+      tmp.rotation.set(0, a, (Math.random() - 0.5) * 0.18);
+      tmp.updateMatrix();
+      xforms.push(tmp.matrix.clone());
     }
+    g.add(mergeSprouts(body, xforms));
     g.userData.kind = 'beansprout';
     g.userData.leaves = [];
     g.userData.containerCount = cl.offs.length;

@@ -76,11 +76,13 @@ const INSTALL = `(() => {
     const seen = new Set();
     g.traverse(o => { if (o.userData && Number.isInteger(o.userData.containerIndex))
                         seen.add(o.userData.containerIndex); });
+    /* ★ 콩나물 포기는 한 묶음으로 합쳐 선다(room_view §mergeSprouts · 2026-11-01) — 묶음은 적힌 포기 수로 센다 */
+    const nOf = c => (c.userData && Number.isInteger(c.userData.sprouts)) ? c.userData.sprouts : 1;
     return {
       kind: g.userData.kind || null,
       pos: { x: r5(g.position.x), y: r5(g.position.y), z: r5(g.position.z) },
-      children: g.children.length,
-      bodies: kids.length,
+      children: g.children.reduce((s, c) => s + nOf(c), 0),
+      bodies: kids.reduce((s, c) => s + nOf(c), 0),
       containers: seen.size,
       diameter: r5(V.plantDiameter(key) ?? -1),
       pot: window.__bbox(pot),

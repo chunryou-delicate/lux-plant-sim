@@ -248,10 +248,17 @@ async function main() {
   /* ★ 시루 무리는 **상한이 없다.** 여기서는 값을 숫자로 남기고, 판단은 박사님께 올린다
      (docs/handoff/render3d-to-plan.md §판단 필요). 검사는 "값이 이 표와 같은가"만 본다 —
      여기서 임의로 자르면 "사면 돈만 없어진다" 사고를 다시 만드는 셈이다. */
+  /* ★ 2026-11-01 [house] 47±6 → «시루 한 그루 9±2 · 무리 안 시루 하나 4±1».
+     10-08(66508ad9)에 포기를 4~11 → 6~16 으로 늘리고 콩 판을 깔면서 47 → 68 이 됐는데 표만 안 고쳐 빨강이었다.
+     콩나물 GLB 한 포기가 메시 4개라 포기 수만큼 콜이 붙었다. 이제 포기를 GLB 메시마다 한 메시로 합친다(room_view §mergeSprouts).
+       시루 한 그루 = 시루 3 + 콩 판 1 + 콩나물 4(다 자란 GLB 메시 수) + 1 = 9 — 게임은 시루를 하나씩(count:1) 세우므로 이것이 폰 값이다.
+       무리(count:N) 안 시루 하나 = 시루 3 + 콩 판 1 = 4 — 콩나물은 무리 전체가 4콜이다.
+     삼각형은 그대로다(시루 하나 5,920) — 줄인 것은 콜 수뿐이다. */
   const perSiru = Math.round((siru[24].calls - siru[1].calls) / 23);
-  ok('B 시루 하나가 더하는 드로우콜을 안다 (표가 흔들리면 여기서 걸린다 · 47±6)',
-     perSiru >= 41 && perSiru <= 53,
-     `시루 1개당 +${perSiru}콜 · 1개 ${siru[1].calls} → 12개 ${siru[12].calls} → 24개 ${siru[24].calls}콜`);
+  const oneSiru = siru[1].calls - withMusun.calls;
+  ok('B 시루 하나가 더하는 드로우콜을 안다 (표가 흔들리면 여기서 걸린다 · 시루 한 그루 9±2 · 무리 안 시루 하나 4±1)',
+     oneSiru >= 7 && oneSiru <= 11 && perSiru >= 3 && perSiru <= 5,
+     `시루 한 그루 +${oneSiru}콜 · 무리 안 시루 1개당 +${perSiru}콜 · 1개 ${siru[1].calls} → 12개 ${siru[12].calls} → 24개 ${siru[24].calls}콜`);
   const idleDefault = idleRows[0];
   const cap = JSON.parse(await page.eval(`JSON.stringify(window.view.stats().idleCap)`));
   /* ★ 24 → 18 (박사님 2026-08-07 확정 · room_view §ANIM_IDLE_FPS).
