@@ -1422,6 +1422,9 @@
     background:rgba(16,13,24,.82);border:1px solid rgba(255,180,84,.35);
     box-shadow:0 4px 14px rgba(0,0,0,.45);text-align:left;color:var(--ink)}
   #questChip.on{display:block}
+  #lightHeatOff{position:absolute;z-index:23;right:10px;top:calc(var(--safe-t) + 112px);padding:6px 10px;border-radius:12px;
+    background:rgba(16,13,24,.82);border:1px solid rgba(255,180,84,.35);color:var(--gold);font-size:12px;font-weight:700;
+    box-shadow:0 4px 14px rgba(0,0,0,.45)}
   /* ★ 2026-10-24 (plan d_B_switched · core 걸음) — 배너(#event)는 6초에 꺼진 뒤 0.45초 동안 사라지는데, 칩은 감춤 규칙(§#stage:has(#event.on))이 풀리는 즉시 돌아와
        그 사이 둘이 겹쳐 보였다. 칩이 «돌아올 때»만 배너가 다 사라진 뒤(0.45초)에 온다 — 감출 때는 위 규칙 그대로 바로 */
   #questChip{transition:opacity .2s ease .45s,visibility 0s linear .45s}
@@ -1592,7 +1595,8 @@
        ① 확대 중엔 [다음 날]의 «· 수확까지 N일»을 숨기고(§drawNext .nx-sub — 방으로 돌아오면 그대로) ② 카드 글줄은 [다음 날] 폭만큼 비킨다(--nextW · §ggResize)
        ③ [시야 돌아가기]는 카드 위(카드 높이 --ggH) — 예전엔 카드 윗변과 4px 겹쳤다 */
   #stage.zoom #next .nx-sub{display:none}
-  #stage.zoom #growGauge .gg-row,#stage.zoom #growGauge .gg-why,#stage.zoom #growGauge .gg-cut{margin-right:max(0px, calc(var(--nextW, 0px) - 4px))}
+  /* ★ 2026-10-31 D93 ④ m11 — 진행 띠(.gg-bar)도 비킨다 — 글줄만 비키고 띠는 [다음 날] 밑으로 들어가 «얼마나 남았나»의 오른쪽이 가려졌다(비판 둘째 판 s082_zoom) */
+  #stage.zoom #growGauge .gg-row,#stage.zoom #growGauge .gg-bar,#stage.zoom #growGauge .gg-why,#stage.zoom #growGauge .gg-cut{margin-right:max(0px, calc(var(--nextW, 0px) - 4px))}
   #stage.zoom #closeZoom{bottom:calc(22px + var(--ggH, 72px))}
   #growGauge .gg-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
   #growGauge b{font-size:13px;color:var(--ink);font-weight:700}
@@ -1988,6 +1992,8 @@
     <div id="placeHint"></div>
     <!-- ★ 할 일 쪽지 — 늘 보인다. 누르면 [할 일] 탭이 열린다(§questChip) -->
     <button id="questChip" type="button"><b>📜 할 일</b><span id="questChipText"></span></button>
+    <!-- ★ 2026-10-31 D93 ④ m8 — 빛 분포가 켜진 동안 방 위에 «끄기»(식물 칸 안에만 있어 며칠째 켜진 채 방을 덮었다 · 비판 둘째 판 s115 · s143) -->
+    <button id="lightHeatOff" type="button" style="display:none">🔆 빛 분포 끄기</button>
     <!-- ══ ★★★ **모서리로 뺀 두 손** (2026-08-17 · 박사님: *"[다음 날] 버튼은 우측 하단으로,
          물 주는 거 알림 버튼은 좌측 하단으로. 화면 앞으로 아이콘 형태로 — 시야 안 가리고,
          칸 차지 안 하고."*)
@@ -2754,14 +2760,8 @@
       <div class="box" id="shopBox" style="display:none">
         <h3>인터넷 주문 <span id="shopCash"></span></h3>
         <div class="sub">주문하면 하루 이틀 뒤에 옵니다. 취소는 안 됩니다.</div>
-        <!-- ★★ 하부 탭 (2026-08-16 박사님: *"상점에 하부탭이 더 생겨서 종류별로 리스팅되게"*)
-             ⚠ 갈래 이름을 여기 손으로 안 적는다 — `SHOP_GROUPS` 가 정본이고 `drawShop` 이 짓는다.
-               두 벌이 되면 품목이 늘 때 한쪽이 반드시 낡는다. -->
-        <div class="sheettabs" id="shopGroups" role="tablist"></div>
-        <!-- ★ 2026-10-10 D59 — 가게 주문판(산 집 · 진로 가게일 때만) -->
-        <div id="orderBoard" style="display:none"></div>
-        <div id="shopList"></div>
-        <div id="shopPending" class="itemline"></div>
+        <!-- ★ 2026-10-31 D93 ④ m10 — 파는 묶음(잉여 넘기기 · 몬스테라 내놓기 · 보유 채소 팔기 · 안내 줄)을 품목 목록 «위»로 올렸다.
+             ⛔ 목록 아래 있어 가구점이 열린 뒤(Day 45) 포스터 · 침대 수십 줄 밑으로 밀려 굴리기 15번+(비판 둘째 판 s149 · s150) -->
         <div class="btns">
           <!-- ★잉여 채소 넘기기 (2026-08-06 · docs/handoff/cropsale-to-plan.md).
                팔 것이 있을 때만 뜬다 — 늘 띄우면 "왜 회색이지"가 된다.
@@ -2797,6 +2797,14 @@
              이 파일 아래쪽 `#pantryPanel`(`.pop`)을 보라. 여기 있을 때는 시트 안 구르는
              칸의 맨 아래(실측 y=1211 · 화면 844)라 **눌러도 화면 밖에 떴다.** -->
         <div id="sellHint" class="itemline"></div>
+        <!-- ★★ 하부 탭 (2026-08-16 박사님: *"상점에 하부탭이 더 생겨서 종류별로 리스팅되게"*)
+             ⚠ 갈래 이름을 여기 손으로 안 적는다 — `SHOP_GROUPS` 가 정본이고 `drawShop` 이 짓는다.
+               두 벌이 되면 품목이 늘 때 한쪽이 반드시 낡는다. -->
+        <div class="sheettabs" id="shopGroups" role="tablist"></div>
+        <!-- ★ 2026-10-10 D59 — 가게 주문판(산 집 · 진로 가게일 때만) -->
+        <div id="orderBoard" style="display:none"></div>
+        <div id="shopList"></div>
+        <div id="shopPending" class="itemline"></div>
       </div>
 
       <div id="shopClosed" class="ph">아직 주문할 수 있는 것이 없습니다.</div>
@@ -4688,6 +4696,9 @@ function placeHintAt(el, say) {
   hintTargetEl = el;
 }
 function hintAvoidChip(h, hand, r) {
+  /* ★ D93 ④ m3 — 들어올 때의 자리(§placeHintAt 이 정한 처음 자리)를 적어 둔다 — 아래 후보가 다 무언가를 덮으면 이것도 견준다 */
+  const initPose = { left: h.style.left, top: h.style.top, cls: ['side', 'toRight', 'below', 'row'].filter(c => h.classList.contains(c)),
+                     hand: hand.textContent, handLeft: hand.style.left };
   /* ★ 2026-10-08 E — 확인 바의 경고 글(#placeConfirmWarn)도 비킨다. 빛·길 경고가 두 줄이면 말풍선(«여기에 둘까요? — [확인]»)이
        그 아랫줄을 덮었다(probe_reach_uses corridor.png) — 경고를 가리고 [확인]만 짚으면 안 된다. 비키는 법은 칩과 같다 */
   const shown = el => { if (!el) return null; const rc = el.getBoundingClientRect(); const cs = getComputedStyle(el);
@@ -4797,7 +4808,33 @@ function hintAvoidChip(h, hand, r) {
   const left = sideAt(false);
   if (hit(left, r) || hitAny(left)) {
     const right = sideAt(true);
-    if (right.right > innerWidth - 8 || hit(right, r) || hitAny(right)) sideAt(false);
+    if (right.right > innerWidth - 8 || hit(right, r) || hitAny(right)) {
+      /* ★★ 2026-10-31 총괄 D93 ④ m3 — 후보가 다 무언가를 덮으면 «덮는 넓이가 가장 작은 자리»로 간다(예전: 늘 왼쪽).
+           ⛔ 상점 줄 [주문]을 짚는 말풍선이 그 줄의 이름 · 값을 덮고(s021) · 확인 바 [확인]을 짚는 말풍선이 그 단추 글을 덮었다(s064 · s067 · s073).
+           ⇒ 처음 자리(위) · 아래 · 아래 한 줄 · 왼쪽 · 오른쪽을 다 재 — 비킬 글과 겹친 넓이 + 짚는 그것과 겹친 넓이×3 + 화면 밖 — 가장 작은 것.
+           ⚠ 자리만 고른다 — 말 · 짚는 것은 그대로 */
+      const area = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      const score = (q) => obs.reduce((a, o) => a + area(q, o), 0) + 3 * area(q, r)
+        + 1000 * (Math.max(0, 8 - q.left) + Math.max(0, q.right - (innerWidth - 8)) + Math.max(0, 4 - q.top) + Math.max(0, q.bottom - (innerHeight - 8)));
+      const poses = [
+        () => { h.classList.remove('side', 'toRight', 'below', 'row'); for (const c of initPose.cls) h.classList.add(c);
+                hand.textContent = initPose.hand; hand.style.left = initPose.handLeft; h.style.left = initPose.left; h.style.top = initPose.top; return h.getBoundingClientRect(); },
+        () => { h.classList.remove('side', 'toRight', 'row'); h.classList.add('below'); hand.textContent = '👆'; hand.style.left = '0px';
+                const hb2 = h.getBoundingClientRect(); const want2 = r.left + r.width / 2;
+                const got2 = Math.min(innerWidth - 8 - hb2.width / 2, Math.max(hb2.width / 2 + 8, want2));
+                h.style.left = got2 + 'px'; h.style.top = (r.bottom + 2) + 'px';
+                hand.style.left = Math.max(-(hb2.width / 2 - 8), Math.min(hb2.width / 2 - 8, want2 - got2)).toFixed(1) + 'px'; return h.getBoundingClientRect(); },
+        () => { h.classList.remove('side', 'toRight'); h.classList.add('below', 'row'); hand.textContent = '👆'; hand.style.left = '0px';
+                const hb2 = h.getBoundingClientRect(); const hw = hand.getBoundingClientRect().width || 28; const want2 = r.left + r.width / 2;
+                h.style.left = Math.min(innerWidth - 8 - hb2.width / 2, Math.max(hb2.width / 2 + 8, want2 + hb2.width / 2 - hw / 2)) + 'px';
+                h.style.top = (r.bottom + 2) + 'px'; return h.getBoundingClientRect(); },
+        () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(false); },
+        () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(true); }
+      ];
+      let best = 0, bestS = Infinity;
+      poses.forEach((f, i) => { const sc = score(f()); if (sc < bestS - 0.5) { bestS = sc; best = i; } });
+      poses[best]();
+    }
   }
 }
 /* ══ 조작 안내판 — 모든 조작을 한 화면에 (박사님 2026-08-03) ═══════════════
@@ -5869,6 +5906,10 @@ function coachHide() {
 function coach(id) {
   const n = COACH_NOTES[id];
   if (!n || !coachClear() || coachSeen().has(id)) return false;
+  /* ★ 2026-10-31 D93 ④ m11 — 배너(#event)나 [확인] 바가 떠 있으면 «시작»을 미룬다 — 같은 위쪽에 앉아 «여기에 둘까요?» 배너를 덮었다
+       (비판 둘째 판 s045 · zoomTip 이 놓는 중에 섰다). 떠 있는 쪽지는 안 걷는다(본 것으로 적혀 영영 사라진다) ·
+       안 본 쪽지라 다음 그리기(§updateHint · §coachTick)에서 다시 묻는다 */
+  if (($('event') && $('event').classList.contains('on')) || ($('stage') && $('stage').classList.contains('confirming'))) return false;
   const el = $('coach'); if (!el) return false;
   $('coachTitle').textContent = n.ko;
   $('coachBody').innerHTML = n.say;
@@ -7191,7 +7232,7 @@ function drawLedger() {
         + ` 하루씩 어긋나게 돌리면 <b>매일</b> 거둡니다.`;
   else if (sirus < handCap)
     tip = `시루 <b>${sirus}개</b> — 이제 매일 거둡니다. 하루 몫을 넘게 거둔 것은`
-        + ` <b>안 버려지고</b> **보유 채소**로 쌓였다가 [상점]에서 팔립니다.<br>`
+        + ` <b>안 버려지고</b> <b>보유 채소</b>로 쌓였다가 [상점]에서 팔립니다.<br>`
         + `★물은 한 번에 하나라 <b>하루 ${maxWaterPerDay}개</b>까지 시작할 수 있습니다`
         + ` — 그래서 <b>${handCap}개</b>가 천장입니다.`;
   else
@@ -8023,7 +8064,7 @@ function drawCuttings() {
            '장을 이미 잘랐습니다 — 새 잎이 날 때까지 기다립니다'
          : '새 잎이 날 때까지 기다립니다') + '</small></div></div>');
   } else {
-    for (const n of ok.slice(0, 5)) {
+    for (const [ni, n] of ok.slice(0, 5).entries()) {
       let sellWon = 0;
       try { sellWon = priceOf({ leaves: n.leaves, variegatedLeaves: n.variegatedLeaves }).won; } catch { }
       /* ★★ 「목록에 떠 있는데 누르면 던지는」 마디를 없앤다.
@@ -8054,7 +8095,8 @@ function drawCuttings() {
       };
       rows.push('<div class="cutRow"><div class="nm">잎 ' + n.leaves + '장' +
         (n.variegatedLeaves ? ' · 무늬 ' + n.variegatedLeaves + '장' : '') +
-        '<small>' + n.nodeId + ' · ' + n.stem + ' · ' +
+        /* ★ 2026-10-31 D93 ④ m1 — «n0#0 · pink»(성장 엔진 마디 id · 줄기 낱말)가 그대로 보였다(비판 둘째 판 s122 · s157) — 사람 말 «마디 N» */
+        '<small>마디 ' + (ni + 1) + ' · ' +
         (why ? why : '뿌리내면 팔 수 있습니다') + '</small></div>' +
         /* ★ 이 줄이 급전의 값을 말한다 — 받는 것 위, 치르는 것 아래(§cutMotherLoss) */
         '<div class="won">+' + sellWon.toLocaleString() + '원' +
@@ -8723,10 +8765,11 @@ function drawBag() {
       anyPlaceable = true;
       const ko = ['벽부형 식물등', '집게형 식물등', '거치형 식물등'][placed] || '식물등';
       html += `<div class="grouphead">식물등</div><div class="baggrid">` +
+        /* ★ 2026-10-31 D93 ④ m12 — 칸 글이 단추 기본 글색이라 배경과 거의 같아 안 읽혔다(비판 둘째 판 s137) — 다른 칸과 같은 짜임(.qty · .art · .nm) */
         `<button class="bagslot draggable" id="${BAG_LAMP_ID}" data-lampbag="1" type="button">` +
-        `<i class="ltr">💡</i>` +
-        (left > 1 ? `<b class="qty">×${left}</b>` : '') +
-        `<small>${ko}</small></button></div>`;
+        `<span class="qty">×${left}</span>` +
+        `<span class="art"><b style="background:#ffd36b">💡</b></span>` +
+        `<span class="nm">${ko}</span></button></div>`;
     }
   }
   /* ══ ★★★ 2026-08-21 — **선물 몬스테라는 가방 칸으로 온다** (박사님:
@@ -11756,15 +11799,61 @@ function placeMarks() {
   if (!box || !roomView || !roomView.screenPosOf) return;
   box.classList.toggle('busy', stageBusy());   /* ★ 바쁨이 풀리면 감춘 말풍선이 다시 보인다(§drawMarks) */
   const c = $('roomCanvas');
+  const items = [];
   for (const el of box.children) {
     const key = el.dataset.key;
     let sp = null; try { sp = roomView.screenPosOf(key); } catch { }
     /* 화면 밖이거나 카메라 뒤면 감춘다 — 0으로 메꾸면 구석에 붙어 오해를 만든다 */
     if (!sp) { el.style.display = 'none'; continue; }
     el.style.display = '';
-    el.style.left = sp.x + 'px';
     /* 발밑 좌표라 위로 올린다 — 화분 높이만큼 띄워야 물건을 안 가린다 */
-    el.style.top = Math.max(24, sp.y - 46) + 'px';
+    items.push({ el, x: sp.x, y: Math.max(24, sp.y - 46) });
+  }
+  /* ★ 2026-10-31 총괄 D93 ④ m4 — **같은 점의 방울을 한 줄로 벌린다**(house 69f1dfe0 · 비판 둘째 판 s080 · s103 · s130).
+       ⛔ 비키는 규칙이 없어 한 이름 자리에 겹쳐 선 그루(옛 세이브 — 이제는 놓는 손이 막는다 · M4)나 화면에서 11px 남짓 붙은 에타제르 칸의
+         심기 방울 3~4개가 한 점에 포개져 어느 것을 누르는지 몰랐다.
+       ⇒ 발밑이 가로 · 세로 24px 안인 방울끼리 묶어, 묶음 가운데를 기준으로 방울 폭만큼 옆으로 벌린다(위아래는 그대로 · 화면 밖으로는 안 나가게).
+       ⚠ 그림 자리만 바꾼다 — 어느 그루의 방울인지(열쇠 · 누름)는 그대로다 */
+  /* 묶기는 사슬로 — 가까운 것끼리 이어지면 한 묶음(첫 방울에서만 재면 이어진 방울이 다른 묶음으로 갈려 벌린 뒤 서로 부딪혔다 · core 자 probe_minor) */
+  const par = items.map((_, i) => i);
+  const root = i => (par[i] === i ? i : (par[i] = root(par[i])));
+  for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++)
+    if (Math.abs(items[i].x - items[j].x) < 24 && Math.abs(items[i].y - items[j].y) < 24) par[root(j)] = root(i);
+  const byRoot = new Map();
+  items.forEach((it, i) => { const k = root(i); if (!byRoot.has(k)) byRoot.set(k, []); byRoot.get(k).push(it); });
+  const cw = (c && c.clientWidth) || innerWidth;
+  for (const list of byRoot.values()) {
+    const n = list.length;
+    if (n === 1) { const it = list[0]; it.el.style.left = it.x + 'px'; it.el.style.top = it.y + 'px'; continue; }
+    /* 큰 묶음은 4개씩 줄을 바꿔 위로 쌓는다 — 한 줄로만 벌리면 에타제르 빈 시루 10개가 390px 을 넘어 화면 밖으로 나갔다(core 자 probe_minor 사진).
+         아래 줄부터 아래쪽 · 왼쪽 방울을 채운다(방에서의 자리 차례를 대강 지킨다) */
+    list.sort((a, b) => (b.y - a.y) || (a.x - b.x));
+    const step = Math.max(...list.map(it => it.el.offsetWidth || 36)) + 4;
+    const rowH = Math.max(...list.map(it => it.el.offsetHeight || 32)) + 4;
+    const perRow = Math.max(1, Math.min(n, 4, Math.floor((cw - 8) / step)));
+    const rows = Math.ceil(n / perRow);
+    const cx = list.reduce((a, it) => a + it.x, 0) / n;
+    const cy = Math.max(list.reduce((a, it) => a + it.y, 0) / n, 24 + (rows - 1) * rowH);
+    for (let r = 0; r < rows; r++) {
+      const row = list.slice(r * perRow, (r + 1) * perRow).sort((a, b) => a.x - b.x);
+      const half = (row.length - 1) / 2 * step;
+      const x0 = Math.min(Math.max(cx - half, step / 2), Math.max(step / 2, cw - step / 2 - 2 * half));
+      row.forEach((it, i) => { it.x = x0 + i * step; it.y = cy - r * rowH; it.el.style.left = it.x + 'px'; it.el.style.top = it.y + 'px'; });
+    }
+  }
+  /* 벌린 뒤에도 서로 30% 넘게 겹치는 쌍(다른 묶음끼리)은 뒤엣것을 위로 비켜 세운다 — 방울 위끝(top)은 24px 아래로 안 내려간다 */
+  if (items.length > 1) {
+    const rectOf = it => { const w = it.el.offsetWidth || 36, h = it.el.offsetHeight || 32; return { l: it.x - w / 2, r: it.x + w / 2, t: it.y - h, b: it.y, w, h }; };
+    for (let pass = 0; pass < 3; pass++) {
+      let moved = false;
+      for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+        const a = rectOf(items[i]), q = rectOf(items[j]);
+        const ov = Math.max(0, Math.min(a.r, q.r) - Math.max(a.l, q.l)) * Math.max(0, Math.min(a.b, q.b) - Math.max(a.t, q.t));
+        if (ov <= 0.3 * Math.min(a.w * a.h, q.w * q.h)) continue;
+        const it = items[j]; it.y = Math.max(24 + q.h, a.t - 2); it.el.style.top = it.y + 'px'; moved = true;
+      }
+      if (!moved) break;
+    }
   }
 }
 /* ══════════════════════════════════════════════════════════════════════════
@@ -11847,6 +11936,12 @@ function syncPickLift() {
 addEventListener('resize', syncPickLift);
 if (window.ResizeObserver) try { new ResizeObserver(syncPickLift).observe($('bottom')); } catch { }
 
+/* ★ D93 ④ — 그루가 방에 선 뒤 덮개를 한 번만 다시 그린다(여럿이 한꺼번에 서도 한 번 · §syncRoom 시루 줄) */
+let overlayAfterPlants = null;
+function overlaysAfterPlants() {
+  if (overlayAfterPlants != null) return;
+  overlayAfterPlants = setTimeout(() => { overlayAfterPlants = null; try { refreshOverlays(); } catch (e) { console.warn('[덮개 다시]', e && e.message); } }, 0);
+}
 function refreshOverlays() {
   syncPickLift();
   /* ★ 말풍선을 **먼저** 만든다 (2026-08-06). 아래 둘이 그걸 보고 정하기 때문이다:
@@ -12748,6 +12843,7 @@ function drawLightHeatBtn() {
   b.setAttribute('aria-pressed', on ? 'true' : 'false');
   b.textContent = on ? '🔆 빛 분포 끄기' : '🔆 빛 분포 보기';
   b.classList.toggle('primary', on);
+  { const off = $('lightHeatOff'); if (off) off.style.display = on ? '' : 'none'; }   /* ★ D93 ④ m8 — 켜진 동안 방 위 끄기 */
   if (!note) return;
   /* ⚠ 켜져 있을 때만 말한다 — 꺼 놓고 「몇 칸을 쟀다」를 적으면 그게 거짓말이다 */
   note.style.display = on ? '' : 'none';
@@ -12755,6 +12851,16 @@ function drawLightHeatBtn() {
     '칸마다 그 칸의 표면에서 잰 값입니다 — 가구 위는 가구 윗면, 없으면 바닥입니다.'
     + (st.onFurniture ? ` (가구 위 ${st.onFurniture}칸)` : '');
 }
+/* ★ 2026-10-31 D93 ④ m8 — 끄는 손 하나(방 위 칩 · 하루 넘김이 같이 씀) */
+function lightHeatOff() {
+  let on = false;
+  try { on = !!(roomView && roomView.lightHeatmap && (roomView.lightHeatmap() || {}).on); } catch { on = false; }
+  if (!on) return false;
+  try { roomView.setLightHeatmap(false); } catch (e) { console.warn('[빛 분포 끄기]', e && e.message); return false; }
+  drawLightHeatBtn();
+  return true;
+}
+if ($('lightHeatOff')) $('lightHeatOff').onclick = guard(() => { lightHeatOff(); });
 if ($('lightHeat')) $('lightHeat').onclick = guard(() => {
   if (!roomView || !roomView.setLightHeatmap) {
     banner('빛 분포를 못 켭니다', '방 화면이 아직 안 떴습니다');
@@ -13855,6 +13961,9 @@ function goNextDay() {
   mealLastWrite();                            /* D13 — 오늘 넘긴 상을 적는다(고른 g 을 비우기 «전») */
   mealOpen = false; mealG = null;
   drawMealPanel();
+  /* ★ 2026-10-31 D93 ④ m8 — 하루가 가면 빛 분포를 끈다: 켤 때의 날씨 · 계절(지난 턴)로 잰 값이라 다음 날엔 낡는다 ·
+       켜 둔 채 며칠 방을 덮었다(비판 둘째 판 Day 27~32). 다시 보려면 다시 켠다(그날 조건으로 다시 잰다) */
+  lightHeatOff();
   runDayAnim(commitNextDay);
 }
 /* ★ 그만두기 — **하루가 안 간다.** 고른 값도 디폴트로 되돌린다.
@@ -15200,7 +15309,11 @@ function syncRoom() {
         want.add(row.id);
         Promise.resolve(row.at && roomView.setPlantAt
           ? roomView.setPlantAt(row.id, row.at, spec)
-          : roomView.setPlant(row.slotId, spec)).catch(warn(row.kindKo + ' ' + row.id));
+          : roomView.setPlant(row.slotId, spec))
+          /* ★ 2026-10-31 D93 ④ — 방에 «선 뒤» 덮개(말풍선 · 꼬리표)를 한 번 다시 그린다 — 꼬리표는 방이 그린 시루에만 다는데(§siruBadgeRows),
+               다시 켜면 첫 그리기가 시루를 싣기 «전»이라 0 개로 남았다(house 69f1dfe0 · 비판 판 Day 50 세이브 · draw 한 번이면 21) */
+          .then(() => { if (my === syncSeq) overlaysAfterPlants(); })
+          .catch(warn(row.kindKo + ' ' + row.id));
       }
       for (const id of [...shownSirus]) if (!want.has(id)) {
         shownSirus.delete(id);

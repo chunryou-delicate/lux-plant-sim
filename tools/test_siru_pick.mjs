@@ -33,18 +33,37 @@ await page.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchP
 let pass = 0;
 const ok = (name) => { pass++; console.log('PASS  ' + name); };
 
+/* ★ 2026-10-31 core(총괄 물음 · D93 ④) — 터치 끝을 «바로» 보낸다.
+     ⛔ 시작 → 60ms 쉼 → 끝이었는데, 느린 헤드리스(swiftshader)에서 화면이 바쁘면 끝 이벤트가 늦게 닿아
+       시작~끝이 640~660ms 가 됐다 — 방 뷰는 600ms(room_view TAP_MS) 넘게 누른 것을 «누름»이 아니라고 본다(core 진단 diag_touch: 열에 여섯이 그 꼴).
+       사람 손가락 누름은 100ms 안팎이다 — 자가 «길게 누름»을 흉내 낸 것이었다 */
 const tapXY = async (x, y) => {
   await page.send('Input.dispatchTouchEvent',
     { type: 'touchStart', touchPoints: [{ x: Math.round(x), y: Math.round(y), id: 1, radiusX: 8, radiusY: 8, force: 1 }] });
-  await sleep(60);
   await page.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await sleep(180);
 };
 /* 누르기 전에 고르기를 푼다 — 안 풀면 「안 눌렸다」가 「전에 고른 것이 남았다」로 보인다.
    이 검사가 막으려는 버그가 바로 그것이라, 여기서 안 풀면 검사가 통째로 장식이 된다. */
+/* ★ 2026-10-31 core(총괄 물음 · D93 ④) — 누르기 «전»에 카메라가 멎기를 기다린다.
+     ⛔ 82d55fe0(10-25)부터 빨갰다(«(−8,−6) null»). 가르니(core 진단 diag_siru_pick): 바닥 free 시루는 퍼지 그물에 들어 있고(마우스 12/12),
+       터치만의 탓도 아니다(기다림 없이는 마우스도 null). 고르면 카메라가 그 그루로 다가가고 풀면 돌아오는데, 그동안 방 뷰가 누름을 안 받는다
+       (카메라 v2 — «방 단추는 카메라 멎은 뒤 눌러라»). 이 자는 고르고 풀고를 바로 되풀이해 그 사이를 눌렀다.
+     ⇒ 풀고 · 멎기를 기다리고 · 화면 좌표를 다시 잰다(아래 루프). 자가 재는 물음(발밑 ±8px · 위로 16px 이면 그 시루)은 그대로다 */
+const settle = async () => {
+  for (let i = 0; i < 60; i++) {
+    const busy = await page.eval(`(() => { try { return !!(window.__rv.camBusy && window.__rv.camBusy()); } catch (e) { return false; } })()`);
+    if (!busy) break;
+    await sleep(120);
+  }
+  await sleep(600);
+};
 async function tapAndRead(x, y) {
-  await page.eval(`window.__picked.clear()`);
+  /* ⚠ 바로 보내도 느린 헤드리스는 한 프레임 그리기가 길어 터치 끝이 600ms 뒤로 밀렸다(core 진단) — 누르는 동안만 그리기 고리를 멈춘다
+       (room_view §setPaused · 광선 판정은 그리기와 무관 · 읽은 뒤 다시 돈다) */
+  await page.eval(`(() => { try { window.__rv.setPaused(true); } catch (e) {} return 1; })()`);
   await tapXY(x, y);
+  await page.eval(`(() => { try { window.__rv.setPaused(false); } catch (e) {} return 1; })()`);
   return page.eval(`(() => ({
     picked: window.__picked && window.__picked.slotId,
     name: (document.getElementById('pickedName')||{}).textContent
@@ -88,9 +107,11 @@ const screenOf = (key) => page.eval(`(() => {
 /* ── A · B — 손가락 오차 안에서 그 시루가 잡히고, 이름이 시루마다 다르다 ── */
 const names = new Set();
 for (const key of keys) {
-  const at = await screenOf(key);
-  assert.ok(at, `${key} 가 화면에 안 잡힙니다 — 시점이 바뀌었거나 안 섰습니다`);
   for (const [dx, dy] of [[0, 0], [8, -6], [-8, -6], [0, -16]]) {
+    await page.eval(`window.__picked.clear()`);
+    await settle();
+    const at = await screenOf(key);
+    assert.ok(at, `${key} 가 화면에 안 잡힙니다 — 시점이 바뀌었거나 안 섰습니다`);
     const r = await tapAndRead(at.x + dx, at.y + dy);
     assert.equal(r.picked, key,
       `${key} 발밑에서 (${dx},${dy})px 을 눌렀는데 「${r.picked}」가 골라졌습니다 ` +
@@ -110,6 +131,8 @@ const potKey = await page.eval(`(() => {
   return g ? g.key : null;
 })()`);
 assert.ok(potKey, '몬스테라가 방에 안 서 있습니다');
+await page.eval(`window.__picked.clear()`);
+await settle();
 const pAt = await screenOf(potKey);
 assert.ok(pAt, '몬스테라가 화면 밖입니다');
 const got = await tapAndRead(pAt.x, pAt.y);
