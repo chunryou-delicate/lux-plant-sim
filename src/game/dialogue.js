@@ -232,7 +232,11 @@ export const SCRIPTS = {
     { who: 'moni',   text: '얘는 정해져 있어. **두 번째랑 세 번째** 잎.' },
     { who: 'moni',   text: '거기 무늬가 나. 그게 값이 돼.' },
     { who: 'jachwi', face: 'curious',  text: '…값이 된다고?' },
-    { who: 'moni',   face: 'teach',    text: '응. **이 방을 나가는 돈**, 거기서 나와.' },
+    /* ★ 2026-10-31 [plan] 총괄 D95 ② 이사비 길 한 목소리 — 옛 «응. **이 방을 나가는 돈**, 거기서 나와.»는 Day 25 «채소 판 돈이 이 방을 나가는 돈이야»와
+         서로 «그것만»으로 읽혀 갈렸다(비판 둘째 판 ④ · Q2). 한 목소리: 채소는 이사비를 «꾸준히 모으는 쪽» · 무늬 삽수는 «크게 버는 쪽» · 둘 다 이사비로 간다.
+       참: 무늬 삽수 한 그루 값은 무늬 잎 하나(제일 낮은 등급 산반)만으로 350,000원부터(varie_grades.json · shop §priceOf) — 콩나물 1kg 7,000원의 쉰 배.
+         «쪽»이라 다른 쪽(채소)이 있음을 남긴다. «제일 크게» · «큰 몫»은 안 썼다 — 반지하 들어온 돈의 98%는 채소다(growth 83b1e728) · 한 그루 값이 큰 것만 참. 수 없음. */
+    { who: 'moni',   face: 'teach',    text: '응. 이사비에서 **크게 버는 쪽**이야.' },
     { who: 'moni',   text: '가방에서 꺼내서 **밝은 데** 놓아 봐.' }
   ],
 
@@ -558,6 +562,17 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'worry', text: '겨울인데 안 자란다.' },
     { who: 'moni',   text: '겨울엔 원래 더뎌. 멈춘 거랑 죽은 거는 달라.' },
     { who: 'moni',   face: 'teach', text: '얘는 기다리는 중이야. 봄까지 기다려도 되고, 등을 켜 줘도 되고.' }
+  ],
+  /* ★ 2026-10-31 [plan] 총괄 D95 ⑨ — **반지하에서 겨울에 멈췄을 때.** 위 plantStalledWinter 의 «겨울엔 원래 더뎌 · 봄까지 기다려도 되고»는
+       빛이 철을 타는 판(원룸~ · sim.mode ≠ novice)에서만 참이다. 반지하는 빛의 초보(D1 · 여름·맑음 고정 · D20 «다»)라 겨울이 와도 창턱 빛이 그대로고
+       봄이 와도 안 바뀐다 — 그 판에서 겨울 멈춤은 자리 탓이다(loop §plant_stalled_winter 는 철만 보고 낸다).
+     고르는 곳: §scriptOf(plant_stalled_winter) — S.sim.mode === 'novice' 일 때만 이 줄 · 모르면 예전 그대로(plantStalledWinter).
+     참: «이 방 빛은 겨울에도 그대로» = winterCameBanjiha 와 같은 말 · «자리 탓» = 빛 부족 멈춤인데 철이 빛을 안 바꾸니 남는 까닭은 자리 ·
+       «옮겨 보자» = plantStalled 와 같은 처방(반지하 창턱 3.68 은 문턱 2.7 위라 자란다). 수 없음. */
+  plantStalledWinterBanjiha: [
+    { who: 'jachwi', face: 'worry', text: '겨울인데 안 자란다.' },
+    { who: 'moni',   text: '이 방 빛은 겨울에도 그대로야.' },
+    { who: 'moni',   face: 'teach', text: '철 탓이 아니라 자리 탓이야. 옮겨 보자.' }
   ],
   plantResumed: [
     { who: 'moni',   face: 'proud', text: '봐. 다시 오르기 시작했어.' },
@@ -1044,7 +1059,10 @@ export const SCRIPTS = {
        늘린 만큼 거두는 것도 는다(nudgeSiruPush 와 같은 말). 수 없음. */
   questSiru16: [
     { who: 'jachwi', face: 'think', text: '팔아 보니 시루가 많을수록 낫겠네.' },
-    { who: 'moni',   face: 'teach', text: '응. 채소 판 돈이 이 방을 나가는 돈이야.' },
+    /* ★ 2026-10-31 [plan] 총괄 D95 ② — 옛 «응. 채소 판 돈이 이 방을 나가는 돈이야.»는 Day 11 «이 방을 나가는 돈, 거기서 나와»(몬스테라)와 갈렸다.
+       한 목소리: 채소는 «꾸준히 모으는 쪽» · 무늬 삽수는 «크게 버는 쪽»(monsteraArrived). 참: 반지하 들어온 돈의 98%는 채소(growth 83b1e728) ·
+       시루가 돌면 거두는 대로 곳간에 쌓이고 남는 몫을 판다(sell_surplus) — «꾸준히». «쪽»이라 다른 쪽이 있음을 남긴다. 수 없음 · «버는 쪽»(본전 말) 안 씀. */
+    { who: 'moni',   face: 'teach', text: '응. 채소는 이사비를 **꾸준히 모으는** 쪽이야.' },
     { who: 'moni',   text: '늘리는 동안은 시루값이 먼저 나가. 거두는 건 그 뒤야.' },
     { who: 'jachwi', face: 'worry', text: '…그럼 한동안은 더 줄겠네.' },
     { who: 'moni',   face: 'teach', text: '한동안은. 그래도 늘린 만큼 거두는 것도 늘어.' }
@@ -1062,7 +1080,9 @@ export const SCRIPTS = {
   questSellSurplus: [
     { who: 'jachwi', face: 'think', text: '채소가 자꾸 쌓이네.' },
     { who: 'moni',   face: 'teach', text: '다음에 거둘 때까지 먹을 몫은 두고, 그 위로 쌓이는 건 팔아.' },
-    { who: 'moni',   text: '이 방에서 돈이 들어오는 길은 그거야.' },
+    /* ★ 2026-10-31 [plan] 총괄 D95 ② — 옛 «이 방에서 돈이 들어오는 길은 그거야.»는 «그 길뿐»으로 읽혀 무늬 삽수(«크게 버는 쪽» · monsteraArrived)와 갈렸다.
+       참: 남는 몫을 팔면 그때그때 지갑에 든다(곳간은 쉬지 않음 · 시루가 돌면 또 쌓임) — «꾸준히»는 다음 날 questSiru16 «꾸준히 모으는 쪽»과 같은 말 */
+    { who: 'moni',   text: '그게 꾸준히 돈이 되는 길이야.' },
     { who: 'jachwi', face: 'curious', text: '어디서 팔아?' },
     { who: 'moni',   face: 'teach', text: '상점에서 **보유 채소 팔기**를 눌러.' }
   ],
@@ -1324,8 +1344,12 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'tired', text: '…제일 안 되는 거네.' },
     /* ★ 2026-10-10 [plan] — 「이백만 원」을 뺐다: 몬이는 수를 안 말하고(규율), 이사비가 판으로 바뀐다(총괄 10-10 · 200·180·170·160만 판).
        금액은 화면(이사 되묻기 창 · canMoveOut.why «이사 자금이 N원 모자랍니다»)이 규칙에서 말한다 */
-    { who: 'moni',   text: '보증금이랑 첫 달 월세랑 이삿짐값이야.' },
-    { who: 'jachwi', face: 'think', text: '한 번에 나가는구나.' },
+    /* ★ 2026-10-31 [plan] 총괄 D95 ⑧ — 옛 «보증금이랑 첫 달 월세랑 이삿짐값이야.»는 코드와 달랐다: 이사비(tutorial §moveOut)는 그것만 빼고
+         월세 시계(ts.rent.nextDueDay)는 이사로 안 바뀐다 — 원룸 첫 월세는 그 시계대로 따로 나간다(growth 239767fa · growth-move-broke-20261031 §3 ①).
+       참: 이사비 = 보증금 + 이사 · 복비(homes.json 원룸 notes) · 월세는 다달이 따로(D31 moveLowCash «이사비 내면 첫 달 월세가 모자라»와 한 말).
+       자취생 줄은 «목돈»으로 — 바로 윗줄 «월세는 따로»와 이어져 «한 번에»가 월세로 읽히지 않게. 수 없음. */
+    { who: 'moni',   text: '보증금이랑 이삿짐값이야. 월세는 따로 나가.' },
+    { who: 'jachwi', face: 'think', text: '목돈이 한 번에 나가는구나.' },
     { who: 'moni',   text: '한 번만 나가면 돼. 그다음엔 이 방이 아니고.' }
   ],
   /* 돈은 됐는데 배움이 모자랄 때. ★말이 완전히 다르다 —
@@ -1546,12 +1570,14 @@ export const SCRIPTS = {
   nudgeMixBag:        [ { who: 'moni', face: 'teach', text: '무순 판이 가방에 있어. 밝은 데 놓아 길러 봐.' } ],
   nudgeMixPush:       [ { who: 'moni', face: 'teach', text: '콩나물만으론 상이 한 가지야. 무순을 길러야 둘째 몫이 생겨.' } ],
   nudgeCutOffer:      [ { who: 'moni', face: 'teach', text: '수경병은 상점에 있어. 잎 한 장짜리 마디를 잘라 꽂아 봐.' } ],
-  nudgeCutPush:       [ { who: 'moni', face: 'teach', text: '잘라도 안 죽어. 마디 하나가 한 그루가 돼.' } ],
+  /* ★ 2026-10-31 [plan] D95 — 몬이가 «하나»를 말했다(수) · 뜻 그대로: 자른 마디가 새 그루가 된다 */
+  nudgeCutPush:       [ { who: 'moni', face: 'teach', text: '잘라도 안 죽어. 자른 마디가 새 그루가 돼.' } ],
   nudgeVarieOffer:    [ { who: 'moni', face: 'teach', text: '무늬 있는 마디는 밝은 데서 뿌리내려야 좋은 무늬가 나.' } ],
   nudgeVariePush:     [ { who: 'moni', face: 'teach', text: '무늬 마디를 잘라서 밝은 자리에 꽂아 봐.' } ],
   nudgeSellOffer:     [ { who: 'moni', face: 'teach', text: '무늬 삽수는 값이 나가. 내놓아 봐.' } ],
   /* ★ 2026-10-10 [plan] 총괄 ⓐ — «팔아야»는 반쯤 거짓(이사 문은 돈 — 파는 것은 돈을 모으는 한 길). 열림이 «둘 이상»이라 하나를 팔아도 하나가 남는다 */
-  nudgeSellPush:      [ { who: 'moni', face: 'teach', text: '무늬 삽수 하나 팔면 이사비에 큰 보탬이 돼.' } ],
+  /* ★ 2026-10-31 [plan] 총괄 D95 ② — 몬이가 «하나»를 말했다(수) · 한 목소리 «크게»(monsteraArrived «이사비에서 크게 버는 쪽») */
+  nudgeSellPush:      [ { who: 'moni', face: 'teach', text: '무늬 삽수를 팔면 이사비에 크게 보태져.' } ],
   nudgeHarvestPush:   [ { who: 'moni', face: 'worry', text: '다 자란 게 시루에서 기다려. 거두면 밥이 돼.' } ],
   nudgeSeedPush:      [ { who: 'moni', face: 'worry', text: '씨앗이 떨어졌어. 상점에서 시키면 하루면 와.' } ],
   /* ★ 2026-10-08 [plan] #12 — 퀘스트별 독촉 앞줄(§CHATTER 의 같은 이름). 공통 넷보다 먼저 맞는다 */
@@ -2336,7 +2362,11 @@ export const SCRIPTS = {
      등 장면이 길어 «한 줄만» 붙인다(EVENT_ORDER — lamp_unlocked 바로 뒤). 거짓 없는 말만: 선반·받침대는 자리(slots)를 더한다.
      «밝은 자리»라고는 안 한다 — 밝은지는 놓을 때 D39 C 빛 한 줄이 말한다. 한 판에 한 번(REPEATABLE 아님). */
   furnitureShopOpen: [
-    { who: 'moni', face: 'teach', text: '가구점도 문을 열었대. 선반을 들이면 화분 놓을 자리가 늘어.', art: 'ev_furniture_shop' }   /* ★ 10-10 char 장면(ea18110c) */
+    { who: 'moni', face: 'teach', text: '가구점도 문을 열었대. 선반을 들이면 화분 놓을 자리가 늘어.', art: 'ev_furniture_shop' },   /* ★ 10-10 char 장면(ea18110c) */
+    /* ★ 2026-10-31 [plan] 총괄 D95 ⑥ — 가구점이 한꺼번에 열려 포스터 · 침대(60~73만 원)가 이사비 모자란 사람 앞에 섰다(비판 둘째 판 Q6).
+       참: 꾸미는 가구는 자람 · 돈에 안 걸린다 · 산 가구는 이사 때 가방에 담겨 따라간다(oneroom §반지하 가구를 가방에 담는다) ⇒ 늦게 사도 잃는 게 없다.
+       «사지 마»라고 하지 않는다(막지 않음 · 판단은 사람) · 화면 한 줄은 가구 탭 머리(plan-to-core-d95 §⑥). 수 없음. */
+    { who: 'moni', face: 'calm', text: '꾸미는 가구는 급할 거 없어. 이사비부터.' }
   ],
   ppTradeOffer: [
     { who: 'jachwi', face: 'curious',  text: '아래층에 식물 나눔 쪽지가 붙었다. 분홍 잎이 섞인 작은 화분이다.' },
@@ -2733,13 +2763,30 @@ export const SCRIPTS = {
   ],
   /* 원룸에서 맞는 겨울. ★`winter_still` 은 `!ts.movedOut` 로 잠겨 여기까지 안 온다
      (tutorial.js §winter_still) — 그 자리를 이 작은 말이 받는다.
-     ⚠ 「겨울이라 어두워졌다」고 말하지 않는다. novice 는 계절계수가 1.0 이라 **빛이 안 준다**
-       (story_arc §5 ★★ · autumnCame 주석과 같은 규율). */
+     ⚠ (낡은 말 바로잡음 · 2026-10-31 [plan] D95 ⑦) 옛 주석 «novice 는 계절계수가 1.0 이라 빛이 안 준다»는 D1 전 말이다 — 원룸은 이사 때 real 로 바뀌어
+       겨울 빛이 실제로 준다(growth ab7bbecf: 창턱 등0 겨울 1.50~1.60). 그 말은 아래 chatOneroomWinterLamp · NoLamp 가 한다 — 이 줄은 «나갔지»만. */
   chatOneroomWinter: [
     { who: 'jachwi', face: 'tired', text: '여기서 맞는 첫 겨울이다.' },
     { who: 'moni',   face: 'calm', text: '저 방에서 겨울에 못 나갈까 봐 겁냈잖아.' },
     { who: 'jachwi', text: '…나갔지.' },
     { who: 'moni',   face: 'calm', text: '나갔지.' }
+  ],
+  /* ★★ 2026-10-31 [plan] 총괄 D95 ⑦ — **원룸 첫 철은 겨울**(이사 날 135 = 겨울 첫날 · 하네스 이사 133~150). 원룸 첫 이레에 겨울 빛을 말하는 줄이 없었고,
+       있던 두 줄은 겨울에 거짓이었다 — chatOneroomLamp «여긴 창만으로도 자라» · chatOneroomNoLamp «자라긴 해»(→ 둘 다 겨울엔 안 선다 · §CHATTER).
+     참: 원룸 창턱 넷은 등0 겨울 기대 DLI 1.50~1.60 — 몬스테라 문턱 2.7 밑(growth ab7bbecf · 등0 자라는 날 겨울 1%) ⇒ «등 없이는 못 자라» ·
+       등은 창턱 위 걸이(oneroom-growlight-bar · chatOneroomLamp 와 같은 자리) · «겨울엔 거기가 길이야»(등 아래 = 등이 그 자리 빛을 더한다 · hintShopDry «겨울엔 등 아래 자리가 길이야»와 같은 말 ·
+       «제일 밝아» · «자라»는 안 썼다 — 등을 다른 데 달 수도 있고 등1 창턱 겨울은 문턱 언저리라 장담 못 함).
+     때: 원룸(이사 뒤 · 내 집 전) · 겨울 · 원룸 든 지 열나흘 안(첫 아침 줄과 같은 창) — Lamp 는 단 등 ≥ 1 · NoLamp 는 가진 등 ≥ 1 · 단 등 0. 수 없음. */
+  chatOneroomWinterLamp: [
+    { who: 'jachwi', face: 'think', text: '창이 큰데도 겨울 해는 짧다.' },
+    { who: 'moni',   face: 'teach', text: '겨울엔 창턱도 등 없이는 몬스테라가 못 자라.' },
+    { who: 'moni',   text: '화분은 등 아래로. 겨울엔 거기가 길이야.' }
+  ],
+  chatOneroomWinterNoLamp: [
+    { who: 'jachwi', face: 'think', text: '창이 큰데도 겨울 해는 짧다.' },
+    { who: 'moni',   face: 'teach', text: '겨울엔 창턱도 등 없이는 몬스테라가 못 자라.' },
+    { who: 'moni',   text: '가방의 등을 창턱 위 걸이에 달아.' },
+    { who: 'moni',   text: '화분은 그 아래로. 겨울엔 거기가 길이야.' }
   ],
 
   /* ═══ ★★ 2026-08-15 밤(story4) — **③ 원룸에서 빈 채로 남아 있던 네 자리** ═══════
@@ -2764,12 +2811,16 @@ export const SCRIPTS = {
      ⚠ 그 배선을 고치는 것은 이 창 일이 아니다(`state.js` 는 손대지 않는다).
        다만 **일어나는 일에 말이 없는 것**은 이 창 일이라, 여기서 말하게 했다.
      ★ 혼내지 않는다. 짐을 내려놓다 생긴 일이지 게으름이 아니다. */
+  /* ★★ 2026-10-31 [plan] 총괄 D95 ⑦ — 옛 셋째 · 넷째 줄 «…이삿짐 내려놓은 데. 침대 옆.» · «거긴 시루 자리야. 이 방에서 제일 어두운 칸.»을 걷었다.
+       위 머리말의 rehomePot(화분이 slots[0] 침대 옆으로)은 D92 ㉠ 뒤로 없다 — 이사 순간 그루는 다 가방이고 사람이 놓는다(침대 옆 칸도 방 데이터에서 빠짐).
+       그리고 원룸 첫 철 겨울엔 창턱에 둬도 등 없이는 멈춘다 — 그때 «어두운 데 놨네 · 창턱으로»는 거짓이다.
+     ⇒ 때를 좁혔다(§CHATTER): 겨울 아님(겨울은 chatOneroomWinterLamp · NoLamp 가 말한다) · 그루가 창턱이 아님(turn.leafWait.potOnSill !== true).
+     참: 빛 부족 멈춤(c.blocked) · 창턱 아닌 자리 · 겨울 아님 ⇒ «창에서 멀면 어두워 · 어두운 데 놨네 · 창턱으로»(봄 · 여름 · 가을 창턱 등0 자라는 날 45~96% · growth ab7bbecf). */
   chatOneroomPotDark: [
     { who: 'jachwi', face: 'worry', text: '몬스테라가 며칠째 그대로다.' },
     { who: 'moni',   face: 'teach', text: '어디 뒀는지 봐 봐.' },
-    { who: 'jachwi', text: '…이삿짐 내려놓은 데. 침대 옆.' },
-    { who: 'moni',   face: 'teach', text: '거긴 시루 자리야. 이 방에서 제일 어두운 칸.' },
-    { who: 'jachwi', face: 'tired', text: '밝은 방으로 와서 제일 어두운 데 놨네.' },
+    { who: 'moni',   text: '창에서 멀면 이 방도 어두워.' },
+    { who: 'jachwi', face: 'tired', text: '밝은 방으로 와서 어두운 데 놨네.' },
     { who: 'moni',   text: '창턱으로 올려. 그건 저 방에서 해 봤잖아.' }
   ],
 
@@ -2979,6 +3030,8 @@ export const REPEATABLE = new Set(
              'nudgeCutOffer', 'nudgeCutPush', 'nudgeVarieOffer', 'nudgeVariePush', 'nudgeSellOffer', 'nudgeSellPush',
              'nudgeHarvestPush', 'nudgeSeedPush'])
     .concat(['rentSoon', 'rentAgain', 'plantStalledAgain', 'plantStalledWinter',
+             /* ★ 2026-10-31 [plan] D95 ⑨ — 반지하 겨울 멈춤도 plantStalledWinter 처럼 멈출 때마다(같은 사건 갈래) */
+             'plantStalledWinterBanjiha',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
              /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
              'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'moveNoCutting', 'sellKeepOne', 'hungryTalk', 'hungryTalk2',
@@ -3381,6 +3434,11 @@ function scriptOf(ev, S = null) {
   if (!id) return null;
   /* ★ 2026-10-31 [core] 총괄 — 같은 날 등록까지 간 후보(job_breed §noteRepro sameDayRegister)는 후보 대사를 안 낸다 — «한 번만 더»가 그날 거짓 · 등록 창이 말한다 */
   if (id === 'breed_candidate' && ev && ev.sameDayRegister) return null;
+  /* ★ 2026-10-31 [plan] 총괄 D95 ⑨ — 빛이 철을 안 타는 판(S.sim.mode novice = 반지하)의 겨울 멈춤은 자리 탓(§plantStalledWinterBanjiha) · 모르면 예전 그대로 */
+  if (id === 'plant_stalled_winter') {
+    const mode = S && S.sim && S.sim.mode ? S.sim.mode : null;
+    return mode === 'novice' ? 'plantStalledWinterBanjiha' : 'plantStalledWinter';
+  }
   /* ★ 2026-10-08 [plan] D20 — 겨울은 방으로 갈린다(§winterCameBanjiha). 사건이 실으면(ev.movedOut) 그것을, 아니면 S 를 본다.
      둘 다 모르면 예전 그대로(winterCame) — 판을 안 바꾼다. */
   if (id === 'season' && ev.season === 'winter') {
@@ -3631,7 +3689,13 @@ export const CHATTER = [
        안 걸린다 — 처방이 「옮겨라」인 경우에만 나와야 한다.
      ★ 앞쪽에 둔다. 실제 멈춤(`plant_stalled`)이 나흘째에 뜨므로 그 언저리에 나와야 한다. */
   { id: 'chatOneroomPotDark', when: c => c.movedOut && !c.movedHome && !!c.blocked
-                                      && c.daysInOneroom != null && c.daysInOneroom <= 30 },
+                                      && c.daysInOneroom != null && c.daysInOneroom <= 30
+                                      && c.season !== 'winter' && c.potOnSill !== true },   /* ★ D95 ⑦ — 겨울 · 창턱이면 «어두운 데 놨네»가 거짓 */
+  /* ★ 2026-10-31 [plan] 총괄 D95 ⑦ — 원룸 첫 철 겨울(이사 135 = 겨울 첫날) · 첫 아침 · 첫 수확 · 멈춤 줄 뒤 차례(처음엔 목록 차례가 이긴다 · §pickChatter) */
+  { id: 'chatOneroomWinterLamp',   when: c => c.movedOut && !c.movedHome && c.season === 'winter'
+                                            && c.daysInOneroom != null && c.daysInOneroom <= 14 && c.lampPlaced >= 1 },
+  { id: 'chatOneroomWinterNoLamp', when: c => c.movedOut && !c.movedHome && c.season === 'winter'
+                                            && c.daysInOneroom != null && c.daysInOneroom <= 14 && c.lampOwned >= 1 && !(c.lampPlaced >= 1) },
   { id: 'chatOneroomDark',    when: c => c.movedOut && !c.movedHome },
   /* ★ 이사비 이백만 원이 빠져나간 직후. 실측으로 이사 다음 날 소지금이 거의 0 이다 */
   { id: 'chatOneroomMoney',   when: c => c.movedOut && !c.movedHome && c.cashWon != null && c.cashWon < 300_000
@@ -3647,8 +3711,9 @@ export const CHATTER = [
      넘을 때만. 숫자를 대사에 안 박았으므로 방이 바뀌어도 안 낡는다(안 뜰 뿐이다). */
   { id: 'chatOneroomFenestrate', when: c => c.movedOut && !c.movedHome && c.fenestrating },
   /* ★ 2026-10-30 D90 ②ⓓ — «가진 등»이 아니라 «단 등»으로 가른다(첫 등은 공짜로 가방에 온다) */
-  { id: 'chatOneroomLamp',    when: c => c.movedOut && !c.movedHome && c.lampPlaced >= 1 },
-  { id: 'chatOneroomNoLamp',  when: c => c.movedOut && !c.movedHome && c.lampOwned >= 1 && !(c.lampPlaced >= 1) },
+  /* ★ 2026-10-31 [plan] 총괄 D95 ⑦ — 겨울엔 안 선다: «여긴 창만으로도 자라» · «자라긴 해»는 겨울 창턱 등0(1.50~1.60 < 2.7)에서 거짓 — 겨울은 chatOneroomWinterLamp · NoLamp */
+  { id: 'chatOneroomLamp',    when: c => c.movedOut && !c.movedHome && c.lampPlaced >= 1 && c.season !== 'winter' },
+  { id: 'chatOneroomNoLamp',  when: c => c.movedOut && !c.movedHome && c.lampOwned >= 1 && !(c.lampPlaced >= 1) && c.season !== 'winter' },
   { id: 'chatOneroomVarie',   when: c => c.movedOut && !c.movedHome },
   { id: 'chatOneroomWinter',  when: c => c.movedOut && !c.movedHome && c.season === 'winter' },
   /* ★ 한참 뒤. 뒤쪽이 아니라 여기 둔다 — 조건이 이미 60일로 늦춰져 있어서
@@ -3665,7 +3730,8 @@ export const CHATTER = [
      보통 판 Day 20 에 잎 1장인 날 났다(leafwait ⓪). 잎 수는 S 에 없고 growth(leafStats)에만 있다 ⇒ [core] turn.leafWait.newLeafToday.
      그 칸이 서기 전엔 안 뜬다 — 거짓말보다 침묵이 낫다(§chatOneroomHarvest 와 같은 판단). */
   { id: 'chatGrowing2', when: c => c.grew === true && c.newLeafToday === true },
-  { id: 'chatWinterSlow', when: c => c.season === 'winter' && c.blocked },
+  /* ★ 2026-10-31 [plan] 총괄 D95 ⑨ — «느린 거야. 나쁜 거 아니고»는 철이 빛을 바꾸는 판에서만 참 — 반지하(빛 고정)의 멈춤은 자리 탓이다 */
+  { id: 'chatWinterSlow', when: c => c.season === 'winter' && c.blocked && c.seasonLight },
 
   /* 돈 — ★ 2026-08-11 주석 정정. 예전 주석은 "한 달 치(60만)"라고 적었는데 코드는 30만이고,
      60만은 하루 지출이 20,000원이던 시절의 한 달이다. 지금 하루 지출은 16,667원(월 50만)이라

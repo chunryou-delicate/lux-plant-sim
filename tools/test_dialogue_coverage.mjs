@@ -398,7 +398,8 @@ const MUST = [
   ['받은 등을 안 달고 버틸 때',  'lamp_skipped',        'lampSkipped',         [A, C]],
   ['성장이 멈췄을 때',           'plant_stalled',       'plantStalled',        [C]],
   ['또 멈췄을 때',               'plant_stalled_again', 'plantStalledAgain',   [C]],
-  ['겨울에 멈췄을 때',           'plant_stalled_winter','plantStalledWinter',  [C]],
+  /* ★ 2026-10-31 [plan] D95 ⑨ — 반지하(빛 고정 · novice)의 겨울 멈춤은 자리 탓 줄이다(dialogue.js §plantStalledWinterBanjiha). C 는 반지하에서 겨울을 맞는다 */
+  ['겨울에 멈췄을 때',           'plant_stalled_winter','plantStalledWinterBanjiha',  [C]],
   ['다시 자랄 때',               'plant_resumed',       'plantResumed',        [C]],
   ['배움 ① 첫 수확·식비 절감',   'learn_harvest',       'learnHarvest',        [A, B, C]],
   ['배움 ② 콩나물을 어두운 데',  'learn_cropDark',      'learnCropDark',       [A, B, C]],
@@ -639,6 +640,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     /* ★ 2026-10-08 [plan] — `hungryTalk2` 가 늘었다. `hungry` 사건 하나가 남은 날 홀/짝으로 두 벌을 번갈아 쓴다(같은 말이 연달아 안 서게) */
     /* ★ 2026-10-08 [plan] — 삽수 사건 갈림(scriptOf): 경고 마지막 날 · 뿌리낸 밝기 둘(중간은 이벤트 표 이름) */
     'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame', 'winterCameBanjiha', 'brokeTalkAgain', 'hungryTalk2',
+    /* ★ 2026-10-31 [plan] D95 ⑨ — 겨울 멈춤(plant_stalled_winter)이 빛 고정 판(novice)에서 갈린다 */
+    'plantStalledWinterBanjiha',
     'cuttingWarnLast', 'cuttingVarieBright', 'cuttingVarieDark',
     /* ★ 2026-10-09 [plan] — 원룸 철 셋(season 사건이 방으로 갈림) */
     'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom',
@@ -1329,6 +1332,60 @@ check('questSellVarie — 몬이 수 없음 · 둘 이상 어느 수에서도 �
     if (l.who === 'moni') assert.ok(!/[0-9]|하나|(^|[^거])둘|셋|넷/.test(l.text), `questSellVarie 몬이가 수를 말합니다: ${l.text}`);
     assert.ok(!/둘이네|나머지 하나/.test(l.text), `questSellVarie 가 «둘»을 박습니다: ${l.text}`);
   }
+});
+
+/* ★ 2026-10-31 [plan] 총괄 D95 — «말이 맞게»: 이사비 길 한 목소리(②) · 이사비에 첫 달 월세 없음(⑧) · 원룸 첫 철 겨울(⑦) · 반지하 계절(⑨) · 가구점(⑥) */
+check('대사 — 이사비 길 한 목소리: 무늬 삽수 «크게 버는 쪽» · 채소 «꾸준히 모으는 쪽» · «그것만»으로 읽히는 말 없음(D95 ②)', () => {
+  assert.ok(SCRIPTS.monsteraArrived.some(l => l.who === 'moni' && /크게 버는 쪽/.test(l.text)), 'monsteraArrived 에 «크게 버는 쪽»이 없습니다');
+  assert.ok(SCRIPTS.questSiru16.some(l => l.who === 'moni' && /꾸준히 모으는/.test(l.text)), 'questSiru16 에 «꾸준히 모으는»이 없습니다');
+  for (const id of Object.keys(SCRIPTS)) for (const l of SCRIPTS[id]) {
+    assert.ok(!/나가는 돈이야|나가는 돈\**, 거기서/.test(l.text), `'${id}' 가 이사비를 한 길로 박습니다: ${l.text}`);
+    assert.ok(!/돈이 들어오는 길은 그거/.test(l.text), `'${id}' 가 «돈 들어오는 길은 그것뿐»으로 읽힙니다: ${l.text}`);
+  }
+  for (const id of ['monsteraArrived', 'questSiru16', 'questSellSurplus', 'nudgeSellPush', 'nudgeCutPush'])
+    for (const l of SCRIPTS[id]) if (l.who === 'moni')
+      assert.ok(!/[0-9]|하나|(^|[^거])둘|셋|넷|다섯|이레|열여섯/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+});
+check('대사 — 이사비는 보증금 + 이삿짐값 · 월세는 따로(D95 ⑧)', () => {
+  for (const l of SCRIPTS.shortMoney) assert.ok(!/첫 달 월세랑|월세랑 이삿짐/.test(l.text), `shortMoney 가 이사비에 첫 달 월세를 넣습니다: ${l.text}`);
+  assert.ok(SCRIPTS.shortMoney.some(l => l.who === 'moni' && /월세는 따로/.test(l.text)), 'shortMoney 에 «월세는 따로»가 없습니다');
+});
+check('대사 — 반지하 겨울 멈춤은 자리 탓 · 철이 빛을 안 바꾸는 판엔 «봄까지»가 안 선다(D95 ⑨)', () => {
+  assert.deepEqual(scriptsForEvents([{ id: 'plant_stalled_winter' }], { sim: { mode: 'novice' } }), ['plantStalledWinterBanjiha']);
+  assert.deepEqual(scriptsForEvents([{ id: 'plant_stalled_winter' }], { sim: { mode: 'real' } }), ['plantStalledWinter']);
+  assert.deepEqual(scriptsForEvents([{ id: 'plant_stalled_winter' }]), ['plantStalledWinter']);   // 모르면 예전 그대로
+  for (const l of SCRIPTS.plantStalledWinterBanjiha) assert.ok(!/봄|원래 더뎌|기다려/.test(l.text), `반지하 겨울 멈춤 줄이 철 탓을 합니다: ${l.text}`);
+  const slow = CHATTER.find(r => r.id === 'chatWinterSlow').when;
+  assert.equal(slow({ season: 'winter', blocked: true, seasonLight: false }), false, '반지하 겨울 멈춤에 «느린 거야»가 섭니다');
+  assert.equal(slow({ season: 'winter', blocked: true, seasonLight: true }), true, '원룸 겨울 멈춤에 안 섭니다');
+});
+check('대사 — 원룸 첫 철 겨울: 등 아래 줄 · 겨울엔 «창만으로 자라»가 안 선다 · 멈춤 줄은 창턱 · 겨울에 안 선다(D95 ⑦)', () => {
+  const row = id => CHATTER.find(r => r.id === id).when;
+  const c = (o = {}) => ({ movedOut: true, movedHome: false, season: 'winter', daysInOneroom: 3, lampOwned: 1, lampPlaced: 1, ...o });
+  assert.equal(row('chatOneroomWinterLamp')(c()), true, '겨울 · 단 등 · 첫 이레인데 안 섭니다');
+  assert.equal(row('chatOneroomWinterLamp')(c({ lampPlaced: 0 })), false, '등을 안 달았는데 «등 아래로»가 섭니다');
+  assert.equal(row('chatOneroomWinterLamp')(c({ season: 'summer' })), false, '여름에 겨울 줄이 섭니다');
+  assert.equal(row('chatOneroomWinterLamp')(c({ daysInOneroom: 20 })), false, '열나흘 넘어 섭니다');
+  assert.equal(row('chatOneroomWinterNoLamp')(c({ lampPlaced: 0 })), true, '겨울 · 가방에 등 · 첫 이레인데 안 섭니다');
+  assert.equal(row('chatOneroomWinterNoLamp')(c()), false, '단 등이 있는데 «가방의 등을 달아»가 섭니다');
+  assert.equal(row('chatOneroomWinterNoLamp')(c({ lampOwned: 0, lampPlaced: 0 })), false, '등이 없는데 «가방의 등»이 섭니다');
+  assert.equal(row('chatOneroomLamp')(c()), false, '겨울에 «여긴 창만으로도 자라»가 섭니다');
+  assert.equal(row('chatOneroomLamp')(c({ season: 'spring' })), true, '봄에 등 잡담이 안 섭니다');
+  assert.equal(row('chatOneroomNoLamp')(c({ lampPlaced: 0 })), false, '겨울에 «자라긴 해»가 섭니다');
+  const pd = o => row('chatOneroomPotDark')(c({ season: 'spring', blocked: true, potOnSill: false, ...o }));
+  assert.equal(pd(), true, '봄 · 창턱 아닌 데서 멈췄는데 안 섭니다');
+  assert.equal(pd({ season: 'winter' }), false, '겨울에 «어두운 데 놨네»가 섭니다(겨울은 창턱도 멈춤)');
+  assert.equal(pd({ potOnSill: true }), false, '창턱에 둔 그루에 «어두운 데 놨네 · 창턱으로»가 섭니다');
+  for (const l of SCRIPTS.chatOneroomPotDark) assert.ok(!/침대|시루 자리|제일 어두운 칸/.test(l.text), `chatOneroomPotDark 에 D92 전 자리 말이 남았습니다: ${l.text}`);
+  for (const id of ['chatOneroomWinterLamp', 'chatOneroomWinterNoLamp', 'plantStalledWinterBanjiha', 'chatOneroomPotDark', 'furnitureShopOpen'])
+    for (const l of SCRIPTS[id]) if (l.who === 'moni')
+      assert.ok(!/[0-9]|하나|(^|[^거])둘|셋|넷|다섯|이레|열나흘/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);
+  for (const id of ['chatOneroomWinterLamp', 'chatOneroomWinterNoLamp'])
+    assert.ok(!SCRIPTS[id].some(l => /제일 밝아|잘 자라/.test(l.text)), `'${id}' 가 겨울 등 아래를 장담합니다`);
+});
+check('대사 — 가구점 열린 날: 꾸미는 가구는 급할 거 없다 · «사지 마» 없음(D95 ⑥)', () => {
+  assert.ok(SCRIPTS.furnitureShopOpen.some(l => /급할 거 없어/.test(l.text)), 'furnitureShopOpen 에 «급할 거 없어»가 없습니다');
+  for (const l of SCRIPTS.furnitureShopOpen) assert.ok(!/사지 ?마/.test(l.text), `가구점 줄이 막습니다: ${l.text}`);
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
