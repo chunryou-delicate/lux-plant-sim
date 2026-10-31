@@ -13068,7 +13068,8 @@ function lightHeatOpts() {
     litHours: (S.lamps && S.lamps.litHours) || 0,
     /* ★ 2026-10-31 D93 ⑥ m6 — 범례에도 «표면»이 무엇인지(예전엔 [빛 분포 보기] 옆 글에만 · growth §4) */
     /* ★ D95 ⑤ — 낱말 표가 서면 범례 첫 줄 «빛 · 표면…» · 단위 DLI(mol/m²·d)는 셋째 줄 작은 글(light_grid_labels §setCaption) */
-    unit: (bands && Number.isFinite(bands.dark)) ? '표면(가구 윗면 · 없으면 바닥)' : 'DLI · 표면(가구 윗면 · 없으면 바닥)',
+    /* ★ D95 ⑤ 둘째 고침(plan 4746ef5d) — 낱말 판 첫 줄은 범례 폭(≈ 276px)에 들게 «표면(가구 윗면 · 바닥)»(가장 긴 판 248px) · 옛 두 갈래 판은 그대로 */
+    unit: (bands && Number.isFinite(bands.dark)) ? '표면(가구 윗면 · 바닥)' : 'DLI · 표면(가구 윗면 · 없으면 바닥)',
     bands
   };
 }
@@ -13077,7 +13078,8 @@ function lightHeatOpts() {
      «아주 밝음»은 잎 갈라짐(fenestrate)이다 — 무늬(흰 무늬 · 등급)가 아니라 범례에 «무늬»를 안 쓴다.
      below · 옛 «자람/갈라짐»은 어둠 문턱을 못 읽은 판(두 갈래 범례)에서만 쓴다 */
 const HEAT_BANDS_KO = Object.freeze({ dark: '어둠', shade: '그늘', grow: '밝음', split: '아주 밝음', head: '빛',
-  legend: Object.freeze({ dark: '콩나물', shade: '무순', grow: '몬스테라 자람', split: '잎 갈라짐' }),
+  /* ★ D95 ⑤ 범례 낱말 줄임(plan e02bc464 · 390 폭) — «몬스테라 자람 · 잎 갈라짐»이면 둘째 줄이 안쪽 폭 360px 를 넘어 범례가 네 줄이 됐다 */
+  legend: Object.freeze({ dark: '콩나물', shade: '무순', grow: '몬스테라', split: '갈라짐' }),
   thresh: '문턱 {t} — DLI(mol/m²·d)',
   below: '안 자람' });
 /* 그 빛 d 의 낱말 — 빛 지도 칸과 같은 표(§HEAT_BANDS_KO) · 문턱을 못 읽으면 null */

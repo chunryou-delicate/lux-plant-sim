@@ -318,11 +318,14 @@ export function createLightGridLabels(o = {}) {
     if (wordsOn()) {
       const k = bands.ko, L = k.legend || {};
       const th = [bands.dark, bands.grow, bands.split].filter(Number.isFinite).map(v => String(+v)).join(' · ');
-      const sw = (c, t, d) => `<span style="color:${c}">■</span>${escapeHtml(t)}${d ? ' ' + escapeHtml(d) : ''}`;
+      /* 낱말 하나(■ + 낱말 + 맞는 것)는 한 덩이로 — 줄이 모자라면 덩이 사이(« · »)에서만 접는다.
+           ⚠ 범례는 탭 기둥 오른쪽에 서서(D93 ⑥) 폰 390 의 안쪽 폭이 ≈ 290px 다 — «■아주 / 밝음 갈라짐»처럼 낱말 가운데서 접혔다(core 사진 regs95c) */
+      const sw = (c, t, d) => `<span data-lg="1" style="white-space:nowrap"><span style="color:${c}">■</span>${escapeHtml(t)}${d ? ' ' + escapeHtml(d) : ''}</span>`;
       cap.style.whiteSpace = 'normal'; cap.style.maxWidth = 'calc(100% - 16px)';
       cap.innerHTML = `<b>${escapeHtml(k.head || '빛')}</b> · ${escapeHtml(unit)}` + (extra ? ` · ${escapeHtml(extra)}` : '') + '<br>' +
-        [sw(heatDarkHex(), k.dark, L.dark), sw(heatShadeHex(), k.shade, L.shade), sw(heatColorHex(0), k.grow, L.grow),
-         Number.isFinite(bands.split) ? sw(heatColorHex(1), k.split, L.split) : null].filter(Boolean).join(' · ') + '<br>' +
+        /* ★ D95 ⑤ 둘째 고침(plan 4746ef5d) — 덩이 둘마다 정해 꺾는다: 회색 둘(작물 자리) / 색 둘(몬스테라 자리) — 짝으로 읽히고 글꼴마다 꺾이는 데가 안 갈린다(범례 네 줄) */
+        [sw(heatDarkHex(), k.dark, L.dark), sw(heatShadeHex(), k.shade, L.shade)].join(' · ') + '<br>' +
+        [sw(heatColorHex(0), k.grow, L.grow), Number.isFinite(bands.split) ? sw(heatColorHex(1), k.split, L.split) : null].filter(Boolean).join(' · ') + '<br>' +
         `<small style="opacity:.8">${escapeHtml((k.thresh || '문턱 {t} — DLI(mol/m²·d)').replace('{t}', th))}</small>`;
       return;
     }
