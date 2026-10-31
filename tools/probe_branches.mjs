@@ -196,6 +196,8 @@ const PANTRY_KEEP = 10;               /* 남겨 둘 판 수 — night_play KEEP_
                                          ★ growth 10-30 잼(guide·nolamp 씨앗 1-3 · 160일 · 판매 168번): 남긴 10판 = 끼니 중앙 30끼(최소 20) = **15일치**(최소 10일)
                                            · 곳간은 하루 두 끼(한 끼 2,500원 · 하루 5,000원 상한 · first_play §dailyCropMealCap) ⇒ «이레치»가 아니다. 이레치는 P.keepMeals 14 */
 const MUSUN_AT = 'banjiha-desk:0';    /* 무순 판 자리 — 반지하 책상(원룸에도 짐으로 같은 이름이 선다) */
+/* ★ 2026-10-31 — 투룸(산 집) 이삿짐 작물을 푸는 칸 — 콩나물은 아래 날마다 다시 심기(tworoom-shelf-low:0)와 같은 칸 · 무순은 옆 칸 */
+const TWO_BEAN_AT = 'tworoom-shelf-low:0', TWO_MUSUN_AT = 'tworoom-shelf-low:1';
 const reasonKey = m => String(m || '')
   .replace(/n[\d.]+#\d+/g, '마디').replace(/\d[\d,.]*/g, 'N').replace(/\s+/g, ' ').slice(0, 46);
 function pickNode(nodes, budget, varieOnly) {
@@ -848,6 +850,10 @@ export async function play(name, seed, opt = {}) {
           finishEnding(S, io, { rules: endingRulesFrom({ targetWon: 5_000_000 }), nodes: pot0(S) ? io.growth.cuttableNodes() : null, stats: pot0(S) ? io.growth.leafStats() : null });
           JCARE.startCareJob(S);
           moveIntoOwnedHome(S, io, {});
+          /* ★ 2026-10-31 총괄(fe78bb38 진로 걸음 빨강) — 투룸 이사도 작물을 이삿짐으로 가방에 넣는다(D92 oneroom §clearPlacements · moveIntoOwnedHome 같은 손).
+               원룸 이사 뒤만 풀어 투룸에선 작물이 가방에 남았다 → 채소 0 · 짐 풀기(home/care/breed_unpack · bagPlants) 영영 안 끝남 → 굶음.
+               ⇒ 그루 · 삽수를 놓기 «전»에 푼다(옛 §reseatCrops 처럼 작물 칸이 먼저 서 그루 고르기에서 빠진다) · 콩나물은 날마다 다시 심는 그 칸(TWO_BEAN_AT) */
+          out.unpackHome = unpackCropsAfterMove(S, light, { legacy: !!opt.legacySeat, beanAt: TWO_BEAN_AT, musunAt: TWO_MUSUN_AT });
           S.lamps.count = ts.lamp.owned || 0; if (ts.lamp) ts.lamp.placed = S.lamps.count; light.clearCache();
           const placeBest = (setFn) => { const occ = new Set(placedItems(S).map(x => x.slotId).filter(Boolean)); let sky = null; try { sky = light.skyFor(S.day, S.sim); } catch (e) { out.carePlaceErr = String(e && e.message || e).slice(0, 120); }
             let best = null, bd = -1; for (const sl of light.room.slots || []) { if (occ.has(sl.slotId)) continue; let d = -1; try { d = light.dliOfSlot(sl.slotId, lightOptsOf(S, sky)); } catch (e) { out.carePlaceErr = String(e && e.message || e).slice(0, 120); } if (d > bd) { bd = d; best = sl; } }
@@ -866,6 +872,10 @@ export async function play(name, seed, opt = {}) {
           finishEnding(S, io, { rules: endingRulesFrom({ targetWon: 5_000_000 }), nodes: pot0(S) ? io.growth.cuttableNodes() : null, stats: pot0(S) ? io.growth.leafStats() : null });
           JBREED.startBreedJob(S);
           moveIntoOwnedHome(S, io, {});
+          /* ★ 2026-10-31 총괄(fe78bb38 진로 걸음 빨강) — 투룸 이사도 작물을 이삿짐으로 가방에 넣는다(D92 oneroom §clearPlacements · moveIntoOwnedHome 같은 손).
+               원룸 이사 뒤만 풀어 투룸에선 작물이 가방에 남았다 → 채소 0 · 짐 풀기(home/care/breed_unpack · bagPlants) 영영 안 끝남 → 굶음.
+               ⇒ 그루 · 삽수를 놓기 «전»에 푼다(옛 §reseatCrops 처럼 작물 칸이 먼저 서 그루 고르기에서 빠진다) · 콩나물은 날마다 다시 심는 그 칸(TWO_BEAN_AT) */
+          out.unpackHome = unpackCropsAfterMove(S, light, { legacy: !!opt.legacySeat, beanAt: TWO_BEAN_AT, musunAt: TWO_MUSUN_AT });
           S.lamps.count = ts.lamp.owned || 0; if (ts.lamp) ts.lamp.placed = S.lamps.count; light.clearCache();
           const placeBest = (setFn) => { const occ = new Set(placedItems(S).map(x => x.slotId).filter(Boolean)); let sky = null; try { sky = light.skyFor(S.day, S.sim); } catch (e) { out.breedPlaceErr = String(e && e.message || e).slice(0, 120); }
             let best = null, bd = -1; for (const sl of light.room.slots || []) { if (occ.has(sl.slotId)) continue; let d = -1; try { d = light.dliOfSlot(sl.slotId, lightOptsOf(S, sky)); } catch (e) { out.breedPlaceErr = String(e && e.message || e).slice(0, 120); } if (d > bd) { bd = d; best = sl; } }
@@ -885,6 +895,10 @@ export async function play(name, seed, opt = {}) {
           finishEnding(S, io, { rules: endingRulesFrom({ targetWon: 5_000_000 }), nodes: pot0(S) ? io.growth.cuttableNodes() : null, stats: pot0(S) ? io.growth.leafStats() : null });
           JSHOP.startShopJob(S);
           moveIntoOwnedHome(S, io, {});
+          /* ★ 2026-10-31 총괄(fe78bb38 진로 걸음 빨강) — 투룸 이사도 작물을 이삿짐으로 가방에 넣는다(D92 oneroom §clearPlacements · moveIntoOwnedHome 같은 손).
+               원룸 이사 뒤만 풀어 투룸에선 작물이 가방에 남았다 → 채소 0 · 짐 풀기(home/care/breed_unpack · bagPlants) 영영 안 끝남 → 굶음.
+               ⇒ 그루 · 삽수를 놓기 «전»에 푼다(옛 §reseatCrops 처럼 작물 칸이 먼저 서 그루 고르기에서 빠진다) · 콩나물은 날마다 다시 심는 그 칸(TWO_BEAN_AT) */
+          out.unpackHome = unpackCropsAfterMove(S, light, { legacy: !!opt.legacySeat, beanAt: TWO_BEAN_AT, musunAt: TWO_MUSUN_AT });
           /* 가방에 든 그루·삽수를 빈 자리 중 가장 밝은 데로(투룸 자리 이름은 원룸과 다르다 — 방 전체에서 고른다) */
           const placeBest = (setFn) => { const occ = new Set(placedItems(S).map(x => x.slotId).filter(Boolean)); let sky = null; try { sky = light.skyFor(S.day, S.sim); } catch { }
             let best = null, bd = -1; for (const sl of light.room.slots || []) { if (occ.has(sl.slotId)) continue; let d = -1; try { d = light.dliOfSlot(sl.slotId, lightOptsOf(S, sky)); } catch { } if (d > bd) { bd = d; best = sl; } }
