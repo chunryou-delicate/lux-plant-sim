@@ -1339,6 +1339,8 @@
        창 밑에 깔려 안 보였다(Day 1 첫 달 가계부). 창이 떠 있는 동안만 손가락을 창 위로 올린다 — 손가락은 손짓을 안 받는다(pointer-events:none) */
   html:has(.pop.on) #hint{z-index:86}
   #hint.on{display:block}
+  /* ★ 2026-10-31 MINOR ① — 조작 쪽지(#coach)가 떠 있는 동안 꼬리표 글이 쪽지와 겹치면 글만 접는다(손은 그대로 · 쪽지가 걷히면 돌아옴 · §hintCoachMute) */
+  #hint.mute .say{display:none}
   /* ★손가락은 **글 아래**에 둔다 (박사님 2026-08-04: "가방 열어보세요 손가락 위치 봐").
      예전엔 위를 가리키는 손가락(☝)을 대상 **위**에 놓았다 — 반대를 가리킨 셈이다.
      아래를 가리키는 손가락을 글 아래 두면 끝이 대상에 닿는다. */
@@ -1450,7 +1452,8 @@
   #questChip b{display:block;font-size:10.5px;font-weight:700;color:var(--gold);
     letter-spacing:.02em;margin-bottom:2px}
   #questChip span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-    overflow:hidden;font-size:11.5px;line-height:1.35;color:var(--ink)}
+    overflow:hidden;font-size:11.5px;line-height:1.35;color:var(--ink);
+    word-break:keep-all;overflow-wrap:break-word}   /* ★ 2026-10-31 MINOR ③ — «뿌리내리기 / 를»처럼 낱말이 글자에서 끊기던 것 */
   /* ══ ★★★ **게임오버 — 굶어 쓰러졌다** (2026-08-17 · 박사님: *"돈 0원 되고 10일 지나면
        배고파서 죽는 걸로 게임오버 하고 0일부터 재시작"*) ═══════════════════════
      ⚠ 이 저장소는 그동안 **일부러 안 죽였다**(story_arc §0 · first_play §*"게임오버는 되면
@@ -2861,7 +2864,7 @@
 
       <!-- ══ 반지하 살림 — 첫 플레이가 끝나면 열린다 ══════════════════════ -->
       <div class="box" id="tutBox" style="display:none">
-        <h3>반지하 살림</h3>
+        <h3 id="tutTitle">반지하 살림</h3>
         <div class="itemline" id="tutSeason">여름</div>
         <!-- ★하루에 얼마가 나가고 콩나물이 얼마를 덜어 주는지 (박사님 2026-08-04).
              "시루를 더 살까"는 이 표가 없으면 감으로 정하게 된다. -->
@@ -4272,6 +4275,17 @@ let hintTargetEl = null;
    ⚠ 가리킬 것이 없으면 **안 돈다** — 노는 화면을 계속 깨우지 않는다(§markTick 과 같은 규율). */
 let hintFollow = null;          // { el, say }
 let hintTick = null;
+/* ★ 2026-10-31 MINOR ① (총괄 ae32f79c ready_boot) — 손가락 꼬리표 «이제 식물과 시루를 놓으세요»가 조작 쪽지 «가까이 볼 수 있습니다» 제목 줄을 덮었다(둘 다 왼쪽 위 탭 기둥 옆).
+     쪽지는 «평생 것»이라 지금 것(꼬리표 글)이 비킨다(§coaching 과 같은 결) — 겹치는 동안만 글을 접고, 쪽지가 걷히면 돌아온다 */
+function hintCoachMute() {
+  const h = $('hint'), c = $('coach');
+  if (!h) return;
+  const coachOn = !!(c && c.classList.contains('on'));
+  if (!coachOn || !h.classList.contains('on')) { h.classList.remove('mute'); return; }
+  if (h.classList.contains('mute')) return;            /* 접힌 동안은 글 자리가 없다 — 쪽지가 걷힐 때까지 그대로 */
+  const a = h.querySelector('.say').getBoundingClientRect(), b = c.getBoundingClientRect();
+  if (a.width > 0 && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) h.classList.add('mute');
+}
 function hintFollowLoop(on) {
   if (on) {
     if (hintTick != null) return;
@@ -4294,6 +4308,7 @@ function hintFollowLoop(on) {
           hintAt(null); return;
         }
       }
+      try { hintCoachMute(); } catch { }   /* ★ MINOR ① */
       /* ⚠⚠ 2026-08-16 §E-2 — **가리키던 것이 사라지면 손가락도 꺼야 한다.**
          여기 있던 것은 `return` 한 줄이었다. 그러면 고리는 계속 도는데 아무것도 안 하고,
          손가락은 **옛 자리에 그대로 켜진 채** 남는다. 다시 그리는 계기가 없으면 영영이다.
@@ -5727,7 +5742,7 @@ function movePotTo(slotId) {
   pushLog(S, `🪴 몬스테라${n}를 ${josaRo(slotLabel(slotId))} 옮겼습니다`);
   banner(`${josaRo(slotLabel(slotId))} 옮겼습니다`, '빛 판정은 7일 평균이라 며칠 지나야 새 자리 값이 됩니다');
   try { unlockAfterFix(); sfx.thud(); } catch { }
-  try { if (isBrightestSlot(slotId) && dlgOpen('monsteraMoved')) focusOnMonstera(); } catch { }   /* ★ §isBrightestSlot · 첫 한 번만 당긴다(W3 #6) */
+  try { if (isBrightestSlot(slotId) && (((S.lamps && S.lamps.count) > 0) ? dlgOpen('monsteraMovedLamp') : dlgOpen('monsteraMoved'))) focusOnMonstera(); } catch { }   /* ★ §isBrightestSlot · 첫 한 번만 당긴다(W3 #6) · D97 §4-3 등 단 판 */
   try { syncRoom(); } catch { }
   draw();
 }
@@ -6541,7 +6556,7 @@ function updateHint() {
      ⚠ 첫 플레이 손가락은 fp.completed·movedOut 이면 안 선다(§fpLive) — 이 사슬이 그 자리를 잇는다. */
   /* ★★ 2026-10-31 비판 셋째 판 B2 ③ — 이삿짐을 놓으려다 «자리가 없다»를 들은 판은, 가구 판이 바뀔 때까지 이 원룸 짐 풀기 갈래를 통째로 건너뛴다 —
        ⛔ 손가락이 30일 내내 [가방]만 짚어 거두기 · 심기 · 자르기를 한 번도 안 짚었다(비판 B · Day 135~165). 아래 갈래(돌봄 먼저 · D93 ②)로 간다 */
-  if (ts && ts.movedOut && !unpackStuckNow()) {
+  if (ts && ts.movedOut && !unpackStuckNow() && !unpackPassedBoxesOnly()) {
     const home = S.home || {};
     /* ★ 2026-10-10 [plan] — 받은 물건(가게 첫날 주문판 · state §giveFurniture)은 사람이 고른 가구가 아니다 — «놓은 가구» 셈에서 뺀다 */
     const furnBag = (home.furnitureBag || []).length, furnDone = (home.furnitureAdded || []).filter(f => f && !GIVEN_FURNITURE.includes(f.preset)).length;
@@ -6591,7 +6606,13 @@ function updateHint() {
       try { if (sheetShown() && boxN > 0 && boxCell && boxCell.offsetParent && !onScreen(boxCell)) boxCell.scrollIntoView({ block: 'center' }); } catch { }
       if (boxN > 0 && onScreen(boxCell) && !sheetCovers(boxCell)) return hintAt(boxCell, '들고 온 채소를 가구 위에 올리세요');
       if ((siruN + trayN) > 0 && onScreen(siruCell) && !sheetCovers(siruCell)) return hintAt(siruCell, '시루를 놓고 씨앗을 심으세요 — 처음처럼');
-      const door = bagDoor(); if (door) return hintAt(door, '이제 식물과 시루를 놓으세요');
+      /* ★ MINOR ② — 남은 것을 그대로 말한다(삽수는 위 갈래가 맡음) · 섞였을 때만 예전 말 */
+      const growN = potN, contN = Math.max(0, siruN) + Math.max(0, trayN);
+      const doorSay = (boxN > 0 && !growN && !contN) ? '들고 온 채소를 놓으세요'
+                    : (growN > 0 && !boxN && !contN) ? '몬스테라를 놓으세요'
+                    : (contN > 0 && !boxN && !growN) ? '시루를 놓으세요'
+                    : '이제 식물과 시루를 놓으세요';
+      const door = bagDoor(); if (door) return hintAt(door, doorSay);
       return hintAt(null);
     }
     /* 끝 — 손가락 없음. 그 뒤는 원룸 퀘스트 몫 */
@@ -6681,9 +6702,12 @@ function updateHint() {
        (core 자 probe_core_d11_13 D13 · 6일: 거두러 가는 동안 손가락이 없어 [다음 날]만 눌러 막힘). ⇒ 여기선 돌봄 손가락만 건너뛰고,
        «손가락 없음»은 예전 자리(사는 갈래 뒤 · [다음 날] 앞 — 아래 §careActing)에서 그대로 한다 */
   const careActing = !!($('marks') && $('marks').querySelector('.mark.acting'));
-  if (!careActing && pointStill && $('marks')) {
+  /* ★ 2026-10-31 비판 셋째 판 MAJOR #5 ① — 두 바퀴 뒤 · 세팅 끝 전에도 «심기»(씨앗이 온 날 · 새 시루)는 짚는다. 거두기 · 물 손가락은 뗀 채(박사님 08-17) */
+  const sowNow = !pointStill && markLive('심');
+  if (!careActing && (pointStill || sowNow) && $('marks')) {
     for (const el of $('marks').querySelectorAll('.mark')) {
       const ko = (el.getAttribute('aria-label') || el.textContent || '').replace(/^[^가-힣]+/, '');
+      if (!pointStill && !/심/.test(ko)) continue;   /* ★ MAJOR #5 ① */
       if (!markLive(ko)) continue;
       if (!onScreen(el)) continue;
       /* ★ 시트가 말풍선을 가리면 «닫는 길»을 짚는다(폰 실측 d13~16: 손가락 없음) */
@@ -6711,8 +6735,30 @@ function updateHint() {
     return hintAt(btnWater, '물을 주면 자라기 시작합니다');
   /* ★ D93 ② — [다시 심기] 알약도 돌봄이다(그 종류 씨앗이 있을 때만 — 주문 지름길(dataset.buy)이면 «사기»라 아래 갈래 몫) */
   const btnResow = $('resow');
-  if (!careActing && pointStill && btnResow && onScreen(btnResow) && !btnResow.disabled && !btnResow.dataset.buy && !sheetCovers(btnResow) && markLive('심'))
+  if (!careActing && (pointStill || sowNow) && btnResow && onScreen(btnResow) && !btnResow.disabled && !btnResow.dataset.buy && !sheetCovers(btnResow) && markLive('심'))
     return hintAt(btnResow, '여기를 눌러 보세요');
+  /* ★★ 2026-10-31 비판 셋째 판 MAJOR #5 ② — 무순 판이 가방에 있고(몬이 nudgeMixBag) 무순 할 일(crop_mix · radish5)이 열렸는데 방에 놓인 판이 없으면 그 칸을 짚는다.
+       ⛔ 사는 갈래(§musunNeed)는 판을 «가졌으면» 빠지고 놓는 갈래가 없어 손가락이 «시루는 내일 옵니다»로 [다음 날]을 짚었다(A Day 17) */
+  const trayBagNow = (() => {
+    try {
+      const rows = cropPotList(S.firstPlay, S.day) || [];
+      if (rows.some(r => r && r.kind === 'musun' && r.placed)) return false;
+      if (!((stockOf(S, 'sprout_tray') + rows.filter(r => r && r.kind === 'musun' && r.inBag).length) > 0)) return false;
+      const qv = questView(S, questSnapshotNow(lastTurn));
+      return (qv && qv.all || []).some(x => x && (x.id === 'crop_mix' || x.id === 'radish5') && x.state === 'open');
+    } catch { return false; }
+  })();
+  if (trayBagNow && !careActing && !(S.tutorial && S.tutorial.movedOut)) {
+    const cell = $('bagGrid') && $('bagGrid').querySelector('[id="musunThumb"]');
+    try { if (sheetShown() && cell && cell.offsetParent && !onScreen(cell)) cell.scrollIntoView({ block: 'center' }); } catch { }
+    if (cell && onScreen(cell) && !sheetCovers(cell)) return hintAt(cell, '끌거나 눌러서 방 안 그늘에');
+    for (const [id, say] of [['tabBag', '가방에 무순 판이 있습니다'], ['openBag', '가방을 열어 보세요']]) {
+      const el = $(id);
+      if (!el || !onScreen(el) || sheetCovers(el)) continue;
+      if (el.getAttribute && el.getAttribute('aria-selected') === 'true') continue;
+      return hintAt(el, say);
+    }
+  }
   if ((!placedOne || needPlaceSecond) && fpLive) {
     /* ★ 2026-08-10 — 가리키는 것은 이제 **가방 격자의 시루 칸**이다(id 는 그대로 `cropThumb`).
        칸이 없으면(빈 시루 0개) `onScreen(null)` 이 false 라 아래 [가방]으로 떨어진다. */
@@ -7137,6 +7183,8 @@ function updateHint() {
   }
   /* ⚠ 밥상 창을 여기서 «따로» 안 짚는다 — 위 §떠 있는 창 갈래가 모든 창을 맡는다.
      (2026-08-30: 밥상만 짚었다가 가계부에서 손가락이 통째로 쉬었다.) */
+  /* ★ 2026-10-31 비판 셋째 판 MAJOR #5 ③ — 거두기 · 물이 «지금 되는데» 기다림으로 [다음 날]을 짚지 않는다(그 돌봄 단추가 울타리에 두 번 막혔다) — 손가락을 쉰다 */
+  if (wait && !pointStill && (markLive('거두') || markLive('물'))) return hintAt(null);
   if (!$('next').disabled && wait && !sheetCovers($('next'))) return hintAt($('next'), wait);
   /* ★★★★ 2026-08-30 — **[다음 날]이 시트에 가리면 «닫는 길»을 짚는다** ([Plan] 문안 · 총괄 청).
      ══════════════════════════════════════════════════════════════════
@@ -7162,8 +7210,15 @@ function drawTutorial(living) {
   if (!living) return;
   const R = ts.rules;
   const season = seasonAt(ts, ts.day), sd = seasonDayAt(ts, ts.day);
+  /* ★ 2026-10-31 D97 §3 (비판 셋째 판 ⑤ #14) — 사는 방 이름 · 그 방에 온 날을 1일차로(원룸 S.story.movedInOnDay · 내 집 homeOnDay) · 모르면 날 수를 안 적는다 */
+  const st0 = S.story || {};
+  const homeNow = !!(ts.homeOwned || (S.home && S.home.room === 'tworoom'));
+  const roomKo = homeNow ? '내 집' : ts.movedOut ? '원룸' : '반지하';
+  const since = homeNow ? st0.homeOnDay : ts.movedOut ? st0.movedInOnDay : null;
+  const kDay = !ts.movedOut && !homeNow ? ts.day : (Number.isInteger(since) ? S.day - since + 1 : null);
+  { const h = $('tutTitle'); if (h) h.textContent = `${roomKo} 살림`; }
   $('tutSeason').textContent =
-    `${SEASON_KO[season]} ${sd + 1}일째 · 반지하 ${ts.day}일차` +
+    `${SEASON_KO[season]} ${sd + 1}일째 · ${roomKo}` + (kDay != null ? ` ${kDay}일차` : '') +
     (ts.lamp.owned ? ` · 식물등 ${ts.lamp.owned}개` : '');
 
   const goal = tutorialGoal(ts);
@@ -8116,6 +8171,11 @@ function sellKeepOneHit(c) {
     return others === 0;
   } catch { return false; }
 }
+/* ★ 2026-10-31 비판 넷째 판 ① — 방울과 [식물] 판 삽수 칸이 같은 값 · 같은 «올렸나»를 읽는다(§drawCuttings 셈 그대로) */
+function cutListWonOf(c) {
+  try { const v = cuttingSnapshot(S, c); return priceOf({ leaves: v.leaves, variegatedLeaves: v.variegatedLeaves }).won || 0; } catch { return 0; }
+}
+function cutListedNow(c) { try { return !!listingFor(S, c); } catch { return false; } }
 const doListCutting = guard((id) => {
   { const c0 = cuttingsOf(S).find(x => x && x.id === id);
     if (sellKeepOneHit(c0)) { try { dlgOpen(story.events([{ id: 'sell_keep_one' }], S)); } catch (e) { console.warn('[남겨 두자]', e && e.message); } } }
@@ -8193,7 +8253,7 @@ function drawCuttings() {
         (why ? why : '뿌리내면 팔 수 있습니다') + '</small></div>' +
         /* ★ 이 줄이 급전의 값을 말한다 — 받는 것 위, 치르는 것 아래(§cutMotherLoss) */
         '<div class="won">+' + sellWon.toLocaleString() + '원' +
-        (lose ? '<small>모주 값 −' + lose.toLocaleString() + '원</small>' : '') +
+        (lose ? '<small>통째로 팔면 −' + lose.toLocaleString() + '원</small>' : '') +   /* ★ D97 §4-1 — «모주 값»은 «자르면 손해»로 읽혔다(plan) */
         '</div>' + btn('jar') + btn('soil') + '</div>');
     }
   }
@@ -9418,11 +9478,21 @@ function drawShop() {
        「수를 넣은 것」이 아니라 **「수를 «박은» 것」**이었다(1,500,000 이 글자로 박혀 있었다).
        ⇒ ★ 이 줄은 `moveCost`(= `S.tutorial.rules.moveOutCostWon`)를 **읽어 쓴다.** 안 낡는다(㊶).
      ★ 그리고 새 말을 안 지었다 — 「이사 자금」은 **이미 이 줄에 있던 말**이다(㊺). */
-  hint.textContent = won >= moveCost
-    ? '지금 내놓으면 이사 자금이 됩니다 — 연락이 온 뒤 거래해야 돈이 들어옵니다'
-    : `무늬 잎 ${ls.variegatedLeaves}/${ls.leaves}장 — ${n == null || n > ls.leaves
-        ? `이사 자금 ${moveCost.toLocaleString()}원에 못 미칩니다. 더 키우거나 삽수를 내놓으세요`
-        : `${n}장이 무늬면 이사 자금 ${moveCost.toLocaleString()}원이 됩니다`}`;
+  /* ★★ 2026-10-31 D97 §3 (비판 셋째 판 ⑤ #14) — 이사 뒤 · 이미 모은 판에도 «이사 자금에 못 미칩니다»가 섰다.
+       ① 이사 뒤: 무늬 잎이 늘면 값이 오른다(§priceOf) ② 이사 전 · 지갑 ≥ 이사비: 이미 모였다 ③ 이사 전 · 모자람: «모자란 돈»(short)으로 견준다 */
+  const tsH = S.tutorial || {};
+  const vl = `무늬 잎 ${ls.variegatedLeaves}/${ls.leaves}장`;
+  if (tsH.movedOut) { hint.textContent = `${vl} — 무늬 잎이 늘면 값이 오릅니다`; return; }
+  const cashH = Number.isFinite(tsH.cashWon) ? tsH.cashWon : 0;
+  if (cashH >= moveCost) { hint.textContent = `${vl} — 이사 자금은 이미 모였습니다`; return; }
+  const shortH = moveCost - cashH;
+  let nS = null;
+  if (Number.isInteger(ls.leaves) && ls.leaves >= 1) { try { const r = varieLeavesNeededFor(shortH, { leaves: ls.leaves }); nS = r && r.needVarieLeaves; } catch { nS = null; } }
+  hint.textContent = won >= shortH
+    ? '지금 내놓으면 이사 자금이 찹니다 — 연락이 온 뒤 거래해야 돈이 들어옵니다'
+    : `${vl} — ${nS == null || nS > ls.leaves
+        ? `이사 자금이 ${shortH.toLocaleString()}원 모자랍니다. 더 키우거나 삽수를 내놓으세요`
+        : `${nS}장이 무늬면 모자란 이사 자금 ${shortH.toLocaleString()}원이 찹니다`}`;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -11721,6 +11791,11 @@ function bandOfPot(pot) {
 function bandHereOf(pot) {
   try { const g = growBandAt(pot.at ? pot : pot.slotId, !!pot.variegated); return (g && g.band) || null; } catch { return null; }
 }
+/* ★★ 2026-10-31 비판 셋째 판 MAJOR #6 — 물 셈의 «철» 한 곳. 단추 · 줄 · 주는 손이 다 이것을 읽는다(갈리면 단추는 «물 주기» · 코어는 조용히 «아직») */
+function waterSeasonNow() {
+  return (lastTurn && lastTurn.sky && lastTurn.sky.season)
+      || (() => { try { return io.light.skyFor(S.day, S.sim).season || null; } catch { return null; } })();
+}
 function potWaterNow(pot) {
   if (!hasPlant(S)) return null;
   try {
@@ -11729,8 +11804,7 @@ function potWaterNow(pot) {
       band: bandOfPot(pot),        /* ⚠ **그 그루의** 밴드다 (§bandOfPot) */
       /* ★ 2026-10-31 D93 ⑥ 덧 — 지난 턴이 없으면(세이브를 막 연 첫 화면) 철도 «모름»이라 철 보정(여름 −1)이 빠졌고, 다음 날 «N일 뒤»가 두 칸 줄었다(core 자 probe_waterband).
            ⇒ 그날 하늘(io.light.skyFor — 턴이 물 셈에 쓰는 그 철 · 반지하는 늘 여름)로 · 막 놓은 그루의 밴드와 같은 «모름 → 기본» 꼴 */
-      season: (lastTurn && lastTurn.sky && lastTurn.sky.season)
-           || (() => { try { return io.light.skyFor(S.day, S.sim).season || null; } catch { return null; } })()
+      season: waterSeasonNow()   /* ★ MAJOR #6 — 주는 손과 같은 한 곳 */
     });
   } catch { return null; }
 }
@@ -11927,25 +12001,26 @@ function cutMarks(urgent) {
         /* ★포트가 없으면 **파는 길**을 띄운다. 이게 파산 탈출구다 —
            삽수 값(12,000원)이 포트값(7,000원)보다 높아서 팔면 다시 살 수 있다.
            "포트를 사세요"만 띄우면 돈 없는 플레이어에게는 죽으라는 말이 된다. */
-        let w = 0;
-        try { w = priceOf({ leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves }).won; } catch { }
-        out.push({ key, tone: 'warn',
-                   ko: '💰 팔기 ' + w.toLocaleString() + '원' + (left != null ? ' D-' + left : ''),
-                   go: () => doSellCutting(c.id) });
+        /* ★ 2026-10-31 비판 넷째 판 ① — 없는 doSellCutting 대신 [식물] 판 [내놓기]와 같은 길 · 같은 값 · 이미 올렸으면 안 냄 */
+        if (!cutListedNow(c)) {
+          const w = cutListWonOf(c);
+          out.push({ key, tone: 'warn',
+                     ko: '📮 내놓기 ' + w.toLocaleString() + '원' + (left != null ? ' D-' + left : ''),
+                     go: () => doListCutting(c.id) });
+        }
       }
     }
     return out;
   }
 
   /* 팔 때가 된 삽수 — 뿌리를 냈고 기한이 안 도는 것 */
-  const sellable = list.filter(c => c.status === 'rooted' || c.status === 'established');
+  const sellable = list.filter(c => (c.status === 'rooted' || c.status === 'established') && !cutListedNow(c));   /* ★ 비판 넷째 판 ① — 올린 것은 빼고 */
   for (const c of sellable.slice(0, 1)) {
     const key = cutKeyOf(c);
     if (!key) continue;
-    let w = 0;
-    try { w = priceOf({ leaves: c.source.leaves, variegatedLeaves: c.source.variegatedLeaves }).won; } catch { }
-    out.push({ key, tone: 'crop', ko: '💰 삽수 팔기 ' + w.toLocaleString() + '원',
-               go: () => doSellCutting(c.id) });
+    const w = cutListWonOf(c);
+    out.push({ key, tone: 'crop', ko: '📮 삽수 내놓기 ' + w.toLocaleString() + '원',
+               go: () => doListCutting(c.id) });   /* ★ 비판 넷째 판 ① — [식물] 판 [내놓기]와 같은 길 */
   }
   if (out.length) return out;
 
@@ -13169,6 +13244,8 @@ if ($('lightHeat')) $('lightHeat').onclick = guard(() => {
   try { on = !!(roomView.lightHeatmap() || {}).on; } catch { }
   try { roomView.setLightHeatmap(!on, on ? undefined : lightHeatOpts()); }
   catch (e) { banner('빛 분포를 못 켰습니다', (e && e.message) || ''); return; }
+  /* ★ 2026-10-31 MINOR ④(D96 트럭 사진) — 켤 때 떠 있던 배너는 걷는다(범례 윗부분과 겹침 · 사람 손이 새 화면을 연 것이라 옛 소식은 끝) */
+  if (!on) { try { const ev = $('event'); if (ev && ev.classList.contains('on')) { clearTimeout(bannerTimer); ev.classList.remove('on'); } } catch { } }
   drawLightHeatBtn();
   /* 켜면 방이 보여야 한다 — 시트를 닫는다. 끌 때는 그대로 둔다(다시 누를 수 있게) */
   if (!on) { try { window.__byeotSheet.close(); } catch { } }
@@ -13228,7 +13305,7 @@ function drawPlantMore() {
       /* ⚠ **`pot` 이다. `potId` 가 아니다** — 코어가 안 보는 칸을 넘기면 조용히 첫 그루 값이 온다 */
       w = potWaterStatus(S, { pot: p,
                               band: bandOfPot(p),   /* ⚠ 첫 그루 것을 넘기면 주기가 갈린다 */
-                              season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null });
+                              season: waterSeasonNow() });   /* ★ MAJOR #6 */
       if (w) bits.push(w.dry ? '💧 말랐습니다' : `물 준 지 ${w.dryDays}/${w.interval}일`);
     } catch { }
     if (Number.isFinite(p.daysPlanted)) bits.push(`돌본 날 ${p.daysPlanted}일`);
@@ -13553,7 +13630,7 @@ $('slot').onchange = e => {
     unlockAfterFix();
   sfx.thud();                         /* ★ 놓았다 — 실패는 이 줄을 안 지난다 */
     /* ★도착 자리에서 벗어난 순간이 두 번째 학습이 일어난 순간이다 */
-    if (isBrightestSlot(e.target.value) && dlgOpen('monsteraMoved')) focusOnMonstera();   /* ★ §isBrightestSlot · W3 #6 */
+    if (isBrightestSlot(e.target.value) && (((S.lamps && S.lamps.count) > 0) ? dlgOpen('monsteraMovedLamp') : dlgOpen('monsteraMoved'))) focusOnMonstera();   /* ★ §isBrightestSlot · W3 #6 · D97 §4-3 */
     syncRoom();
   }
   draw();
@@ -13679,6 +13756,8 @@ function guard(fn) {
      머무는 동안: 12×16px 짜리를 한 번 알아볼 만큼. 짧으면 못 보고, 길면 갇힌 것처럼 느낀다. */
 const SPEAR_ZOOM_WAIT_MS = 900;
 const SPEAR_ZOOM_HOLD_MS = 3600;
+/* ★ 2026-10-31 비판 셋째 판 MAJOR #4 — 지금 서 있는 «몬스테라 당기기» 하나(돌려놓을 때까지) · 새 당기기가 서면 옛 것의 돌려놓기는 손을 뗀다 */
+let spearFocus = null, spearFocusTok = 0;
 function focusOnMonstera() {
   try {
     const p = pot0(S);
@@ -13688,12 +13767,19 @@ function focusOnMonstera() {
     setTimeout(() => {
       /* ★ W3 — 방이 그 그루를 (아직·다시 짓느라) 모르면 안 당긴다. 모르는 열쇠를 넘기면 방뷰가 console.error 를 찍는다(실측 1회) */
       try { if (!(roomView.plants ? roomView.plants() : []).some(x => x && (x.key === key || x.potId === p.id))) return; } catch { return; }
-      try { roomView.focusSlot(key); } catch (e) { console.warn('[새순 당기기]', e && e.message); }
-      setTimeout(() => {
-        /* ⚠ 그 사이 사람이 뭔가를 골랐으면 **안 되돌린다** — 남의 손을 뺏지 않는다 */
-        try { if (!picked.slotId && !picked.mode && !drag.on) roomView.focusSlot(null); }
-        catch (e) { console.warn('[새순 되돌리기]', e && e.message); }
-      }, SPEAR_ZOOM_HOLD_MS);
+      const tok = ++spearFocusTok;
+      try { roomView.focusSlot(key); spearFocus = { tok, key }; } catch (e) { console.warn('[새순 당기기]', e && e.message); }
+      /* ⚠ 그 사이 사람이 뭔가를 골랐으면 **지금은 안 되돌린다** — 남의 손을 뺏지 않는다.
+         ★ MAJOR #4 — 그렇다고 «영영» 안 되돌리면 안 된다(예전엔 한 번만 물어 카메라가 당긴 채 남았다). 손이 끝날 때까지 기다렸다 돌린다.
+         가구 메뉴가 제 카메라를 잡았으면(furnPicked.camFocused) 그것이 임자다 — 손대지 않고 끝낸다 */
+      const back = () => {
+        if (!spearFocus || spearFocus.tok !== tok) return;
+        try { if (furnPicked && furnPicked.camFocused) { spearFocus = null; return; } } catch { }
+        if (picked.slotId || picked.mode || drag.on) { setTimeout(back, 700); return; }
+        spearFocus = null;
+        try { roomView.focusSlot(null); } catch (e) { console.warn('[새순 되돌리기]', e && e.message); }
+      };
+      setTimeout(back, SPEAR_ZOOM_HOLD_MS);
     }, SPEAR_ZOOM_WAIT_MS);
   } catch (e) { console.warn('[새순 당기기]', e && e.message); }
 }
@@ -14308,6 +14394,8 @@ $('mealNone').onclick = guard(() => {
    ⚠ `guard` 로 따로 감싼다 — 연출이 끝난 **뒤에** 부르므로 바깥 `guard` 의 try 는 이미
      빠져나간 상태다. 안 감싸면 하루가 터졌을 때 오류 상자가 안 뜬다(= 조용한 실패). */
 const commitNextDay = guard(() => {
+  /* ★ 2026-10-31 비판 셋째 판 MAJOR #4 덧 — 날이 넘어가면 고르기만 한 화분 메뉴는 닫는다(카메라 돌려놓기가 그 메뉴를 기다리다 날을 넘어 붙었다) */
+  try { if (picked.slotId && !picked.mode && !drag.on) picked.clear(); } catch (e) { console.warn('[메뉴 닫기]', e && e.message); }
   noteTurn(nextDay(S, io).turn);
   /* ★ 2026-08-18 — 한 달 가계부. **배너·대사보다 먼저 세고 뜨기는 나중에** 뜬다.
      세는 것은 하루가 간 그 자리라야 하고(값이 휘발이다), 뜨는 것은 대사가 끝난
@@ -16871,7 +16959,7 @@ function commitPlaceInner(what, hit, opt = {}) {
       pushLog(S, `🪴 몬스테라${n}를 ${josaRo(r.slotId && !isFreeSlotId(r.slotId) ? slotLabel(r.slotId) : '고르신 자리')} 옮겼습니다`); }
     unlockAfterFix();
   sfx.thud();                         /* ★ 놓았다 — 실패는 이 줄을 안 지난다 */
-    if (isBrightestSlot(r.slotId) && dlgOpen('monsteraMoved')) focusOnMonstera();         /* ★ §isBrightestSlot · W3 #6 */
+    if (isBrightestSlot(r.slotId) && (((S.lamps && S.lamps.count) > 0) ? dlgOpen('monsteraMovedLamp') : dlgOpen('monsteraMoved'))) focusOnMonstera();   /* ★ §isBrightestSlot · W3 #6 · D97 §4-3 */
     /* ★ 2026-10-08 A·B — 확인 바가 안 서는 옮기기면 배너로(확인 바면 바가 말한다) */
     if (!picked.confirming) { const w = darkPlaceWarn({ obj: p, kind: 'pot', variegated: false }); if (w) banner('⚠ 어두운 자리입니다', w); }
   } catch (e) { return placeFailed(e); }
@@ -17684,6 +17772,16 @@ function noteUnpackNoSpot() {
         unpackNoSpot = { day: S.day, furn: fa, left: boxedCountOf('beansprout') + boxedCountOf('musun') }; } catch { unpackNoSpot = null; }
   try { updateHint(); } catch { }
 }
+/* ★ 2026-10-31 MINOR ②(총괄 ae32f79c shop45 Day 151 · 152 · 445) — 짐 풀기 할 일(oneroom_unpack)이 넘어갔고(B2 사흘) 가방에 남은 것이 이삿짐 채소뿐이면
+     손가락을 원룸 짐 풀기 갈래에 묶지 않는다 — Day 445 까지 [가방]을 짚었다. 가방 채소는 상태 줄(statusBagCrops)이 말한다(B2 와 같은 결 · 아래 돌봄 갈래로) */
+function unpackPassedBoxesOnly() {
+  try {
+    if (!((S.stamina && S.stamina.questsTaken) || []).includes('oneroom_unpack')) return false;
+    const boxN = boxedCountOf('beansprout') + boxedCountOf('musun');
+    if (!(boxN > 0)) return false;
+    return bagPots().length + bagCuttings().length + Math.max(0, spareSiru()) + Math.max(0, spareContainerOf('musun')) <= 0;
+  } catch { return false; }
+}
 function unpackStuckNow() {
   if (!unpackNoSpot) return false;
   const fa = ((S.home && S.home.furnitureAdded) || []).length;
@@ -18119,6 +18217,12 @@ function provisionalSpot(what = 'beansprout') {
   const free = list.filter(s => !taken.has(s.slotId));
   const near = free.filter(s => slotReachable(s.slotId));
   const pool = (near.length ? near : free).slice().sort((a, b) => (meals(b) - meals(a)) || (a.dli - b.dli));
+  /* ★★ 2026-10-31 비판 셋째 판 MAJOR #10 — 원룸: 이름 자리 최선이 그 작물 최고 띠가 아니면 가구 윗면도 재 보고 끼니가 더 많은 쪽(같으면 이름 자리) */
+  if (pool.length && !floorOk) {
+    let top = 0; try { top = Math.max(0, ...((cropKindOf(kindId).quality || []).map(q => q.meals || 0))); } catch { top = 0; }
+    const m0 = meals(pool[0]);
+    if (!(m0 >= top)) { const t = topGridSpot(potD, kindId, false, true); if (t && t.meals > m0) return t.at; }
+  }
   if (pool.length) return pool[0].slotId;
   /* ★★ 2026-10-31 총괄 D93 ③ M4 ㉡ — **찬 이름 자리는 절대 안 준다.**
        ⛔ 여기 «return list[0]»(후보 첫째 = 가장 밝은 창턱)이 있어, 이름 자리 15칸이 다 찬 뒤 누른 시루 · 재배판 넷이
@@ -18132,7 +18236,7 @@ function provisionalSpot(what = 'beansprout') {
 }
 /* 원룸 — 놓인 가구 윗면을 가구마다 3×3 으로 쏴서(화면 점 → room_view surfaceAt · 겹침 · 지름 · 다른 화분은 거기서 가른다) 그 작물에 맞는 빛 먼저 · 같으면 덜 밝은 데
    bright(그루 · 삽수 · 새 종) — 작물 띠 말고 «가장 밝은 데» 먼저(삽수 병이 제일 어두운 선반 밑을 권하지 않게) */
-function topGridSpot(potD, kindId, bright = false) {
+function topGridSpot(potD, kindId, bright = false, full = false) {   /* full — { at, dli, meals } 그대로(§provisionalSpot MAJOR #10 견줌) */
   let c = null; try { c = $('roomCanvas').getBoundingClientRect(); } catch { return null; }
   let furn = []; try { furn = (roomView && roomView.furniture && roomView.furniture()) || []; } catch { furn = []; }
   if (!roomView || typeof roomView.worldToScreen !== 'function') return null;
@@ -18155,7 +18259,7 @@ function topGridSpot(potD, kindId, bright = false) {
     }
   }
   cands.sort(bright ? ((a, b) => (b.dli === 99 ? -1 : b.dli) - (a.dli === 99 ? -1 : a.dli)) : ((a, b) => (b.meals - a.meals) || (a.dli - b.dli)));
-  return cands.length ? cands[0].at : null;
+  return cands.length ? (full ? cands[0] : cands[0].at) : null;
 }
 /* ★ D93 ③ — 이름 자리가 다 찼을 때 바닥 칸을 넓게 쏜다(5×4) · 놓이는 바닥 칸 가운데 그 작물 빛에 맞는 데(끼 많은 데 › 덜 밝은 데) */
 function floorGridSpot(potD, kindId) {
@@ -20171,25 +20275,32 @@ const reallyWaterPot = guard((pot) => {
   const r = waterPot(S, {
     pot: p,
     band: bandOfPot(p),            /* ⚠ 재는 값과 주는 값이 같은 자에서 나와야 한다 */
-    season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null
+    season: waterSeasonNow()       /* ★ MAJOR #6 — 단추(§potWaterNow)와 같은 철 */
   });
   /* 두 번 눌러도 안전하다 — 아직 촉촉하면 `already` 로 돌아온다(안 던진다) */
   if (r.watered && before && before.dry)
     banners([{ title: '💧 물을 줬습니다', sub: '흙이 촉촉해졌습니다 — 다시 자랍니다' }]);
+  else if (r.already) waterNotYetBanner(r);   /* ★ MAJOR #6 — 눌렀는데 말 없음 금지 */
   draw();
 });
+/* ★★ 2026-10-31 MAJOR #6 — 아직 촉촉해 물이 안 든 누름은 그렇다고 말한다(단추 글 «아직 촉촉합니다 (N일 뒤)»와 같은 셈 · leftDays − 유예 2) */
+function waterNotYetBanner(r) {
+  const n = r && Number.isFinite(r.leftDays) ? Math.max(1, r.leftDays - 2) : null;
+  banner('💧 몬스테라는 아직 촉촉합니다', n ? `${n}일 뒤에 물을 줄 수 있습니다` : '');
+}
 /* ★ D95 ① — 바닥 단추 묶음: 그루마다 waterPot 한 번씩(체력 1 · 낱개와 같다 · §runBatch) · 마른 그루가 하나라도 있었으면 예전 배너 */
 const reallyWaterPots = guard((pots) => {
   const list = (pots || []).filter(Boolean);
   let wasDry = false;
-  runBatch('water', list.length ? list : [pot0(S)], (pp) => {
+  const done = runBatch('water', list.length ? list : [pot0(S)], (pp) => {
     const p = pp || pot0(S);
     const before = potWaterNow(p);
-    const r = waterPot(S, { pot: p, band: bandOfPot(p), season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null });
+    const r = waterPot(S, { pot: p, band: bandOfPot(p), season: waterSeasonNow() });   /* ★ MAJOR #6 */
     if (r.watered && before && before.dry) wasDry = true;
     return r;
   });
   if (wasDry) banners([{ title: '💧 물을 줬습니다', sub: '흙이 촉촉해졌습니다 — 다시 자랍니다' }]);
+  else if (done.length && done.every(r => r && r.already)) waterNotYetBanner(done[0]);   /* ★ MAJOR #6 */
   draw();
 });
 

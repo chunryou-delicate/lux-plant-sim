@@ -644,8 +644,6 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     'plantStalledWinterBanjiha',
     /* ★ 2026-10-31 [plan] D97 ① — 이사 «된 날»(move_ready)이 ev.survives 로 갈린다(scriptOf) */
     'moveReadyNow', 'moveReadyShort',
-    /* ★ 2026-10-31 [plan] D97 ④ — 등 단 판의 창턱 줄 · [core] 가 부르는 자리를 등 수로 가르기 전까지 «아직 안 부름»(plan-to-core-d97 §4) */
-    'monsteraMovedLamp',
     'cuttingWarnLast', 'cuttingVarieBright', 'cuttingVarieDark',
     /* ★ 2026-10-09 [plan] — 원룸 철 셋(season 사건이 방으로 갈림) */
     'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom',
