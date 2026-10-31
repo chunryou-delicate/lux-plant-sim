@@ -1323,6 +1323,14 @@ check('D93 파는 말 한 규칙 · sell_surplus 끝은 열린 뒤 판 것 · cr
   assert.equal(chatterContextOf({ day: 20 }, S).musunRoom, 1, '문맥 musunRoom 이 방의 무순 판을 못 셉니다');
 });
 
+/* ★ 2026-10-31 [plan] 총괄 — questSellVarie 는 무늬 삽수 «둘 이상»에 열린다: 몬이는 수를 안 말하고 · 자취생도 «하나»를 안 박는다(셋이면 거짓) */
+check('questSellVarie — 몬이 수 없음 · 둘 이상 어느 수에서도 참(«둘이네» · «나머지 하나» 없음)', () => {
+  for (const l of SCRIPTS.questSellVarie) {
+    if (l.who === 'moni') assert.ok(!/[0-9]|하나|(^|[^거])둘|셋|넷/.test(l.text), `questSellVarie 몬이가 수를 말합니다: ${l.text}`);
+    assert.ok(!/둘이네|나머지 하나/.test(l.text), `questSellVarie 가 «둘»을 박습니다: ${l.text}`);
+  }
+});
+
 /* ── 보고 ─────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st, name, msg] of results) {
