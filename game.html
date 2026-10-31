@@ -10108,6 +10108,13 @@ function markSays(re) {
   if (!box) return false;
   return [...box.querySelectorAll('.mark')].some(el => re.test(el.textContent || ''));
 }
+/* ★ 2026-10-31 총괄 D93 ① M2 ㉡ — 아래 [거두기]가 «다음에 거둘 그 하나»를 한 곳에서 고른다(글 · 손 둘 다 이것).
+     ⛔ 손(§reallyHarvest)은 익은 것 중 가장 오래 자란 하나(무순 7일 > 콩나물 5일이라 무순이 먼저)를 거두는데,
+       글은 늘 «🥣 콩나물 거두기 (익은 것 6개)»였다 — 무순 판을 거두면서 콩나물이라 했다(비판 둘째 판 M2 · Day 36 · 45) */
+function nextRipeCrop() {
+  try { return (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.ready)
+                 .sort((a, b) => (b.ageDays || 0) - (a.ageDays || 0))[0] || null; } catch { return null; }
+}
 function drawHarvest() {
   const b = $('harvestCrop');
   if (!b) return;
@@ -10129,9 +10136,14 @@ function drawHarvest() {
      ⚠ `disabled` 를 안 건드린다 — 잠긴 버튼은 말풍선의 `click()` 까지 삼킨다(2026-08-08 버그).
        눌러 보면 코어가 `tutorialInput` 으로 안내한다. */
   const noteH = staminaBlockNote('harvest');
-  if (show) b.textContent = noteH ? `🥣 ${noteH}`
-    : (n > 1 ? `🥣 콩나물 거두기 (익은 것 ${n}개 · 한 번에 하나)`
-             : '🥣 콩나물 거두기');
+  /* ★ D93 ㉡ — 그 종류의 익은 수 · 그 종류 이름(§nextRipeCrop). 못 고르면 예전 글 */
+  /* ⚠ 글은 «숨겨도» 적는다(다시 심기 알약과 같게) — 말풍선 «거두기»가 이 단추를 숨긴 동안에도 말풍선의 click() 이 이 단추로 온다 */
+  const nx = (st && st.ready) ? nextRipeCrop() : null;
+  const ko = (nx && nx.kindKo) || '콩나물';
+  const nk = nx && st && Array.isArray(st.byKind) ? ((st.byKind.find(x => x && x.kind === nx.kind) || {}).readyCount || 0) : n;
+  if (st && st.ready) b.textContent = noteH ? `🥣 ${noteH}`
+    : (nk > 1 ? `🥣 ${ko} 거두기 (익은 것 ${nk}개 · 한 번에 하나)`
+              : `🥣 ${ko} 거두기`);
 }
 
 /* 다시 심어야 하나 — 거둔 시루가 있고 씨앗이 있을 때만 뜬다.
@@ -10149,9 +10161,22 @@ function drawSow() {
   /* ★ 2026-10-30 총괄 D90 버그 2 — «콩나물» 다시 심기는 «콩나물» 시루만 센다.
        ⛔ hv.harvestedCount 는 종류 합계(무순 재배판 포함)라, 거둔 것이 무순 판뿐이어도 이 알약이 서고 누르면
          무순 판을 골라 콩나물 심기에 넘겨 «[콩나물] 아직 수확하지 않았습니다»가 끝없이 났다(총괄 판 막힘 ②) */
-  const bsKind = hv && Array.isArray(hv.byKind) ? hv.byKind.find(x => x && x.kind === 'beansprout') : null;
-  const need = bsKind ? (bsKind.harvestedCount || 0) : 0;
-  const seeds = st ? (st.stock.bean_seed || 0) : 0;
+  /* ★★ 2026-10-31 총괄 D93 ① M2 ㉠ — **무순 판도 이 알약으로 다시 심는다**(무 씨앗) · 종류는 섞지 않는다(위 D90 버그 2 그대로).
+       ⛔ D90 뒤로 콩나물만 세어 무순 판은 바닥에 다시 심기 길이 없었다(비판 둘째 판 M2 · Day 37 «전부 자라는 중» · 이틀 놂).
+       ⇒ 거둔 것이 있는 종류 가운데 «씨앗이 있는» 종류를 먼저(지금 할 수 있는 일) · 없으면 거둔 것이 있는 첫 종류(주문 지름길 · 오는 중).
+       ★ 고른 종류를 알약에 적어(dataset.kind) 누르는 손(§resowTarget · §reallySow)이 그 종류 시루만 고른다 — 끝없는 오류(D90 버그 2)가 안 되살아나게 */
+  const kindsNeed = (hv && Array.isArray(hv.byKind) ? hv.byKind : []).filter(x => x && (x.harvestedCount || 0) > 0).map(x => {
+    let k = null; try { k = cropKindOf(x.kind); } catch { k = null; }
+    const seedId = (k && k.seedItemId) || (x.kind === 'musun' ? 'radish_seed' : 'bean_seed');
+    return { kind: x.kind, ko: (k && k.ko) || x.kind, need: x.harvestedCount || 0, seedId, seeds: st ? (st.stock[seedId] || 0) : 0 };
+  });
+  const pick = kindsNeed.find(x => x.seeds >= 1) || kindsNeed[0] || null;
+  const need = pick ? pick.need : 0;
+  const seeds = pick ? pick.seeds : 0;
+  const seedId = pick ? pick.seedId : 'bean_seed';
+  const SEED_KO = { bean_seed: '콩 씨앗', radish_seed: '무 씨앗' }, BOX_KO = { beansprout: '시루', musun: '재배판' };
+  const seedKo = SEED_KO[seedId] || '씨앗', kindKo = pick ? pick.ko : '콩나물', boxKo = (pick && BOX_KO[pick.kind]) || '시루';
+  if (pick) btn.dataset.kind = pick.kind; else delete btn.dataset.kind;
   /* ★★ **산 시루는 이 버튼이 안 세운다** (박사님 2026-08-08: "시루를 샀는데 자동 배치가
        되는데 이상하게 배치되고. 애초에 인벤에서 끌어서 배치하도록 해").
      ══════════════════════════════════════════════════════════════════
@@ -10173,22 +10198,22 @@ function drawSow() {
   /* ★★ 2026-10-08 D19(총괄 · 중반 M1 «길을 끊기지 않게») — 씨앗이 «0개»이고 «오는 중»도 아니면 이 알약이 **주문 지름길**이 된다.
        ⛔ 났던 일(0~60일 199장): 첫 수확 뒤 씨앗을 안 사서 할 일이 「씨앗을 주문하세요」에 54일 멈췄고 몬스테라가 끝내 안 왔다.
        회색 「콩 씨앗이 없습니다」는 까닭만 말하고 길을 안 줬다 ⇒ 누르면 상점의 콩 씨앗 주문 창을 연다(빨간 오류 없이) */
-  const coming = !!(st && (st.orders || []).some(o => o && o.itemId === 'bean_seed'));
-  const buyIt = (need > 0 && seeds < 1 && !coming) ? buyItemOf('bean_seed') : null;
-  if (buyIt) { btn.disabled = false; btn.dataset.buy = 'bean_seed'; }
+  const coming = !!(st && (st.orders || []).some(o => o && o.itemId === seedId));
+  const buyIt = (need > 0 && seeds < 1 && !coming) ? buyItemOf(seedId) : null;
+  if (buyIt) { btn.disabled = false; btn.dataset.buy = seedId; }
   else delete btn.dataset.buy;
   /* 거두기·물주기와 **같은 규칙** — 심는 말풍선이 떠 있으면 아래 버튼은 안 뜬다 (2026-08-06) */
   btn.style.display = (need > 0 && !markSays(/심기/)) ? '' : 'none';
   if (!need) return;
   /* 씨앗이 모자라도 **버튼은 보인다** — 안 보이면 왜 못 심는지 알 길이 없다.
      회색으로 두고 사유를 말한다. */
-  btn.textContent = buyIt ? `🛒 콩 씨앗 주문 · ${Number(buyIt.buyWon || 0).toLocaleString('ko-KR')}원`
+  btn.textContent = buyIt ? `🛒 ${seedKo} 주문 · ${Number(buyIt.buyWon || 0).toLocaleString('ko-KR')}원`
     : seeds < 1
-    ? (coming ? '🌱 콩 씨앗이 오는 중입니다' : '🌱 콩 씨앗이 없습니다')
+    ? (coming ? `🌱 ${seedKo}이 오는 중입니다` : `🌱 ${seedKo}이 없습니다`)
     /* ★ 2026-08-09 — 이것도 **한 번에 하나**다(거두기와 같은 이유 · 체력은 시루마다 1) */
-    : (need > 1 ? `🌱 콩나물 다시 심기 (빈 시루 ${need}개 · 한 번에 하나)`
-                : '🌱 콩나물 다시 심기');
-  btn.title = seeds < 1 ? '콩 씨앗을 먼저 주문하세요' : '';
+    : (need > 1 ? `🌱 ${kindKo} 다시 심기 (빈 ${boxKo} ${need}개 · 한 번에 하나)`
+                : `🌱 ${kindKo} 다시 심기`);
+  btn.title = seeds < 1 ? `${seedKo}을 먼저 주문하세요` : '';
 }
 
 /* ══ 체력 — 오늘 손이 얼마나 남았나 (2026-08-05 · docs/stamina.md) ═════════
@@ -11276,6 +11301,7 @@ function drawWater() {
      ⇒ **하나씩**이라고 적는다. 시루를 골라 주고 싶으면 방의 말풍선이나 [식물]의 줄에서 한다. */
   /* ★★★ 체력이 모자라면 **왜 안 되는지**를 글자로 말한다 (2026-08-09 · §staminaBlockNote) */
   const noteW = staminaBlockNote('water');
+  let hvW = null; try { hvW = cropHarvestStatus(S); } catch { hvW = null; }   /* ★ D93 ㉢ — 거둔 빈 용기 · 익은 것(종류 합) */
   b.textContent = noteW ? `💧 ${noteW}`
     : st.needsWater
     ? (wait > 1 ? `💧 ${ko} 한 시루에 물 주기 (${wait}개 대기)`
@@ -11291,6 +11317,10 @@ function drawWater() {
        ⚠ 물 단추가 잠긴 까닭이 「다 자라는 중」과 「아직 안 심음」 둘인데 한 가지로만
          말하고 있었다. 까닭이 다르면 글자도 달라야 한다(§조용한 실패와 같은 결이다). */
     : st.needsSow ? '💧 심기 먼저'      /* #7 — 잘리지 않게 짧게(무엇을 심는지는 배너·칩이 말한다) */
+    /* ★ 2026-10-31 총괄 D93 ① M2 ㉢ — 거둔 빈 용기(다시 심을 것)나 익은 것이 하나라도 있으면 «전부 자라는 중»은 거짓이다
+         (비판 둘째 판 Day 37 · 45 · 50 — 무순 판이 비었는데 이 줄이 떴다). 「심기 먼저」와 같은 결로 짧게 */
+    : (hvW && hvW.harvestedCount > 0) ? '💧 다시 심기 먼저'
+    : (hvW && hvW.ready) ? '💧 거두기 먼저'
     : '💧 작물은 전부 자라는 중';
 }
 
@@ -19287,13 +19317,11 @@ const reallyHarvest = guard(() => {
      시루를 늘릴수록 돌보는 것이 **싸지는** 셈이라 체력이 상한 노릅을 못 한다.
      ⚠ 코어는 그대로다 — `potIds` 를 안 주면 여전히 다 거둔다(재현이 그 길을 쓴다).
        **화면만** 하나씩 부른다. */
-  let ripeOne = null;
-  try { ripeOne = (cropPotList(S.firstPlay, S.day) || []).filter(x => x.ready)
-                   .sort((a, b) => (b.ageDays || 0) - (a.ageDays || 0))[0] || null; } catch { }
+  const ripeOne = nextRipeCrop();   /* ★ D93 ㉡ — 단추 글과 같은 하나(§nextRipeCrop) */
   const r = harvestCrop(S, io, ripeOne ? { potIds: [ripeOne.id] } : {});
   noteHarvest(r);           /* 아래 한 줄이 「얼마를 아꼈나」를 말할 근거 (§A ①) */
   lastTurn = lastTurn || null;
-  banners([{ title: `🥣 콩나물을 거뒀습니다`,
+  banners([{ title: `🥣 ${(ripeOne && ripeOne.kindKo) || '콩나물'}을 거뒀습니다`,   /* ★ D93 ㉡ — 거둔 종류(콩나물을 · 무순을) */
              /* ★ 2026-10-30 [plan] D90 ⑤ — «밥값 N원어치»(물건 값 10원/g)를 걷고 거둔 g 만(값 낱말은 밥상 «한 몫 2,500원 아낌» · 파는 창 «팔면 N원» 둘뿐) */
              sub: `${r.qualityKo || ''} · ${formatGram((r.perPot || []).reduce((a, x) => a + (x.grams || 0), 0))}` },
            ...surplusBannerOf(r), ...neighborOrderBannerOf(r.events)]);
@@ -19366,9 +19394,9 @@ const reallyWaterPot = guard((pot) => {
 
 /* ★ 2026-10-30 총괄 D90 버그 2 — 어느 거둔 «콩나물» 시루를 심나 · 손이 닿는 것부터(방 뷰 reach — runAct 가 실제로 걷는 길).
      ⛔ 걸음 열쇠가 늘 «첫 시루»(cropKey)였다 — 그 시루가 손 안 닿는 자리면 심을 시루와 상관없이 «가지는 못했습니다»가 났다 */
-function resowTarget() {
+function resowTarget(kind = 'beansprout') {   /* ★ D93 ㉠ — 알약이 고른 종류(§drawSow dataset.kind) */
   let rows = [];
-  try { rows = (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.harvested && x.kind === 'beansprout'); } catch { rows = []; }
+  try { rows = (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.harvested && x.kind === kind); } catch { rows = []; }
   const keyOf = x => x.slotId || (x.at ? `free:${x.id}` : null);
   const reach = x => { const k = keyOf(x); if (!k || !roomView || typeof roomView.reach !== 'function') return true;
                        try { const r = roomView.reach(k); return !r || r.ok !== false; } catch { return true; } };
@@ -19379,10 +19407,11 @@ $('resow').onclick = guard(() => {
   /* D19 — 씨앗이 없으면 이 알약은 주문 지름길이다(§drawSow dataset.buy) */
   const it = $('resow').dataset.buy;
   if (it) { try { window.__byeotSheet.open('shop'); } catch { } openBuyPanel(it); return; }
-  const one = resowTarget();
-  return doAct('sow', () => reallySow(one && one.id), one && one.key ? { key: one.key } : {});
+  const kind = $('resow').dataset.kind || 'beansprout';   /* ★ D93 ㉠ */
+  const one = resowTarget(kind);
+  return doAct('sow', () => reallySow(one && one.id, kind), one && one.key ? { key: one.key } : {});
 });
-const reallySow = guard((potId) => {
+const reallySow = guard((potId, kind = 'beansprout') => {
   /* ★ **`sirus` 를 안 넘긴다** (2026-08-08). 안 넘기면 `resowCrop` 이 지금 개수를 그대로 써서
      거둔 시루만 제자리에 다시 심는다 — 자리도 개수도 안 바뀐다. 그게 이 버튼의 전부다.
      ⚠ 산 시루를 여기서 얹지 마라. 그러면 새 시루가 **놓인 자리에 저절로** 붙고,
@@ -19390,11 +19419,11 @@ const reallySow = guard((potId) => {
        산 시루는 끌어다 놓을 때 선다 — `commitPlace` §산 시루. */
   /* ★★ 2026-08-09 — 거두기와 **같은 이유로** 한 시루만 심는다(체력은 시루마다 1) */
   let sowOne = null;
-  try { const rows = (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.harvested && x.kind === 'beansprout');   /* ★ 10-30 콩나물만(위 §resowTarget) */
+  try { const rows = (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.harvested && x.kind === kind);   /* ★ 10-30 그 종류만(위 §resowTarget · D93 무순도) */
         sowOne = (potId && rows.find(x => x.id === potId)) || rows[0] || null; } catch { }
-  const r = resowCrop(S, { slots: io.light.room.slots, size: io.light.room.size,
+  const r = resowCrop(S, { kind, slots: io.light.room.slots, size: io.light.room.size,
                            ...(sowOne ? { potIds: [sowOne.id] } : {}) });
-  banner('콩나물을 다시 심었습니다', `시루 ${r.resown}개 · 씨앗 ${r.seedsUsed}봉지`);
+  banner(`${r.kindKo || '콩나물'}을 다시 심었습니다`, `${kind === 'musun' ? '재배판' : '시루'} ${r.resown}개 · 씨앗 ${r.seedsUsed}봉지`);
   draw();
 });
 
