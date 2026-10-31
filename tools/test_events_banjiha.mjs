@@ -7,13 +7,14 @@
      B 끄면(setBanjihaEventsOn(false) — ?ev=0 · --ev=0) 사건 0
      C 안 열린 판(siru16 전 · Day 35 전 · 첫 플레이 중)엔 안 뜬다 · 원룸(이사 뒤) · 산 집엔 안 뜬다
      D 막는 날(월세 · 대사 서는 사건)엔 안 뜬다 · 다음 날로 밀린다 · 사흘 내리 막히면 그 차례 건너뜀
-     E 카드 사이 적어도 나흘 · 사건마다 한 번(고양이 셋 · 아이들 둘은 제 시계 · 아이들 둘째는 흔든 판만)
+     E 카드 사이 적어도 엿새(★ D98 ㉯ 4 → 6) · 사건마다 한 번(고양이 셋 · 아이들 둘은 제 시계 · 아이들 둘째는 흔든 판만)
+     H ★ D98 ㉮ 미루기(deferBjCard) — 그날 카드를 안 본 것으로 되돌려 이튿날 다시 · 고른 뒤 · 다른 날엔 못 민다
      F 고르기: 택배 a → 체력 1 · 이튿날 아침 김치(밥 한 몫) / 체력 0 이면 a 못 고름 · 추석 a → 이틀 뒤 · 사흘 뒤 한 몫씩 · 두 번 못 고름
      G 저장 칸 왕복(bjEventsSnapshot) — 모르는 칸 · 잘못된 값은 버림 · 없으면 null
    ⚠ 판은 가짜 S(최소 칸)다 — 게임 판 걸음은 하네스(probe_branches · out.bjEvents)와 core probe_d96_ev(화면)가 잰다.
 ============================================================ */
 import assert from 'node:assert';
-import { setBanjihaEventsOn, stepBanjihaEvents, applyBjChoice, bjEventsSnapshot, BJ_KEYS, bjChoicesOf, createBjEvents } from '../src/game/events_banjiha.js';
+import { setBanjihaEventsOn, stepBanjihaEvents, applyBjChoice, bjEventsSnapshot, BJ_KEYS, bjChoicesOf, createBjEvents, deferBjCard } from '../src/game/events_banjiha.js';
 import { createStaminaState } from '../src/game/stamina.js';
 
 let pass = 0, fail = 0;
@@ -94,9 +95,9 @@ console.log('== E 간격 · 한 번 · 되풀이 ==');
     const gaps = a.slice(1).map((x, i) => x.day - a[i].day);
     const keys = a.map(x => x.key);
     const once = BJ_KEYS.every(k => keys.filter(x => x === k).length <= 1);
-    if (!(gaps.every(g => g >= 4) && once)) { ok(`E 씨앗 ${seed}`, false, a.map(x => x.day + ':' + x.key).join(' ')); }
+    if (!(gaps.every(g => g >= 6) && once)) { ok(`E 씨앗 ${seed}`, false, a.map(x => x.day + ':' + x.key).join(' ')); }
   }
-  ok('E-1 카드 사이 적어도 나흘 · 사건마다 한 번(씨앗 여섯)', true);
+  ok('E-1 카드 사이 적어도 엿새 · 사건마다 한 번(씨앗 여섯)', true);
   const waved = cards(walk(makeS(3), 140, { choose: e => 0 }));
   const hid = cards(walk(makeS(3), 140, { choose: e => (e.key === 'kids1' ? 1 : 0) }));
   ok('E-2 아이들 둘째는 흔든 판만', waved.some(x => x.key === 'kids2') && !hid.some(x => x.key === 'kids2'),
@@ -148,6 +149,26 @@ console.log('== F 고르기 ==');
       ok('F-5 추석 a → 이틀 뒤 · 사흘 뒤 아침 반찬(한 몫씩)', JSON.stringify(got) === '[2,3]', JSON.stringify(got));
     } else ok('F-5 판 — 추석이 떴다', false, '안 뜸');
   }
+}
+console.log('== H 미루기(D98 ㉮) ==');
+{
+  /* 첫 카드가 서는 날까지 걷고 → 그날 민다 → 이튿날 카드가 선다(같은 판 · 안 본 것으로 되돌림) */
+  const S = makeS(7);
+  let first = null;
+  for (let d = 30; d < 90 && !first; d++) { S.day = d; S.stamina.left = S.stamina.max; const out = stepBanjihaEvents(S, { events: [] }); const e = out.find(x => x.id === 'bj_event'); if (e) first = e; }
+  ok('H-0 판 — 첫 카드', !!first, first && `${first.day}:${first.key}`);
+  const k = deferBjCard(S);
+  const B = S.tutorial.bjEvents;
+  ok('H-1 그날 카드를 민다 — 안 본 것 · 카드 없음 · 다음 차례 내일', k === first.key && B.card === null && B.seen[first.key] == null && B.next === first.day + 1, JSON.stringify({ k, card: B.card, next: B.next }));
+  ok('H-2 민 카드는 못 고른다', !applyBjChoice(S, first.key, 0).ok);
+  S.day = first.day + 1; S.stamina.left = S.stamina.max;
+  const out2 = stepBanjihaEvents(S, { events: [] });
+  const e2 = out2.find(x => x.id === 'bj_event');
+  ok('H-3 이튿날 카드가 선다', !!e2 && e2.day === first.day + 1, e2 && `${e2.day}:${e2.key}`);
+  const r = applyBjChoice(S, e2.key, bjChoicesOf(e2.key) >= 2 ? 1 : 0);
+  ok('H-4 고른 뒤에는 못 민다', r.ok && deferBjCard(S) === null);
+  S.day = first.day + 3;
+  ok('H-5 그날 카드가 아니면 못 민다', deferBjCard(S) === null);
 }
 console.log('== G 저장 칸 ==');
 {

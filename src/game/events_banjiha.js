@@ -22,7 +22,10 @@
      chuseok    E8      2     55 ≤ Day ≤ 80                               a 받는다 → 이틀 뒤 · 사흘 뒤 아침 밥 한 몫씩 아낌 · b 괜찮다
 
    ★ 언제부터(plan §2 ㉠) — 할 일 siru16 이 끝난 다음 아침. 못 닿은 판도 첫 플레이가 끝나고 몬스테라가 왔으면 Day 35 에 연다.
-     ⛔ 튜토 사슬(첫 수확 → 몬스테라 자리 → siru16) 동안은 안 뜬다 · 원룸(이사 뒤)엔 아예 안 뜬다.
+     ⚠ 실제(growth 43e9bda6 · 총괄 D98 ㉰): siru16 은 Day 25 께 열려 49 께 끝나는 긴 일이라 거의 모든 판이 «Day 35» 길로 연다 —
+       siru16 이 열린 동안에도 Day 35 부터 뜬다(박사님 «반지하가 삭막하다»). 튜토 보호는 첫 수확 · 몬스테라 자리까지다.
+       그 사이 시루 재촉(nudgeSiruPush)이 선 날 · 할 일이 끝난 날은 카드를 이튿날로 민다(§deferBjCard · D98 ㉮).
+     ⛔ 원룸(이사 뒤)엔 아예 안 뜬다.
    ★ 간격 — 카드 사이 6~10일(씨앗). 사건마다 한 판에 한 번(고양이 셋 · 아이들 둘은 제 시계). 조건 맞는 것 가운데 아직 안 본 것을 씨앗으로.
    ★ 막는 날 — 그날 아침 사건 대사 · 월세 · 굶음 · 이사가 섰으면 안 뜬다(다음 날로 밀림 · 큰 차례는 사흘 내리 막히면 건너뜀 · 되풀이 시계는 다음 빈 날).
    ★ 값 — 체력 1(택배) · 밥 한 몫(2,500원 · tutorial rules.mealCostWon — 밥상 «한 몫 아낌»과 같은 값) × 1(김치) / × 2(반찬 택배). 그 밖은 0.
@@ -34,7 +37,7 @@ import { canAct as canActStamina, spend as spendStamina } from './stamina.js';
 import { EVENT_SCRIPT } from './dialogue.js';   /* 그날 «대사가 서는» 사건(막는 날 가르기) — 대사 표가 정본 */
 
 const SALT = 0xb5e7;
-const MIN_GAP = 4;   /* 카드와 카드 사이 적어도 이만큼(되풀이 · 큰 차례 모두) */
+const MIN_GAP = 6;   /* 카드와 카드 사이 적어도 이만큼(되풀이 · 큰 차례 모두) · ★ D98 ㉯ 4 → 6(plan «6~10일» · growth: 첫 단추 판 176곳 중 62곳이 딱 4일 — 되풀이 시계가 쉼 끝나자마자 붙음) */
 /* ?ev=0 · 하네스 --ev=0 — 사건을 통째로 끈다(growth 가 «끔 대 켬»을 잰다). 모듈 한 벌 · 프로세스마다 */
 let EV_ON = true;
 export function setBanjihaEventsOn(on) { EV_ON = !!on; }
@@ -151,8 +154,11 @@ export function stepBanjihaEvents(S, turn, opt = {}) {
   let card = null;
   /* ★ 카드끼리 적어도 나흘(MIN_GAP) — 되풀이 시계가 큰 차례 바로 다음 날에 붙던 것(core 하네스 잼 · 62 · 63 / 73 · 74). 쉬는 동안 되풀이는 기다리고 큰 차례는 미뤄진다 */
   const cooled = !Number.isInteger(B.last) || day - B.last >= MIN_GAP;
+  /* ★ D98 ㉯ 덧 — 기한이 열흘 안인 큰 차례가 오늘 설 수 있으면 되풀이는 하루 기다린다(쉼 6일에 되풀이가 빈 칸을 먼저 차지해 추석 창이 지나감 · humanQ g) */
+  const soonBig = cooled && !blocked && Number.isInteger(B.next) && day >= B.next
+    && BJ_EVENTS.some(e => B.seen[e.key] == null && Number.isInteger(e.until) && e.until - day <= 10 && e.when(c));
   /* ④ 되풀이 — 제 시계(막히면 다음 빈 날) */
-  if (!B.card && cooled) {
+  if (!B.card && cooled && !soonBig) {
     const catKey = !B.seen.cat2 ? 'cat2' : (!B.seen.cat3 ? 'cat3' : null);
     if (catKey && B.seen.cat1 != null && Number.isInteger(B.cat.due) && day >= B.cat.due && !blocked) card = catKey;
     else if (!B.seen.kids2 && B.seen.kids1 != null && Number.isInteger(B.kids.due) && day >= B.kids.due && !blocked) card = 'kids2';
@@ -191,6 +197,24 @@ export function stepBanjihaEvents(S, turn, opt = {}) {
 function finish(turn, out) {
   if (turn && out.length) turn.events = [...(turn.events || []), ...out];
   return out;
+}
+
+/* ★★ 2026-10-31 총괄 D98 ㉮ — 막는 날 덧: 그날 아침 «할 일이 끝났거나»(quest_done) · «시루 재촉(nudgeSiruPush)»이 섰으면 오늘 카드를 이튿날로 민다.
+     할 일 끝 · 재촉 대사는 nextDay «밖»(화면 §checkQuests · story.turn / 하네스 아침 미리 보기)에서 정해지므로 그 뒤에 부른다.
+     ⛔ growth 43e9bda6: Day 76 leaf_three 끝 날 grandma · cat2 가 판마다 두 장 · siru16 열린 동안(36~48) 22판 합 14장이 nudgeSiruPush 와 같은 날.
+   ⇒ 안 본 것으로 되돌린다(내일 다시 고름 · 큰 차례 다음 날 = 내일 · 되풀이 시계 = 내일). 고른 뒤에는 못 민다. 돌려줌: 민 key 또는 null */
+export function deferBjCard(S) {
+  const ts = S && S.tutorial, B = ts && ts.bjEvents;
+  if (!B || !B.card || B.card.day !== S.day) return null;
+  const key = B.card.key;
+  delete B.seen[key];
+  B.card = null;
+  B.last = null;                       /* 오늘 카드는 쉼(MIN_GAP)을 지나 섰다 — 그 앞 카드는 이미 그만큼 멀다 */
+  if (BJ_EVENTS.some(e => e.key === key)) B.next = S.day + 1;
+  if (key === 'cat1') B.cat.due = null;
+  if (key === 'cat2' || key === 'cat3') B.cat.due = S.day + 1;
+  if (key === 'kids2') B.kids.due = S.day + 1;
+  return key;
 }
 
 /* ★ 고른다 — k = 0(첫 단추 · a) | 1(둘째 · b). 화면 · 하네스가 같은 손을 쓴다.

@@ -3417,7 +3417,7 @@ import { createDialogue, createStoryteller, SPEAKERS,
 import { createMusic } from './src/game/music.js';
 /* ★ 2026-10-31 총괄 D96 — 반지하 사건 카드. 글(카드 · 뒷일 배너)은 plan 몫 dialogue §EVENT_CARDS — 아직 없을 수 있어 «통째로» 받는다(이름을 꺼내 가져오면 없는 이름에서 부팅이 멎는다) */
 import * as DIALOGUE_ALL from './src/game/dialogue.js';
-import { setBanjihaEventsOn, applyBjChoice, bjChoicesOf, BJ_STAMINA_CHOICE } from './src/game/events_banjiha.js';
+import { setBanjihaEventsOn, applyBjChoice, bjChoicesOf, BJ_STAMINA_CHOICE, deferBjCard } from './src/game/events_banjiha.js';
 /* ★ 2026-10-10 남녀·캐릭터 «추후 분기»의 길(plan-branch-job-gender §3) — 성별을 읽는 곳은 heroGenderNow() 하나 */
 import { heroGenderOf, portraitNameOf } from './src/game/hero_branch.js';
 import { setHeroGender as setHeroGenderV2 } from './src/game/v2_hero.js';
@@ -10717,6 +10717,7 @@ function checkQuests(turn) {
   try {
     const r = stepQuests(S, questSnapshotNow(turn));
     for (const id of r.finished) grantStaminaQuest(S, id);   /* 보상은 stamina 가 준다 */
+    if (r.finished.length) bjDeferPending('quest');           /* ★ D98 ㉮ — 할 일이 끝난 아침엔 사건 카드를 내일로 */
     if (r.opened.length) questNewSeen = false;               /* 「볼 것이 생겼다」 — 점을 켠다 */
     if (r.finished.length) questNewSeen = false;
     /* ★ 2026-10-08 ④ — 엔딩도 여기서 한 걸음 본다(돈이 바뀌는 자리마다 이 함수가 불린다 · 하루·거래·수확).
@@ -13880,7 +13881,15 @@ function showFirstPlayEvents(turn) {
   try { noteBjEvents(turn); } catch (e) { console.warn('[반지하 사건]', e && e.message); }
   try { noteMoveSurvives(turn); } catch (e) { console.warn('[이사 버팀]', e && e.message); }   /* ★ D97 §1-1 */
   const ids = story.turn(turn, S);
+  if (ids.includes('nudgeSiruPush')) bjDeferPending('nudge');   /* ★ D98 ㉮ — 시루 재촉이 선 날 카드는 내일 */
   if (ids.length) dlgOpen(ids);
+}
+/* ★ 2026-10-31 총괄 D98 ㉮ — 아직 안 띄운 오늘 사건 카드를 이튿날로(events_banjiha §deferBjCard) · 할 일이 끝난 아침(§checkQuests) · 시루 재촉 날 */
+function bjDeferPending(why) {
+  if (!evPending || evShown || evPending.day !== S.day) return false;
+  let k = null; try { k = deferBjCard(S); } catch (e) { console.warn('[반지하 사건 미룸]', e && e.message); }
+  if (k) { evPending = null; console.info('[반지하 사건] 내일로 미룸:', k, why); }
+  return !!k;
 }
 /* ★ 2026-10-31 D97 §1-1 — move_ready 에 «버티나»를 싣고(대사 셋 갈래 · plan 7832818b) · 못 버티던 판이 처음 버틸 만해진 아침에 move_ready_ok 한 번(ts 깃발 둘 · 세이브) */
 function noteMoveSurvives(turn) {

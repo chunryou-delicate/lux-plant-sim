@@ -43,7 +43,7 @@ import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop, placedItems } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote, pantryKeepStatus, setPantryLegacyRule } from '../src/game/first_play.js';
-import { setBanjihaEventsOn, applyBjChoice } from '../src/game/events_banjiha.js';   /* ★ D96 반지하 사건 — 첫 단추가 기본 · --ev=0 끔 · --ev-choice=b 둘째 */
+import { setBanjihaEventsOn, applyBjChoice, deferBjCard } from '../src/game/events_banjiha.js';   /* ★ D96 반지하 사건 — 첫 단추가 기본 · --ev=0 끔 · --ev-choice=b 둘째 */
 import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
 import { useStock, creditSpeciesSale, furnitureItemIdOf } from '../src/game/shop.js';
@@ -75,7 +75,7 @@ import { careSpotsOf } from '../src/game/loop.js';
 import { moveIntoOwnedHome } from '../src/game/oneroom.js';
 import { creditShopOrder, buyPriceOf } from '../src/game/shop.js';
 import { serialize as serializeSave, deserialize as deserializeSave } from '../src/game/save.js';   /* --dump — 단계마다 게임 세이브 꼴(byeot/save/1)로 뜬다 */
-import { stepQuests, questView, questRoomOk } from '../src/game/quest.js';
+import { stepQuests, questView, questRoomOk, questsFinishingNow } from '../src/game/quest.js';
 import { nudgeWaiting, noteQuestWaits, nudgeWaitReason } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
 /* ★ 2026-10-09 (총괄 · plan 청) — 대사 고르기도 같이 돌린다(화면과 무관한 순수 함수 · game.html §story 와 같은 것) */
@@ -337,12 +337,11 @@ export async function play(name, seed, opt = {}) {
     try { turn = nextDay(S, io).turn; } catch (e) { out.crash = (e && e.message) || String(e); break; }
     /* ★ 2026-10-31 D96 — 반지하 사건 카드는 사람처럼 아침에 고른다: 첫 단추가 기본(--ev-choice=b 면 둘째) · 체력 단추가 막히면 둘째 ·
          뜬 날 · 고른 것 · 뒷일(김치 · 반찬)을 out.bjEvents 에 적는다(growth 가 «끔 대 켬»을 잰다) */
+    /* ★ D98 ㉮ — 고르기는 아침 대사(story.turn) 뒤로 옮겼다(아래 §bjToday) — 화면은 아침 할 일(§checkQuests) · 재촉 대사가 선 날 카드를 내일로 민다 */
+    const bjToday = [];
     if (turn && Array.isArray(turn.events)) for (const ev of turn.events) {
-      if (ev && ev.id === 'bj_event') {
-        let r = applyBjChoice(S, ev.key, opt.evChoice === 'b' ? 1 : 0);
-        if (!r.ok && r.stamina) r = applyBjChoice(S, ev.key, 1);
-        (out.bjEvents = out.bjEvents || []).push({ day: S.day, key: ev.key, choice: r.ok ? r.choice : null });
-      } else if (ev && ev.id === 'bj_followup') (out.bjEvents = out.bjEvents || []).push({ day: S.day, key: ev.key, won: ev.won });
+      if (ev && ev.id === 'bj_event') bjToday.push(ev);
+      else if (ev && ev.id === 'bj_followup') (out.bjEvents = out.bjEvents || []).push({ day: S.day, key: ev.key, won: ev.won });
     }
     /* ★ 2026-10-09 (D30 «먼저 확인») — 모주 무늬 잎 등급(game.html §noteTurn → noteLeafGrades 와 같게: 이 턴의 밴드로 · 한 번 정하면 안 바뀜).
          ⚠ 예전엔 이 줄이 없어 장부가 비었고 무늬 삽수는 모두 legacy 산반(35만)으로 값이 매겨졌다 — lightGrade 를 바꿔도 이 판은 안 움직였다 */
@@ -370,6 +369,16 @@ export async function play(name, seed, opt = {}) {
     }
     meals = ((turn && turn.firstPlayEvent && turn.firstPlayEvent.portions) || []).map(p => p && p.kind).filter(Boolean);
     try { if (S.pots && S.pots.length) marketGate(S, { leaves: io.growth.leafStats().leaves }); } catch { }
+    /* ★ D98 ㉮ — 반지하 사건 카드: 아침에 끝나는 할 일(questsFinishingNow · 상태 안 바꿈) · 시루 재촉(nudgeSiruPush)이 섰으면 내일로(§deferBjCard) · 아니면 사람처럼 고른다 */
+    for (const ev of bjToday) {
+      let why = null;
+      if (saidIds.includes('nudgeSiruPush')) why = 'nudge';
+      else { try { if (questsFinishingNow(S, questSnapshotOf(S, io, { mealKinds: meals, targetWon: targets[0] })).length) why = 'quest'; } catch { } }
+      if (why && deferBjCard(S)) { (out.bjEvents = out.bjEvents || []).push({ day: S.day, key: ev.key, deferred: why }); continue; }
+      let r = applyBjChoice(S, ev.key, opt.evChoice === 'b' ? 1 : 0);
+      if (!r.ok && r.stamina) r = applyBjChoice(S, ev.key, 1);
+      (out.bjEvents = out.bjEvents || []).push({ day: S.day, key: ev.key, choice: r.ok ? r.choice : null });
+    }
     if (!rest) {
       /* ── 작물 ── 안내를 따르는 사람은 열린 퀘스트가 말하는 시루 수를 맞춘다(5·8·16) · 무순도 들인다(crop_mix 1 · radish5 5) */
       const stm = S.stamina || {}, openQ = id => (stm.questsOpenedOn || {})[id] != null, doneQ = id => (stm.questsTaken || []).includes(id);

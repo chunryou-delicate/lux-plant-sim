@@ -1770,6 +1770,15 @@ export function questView(S, snapshot, opt = {}) {
    반환 `{ opened: [id…], finished: [id…], events: [ev…] }`
      ev = { id: 'quest_opened'|'quest_done', questId, ko, todo }
    ⚠ **두 번 불러도 안전하다.** `finished` 는 아직 `questsTaken` 에 없는 것만 낸다. */
+/* ★ 2026-10-31 총괄 D98 ㉮ — «지금 한 걸음 보면 끝나는 줄» 미리 보기 · 상태를 안 바꾼다(stepQuests 가 바꾸는 둘 — _questOpen · stamina.questsOpenedOn — 을 베껴서 돈다).
+     하네스는 할 일을 하루 한 번(손일 뒤) 재므로, 화면이 아침에 §checkQuests 로 보는 «아침에 끝난 할 일»을 이것으로 센다(반지하 사건 카드 미루기 · events_banjiha §deferBjCard) */
+export function questsFinishingNow(S, snapshot) {
+  if (!S) return [];
+  const st = S.stamina || {};
+  const S2 = { ...S, _questOpen: Array.isArray(S._questOpen) ? [...S._questOpen] : [],
+               stamina: { ...st, questsOpenedOn: { ...(st.questsOpenedOn || {}) } } };
+  try { return (stepQuests(S2, snapshot).finished || []).slice(); } catch { return []; }
+}
 export function stepQuests(S, snapshot) {
   const s = snapOf(snapshot);
   const doneIds = doneIdsOf(S);
