@@ -1369,6 +1369,9 @@ export function serialize(S, opt = {}) {
         /* ★ 2026-10-08 D2 — «마지막으로 기다린 날». 안 실으면 다시 켤 때 독촉이 «열린 날»부터 다시 세어 한 단 뛴다 */
         questsWaitedOn: Object.fromEntries(Object.entries(needObj(((S.stamina || {}).questsWaitedOn || {}), 'stamina.questsWaitedOn'))
           .map(([id, d]) => [needStr(id, 'stamina.questsWaitedOn[id]'), needInt(d, `stamina.questsWaitedOn[${id}]`, { min: 0 })])),
+        /* ★ 2026-11-01 총괄 D100 ③ — 닫힌 할 일(quest §closeVarieQuests · questsTaken 에도 들어 있다) — 판 꼬리 «닫힘»과 «끝낸 할 일» 셈의 근거 */
+        questsClosed: needArr(((S.stamina || {}).questsClosed || []), 'stamina.questsClosed')
+          .map((q, i) => needStr(q, `stamina.questsClosed[${i}]`)),
         /* ⑦ 낮잠 잔 날 — 하루 1번의 근거. -1 = 아직 */
         nappedOnDay: needInt(((S.stamina || {}).nappedOnDay ?? -1), 'stamina.nappedOnDay', { min: -1 })
       },
@@ -1972,6 +1975,9 @@ export function deserialize(raw, opt = {}) {
     }
     if (Number.isInteger(st.stamina.nappedOnDay) && st.stamina.nappedOnDay >= -1)
       S.stamina.nappedOnDay = st.stamina.nappedOnDay;
+    /* ★ D100 ③ — 닫힌 할 일 · 옛 세이브(칸 없음)는 빈 것 */
+    if (Array.isArray(st.stamina.questsClosed))
+      S.stamina.questsClosed = st.stamina.questsClosed.filter(q => typeof q === 'string');
     S.stamina.left = Number.isInteger(st.stamina.left)
       ? Math.max(0, Math.min(S.stamina.max, st.stamina.left))
       : S.stamina.max;

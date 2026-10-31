@@ -19,6 +19,7 @@ import { storyOf, tutorialRulesFromHomes } from '../../src/game/oneroom.js';
 import { PROLOGUE_VARIE_LEAVES } from '../../src/game/growth_adapter.js';
 import { speciesSnapshot, speciesPotsOf, speciesPlaced } from '../../src/game/species.js';   /* ★ D94 — bagGrowers 의 새 종 */   /* D45 — 새 두 종 곁줄 칸 */
 import { jobShopSnapshot } from '../../src/game/job_shop.js';   /* D59 — 가게 칸 */
+import { stockOf, POT_KINDS } from '../../src/game/shop.js';   /* ★ D100 ③ — 씨앗 길 칸(가방 씨앗 · 화분 품목) */
 import { jobCareSnapshot } from '../../src/game/job_care.js';   /* B — 돌봄 칸 */
 import { jobBreedSnapshot } from '../../src/game/job_breed.js';   /* C — 육종 칸 */
 
@@ -239,12 +240,22 @@ export function questSnapshotOf(S, io, opt = {}) {
     try { const st = io.growth.leafStats(); motherLeaves = (st && st.leaves) || 0; motherVarieLeaves = (st && st.variegatedLeaves) || 0; } catch { }
     try { const ls = io.growth.leafState ? io.growth.leafState() : null; motherVarieMatured = Array.isArray(ls) ? ls.filter(r => r && r.varie && r.matured && !r.dropped).length : null; } catch { motherVarieMatured = null; }
   }
+  /* ★ 2026-11-01 총괄 D100 §2 끝 — game.html §questSnapshotNow 와 같은 자: 몬스테라가 온 뒤 첫 화분이 없으면(그루째 팜) null(wait_varie 가 없는 그루를 안 기다림) */
+  if (!hasPlant(S) && fp.monstera && fp.monstera.arrived && !pot0(S)) motherVarieMatured = null;
   const cuts = (cuttingsOf(S) || []).map(c => ({ method: c.method, status: c.status, varieFromCut: !!c.varieFromCut,
                                                  varieLightBand: c.varieLightBand || null, rootedOnDay: Number.isInteger(c.rootedOnDay) ? c.rootedOnDay : null,
                                                  gen: Number.isInteger(c.gen) ? c.gen : null }));   /* D41 — game.html §questSnapshotNow 와 같게 */
   let story = null; try { story = storyOf(S); } catch { story = null; }
   const movedOut = !!ts.movedOut;
+  /* ★★ 2026-11-01 총괄 D100 ③ — game.html §questSnapshotNow 와 같은 자(이사 창 varieSourcesNow: 첫 화분은 지금 잎 · 다른 화분은 p.variegated · 삽수는 varieFromCut ∧ 안 죽음) */
+  const p0h = (S.pots || [])[0] || null;
+  const varieSourceN = (p0h && motherVarieLeaves > 0 ? 1 : 0) + (S.pots || []).filter(p => p && p !== p0h && p.variegated).length
+                     + (S.cuttings || []).filter(c => c && c.varieFromCut && c.status !== 'dead').length;
   return {
+    varieSourceN, monsteraPots: Array.isArray(S.pots) ? S.pots.length : null,
+    monsteraSeeds: (() => { try { return stockOf(S, 'monstera_seed') || 0; } catch { return null; } })(),
+    emptyPotItems: (() => { try { return Object.values(POT_KINDS).reduce((a, k) => a + ((k && k.itemId) ? (stockOf(S, k.itemId) || 0) : 0), 0); } catch { return null; } })(),
+    emptyPotsPlaced: Array.isArray(S.emptyPots) ? S.emptyPots.length : 0,
     day: S.day, firstPlayDone: !!fp.completed,
     cropHarvestTotal: (() => { try { return cropSites(fp).reduce((a, s) => a + (s.harvestCount || 0), 0); } catch { return 0; } })(),
     cropPots, mealKinds: opt.mealKinds || [], motherLeaves, motherVarieLeaves, motherVarieMatured,

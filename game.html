@@ -2417,6 +2417,17 @@
     </div>
   </div>
 </div>
+<!-- ★ 2026-11-01 총괄 D100 ① — 모그루를 내놓거나 거래해 무늬 원천이 0 이 되는 때의 되묻기 창(이사 창과 같은 셈 · 같은 말 · 막지 않는다) -->
+<div id="varieAsk" class="pop" aria-hidden="true">
+  <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="varieAskTitle">
+    <div class="ptitle" id="varieAskTitle"></div>
+    <div class="plots" id="varieAskLines"></div>
+    <div class="pbtns">
+      <button id="varieAskGo" class="go" type="button"></button>
+      <button id="varieAskCancel" class="ghost" type="button">아직</button>
+    </div>
+  </div>
+</div>
 <div id="buyPanel" class="pop" aria-hidden="true">
   <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="buyTitle">
     <div class="ptitle" id="buyTitle">몇 개 주문할까요</div>
@@ -3343,6 +3354,8 @@ import { catalogList, orderItem, shopStatus, priceOf,
          /* ★ 그루 값은 **묻는다** — 화면이 다시 세면 코어와 갈린다(shop.js §quotePot) */
          quotePot,
          listPot, listCutting, dealListing, cancelListing,
+         /* ★ D100 ① — [거래하기] 확인 창이 매물(그루 · 값)을 id 로 읽는다 */
+         listingOf,
          marketGate, marketStatus, listingFor, marketWaitKo, MARKET_MIN_LEAVES,
          stockOf, SELLABLE_CUTTING_STATUS, varieLeavesNeededFor,
          /* ★ 장부에서 잎별 등급을 줄 세우는 정본 — 재는 자가 따로 줄 세우면 갈린다(§cutMotherLoss) */
@@ -5564,10 +5577,11 @@ const detail = {
         if (listed) {
           out.push({ ko: `📮 내놓는 중 · ${listed.won.toLocaleString()}원`, go: () => sheetTo('shop') });
         } else if (gate && gate.open && ls) {
-          let q = null; try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves, ...(potLeafArgs(pot0(S)) || {}) }); } catch { }
+          /* ★ 2026-11-01 D100 #2 (㉡) — 올릴 때와 같은 입력(§listQuoteArgs) */
+          let q = null; try { const a = listQuoteArgs(ls); q = a ? quotePot(S, { ...a, potId: pot0(S).id }) : null; } catch { }
           out.push({ ko: q ? `📮 중고에 내놓기 (${q.won.toLocaleString()}원)` : '📮 중고에 내놓기',
-                     /* D22 — 상세 카드 길도 같은 한 줄(§sellingLastVarieSource) */
-                     go: () => { try { if (sellingLastVarieSource()) dlgOpen(story.events([{ id: 'sell_last_varie' }], S)); } catch { } return askListPot(); } });
+                     /* D22 → D100 ① — 상세 카드 길도 [상점] 단추와 같은 손(§sellPlantTap · 원천 0 이면 확인 창) */
+                     go: () => sellPlantTap() });
         } else if (gate) {
           out.push({ ko: `📮 ${gate.reason}`, go: () => sheetTo('shop') });
         }
@@ -9484,7 +9498,8 @@ function drawShop() {
   /* 내놓기 — 잎은 growth 소유라 leafStats 로 읽는다. 없으면 열지 않는다(값을 지어내지 않는다) */
   let ls = null; try { ls = io.growth.leafStats && io.growth.leafStats(); } catch { }
   const sell = $('sellPlant'), hint = $('sellHint');
-  if (!ls || !pot0(S)) { sell.disabled = true; hint.textContent = ''; return; }
+  /* ★ 2026-11-01 D100 ① — 그루를 판 뒤(pot0 없음) 단추 글이 «몬스테라 내놓는 중» 그대로 남았다(비판 d95_after) — 글도 되돌린다 */
+  if (!ls || !pot0(S)) { sell.disabled = true; sell.textContent = '몬스테라 내놓기'; hint.textContent = ''; return; }
 
   /* ══ ★★ 문 — **잎 2장** (2026-08-17 박사님 확정 · shop.js §marketGate) ═══════════
      ⚠ **왜 2장인지 화면이 말해야 한다.** 안 그러면 「왜 안 팔리지」가 된다.
@@ -9519,7 +9534,10 @@ function drawShop() {
        이 줄이 그것이었다 — **경고를 적어 두는 것만으로는 안 막힌다.**
      ⇒ 이제 **올릴 때와 같은 함수**(`quotePot`)에 묻는다. 값을 정하는 곳이 하나면 못 갈린다. */
   let q = null;
-  try { q = quotePot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves, ...(potLeafArgs(pot0(S)) || {}) }); } catch { }
+  /* ★★ 2026-11-01 총괄 D100 #2 (㉡) — **올릴 때와 같은 입력**(§listQuoteArgs). 단추가 potLeafArgs(잎 등급 + 자람 배수)를 넘겨
+       872,500(Day 88) · 891,250(Day 89)을 적는 동안 올리기는 잎 수만 넘겨 1,960,000 이 올라갔다 — 함수는 하나인데 넣는 것이 갈렸다(위 ⚠ 의 재발).
+       ⇒ 받는 돈 그대로 · 화면이 실제에 맞춘다. «덜 자란 잎은 덜 친다»를 실제 값에도 태울지는 박사님 몫(총괄 물음) — potLeafArgs 는 남겨 둔다 */
+  try { const a = listQuoteArgs(ls); q = a ? quotePot(S, { ...a, potId: pot0(S).id }) : null; } catch { }
   /* ⚠ 못 매기면 **값을 지어내지 않는다** — 단추는 열되 숫자를 안 적는다 */
   sell.disabled = false;
   sell.textContent = q ? `몬스테라 내놓기 (${q.won.toLocaleString()}원)` : '몬스테라 내놓기';
@@ -9560,8 +9578,15 @@ function drawShop() {
   const shortH = moveCost - cashH;
   let nS = null;
   if (Number.isInteger(ls.leaves) && ls.leaves >= 1) { try { const r = varieLeavesNeededFor(shortH, { leaves: ls.leaves }); nS = r && r.needVarieLeaves; } catch { nS = null; } }
+  /* ★★ 2026-11-01 총괄 D100 · [plan] §1-1 — 내놓으면 무늬 원천이 0 이 되는 판은 «찹니다»(사실)와 대가를 한 줄에 · 자르기 문 갈래(«연락이 온 뒤 …»는 확인 창으로 옮김) */
+  let lastSrc = false; try { lastSrc = sellingLastVarieSource(); } catch { lastSrc = false; }
+  let mNow = 0; try { mNow = varieMaturedLeavesNow() || 0; } catch { mNow = 0; }
   hint.textContent = won >= shortH
-    ? '지금 내놓으면 이사 자금이 찹니다 — 연락이 온 뒤 거래해야 돈이 들어옵니다'
+    ? (lastSrc
+        ? '지금 내놓으면 이사 자금이 찹니다 — 다만 통째로 팔면 무늬 원천 0, 원룸에서 늘릴 게 없습니다. ' +
+          (varieCutOpenNow() > 0 ? '무늬 마디를 잘라 삽수로 팔면 그루가 남습니다'
+                                 : `다 자란 무늬 잎이 둘이 되면 마디를 잘라 삽수로 팔 수 있습니다 (지금 ${mNow}/2)`)
+        : '지금 내놓으면 이사 자금이 찹니다 — 연락이 온 뒤 거래해야 돈이 들어옵니다')
     : `${vl} — ${nS == null || nS > ls.leaves
         ? `이사 자금이 ${shortH.toLocaleString()}원 모자랍니다. 더 키우거나 무늬 삽수가 둘이면 하나를 내놓으세요`   /* ★ D99 §1-2 · §6 */
         : `${nS}장이 무늬면 모자란 이사 자금 ${shortH.toLocaleString()}원이 찹니다`}`;
@@ -10798,7 +10823,8 @@ function questSnapshotNow(turn) {
     /* ★ 2026-10-08 D25 — 무늬이면서 다 자란 잎 수. first_cut 이 이 수 ≥ 2 에 연다([plan] c07263f1).
        자르기 문(cutBlockedReason)에 넘기는 «같은 함수»다 — 두 벌로 재면 하루라도 어긋난다.
        몬스테라 전은 0(위 motherLeaves 와 같은 까닭 — 생장 창의 시연용 그루를 안 읽는다) · 못 재면 null(퀘스트가 무늬 잎 수로 어림) */
-    motherVarieMatured: hasPlant(S) ? varieMaturedLeavesNow() : 0,
+    /* ★ 2026-11-01 총괄 D100 §2 끝 — 몬스테라가 온 뒤 첫 화분이 없으면(그루째 팜) null — wait_varie(«무늬 잎이 다 자라기를 · 0/2»)가 없는 그루를 기다리지 않게 · 하네스 같은 자 */
+    motherVarieMatured: hasPlant(S) ? varieMaturedLeavesNow() : ((fp.monstera && fp.monstera.arrived && !pot0(S)) ? null : 0),
     /* ★ 2026-10-08 [plan] 갈래 지도 57 — 첫 그루가 «자라는 자리»(밴드가 안 자람 셋이 아님)에 놓였나. 자는 놓는 순간 경고와 같다(§growBandAt).
          가방·자리 없음은 false · 못 재면 null(지어내지 않는다). plan 이 monstera_home done 을 이 칸으로 옮길 때 쓴다 */
     monsteraGrowing: (() => { const p0 = pot0(S); if (!p0) return false; if (!p0.at && !p0.slotId) return false;
@@ -10833,6 +10859,16 @@ function questSnapshotNow(turn) {
     /* ★ 2026-09-02 — 무순 줄(crop_mix)이 「집 잡은 «다음 날»」로 열리게 — 있는 칸 둘을 옮겨 적는다 */
     monsteraHomedDays: (fp.monstera && fp.monstera.guide && fp.monstera.guide.movedDays) || 0,
     monsteraGrewOnce: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.grewOnce),
+    /* ★★ 2026-11-01 총괄 D100 ③ — 원룸 무늬 원천 0 닫힘 · 씨앗 길(quest §closeVarieQuests · oneroom_seed_restart) · 하네스 §questSnapshotOf 와 같은 자.
+         varieSourceN = 이사 창 «무늬 원천 n»(§varieSourcesNow) · monsteraPots = 몬스테라 화분 수 · monsteraSeeds = 가방 몬스테라 씨앗 ·
+         emptyPotItems = 가방 화분 품목 수(shop.POT_KINDS) · emptyPotsPlaced = 방에 놓인 빈 화분 수. 못 세면 null(그 줄은 안 열리고 안 닫는다) */
+    /* ⚠ 첫 화분이 있는데 잎을 못 읽으면(켜는 순간 생장 창이 아직 안 섬) null — 0 으로 읽으면 무늬 그루가 있는 판의 할 일이 영영 닫힌다 */
+    varieSourceN: (() => { try { if (pot0(S)) { const ls = io.growth.leafStats(); if (!ls || !Number.isInteger(ls.variegatedLeaves)) return null; }
+                                 return varieSourcesNow().n; } catch { return null; } })(),
+    monsteraPots: Array.isArray(S.pots) ? S.pots.length : null,
+    monsteraSeeds: (() => { try { return stockOf(S, 'monstera_seed') || 0; } catch { return null; } })(),
+    emptyPotItems: (() => { try { return Object.values(POT_KINDS).reduce((a, k) => a + ((k && k.itemId) ? (stockOf(S, k.itemId) || 0) : 0), 0); } catch { return null; } })(),
+    emptyPotsPlaced: Array.isArray(S.emptyPots) ? S.emptyPots.length : 0,
     /* ★★ 2026-10-08 — **원룸 줄의 칸**([plan] f39fbddb · quest.js oneroom_*). null = 「모른다」(그 줄은 안 열린다 · 안전 폴백) */
     movedOut: !!ts.movedOut,
     movedInOnDay: (() => { try { const st = storyOf(S); return Number.isInteger(st && st.movedInOnDay) ? st.movedInOnDay : null; } catch { return null; } })(),
@@ -10886,6 +10922,14 @@ function questSnapshotNow(turn) {
 
 /* 「퀘스트 창을 연 뒤로 바뀐 것이 없다」 — 점을 끌 근거. `_` 세이브 칸을 안 만든다(§상태) */
 var questNewSeen = true;
+/* ★ 2026-11-01 총괄 D100 ③ · [plan] plan-to-core-d100 §4-1 — 무늬 할 일 닫힘 글(배너 · 판 꼬리) */
+const QUEST_CLOSED_KO = Object.freeze({
+  title: '🔒 무늬를 늘리는 할 일이 닫혔습니다',
+  sub: '무늬 그루 · 무늬 삽수가 없습니다',
+  tailSeed: ' — 씨앗부터 다시 키울 수 있습니다',
+  tailHome: ' — 다음 할 일: 내 집 자금',
+  board: '닫힘 — 무늬 그루 · 무늬 삽수가 없습니다'
+});
 
 /* ★ 한 걸음 재고 · 보상 주고 · 말하게 한다. **두 번 불러도 안전하다.**
    ⚠ `draw()` 안에서 부르지 마라 — 보상은 규칙이고 draw 는 보여 주기다(quest-to-plan 의 규율).
@@ -10898,6 +10942,16 @@ function checkQuests(turn) {
     if (r.finished.length) bjDeferPending('quest');           /* ★ D98 ㉮ — 할 일이 끝난 아침엔 사건 카드를 내일로 */
     if (r.opened.length) questNewSeen = false;               /* 「볼 것이 생겼다」 — 점을 켠다 */
     if (r.finished.length) questNewSeen = false;
+    /* ★★ 2026-11-01 총괄 D100 ③ · [plan] §4-1 — 무늬 할 일을 닫은 날 한 번 배너(대사 oneroom_varie_closed 는 같은 묶음 r.events 로 선다) */
+    { const vc = (r.events || []).find(e => e && e.id === 'oneroom_varie_closed');
+      if (vc) {
+        questNewSeen = false;
+        let tail = '';
+        if (vc.pots === 0) tail = QUEST_CLOSED_KO.tailSeed;
+        else { let hf = false; try { hf = (questView(S, questSnapshotNow(turn)).open || []).includes('oneroom_home_fund'); } catch { hf = false; }
+               if (hf) tail = QUEST_CLOSED_KO.tailHome; }
+        banner(QUEST_CLOSED_KO.title, QUEST_CLOSED_KO.sub + tail);
+      } }
     /* ★ 2026-10-08 ④ — 엔딩도 여기서 한 걸음 본다(돈이 바뀌는 자리마다 이 함수가 불린다 · 하루·거래·수확).
          퀘스트 사건과 «한 묶음»으로 넘겨야 EVENT_ORDER 가 「됐다! 가자.」(quest_done) → 「집 계약은 네가 해…」(ending_ready)로 세운다 */
     let evs = r.events;
@@ -10906,7 +10960,7 @@ function checkQuests(turn) {
          33일 동안 한 번도 안 났다 ⇒ 지갑이 바뀌는 자리(이 함수)에서도 잰다 · 한 판에 한 번(ts 깃발 · 세이브) */
     try { const ts = S.tutorial;
           if (ts && !ts.movedOut && ts.moveShortSeen && !ts.moveReadyOkSaid && moveSurvivesNow() === true) {
-            ts.moveReadyOkSaid = true; evs = [...evs, { id: 'move_ready_ok', day: S.day }]; } }
+            ts.moveReadyOkSaid = true; evs = [...evs, { id: 'move_ready_ok', day: S.day, ...varieSourceEvFields() }]; } }   /* ★ D100 ② 무늬 원천 */
     catch (e) { console.warn('[이사 버팀 낮]', e && e.message); }
     if (evs.length) dlgOpen(story.events(evs, S));               /* 대사는 늘 같은 창구로 */
   } catch (e) { console.warn('[퀘스트]', e && e.message); }
@@ -10958,8 +11012,9 @@ function drawQuestPanel() {
   try { v = questViewNow(); } catch (e) { v = null; }
   if (!v) { $('questList').textContent = '지금은 할 일을 읽을 수 없습니다'; return; }
 
-  const total = v.all.length, done = v.done.length;
-  $('questTitle').textContent = `할 일 ${done}/${total}`;
+  /* ★ 2026-11-01 [plan] D100 §5-1 — 칩 «첫걸음 i/n»과 같은 꼴 두 수가 다른 것을 셌다 ⇒ 판 머리는 «끝낸 할 일» · 닫힌 줄은 «끝낸» 셈 밖(counts.done) */
+  const total = v.all.length, done = (v.counts && Number.isFinite(v.counts.done)) ? v.counts.done : v.done.length;
+  $('questTitle').textContent = `끝낸 할 일 ${done}/${total}`;
   /* D50 — 머리는 칩과 같은 줄(기다리지 않는 첫 줄)을 말한다 */
   const subKo = v.chip
     ? (questChipIsWait(v) ? `기다리는 중 — ${v.chip.waitWhat || v.chip.ko}` : `지금 할 것 — ${v.chip.ko}`)
@@ -11049,12 +11104,12 @@ function questRowsHtml(v) {
       if (peeked >= QUEST_PEEK_LOCKED) { hidden++; continue; }
       peeked++;
     }
-    const mark = state === 'done' ? '✓' : state === 'open' ? '▶' : resting ? '⏸' : '🔒';
+    const mark = state === 'done' ? (q.closed ? '✕' : '✓') : state === 'open' ? '▶' : resting ? '⏸' : '🔒';   /* ★ D100 ③ 닫힌 줄 ✕ */
     /* 끝낸 줄은 **이름만** 남긴다. 「끝냈습니다」와 까닭을 다시 적으면 지난 일이 화면을 먹는다 */
     const body =
       resting ? `<div class="qwhy">${esc(q.todo)}</div>`
       : state === 'locked' ? '<div class="qwhy">아직 열리지 않았습니다</div>'
-      : state === 'done' ? ''
+      : state === 'done' ? (q.closed ? `<div class="qwhy">${esc(QUEST_CLOSED_KO.board)}</div>` : '')   /* ★ D100 ③ 닫힘 꼬리 */
       : q.waiting && q.waitDo
         ? `<div class="qtodo">${esc(q.waitDo)}</div><div class="qwhy">${esc(q.why)}</div>`   /* plan 85af8fd7 — 먼저 할 손 */
       : q.waiting && q.waitWhat
@@ -11065,7 +11120,7 @@ function questRowsHtml(v) {
        그려졌나」를 알아야 보상 문구를 정의와 대조할 수 있다(test_questui C-9). */
     out.push(`<div class="qrow ${cls}" data-qid="${esc(q.id)}"><div class="qmark">${mark}</div>` +
              `<div class="qbody"><div class="qko">${esc(q.ko)}</div>${body}</div>` +
-             `<div class="qrew">${esc(questRewardKo(q))}</div></div>`);
+             `<div class="qrew">${esc(q.closed ? '' : questRewardKo(q))}</div></div>`);   /* ★ D100 ③ 닫힌 줄은 보상 없음 */
   }
   /* ⚠ 접은 것을 **말한다.** 조용히 빼면 「줄이 사라졌다」가 된다 */
   if (hidden) out.push(`<div class="qrow lock qmore"><div class="qmark">⋯</div>` +
@@ -11629,8 +11684,8 @@ function drawQuestTab() {
   let v = null;
   try { v = questViewNow(); } catch { v = null; }   /* D50 — 기다림 줄을 «기다리는 중 — …»으로 */
   if (!v) { list.textContent = '지금은 할 일을 읽을 수 없습니다'; return; }
-  const total = v.all.length, done = v.done.length;
-  $('questTabTitle').textContent = `할 일 ${done}/${total}`;
+  const total = v.all.length, done = (v.counts && Number.isFinite(v.counts.done)) ? v.counts.done : v.done.length;   /* ★ D100 §5-1 */
+  $('questTabTitle').textContent = `끝낸 할 일 ${done}/${total}`;
   /* D21 — 할 일 머리 아래 한 줄: 「이사비까지 {n}원」(둘째 줄 「목표 {목표}원」) · 다 모으면 「이사비가 모였습니다」 */
   { let g = $('questGoalTab');
     if (!g) { g = document.createElement('div'); g.id = 'questGoalTab'; g.className = 'plots';
@@ -12002,9 +12057,23 @@ function markList() {
        띄우면 매 주기 사흘씩 말풍선이 서서 급한 것을 가린다(위 ⚠ 와 같은 함정). */
   const dry = potMarks();
   if (dry.length) return dry;
-  const crop = cropMarks();
+  /* ★ 2026-11-01 총괄 D100 · [plan] §4-2 · 비판 #21 — 빈 화분 🌱(씨앗 심기)도 작물 말풍선과 같은 층(사람은 방에서 찾는다) */
+  const crop = [...cropMarks(), ...emptyPotMarks()];
   if (crop.length) return crop;
   return cutMarks(false);
+}
+/* ★★ 2026-11-01 총괄 D100 ③ · [plan] §4-2 — 방에 놓인 빈 화분마다 «🌱 씨앗 심기» 말풍선(가방에 몬스테라 씨앗이 있을 때만) → [식물] 판 줄 단추와 같은 함수(§sowEmptyPot).
+     ⛔ 비판 다섯째 판 #21: 원룸 빈 모종포트에 씨앗 심는 길을 못 찾았다 — [식물] 판 줄 단추뿐이었다 */
+function emptyPotMarks() {
+  const out = [];
+  let seeds = 0; try { seeds = stockOf(S, 'monstera_seed') || 0; } catch { seeds = 0; }
+  if (!(seeds > 0)) return out;
+  const rvKeyOf = (() => { try { const m = new Map(); for (const p of (roomView && roomView.plants ? roomView.plants() : [])) if (p && p.potId) m.set(p.potId, p.key); return id => m.get(id) || null; } catch { return () => null; } })();
+  for (const ep of (S.emptyPots || [])) {
+    if (!ep || !ep.at) continue;
+    out.push({ key: rvKeyOf(ep.id) || `free:${ep.id}`, ko: '🌱 씨앗 심기', tone: 'crop', go: () => sowEmptyPot(ep.id) });
+  }
+  return out;
 }
 
 /* 몬스테라 말풍선 — **마른 것만.** 규칙은 state.js §몬스테라 물주기 것이다.
@@ -13003,7 +13072,7 @@ function drawJourney() {
                         order_seed: '씨앗 주문', monstera_home: '몬스테라 자리' };
         /* 차례: 초반 사슬(D12) > 새로 열린 줄(P3 · 「새 」) > 「할 일」 */
         if (hb) hb.textContent = questChain
-          ? `📜 ${questChain.index}/${questChain.total} · ${SHORT[questChain.id] || questChain.ko || ''}`
+          ? `📜 첫걸음 ${questChain.index}/${questChain.total} · ${SHORT[questChain.id] || questChain.ko || ''}`   /* ★ D100 §5-1 — 판 머리 «끝낸 할 일»과 다른 수임을 말한다 */
           : questFresh ? `📜 새 ${questFresh.ko || ''}`
           : '📜 할 일'; }
       /* 「보이나」는 `offsetParent` 로 묻는다 — `style.display` 만 보면 부모가 감춘 것을 못 본다
@@ -14113,15 +14182,22 @@ function bjDeferPending(why) {
   return !!k;
 }
 var moveLowCashSaidOn = null;   /* ★ 2026-11-01 b017 — move_low_cash 대사를 낸 날(하루 한 번 · 세이브 안 함) */
+/* ★ 2026-11-01 총괄 D100 ② — 이사 대사에 싣는 무늬 원천(이사 창 §varieSourcesNow 와 같은 자) · 못 세면 빈 것(대사는 «모르면 지금 그대로») */
+function varieSourceEvFields() {
+  try { const v = varieSourcesNow(); return { varieSource: v.n, varieSourceA: v.a, varieSourceB: v.b }; }
+  catch (e) { console.warn('[D100 ②]', e && e.message); return {}; }
+}
 /* ★ 2026-10-31 D97 §1-1 — move_ready 에 «버티나»를 싣고(대사 셋 갈래 · plan 7832818b) · 못 버티던 판이 처음 버틸 만해진 아침에 move_ready_ok 한 번(ts 깃발 둘 · 세이브) */
 function noteMoveSurvives(turn) {
   const ts = S.tutorial; if (!ts || ts.movedOut || !turn) return;
   const sv = moveSurvivesNow();
   for (const e of (turn.events || [])) if (e && e.id === 'move_ready' && sv != null) e.survives = sv;
+  /* ★ 2026-11-01 총괄 D100 ② — move_ready · move_ready_ok 에 무늬 원천(이사 창과 같은 자) · 0 이면 대사가 «오늘이어도 되고» 대신 경고 갈래(글 plan) */
+  for (const e of (turn.events || [])) if (e && (e.id === 'move_ready' || e.id === 'move_ready_ok')) Object.assign(e, varieSourceEvFields());
   if (sv === false) ts.moveShortSeen = true;
   else if (sv === true && ts.moveShortSeen && !ts.moveReadyOkSaid) {
     ts.moveReadyOkSaid = true;
-    if (!(turn.events || []).some(e => e && e.id === 'move_ready')) (turn.events = turn.events || []).push({ id: 'move_ready_ok', day: S.day });
+    if (!(turn.events || []).some(e => e && e.id === 'move_ready')) (turn.events = turn.events || []).push({ id: 'move_ready_ok', day: S.day, ...varieSourceEvFields() });
   }
 }
 /* ══ ★★ 2026-10-31 총괄 D96 — 반지하 사건 카드(events_banjiha · plan-events-banjiha-d96 §2 · §3) ══════════════════════
@@ -17882,6 +17958,8 @@ function sowEmptyPot(id) {
   removeEmptyPot(S, id);
   banner('🪴 몬스테라를 심었습니다', '씨앗부터라 오래 걸립니다 — 물을 주고 밝은 자리에 두세요');
   draw();
+  /* ★ 2026-11-01 총괄 D100 ③ — 심은 그 자리에서 할 일을 본다(«씨앗부터 다시 키운다» 끝 · 다른 손과 같게) */
+  checkQuests(lastTurn);
 }
 
 /* ★★★ 가방의 식물등을 방에 세운다 (2026-08-17 · 박사님).
@@ -18204,6 +18282,12 @@ function startPhonePlace(kind = 'beansprout', opt = {}) {
   const spare = boxId ? 1 : musun ? spareContainerOf('musun') : spareSiru();
   if (spare <= 0) { banner(musun ? '가방에 빈 재배판이 없습니다' : '가방에 빈 시루가 없습니다', musun ? '상점에서 새싹 재배판을 주문해 주세요' : '상점에서 시루를 주문해 주세요'); return; }
   const spot = provisionalSpot(musun ? 'musun' : 'beansprout');
+  /* ★ 2026-11-01 총괄 D100 #5 — 빈 자리는 있는데 그 작물 띠 밖뿐이면(콩나물 → 밝은 창턱) 놓지 않고 말한다(D99 ④ 삽수와 같은 꼴) */
+  if (!spot && provisionalNone === 'band') {
+    banner('맞는 자리가 없습니다', `${musun ? '무순' : '콩나물'}에 맞는 빛의 빈 자리가 없습니다 — 가구를 놓으세요`);
+    noteUnpackNoSpot();   /* 손가락이 이 칸에 묶이지 않게(B2 ③ 과 같은 길) */
+    return;
+  }
   /* ★ D93 ③ — 이름 자리가 다 찼으면 그렇게 말한다(찬 자리에 겹쳐 세우지 않는다 · §provisionalSpot) */
   if (!spot && cropSlotsAllTaken()) {
     const oneroom = !!(S.home && S.home.room === 'oneroom');
@@ -18321,7 +18405,10 @@ function varieBrightFreeNow(selfId) {
   } catch { return null; }
 }
 /* what — 무엇을 놓나: 'beansprout'·'musun'(작물 · 바닥 구석이 먼저 — 박사님 2026-08-17) · 'pot'·'cutting'·'species'(빛을 먹고 자라는 그루) */
+/* ★ 2026-11-01 총괄 D100 #5 — provisionalSpot 이 null 을 낸 까닭(부르는 쪽 글) · 'band' = 빈 자리는 있는데 그 작물 띠 밖뿐 */
+let provisionalNone = null;
 function provisionalSpot(what = 'beansprout') {
+  provisionalNone = null;
   /* ★★ 2026-10-25 총괄 D72 버그 1 — 몬스테라(가방 화분 · 빈 화분) · 삽수 · 새 식물은 «가장 밝은 빈 칸»부터(닿는 데만).
        ⛔ 바닥 구석(아래 ①)은 어둡다 — 가방의 몬스테라를 누르면 «여기는 몬스테라가 자라기엔 어둡습니다» 창이 서고 손가락이 그 [확인]을 짚어,
          손가락대로 한 사람의 몬스테라가 «날짜만 가는» 자리에 섰다(비판 Claude ⑤ #1 · 총괄 판 #5).
@@ -18382,12 +18469,19 @@ function provisionalSpot(what = 'beansprout') {
   const near = free.filter(s => slotReachable(s.slotId));
   const pool = (near.length ? near : free).slice().sort((a, b) => (meals(b) - meals(a)) || (a.dli - b.dli));
   /* ★★ 2026-10-31 비판 셋째 판 MAJOR #10 — 원룸: 이름 자리 최선이 그 작물 최고 띠가 아니면 가구 윗면도 재 보고 끼니가 더 많은 쪽(같으면 이름 자리) */
-  if (pool.length && !floorOk) {
+  /* ★★ 2026-11-01 총괄 D100 #5 — **띠 밖 자리는 안 준다.** 그 작물 가장 낮은 등급(콩나물 «초록·쓴맛» · 무순 «웃자라 밍밍»)은 «맞는 자리»가 아니다.
+       ⛔ 원룸 이삿짐 콩나물을 차례로 누르면 선반 9칸 다음 창턱 1~4번(아주 밝음 9.27)에 놓았다(비판 다섯째 판 d96_placed) — 몬이 «창가에 두면 초록이 되고 써»,
+         그 창턱은 몬스테라 몫(«제일 밝은 데는 창턱 1번 칸»)이었다. ⇒ 띠 안 빈 자리가 없으면 null(까닭 'band') — 부르는 쪽이 «맞는 자리가 없습니다» */
+  let low = 1; try { low = Math.min(...((cropKindOf(kindId).quality || []).map(q => q.meals || 0))); } catch { low = 1; }
+  const cropKind = what === 'beansprout' || what === 'musun';   /* 띠로 거르는 것은 작물만 — 화분 · 새 종 · 삽수는 예전 그대로 */
+  const band = cropKind ? pool.filter(s => meals(s) > low) : pool;
+  if (band.length && !floorOk) {
     let top = 0; try { top = Math.max(0, ...((cropKindOf(kindId).quality || []).map(q => q.meals || 0))); } catch { top = 0; }
-    const m0 = meals(pool[0]);
+    const m0 = meals(band[0]);
     if (!(m0 >= top)) { const t = topGridSpot(potD, kindId, false, true); if (t && t.meals > m0) return t.at; }
   }
-  if (pool.length) return pool[0].slotId;
+  if (band.length) return band[0].slotId;
+  if (pool.length && cropKind) provisionalNone = 'band';
   /* ★★ 2026-10-31 총괄 D93 ③ M4 ㉡ — **찬 이름 자리는 절대 안 준다.**
        ⛔ 여기 «return list[0]»(후보 첫째 = 가장 밝은 창턱)이 있어, 이름 자리 15칸이 다 찬 뒤 누른 시루 · 재배판 넷이
          모두 이미 찬 banjiha-sill:0 에 같은 좌표로 섰다(비판 둘째 판 Day 27 · 29 · house 69f1dfe0 · 놓는 손도 안 막았다 — state §namedSlotBusy 로 막음).
@@ -18395,7 +18489,13 @@ function provisionalSpot(what = 'beansprout') {
   if (floorOk) { const f = floorGridSpot(potD, kindId); if (f) return f; }
   /* ★★ 2026-10-31 비판 셋째 판 B2 BLOCKER — 원룸(방바닥 금지)은 이름 자리가 다 차면 «가구 윗면»을 넓게 쏜다(§topGridSpot).
        ⛔ 이름 자리(창턱 · 원래 가구)만 보고 놓인 가구 윗면은 안 봐서, 들고 온 가구를 다 놓고도 재배판 넷이 «빈 자리가 없습니다»였다(비판 B042) */
-  else { const t = topGridSpot(potD, what === 'musun' ? 'musun' : 'beansprout', what === 'pot' || what === 'cutting' || what === 'species'); if (t) return t; }
+  else {
+    const brightKind = what === 'pot' || what === 'cutting' || what === 'species';
+    const t = topGridSpot(potD, what === 'musun' ? 'musun' : 'beansprout', brightKind, true);
+    /* ★ D100 #5 — 작물은 가구 윗면도 띠 안만(그 작물 가장 낮은 등급이면 안 준다) */
+    if (t && (!cropKind || t.meals > low)) return t.at;
+    if (t) provisionalNone = 'band';
+  }
   return null;
 }
 /* 원룸 — 놓인 가구 윗면을 가구마다 3×3 으로 쏴서(화면 점 → room_view surfaceAt · 겹침 · 지름 · 다른 화분은 거기서 가른다) 그 작물에 맞는 빛 먼저 · 같으면 덜 밝은 데
@@ -20819,31 +20919,116 @@ $('pantryGo').onclick = guard(() => {
 /* ★ 2026-08-16 — **한 함수로 뺐다.** [상점]의 단추와 식물 상세 카드의 단추가 같은 길을
    타야 한다(박사님: *"식물 상세보기 칸에 … 당근에 올려 팔기 버튼이 거기 있으면 좋겠어"*).
    두 벌로 적으면 한쪽이 낡는다 — 오늘 값이 720,000 vs 1,960,000 으로 갈린 것이 그 병이다. */
-const askListPot = confirmOnce('중고 거래에 내놓습니까?', guard(() => {
-  let ls = null; try { ls = io.growth.leafStats(); } catch { }
-  if (!ls) { const e = new Error('아직 내놓을 수 없습니다 — 식물 상태를 못 읽었습니다'); e.tutorialInput = true; throw e; }
-  const r = listPot(S, { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves,
-                         log: m => pushLog(S, m) });
+/* ★★ 2026-11-01 총괄 D100 #2 (㉡) — **값을 묻는 입력은 이 한 곳**: 단추 · 상세 카드 · 확인 창 · 올리기(listPot)가 같이 쓴다.
+     잎 수 · 무늬 잎 수만(자람 배수 없음 — 등급은 quotePot 이 장부 → 프롤로그 다리로 메운다). 못 읽으면 null */
+function listQuoteArgs(ls0) {
+  let ls = ls0 || null; if (!ls) { try { ls = io.growth.leafStats(); } catch { ls = null; } }
+  if (!ls || !Number.isInteger(ls.leaves)) return null;
+  return { leaves: ls.leaves, variegatedLeaves: ls.variegatedLeaves };
+}
+const listPotNow = guard(() => {
+  const a = listQuoteArgs();
+  if (!a) { const e = new Error('아직 내놓을 수 없습니다 — 식물 상태를 못 읽었습니다'); e.tutorialInput = true; throw e; }
+  const r = listPot(S, { ...a, log: m => pushLog(S, m) });
   banner('몬스테라를 내놓았습니다',
          `${r.price.won.toLocaleString()}원 · ${marketWaitKo()} — 그때 [상점]에서 거래합니다`);
   syncRoom();
   draw();
-}));
+});
+const askListPot = confirmOnce('중고 거래에 내놓습니까?', listPotNow);
 /* ★ 2026-10-08 D22(총괄 확정 ㉠ · [plan] 1ecb0b13 대사) — 그루째 팔기 «되묻기»를 여는 첫 누름에서, 팔고 나면 무늬 원천
      (무늬 잎 단 그루 + 안 죽은 무늬 삽수)이 0 이 되는 경우만 몬이가 한 줄 말한다. ⚠ 막지 않는다 — 확인은 사람이 누른다. 방은 안 가린다 */
+/* ★ 2026-11-01 D100 ① — 셈은 이사 창 하나(§varieSourcesNow)에서 «그 그루가 빠지면»을 뺀다(§varieSourcesAfterPotGone) — 자가 둘이면 한쪽이 낡는다 */
 function sellingLastVarieSource() {
-  let mine = 0; try { const ls = io.growth.leafStats(); mine = (ls && ls.variegatedLeaves) || 0; } catch { mine = 0; }
-  if (!(mine > 0)) return false;                      // 이 그루가 무늬 원천이 아니면 «마지막 원천»도 아니다
-  const p0 = pot0(S);
-  const otherPots = (S.pots || []).filter(p => p && p !== p0 && p.variegated).length;
-  const cuts = (S.cuttings || []).filter(c => c && c.varieFromCut && c.status !== 'dead').length;
-  return otherPots + cuts === 0;
+  const p0 = pot0(S); if (!p0) return false;
+  const s = varieSourcesAfterPotGone(p0.id);
+  return s.now.n > 0 && s.after.n === 0;
 }
-$('sellPlant').onclick = (ev) => {
-  try { if (armedBtn !== ev.currentTarget && sellingLastVarieSource()) dlgOpen(story.events([{ id: 'sell_last_varie' }], S)); }
-  catch (e) { console.warn('[D22]', e && e.message); }
-  return askListPot(ev);
-};
+/* ★★ 2026-11-01 총괄 D100 ① (비판 다섯째 판 ⑤ #1 · #3 · #4 BLOCKER) — **그 그루가 빠지면 무늬 원천이 몇이 되나**(이사 창과 같은 자).
+     첫 화분은 지금 잎(leafStats.variegatedLeaves) · 다른 화분은 p.variegated · 삽수는 그대로(그루만 빠진다). 반환 { now, after } */
+function varieSourcesAfterPotGone(potId) {
+  const now = varieSourcesNow();
+  const p0 = pot0(S);
+  let drop = 0;
+  if (p0 && p0.id === potId) {
+    let mine = 0; try { const ls = io.growth.leafStats(); mine = (ls && ls.variegatedLeaves) || 0; } catch { mine = 0; }
+    drop = mine > 0 ? 1 : 0;
+  } else {
+    const p = (S.pots || []).find(x => x && x.id === potId);
+    drop = p && p.variegated ? 1 : 0;
+  }
+  return { now, after: { a: now.a - drop, b: now.b, n: now.n - drop } };
+}
+/* ★★ D100 §2 확인 창 글 — [plan] plan-to-core-d100 §2 그대로(이사 창 MOVE_ASK_KO 와 같은 낱말 · 원천 줄은 «판 뒤» 값) */
+const SELL_ASK_KO = Object.freeze({
+  list:     '중고 거래에 내놓습니다 — {ko} · {won}원',
+  listHow:  '연락이 온 뒤 [상점]에서 [거래하기]를 눌러야 팔립니다. 그 전엔 [내리기]로 거둘 수 있습니다.',
+  deal:     '{ko} — {won}원에 팝니다. 되돌릴 수 없습니다.',
+  source:   '팔고 나면 무늬 원천 {n} — 무늬 그루 {a} · 무늬 삽수 {b}',
+  none:     '무늬 삽수나 무늬 그루 없이 이사하면, 원룸에서 늘릴 게 없습니다.',   // 반지하(이사 전)
+  noneHere: '무늬 삽수나 무늬 그루가 없으면, 이 방에서 늘릴 게 없습니다.',     // 원룸(이사 뒤)
+  cutOpen:  '무늬 마디를 잘라 삽수로 팔면 그루가 남습니다.',
+  cutWait:  '다 자란 무늬 잎이 둘이 되면 마디를 잘라 삽수로 팔 수 있습니다 (지금 {m}/2).',
+  goList: '내놓는다', goListAnyway: '그래도 내놓는다',
+  goDeal: '판다',     goDealAnyway: '그래도 판다',
+  cancel: '아직'
+});
+/* 판 뒤 원천 0 이면 붙는 세 줄(§2) — 원천(판 뒤 값) · 늘릴 게 없다(이사 전/뒤) · 자르기 문 갈래 */
+function sellSourceLines(s, cutOpen) {
+  let m = 0; try { m = varieMaturedLeavesNow() || 0; } catch { m = 0; }
+  return [SELL_ASK_KO.source.replace('{n}', s.after.n).replace('{a}', s.after.a).replace('{b}', s.after.b),
+          (S.tutorial && S.tutorial.movedOut) ? SELL_ASK_KO.noneHere : SELL_ASK_KO.none,
+          cutOpen ? SELL_ASK_KO.cutOpen : SELL_ASK_KO.cutWait.replace('{m}', m)];
+}
+/* 매물이 빠지면 원천이 몇이 되나 — 그루 매물은 §varieSourcesAfterPotGone · 삽수 매물은 그 삽수가 무늬 삽수(안 죽음)면 b 에서 하나 */
+function varieSourcesAfterListingGone(l) {
+  if (l && l.kind === 'pot') return varieSourcesAfterPotGone(l.refId);
+  const now = varieSourcesNow();
+  const c = (S.cuttings || []).find(x => x && l && x.id === l.refId);
+  const drop = c && c.varieFromCut && c.status !== 'dead' ? 1 : 0;
+  return { now, after: { a: now.a, b: now.b - drop, n: now.n - drop } };
+}
+/* ★ [plan] 11-01 — 창 안 몬이 줄은 뺐다(창 글 none · cutOpen · cutWait 가 같은 말을 수와 함께 한다 · 몬이는 판 뒤 sold_last_varie) */
+let varieAskGo = null;
+function showVarieAsk(o) {
+  $('varieAskTitle').textContent = o.title;
+  const box = $('varieAskLines'); box.innerHTML = '';
+  for (const t of o.lines) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); }
+  $('varieAskGo').textContent = o.goKo;
+  $('varieAskCancel').textContent = SELL_ASK_KO.cancel;
+  varieAskGo = o.onGo;
+  $('varieAsk').classList.add('on'); $('varieAsk').setAttribute('aria-hidden', 'false');
+}
+function closeVarieAsk() { varieAskGo = null; $('varieAsk').classList.remove('on'); $('varieAsk').setAttribute('aria-hidden', 'true'); }
+$('varieAskGo').onclick = () => { const f = varieAskGo; closeVarieAsk(); if (f) f(); };
+$('varieAskCancel').onclick = () => { closeVarieAsk(); };
+/* [상점] 단추 · 식물 상세 카드가 같이 부른다 — ★ D100 §2: [내놓기]는 늘 창(무엇을 · 얼마에 · 어떻게 팔리나) · 판 뒤 원천 0 이면 원천 줄 셋 + 몬이(창 안) + [그래도 내놓는다]
+   ⚠ 그루가 없으면 예전 되묻기 길(listPot 이 «올릴 그루가 없습니다»로 던져 말한다) */
+function sellPlantTap(ev) {
+  const p0 = pot0(S);
+  if (!p0) return askListPot(ev);
+  let s = null; try { s = varieSourcesAfterPotGone(p0.id); } catch (e) { s = null; console.warn('[D100 ①]', e && e.message); }
+  const gone0 = !!(s && s.now.n > 0 && s.after.n === 0);
+  let won = null; try { const a = listQuoteArgs(); won = a ? quotePot(S, { ...a, potId: p0.id }).won : null; } catch { won = null; }
+  const cutOpen = varieCutOpenNow() > 0;
+  const title = Number.isFinite(won) ? SELL_ASK_KO.list.replace('{ko}', '몬스테라').replace('{won}', Math.round(won).toLocaleString('ko-KR'))
+                                     : SELL_ASK_KO.list.replace(' · {won}원', '').replace('{ko}', '몬스테라');
+  showVarieAsk({ title, lines: [SELL_ASK_KO.listHow, ...(gone0 ? sellSourceLines(s, cutOpen) : [])],
+                 goKo: gone0 ? SELL_ASK_KO.goListAnyway : SELL_ASK_KO.goList, onGo: () => listPotNow() });
+}
+$('sellPlant').onclick = (ev) => sellPlantTap(ev);
+/* [거래하기] — 그루 매물이고 팔면 원천이 0 이 되는 때만 확인 창(비판 #3 «되돌릴 수 없는 [거래하기]에 확인 창 없음») · 아니면 예전대로 바로 */
+function dealTap(listingId) {
+  /* ★ D100 §2 — [거래하기]는 늘 창(되돌릴 수 없는 일 · 그루든 삽수든) · 판 뒤 원천 0 이면 원천 줄 셋 + [그래도 판다] · 팔고 나면 sold_last_varie(§doDeal) */
+  let l = null; try { l = listingOf(S, listingId); } catch { l = null; }
+  if (!l) return doDeal(listingId);
+  let s = null; try { s = varieSourcesAfterListingGone(l); } catch (e) { s = null; console.warn('[D100 ①]', e && e.message); }
+  const gone0 = !!(s && s.now.n > 0 && s.after.n === 0);
+  const cutOpen = gone0 ? varieCutOpenNow() > 0 : false;
+  showVarieAsk({ title: SELL_ASK_KO.deal.replace('{ko}', l.ko || '').replace('{won}', Math.round(l.won || 0).toLocaleString('ko-KR')),
+                 lines: gone0 ? sellSourceLines(s, cutOpen) : [],
+                 goKo: gone0 ? SELL_ASK_KO.goDealAnyway : SELL_ASK_KO.goDeal, onGo: () => doDeal(listingId) });
+}
 
 /* ══ ★★★ 중고 거래 칸 — **올린 것 · 연락 온 것** (2026-08-17) ═══════════════════════
    ------------------------------------------------------------
@@ -20881,7 +21066,7 @@ function drawMarket() {
       '<button class="ghost" data-unlist="' + l.listingId + '">내리기</button></div>';
   }).join('');
   for (const b of $('marketList').querySelectorAll('[data-deal]'))
-    b.onclick = guard(() => doDeal(b.dataset.deal));
+    b.onclick = guard(() => dealTap(b.dataset.deal));   /* ★ D100 ① — 원천 0 이 되면 확인 창(§dealTap) */
   for (const b of $('marketList').querySelectorAll('[data-unlist]'))
     b.onclick = guard(() => doUnlist(b.dataset.unlist));
 
@@ -20894,6 +21079,7 @@ function drawMarket() {
    ⚠ 되묻지 않는다 — 되묻기는 [내놓기]에서 이미 했다(§sellPlant). 두 번 물으면 네 번 누른다. */
 const doDeal = guard((listingId) => {
   let r;
+  let n0 = null; try { n0 = varieSourcesNow().n; } catch { n0 = null; }   /* ★ D100 §0 — 판 «앞» 원천(판 뒤 0 이 되면 sold_last_varie) */
   try { r = dealListing(S, listingId, { log: m => pushLog(S, m) }); }
   catch (e) { e.tutorialInput = true; throw e; }
   banner(r.kind === 'pot' ? '몬스테라를 팔았습니다' : '삽수를 팔았습니다',
@@ -20904,6 +21090,12 @@ const doDeal = guard((listingId) => {
   /* ★ 2026-08-18 — 판 그 자리에서 ⑤가 끝나야 「팔렸다 → 이제 남은 건 돈뿐이야」가 온다 */
   checkQuests(lastTurn);
   syncRoom(); draw();
+  /* ★★ 2026-11-01 총괄 D100 §0 · [plan] soldLastVarie — 판 뒤 무늬 원천이 0 이 됐으면 한 번(판 그 자리에서 · 창을 닫은 뒤).
+       ⚠ 폰 [상점] 판(시트)이 대사를 덮으므로(#4) 판을 닫고 말한다 — 모그루가 나간 순간이라 방으로 돌아가는 것이 맞다 */
+  try { let n1 = null; try { n1 = varieSourcesNow().n; } catch { n1 = null; }
+        if (n0 > 0 && n1 === 0) { try { window.__byeotSheet.close(); } catch (e) { console.warn('[D100 §0]', e && e.message); }
+                                 dlgOpen(story.events([{ id: 'sold_last_varie' }], S)); } }
+  catch (e) { console.warn('[D100 §0]', e && e.message); }
 });
 
 /* ★ 내리기 — **한 푼도 안 움직인다.** 물건은 애초에 안 나갔다(shop.js §cancelListing) */

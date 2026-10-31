@@ -365,15 +365,19 @@ steps.forEach((s, i) => step(i + 1, s));
 
 /* ⚠ 줄 수를 이름에 안 박는다 — 2026-08-16 에 여덟이 열여섯이 됐고, 그때 "여덟 줄"이라
    적힌 이름 넷이 한꺼번에 낡았다(START-HERE §2.8 의 그 모양). 표에서 센다. */
-check(`⑵ ${QUEST_IDS.length}줄이 전부 열린다`, () => {
+/* ★ 2026-11-01 총괄 D100 ③ — **갈래 전용 줄**: 본 길(무늬 원천이 있는 판)에서는 안 선다. 아래 «D100 ③ 원천 0 갈래» 검사가 따로 걷는다.
+     ⚠ 본 길에서 원천 0 을 만들면 무늬 줄 넷이 닫혀(quest §closeVarieQuests) 본 길의 «끝» 셈이 깨진다 — 그래서 빼고 따로 잰다 */
+const BRANCH_ONLY = new Set(['oneroom_seed_restart']);
+const MAIN_IDS = QUEST_IDS.filter(id => !BRANCH_ONLY.has(id));
+check(`⑵ ${MAIN_IDS.length}줄이 전부 열린다(갈래 전용 ${BRANCH_ONLY.size} 빼고)`, () => {
   const got = openedAt.map(([id]) => id);
-  for (const id of QUEST_IDS)
+  for (const id of MAIN_IDS)
     assert.ok(got.includes(id), `'${id}' 가 한 번도 안 열렸습니다 — 없는 것과 같습니다`);
   info(`열린 차례 — ${openedAt.map(([id, n]) => `${n}걸음 ${id}`).join(' · ')}`);
 });
-check(`⑵ ${QUEST_IDS.length}줄이 전부 끝난다`, () => {
+check(`⑵ ${MAIN_IDS.length}줄이 전부 끝난다(갈래 전용 ${BRANCH_ONLY.size} 빼고)`, () => {
   const got = doneAt.map(([id]) => id);
-  for (const id of QUEST_IDS) assert.ok(got.includes(id), `'${id}' 가 안 끝났습니다`);
+  for (const id of MAIN_IDS) assert.ok(got.includes(id), `'${id}' 가 안 끝났습니다`);
   info(`끝난 차례 — ${doneAt.map(([id, n]) => `${n}걸음 ${id}`).join(' · ')}`);
 });
 /* ══ ★★★ 2026-08-16 신설 — **초반 사슬** (§초반 사슬) ═══════════════════════ */
@@ -537,8 +541,60 @@ check('⑸ ★ «새로 여는» 줄은 여전히 하루 하나(D78 이 몫을 �
 });
 check('⑸ 끝낸 것은 `stamina.questsTaken` 하나가 기억한다', () => {
   const taken = board.stamina.questsTaken;
-  for (const id of QUEST_IDS) assert.ok(taken.includes(id), `'${id}' 가 안 적혔습니다`);
-  assert.deepEqual(doneIdsOf(board).sort(), [...QUEST_IDS].sort());
+  for (const id of MAIN_IDS) assert.ok(taken.includes(id), `'${id}' 가 안 적혔습니다`);
+  assert.deepEqual(doneIdsOf(board).sort(), [...MAIN_IDS].sort());
+});
+/* ══ ★★ 2026-11-01 총괄 D100 ③ · [plan] plan-to-core-d100 §4 — **원천 0 갈래**: 모그루를 팔고 원룸에 온 판 ══════════════
+   ㉠ 원룸에서 무늬 원천 0 인 걸음 — 무늬 줄 넷(VARIE_CLOSE_IDS) 가운데 안 끝난 것이 닫힌다(questsTaken · questsClosed · 보상 사건 없음)
+   ㉡ 사건 oneroom_varie_closed { pots } 이 한 번 · 다음 걸음엔 다시 안 난다
+   ㉢ home_fund 가 열린다(root_bright 가 사슬에선 끝난 셈) · 칩 · «지금»에서 닫힌 줄이 빠진다 · 판 셈 counts.closed
+   ㉣ 화분 0 이면 oneroom_seed_restart 가 열리고(todo 갈래) · 씨앗을 심으면(화분 1) 같은 걸음에 끝난다
+   ㉤ 칸이 없으면(varieSourceN null) 안 닫는다(안전 폴백) */
+check('D100 ③ 원천 0 갈래 — 무늬 줄 넷이 닫히고 · home_fund 가 열리고 · 씨앗 줄이 열리고 끝난다', () => {
+  const b = newBoard();
+  /* 반지하 줄 · 원룸 짐 풀기까지 끝낸 판(짐 풀기 끝 조건은 이 검사의 몫이 아니다) */
+  b.stamina.questsTaken = [...QUEST_IDS.filter(id => !/^oneroom_|^home_|^shop_|^care_|^breed_|^pp_|^al_|^sc_|^ca_/.test(id)), 'oneroom_unpack'];
+  const base = OR(110, { cuttings: [], varieSalesSinceMove: 0, monsteraPots: 0, monsteraSeeds: 0, emptyPotItems: 0, emptyPotsPlaced: 0 });
+  /* ㉤ 칸 없음 — 안 닫는다 */
+  const r0 = stepQuests(b, { ...base, varieSourceN: null });
+  assert.ok(!(b.stamina.questsClosed || []).length, `칸 없이 닫았습니다: ${b.stamina.questsClosed}`);
+  assert.ok(!r0.events.some(e => e.id === 'oneroom_varie_closed'), '칸 없이 닫힘 사건이 났습니다');
+  /* ㉠ ㉡ 원천 0 */
+  const r1 = stepQuests(b, { ...base, day: 111, varieSourceN: 0 });
+  const closed = b.stamina.questsClosed || [];
+  for (const id of ['oneroom_root_bright', 'oneroom_settle_cutting', 'oneroom_recut', 'oneroom_sell'])
+    assert.ok(closed.includes(id) && b.stamina.questsTaken.includes(id), `'${id}' 가 안 닫혔습니다: ${closed}`);
+  assert.ok(!r1.finished.some(id => closed.includes(id)), `닫힌 줄이 «끝»(보상)으로 나왔습니다: ${r1.finished}`);
+  const ev = r1.events.filter(e => e.id === 'oneroom_varie_closed');
+  assert.equal(ev.length, 1, `닫힘 사건이 ${ev.length}번`);
+  assert.equal(ev[0].pots, 0, `닫힘 사건 pots: ${ev[0].pots}`);
+  const r2 = stepQuests(b, { ...base, day: 112, varieSourceN: 0 });
+  assert.ok(!r2.events.some(e => e.id === 'oneroom_varie_closed'), '닫힘 사건이 또 났습니다');
+  /* ㉢ ㉣ */
+  const v = questView(b, { ...base, day: 112, varieSourceN: 0 });
+  assert.ok(v.open.includes('oneroom_home_fund'), `home_fund 가 안 열렸습니다: ${v.open}`);
+  assert.ok(v.open.includes('oneroom_seed_restart'), `씨앗 줄이 안 열렸습니다: ${v.open}`);
+  assert.ok(!v.open.some(id => closed.includes(id)), `닫힌 줄이 열린 채: ${v.open}`);
+  assert.equal(v.counts.closed, 4, `counts.closed ${v.counts.closed}`);
+  assert.ok(v.all.filter(a => a.closed).length === 4, '판 줄 closed 칸이 넷이 아닙니다');
+  assert.equal(v.chip && v.chip.id, 'oneroom_seed_restart', `칩이 씨앗 줄이 아닙니다: ${v.chip && v.chip.id}`);
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0 }), '상점에서 몬스테라 씨앗과 화분을 사세요');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, emptyPotItems: 1 }), '빈 화분을 방에 놓으세요');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, emptyPotsPlaced: 1, monsteraSeeds: 1 }), '빈 화분의 🌱 을 눌러 씨앗을 심으세요');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, emptyPotsPlaced: 1 }), '상점에서 몬스테라 씨앗을 사세요');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, monsteraSeeds: 1 }), '상점에서 화분을 사세요');
+  const r3 = stepQuests(b, { ...base, day: 120, varieSourceN: 0, monsteraPots: 1 });
+  assert.ok(r3.finished.includes('oneroom_seed_restart'), `씨앗을 심었는데 안 끝났습니다: ${r3.finished}`);
+  info(`닫힌 줄 ${closed.join(' · ')} · 열린 줄 ${v.open.join(' · ')} · 씨앗 줄 끝 ${r3.finished.join(' · ')}`);
+});
+check('D100 ③ 원천이 있으면(1) 안 닫고 씨앗 줄도 안 연다', () => {
+  const b = newBoard();
+  b.stamina.questsTaken = QUEST_IDS.filter(id => !/^oneroom_|^home_|^shop_|^care_|^breed_|^pp_|^al_|^sc_|^ca_/.test(id));
+  const base = OR(110, { varieSourceN: 1, monsteraPots: 1, bagPlants: 0, bagCuttings: 0 });
+  stepQuests(b, base); stepQuests(b, { ...base, day: 111 });
+  assert.ok(!(b.stamina.questsClosed || []).length, `원천이 있는데 닫았습니다: ${b.stamina.questsClosed}`);
+  const v = questView(b, { ...base, day: 111 });
+  assert.ok(!v.open.includes('oneroom_seed_restart'), '원천이 있는데 씨앗 줄이 열렸습니다');
 });
 check('⑸ ★ 세이브에 새 칸을 안 만들었다', () => {
   /* 열린 목록은 `_` 로 시작하는 칸에만 산다 — save.js 의 화이트리스트가 안 싣는다 */

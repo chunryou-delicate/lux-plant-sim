@@ -1084,6 +1084,32 @@ const ONEROOM_QUESTS = Object.freeze([
                        arr(s.cuttings).some(c => c && Number.isFinite(c.gen)),
     done:  s => yes(s.movedOut) && arr(s.cuttings).some(c => c && Number.isFinite(c.gen) && c.gen >= 2)
   }),
+  /* ★★ 2026-11-01 총괄 D100 ③ · [plan] plan-to-core-d100 §4-2 — **씨앗부터 다시 키운다.** 원룸에 무늬 원천 0 · 몬스테라 화분 0 으로 온 판(모그루를 팔고 이사)의
+       «실제로 할 수 있는 길» — 몬스테라 씨앗을 빈 화분에 심는다(state.plantMonsteraSeed · [식물] 판 빈 화분 줄 · 방 🌱 말풍선).
+       ⛔ 비판 다섯째 판: 원룸 할 일이 «무늬를 잘라 뿌리내린다»에 Day 96~110 고정 — 자를 그루도 삽수도 없었다.
+       ★ 여는 조건이 «화분 0»이라 심는 순간 거짓이 된다 → 한 번 열린 줄(열린 날이 적힘)은 계속 열린 셈으로 두어 «끝»을 같은 걸음에 본다(sell_varie 와 같은 꼴).
+       ⚠ 칸(monsteraPots 등)이 없으면(null) 안 열린다 — 안전 폴백. 글은 plan(§4-2 todo 다섯 갈래 · ≤ 28자) */
+  Object.freeze({
+    id: 'oneroom_seed_restart',
+    room: 'oneroom',
+    ko: '씨앗부터 다시 키운다',
+    reward: '새 몬스테라 그루가 생깁니다',
+    teaches: ['씨앗 그루도 아주 가끔 무늬를 낸다'],
+    why: '몬스테라 씨앗을 빈 화분에 심으면 새 그루가 됩니다. 무늬는 아주 가끔 나고, 다 자란 무늬 잎이 둘이 되면 다시 자를 수 있습니다.',
+    speaks: false,
+    todo: (q, s) => {
+      const seeds = num(s && s.monsteraSeeds), bagPots = num(s && s.emptyPotItems), placed = num(s && s.emptyPotsPlaced);
+      if (placed > 0 && seeds > 0) return '빈 화분의 🌱 을 눌러 씨앗을 심으세요';
+      if (bagPots > 0) return '빈 화분을 방에 놓으세요';
+      if (seeds === 0 && placed === 0) return '상점에서 몬스테라 씨앗과 화분을 사세요';
+      if (seeds === 0) return '상점에서 몬스테라 씨앗을 사세요';
+      return '상점에서 화분을 사세요';
+    },
+    opens: (s, ctx) => yes(s.movedOut) && (
+      (Number.isFinite(s.varieSourceN) && s.varieSourceN === 0 && Number.isFinite(s.monsteraPots) && s.monsteraPots === 0) ||
+      !!(ctx && ctx.S && ctx.S.stamina && ctx.S.stamina.questsOpenedOn && ctx.S.stamina.questsOpenedOn.oneroom_seed_restart != null)),
+    done:  s => yes(s.movedOut) && Number.isFinite(s.monsteraPots) && s.monsteraPots >= 1
+  }),
   Object.freeze({
     id: 'oneroom_home_fund',
     room: 'oneroom',
@@ -1617,6 +1643,30 @@ export function doneIdsOf(S) {
   const t = S && S.stamina && Array.isArray(S.stamina.questsTaken) ? S.stamina.questsTaken : [];
   return t.filter(id => QUEST_IDS.includes(id));
 }
+/* ★★ 2026-11-01 총괄 D100 ③ · [plan] plan-to-core-d100 §4-1 — **닫힘.** 원룸에서 무늬 원천(이사 창과 같은 자 · 스냅숏 varieSourceN)이 0 인 날,
+     무늬를 늘리는 원룸 줄 넷 가운데 안 끝난 것을 닫는다 — 사슬에선 «끝난 셈»(questsTaken 에 넣어 home_fund 가 열림)·보상 없음(quest_done 을 안 낸다)·
+     칩 · 할 일 판 «지금»에서 빠짐 · 판 꼬리 «닫힘 — …»(stamina.questsClosed · 세이브에 실림). 다시 열지 않는다(plan §4-1 ㉠).
+     ⛔ 비판 다섯째 판: 모그루를 팔고 원룸에 가자 «무늬를 잘라 뿌리내린다»가 Day 96~110 고정 · 그 뒤 원룸 줄 셋과 home_fund 가 못 열렸다.
+     ⚠ 칸이 없으면(null · 옛 하네스) 안 닫는다 — 안전 폴백 */
+export const VARIE_CLOSE_IDS = Object.freeze(['oneroom_root_bright', 'oneroom_settle_cutting', 'oneroom_recut', 'oneroom_sell']);
+export function closedIdsOf(S) {
+  const t = S && S.stamina && Array.isArray(S.stamina.questsClosed) ? S.stamina.questsClosed : [];
+  return t.filter(id => QUEST_IDS.includes(id));
+}
+function closeVarieQuests(S, s) {
+  if (!yes(s.movedOut) || !Number.isFinite(s.varieSourceN) || s.varieSourceN !== 0) return [];
+  const st = S && S.stamina; if (!st) return [];
+  if (!Array.isArray(st.questsTaken)) st.questsTaken = [];
+  if (!Array.isArray(st.questsClosed)) st.questsClosed = [];
+  const out = [];
+  for (const id of VARIE_CLOSE_IDS) {
+    const q = questOf(id); if (!q || !questRoomOk(q, s)) continue;
+    if (st.questsTaken.includes(id)) continue;
+    st.questsTaken.push(id); st.questsClosed.push(id); out.push(id);
+  }
+  if (out.length && Array.isArray(S._questOpen)) S._questOpen = S._questOpen.filter(x => !out.includes(x));
+  return out;
+}
 
 /* 지금 이 판의 퀘스트 상태. **기억하지 않는다 — 스냅샷에서 매번 센다.**
 
@@ -1692,6 +1742,7 @@ const WAIT_ONE_REASON = Object.freeze({
 export function questView(S, snapshot, opt = {}) {
   const s = snapOf(snapshot);
   const doneIds = doneIdsOf(S);
+  const closedIds = closedIdsOf(S);   /* ★ D100 ③ 닫힌 줄 — done 안에 들어 있다(사슬) · 판 꼬리 · counts.closed */
   const ctx = { doneIds, S };
   const open = [], all = [];
   const openedOnAll = (S && S.stamina && S.stamina.questsOpenedOn) || {};   /* ★ D 나머지 — 쉬는 줄(전에 열렸던 줄) */
@@ -1734,6 +1785,7 @@ export function questView(S, snapshot, opt = {}) {
     let skip = false;
     if (!isDone && !isOpen && typeof q.skips === 'function') { try { skip = !!q.skips(s); } catch { skip = false; } }
     it.skipped = skip;
+    it.closed = isDone && closedIds.includes(q.id);   /* ★ D100 ③ 닫힘(끝난 셈 · 보상 없음) — 판이 꼬리 «닫힘 — …»를 단다 */
     /* ★ D85 ③ — 간판 한 자리(끝낸 줄도 — 이름이 그 판의 사실을 말하게) */
     it.kept = keptOf(q, s);
     if (it.kept) { it.ko = q.kept.ko; it.reward = q.kept.reward; it.why = q.kept.why; }
@@ -1749,7 +1801,8 @@ export function questView(S, snapshot, opt = {}) {
   const from = next ? next.index + 1 : 0;
   const upcoming = all.filter(a => a.index >= from && a.state !== 'done' && a.roomOk && !a.skipped);   // ★ 10-24 D 나머지 — 건너뛴 짐 풀기 줄은 안 온다   // ★ 10-07 다른 방 줄은 «다음에 올 것»이 아니다
   const doneN = doneIds.length;
-  const counts = { total: all.length, done: doneN, open: open.length,
+  const closedN = all.filter(a => a.closed).length;   /* ★ D100 ③ — «끝낸» 수에서 닫힌 줄은 뺀다(판 머리 «끝낸 할 일») */
+  const counts = { total: all.length, done: doneN - closedN, closed: closedN, open: open.length,
                    locked: all.length - doneN - open.length };
   /* ★ 마디 — 초반 사슬에 안 끝난 줄이 하나라도 남아 있으면 아직 첫 마디다 */
   const chainLeft = FIRST_PLAY_CHAIN_IDS.filter(id => !doneIds.includes(id));
@@ -1793,7 +1846,10 @@ export function questsFinishingNow(S, snapshot) {
   if (!S) return [];
   const st = S.stamina || {};
   const S2 = { ...S, _questOpen: Array.isArray(S._questOpen) ? [...S._questOpen] : [],
-               stamina: { ...st, questsOpenedOn: { ...(st.questsOpenedOn || {}) } } };
+               stamina: { ...st, questsOpenedOn: { ...(st.questsOpenedOn || {}) },
+                          /* ★ D100 ③ — 닫기(§closeVarieQuests)가 장부 둘을 바꾸므로 베낀다(미리 보기가 진짜 판을 닫지 않게) */
+                          questsTaken: Array.isArray(st.questsTaken) ? [...st.questsTaken] : [],
+                          questsClosed: Array.isArray(st.questsClosed) ? [...st.questsClosed] : [] } };
   try { return (stepQuests(S2, snapshot).finished || []).slice(); } catch { return []; }
 }
 export function stepQuests(S, snapshot) {
@@ -1803,6 +1859,10 @@ export function stepQuests(S, snapshot) {
   /* 「이미 열렸다고 말한 것」 — `_` 라 세이브에 안 실린다(§상태를 안 늘린다) */
   if (!Array.isArray(S._questOpen)) S._questOpen = [];
   const opened = [], finished = [], events = [];
+  /* ★★ 2026-11-01 총괄 D100 ③ — 닫힘 먼저(§closeVarieQuests) · 닫은 날 한 번 사건(plan 대사 oneroomVarieClosed · pots 0 이면 씨앗 길 갈래) */
+  const closedNow = closeVarieQuests(S, s);
+  if (closedNow.length) { for (const id of closedNow) doneIds.push(id);
+    events.push({ id: 'oneroom_varie_closed', pots: Number.isFinite(s.monsteraPots) ? s.monsteraPots : null, closed: closedNow.slice() }); }
   /* ★★★ 2026-08-17 — **이미 해 놓은 줄은 그 자리에서 끝난다** (박사님: *"퀘스트 나오기 전
        이미 달성했으면 자동 완료되게 해줘 (예를 들면 시루 8개 늘리기)"*)
      ══════════════════════════════════════════════════════════════════

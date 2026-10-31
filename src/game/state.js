@@ -741,6 +741,11 @@ export function plantMonsteraSeed(S, io, opt = {}) {
   };
   S.pots.push(pot);
   syncPotLead(S);
+  /* ★★ 2026-11-01 총괄 D100 ③ (core probe_d100b 걸어서 잡음) — 화분을 넣은 «뒤» 첫 화분을 다시 꽂는다.
+       ⛔ 위 ①의 selectLeadPlant 는 화분을 넣기 전이라, 화분 0 인 판(모그루를 팜)에서는 MAIN(판 그루가 dliHist 로 다시 자란 유령)을 꽂았고
+         그 뒤 «첫 화분 읽기»(leafStats · 무늬 원천 셈)가 갓 심은 0장 그루가 아니라 판 그루의 무늬 잎을 읽었다(원천 «무늬 그루 1»).
+       ⚠ 화분이 이미 있던 판은 첫 화분이 그대로라 바뀌는 것이 없다 */
+  try { selectLeadPlant(S, g); } catch { /* 꽂기가 터지면 생장 창 몫 — 화분은 이미 섰다 */ }
 
   /* ④ 성공한 뒤에 깎는다 */
   spendStamina(S, 'sow');

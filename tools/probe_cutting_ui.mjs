@@ -339,6 +339,9 @@ say(contactedOn != null, '★연락이 온다 (며칠 걸리는지는 랜덤이�
    (541,903 → 331,687 · 3일치 월세). **거래 직전 값과 견준다.** */
 const cashJustBefore = await page.eval(`window.__S().tutorial.cashWon`);
 await page.eval(`(()=>{ const b=document.querySelector('#marketList [data-deal]'); if (b) b.click(); })()`, false);
+/* ★ 2026-11-01 D100 §2 — [거래하기]는 늘 «되돌릴 수 없습니다» 창(#varieAsk) — [판다] */
+await sleep(400);
+await page.eval(`(()=>{ const a=document.getElementById('varieAsk'); if (a && a.classList.contains('on')) document.getElementById('varieAskGo').click(); return 1; })()`, false);
 await sleep(1200);
 const sold = await page.eval(`(()=>{ const S=window.__S();
   return { n:S.cuttings.length, cash:S.tutorial.cashWon,

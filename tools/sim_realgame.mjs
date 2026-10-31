@@ -214,7 +214,9 @@ async function playRun(routeId, seed) {
 
       /* 연락 온 것을 그날 전부 거래한다 */
       for(let i=0;i<5;i++){ const b=document.querySelector('#marketList [data-deal]');
-        if(!b) break; b.click(); out.acted.push('deal'); }
+        if(!b) break; b.click(); out.acted.push('deal');
+        /* ★ 2026-11-01 D100 ① — 모그루를 팔면 무늬 원천이 0 이 되는 판은 확인 창(#varieAsk) · 그래도 판다 */
+        const a=document.getElementById('varieAsk'); if (a && a.classList.contains('on')) document.getElementById('varieAskGo').click(); }
 
       /* 도착했으면 창턱으로 (사람이 하는 일) */
       if(S.pots.length>0){ const s=document.getElementById('slot');

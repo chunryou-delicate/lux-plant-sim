@@ -566,6 +566,9 @@ const listPot = async () => {
     if(!b || b.disabled) return false; b.click(); b.click(); return true; })()`);
   if (done) R.did.listPot = (R.did.listPot || 0) + 1;
   await sleep(300); await tapTalk();
+  /* ★ 2026-11-01 D100 ① — 팔면 무늬 원천이 0 이 되는 판은 게임이 확인 창(#varieAsk)을 띄운다(대사가 있으면 대사 뒤) · 팔기로 한 손은 [그래도 내놓는다] */
+  await ev(`(()=>{ const a=document.getElementById('varieAsk'); if (a && a.classList.contains('on')) document.getElementById('varieAskGo').click(); return 1; })()`, false);
+  await sleep(200); await tapTalk();
   if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }
   return done;
 };
@@ -575,7 +578,10 @@ const takeDeal = async () => {
   const hit = await ev(`(()=>{ const b=document.querySelector('#marketList [data-deal]');
     if(!b || b.disabled) return false; b.click(); return true; })()`);
   if (hit) R.did.deal = (R.did.deal || 0) + 1;
-  await sleep(400); await tapTalk(); await clearPops();
+  await sleep(400); await tapTalk();
+  /* ★ 2026-11-01 D100 ① — 모그루를 팔면 무늬 원천이 0 이 되는 판은 [거래하기]도 확인 창(#varieAsk) · 거래하기로 한 손은 [그래도 판다] */
+  await ev(`(()=>{ const a=document.getElementById('varieAsk'); if (a && a.classList.contains('on')) document.getElementById('varieAskGo').click(); return 1; })()`, false);
+  await sleep(300); await tapTalk(); await clearPops();
   if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }
   return hit;
 };
