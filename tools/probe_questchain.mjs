@@ -314,8 +314,14 @@ console.log('\n══ E. ★★ 회귀 — 본 줄기 여덟은 예전 그대로
   /* ★ 2026-09-06 — **「한 번에 하나」([plan] plan-after-setup-steps ⓒ · stepQuests). 회귀가 아니라 지시다.**
        first_cut·buy_lamp 가 «같은 걸음(7)»에 열리던 것을 하루씩 세운다: buy_lamp 7(등이 곧 길) → first_cut 8 → varie_bright 9 → sell_varie 10.
        ⚠ 옛 값은 옆에 남긴다: first_cut 7 · varie_bright 8 · sell_varie 9. */
+  /* ★ 2026-11-01 core(총괄 F · probe_questchain 15/18) — **둘이 또 움직였다. 회귀가 아니라 지시다.** 커밋마다 갈라 봤다(node):
+       first_cut 8 → **9** : c07263f1(10-08 D25 · 총괄 결정 가 «자를 수 있는 날에 연다») 부터. 여는 조건이 «모주 잎 ≥ 2» →
+         «무늬이면서 다 자란 잎 ≥ 2»(칸이 없으면 무늬 잎 수 ≥ 2 로 어림). 이 표는 걸음 8 무늬 잎 1 · 걸음 9 무늬 잎 2 라 9 에 연다.
+       sell_varie 11 → **undefined** : a0e86638(10-09 · 총괄 ⓐ «하나는 남기고 판다») 부터. 여는 조건이 «무늬 삽수 둘 이상 ∨ 판 적».
+         이 표의 삽수는 많아야 하나라 «안 열리는 것이 뜻대로»다(09-04 ㉲ siru5 와 같은 꼴 · 표에 삽수를 더 얹지 않는다 — 위 «한 글자도»).
+       ⚠ 옛 값은 옆에 남긴다: first_cut 8 · sell_varie 11. (이 자는 10-08 부터 빨강이었다 — 15/17 · 10-09 부터 15/18) */
   const OLD = { crop_mix: undefined, siru5_cycle5: undefined, siru8: undefined, siru16: undefined,
-                first_cut: 8, buy_lamp: 7, varie_bright: 10, sell_varie: 11 };   /* varie_bright 는 잎 3(leaf_three)이 먼저 서는 걸음(9) 뒤라 10 · sell_varie 11 */
+                first_cut: 9, buy_lamp: 7, varie_bright: 10, sell_varie: undefined };   /* varie_bright 는 잎 3(leaf_three)이 먼저 서는 걸음(9) 뒤라 10 · sell_varie 11 */
   const S0 = emptySnapshot();
   const oldSteps = [
     { ...S0, day: 10, cropHarvestTotal: 1, cropPots: [{ kind: 'beansprout', harvestCount: 1 }] },

@@ -12211,7 +12211,7 @@ function cropMarks() {
      사라졌다(1770·390 둘 다 · 전 1 → 후 0). ⇒ 말풍선 열쇠는 «방뷰가 실제로 쥔 열쇠»를 먼저 쓴다(그루 id 로 찾는다). 없으면 예전대로. */
   const rvKeyOf = (() => { try { const m = new Map(); for (const p of (roomView && roomView.plants ? roomView.plants() : [])) if (p && p.potId) m.set(p.potId, p.key); return id => m.get(id) || null; } catch { return () => null; } })();
   for (const row of rows) {
-    const key = rvKeyOf(row.id) || row.slotId || (row.at ? `free:${row.id}` : null);
+    const key = rvKeyOf(row.id) || row.slotId || (row.at ? `free:${row.id}` : null);   /* ⚠ siruActKey 와 같은 식(11-01 · 두 곳이 갈리면 게이지가 말풍선을 못 찾는다) */
     if (!key) continue;                 // 방이 모르는 이름으로는 말풍선을 못 띄운다(§cropKey)
     if (row.ready) {
       out.push({ key, ko: '🥣 거두기', tone: 'crop', go: () => siruAct(row.id, 'harvest', row.kind) });
@@ -12245,7 +12245,7 @@ function cropMarks() {
    ★ 2026-08-11 — `kind` 를 같이 받는다. 무순 판이 같은 길을 타므로, 종류를 안 실으면
      `siruPlant`·`siruWater` 의 기본값(콩나물)으로 떨어져 **무순 판에 콩 씨앗이 나간다.** */
 function siruAct(id, act, kind = 'beansprout') {
-  const key = siruKey(id);
+  const key = siruActKey(id);   /* ★ 11-01 총괄 F ① — 말풍선과 같은 열쇠(§siruActKey) */
   if (act === 'water')   return doAct('water',   () => siruWater(id, kind),   { key });
   if (act === 'harvest') return doAct('harvest', () => siruHarvest(id, kind), { key });
   if (act === 'sow')     return doAct('sow',     () => siruSow(id, kind),     { key });
@@ -12682,7 +12682,7 @@ function noteHarvest(r) {
   try {
     for (const p of ((r && r.perPot) || [])) {
       const g = Math.round(p && p.grams || 0);
-      if (g > 0) floatUp(siruKey(p.id), `+${formatGram(g)} 수확`);
+      if (g > 0) floatUp(siruActKey(p.id), `+${formatGram(g)} 수확`);   /* ★ 11-01 — 말풍선과 같은 열쇠(자유 좌표 시루도 뜬다) */
     }
   } catch (e) { console.warn('[뜨는 글자]', e && e.message); }
   /* ★ 2026-08-18 — 한 달 가계부의 「거둔 것」. **수확은 턴 밖**이라 여기서만 셀 수 있다
@@ -13512,10 +13512,11 @@ $('siruList').addEventListener('click', (ev) => {
   const id = b.dataset.siru, act = b.dataset.act;
   /* ★ 종류는 **단추가 들고 온다**(§siruRowHTML). 화면이 짐작하면 무순에 콩 씨앗이 나간다 */
   const kind = b.dataset.kind || 'beansprout';
-  if (act === 'plant')   return doAct('sow',     () => siruPlant(id, kind),   { key: siruKey(id) });
-  if (act === 'water')   return doAct('water',   () => siruWater(id, kind),   { key: siruKey(id) });
-  if (act === 'harvest') return doAct('harvest', () => siruHarvest(id, kind), { key: siruKey(id) });
-  if (act === 'sow')     return doAct('sow',     () => siruSow(id, kind),     { key: siruKey(id) });
+  /* ★ 11-01 총괄 F ① — 말풍선과 같은 열쇠(§siruActKey) · 판 줄 단추로 눌러도 게이지가 그 시루 말풍선에 선다 */
+  if (act === 'plant')   return doAct('sow',     () => siruPlant(id, kind),   { key: siruActKey(id) });
+  if (act === 'water')   return doAct('water',   () => siruWater(id, kind),   { key: siruActKey(id) });
+  if (act === 'harvest') return doAct('harvest', () => siruHarvest(id, kind), { key: siruActKey(id) });
+  if (act === 'sow')     return doAct('sow',     () => siruSow(id, kind),     { key: siruActKey(id) });
   /* D19(M1) — 씨앗 0 일 때의 주문 지름길: 상점 탭과 그 품목의 주문 창을 연다 */
   if (act === 'buyseed') { try { window.__byeotSheet.open('shop'); } catch { } return openBuyPanel(b.dataset.item); }
   if (act === 'pick')    return siruPick(id);
@@ -13527,6 +13528,25 @@ function siruKey(id) {
   for (const site of (() => { try { return cropSites(S.firstPlay); } catch { return []; } })()) {
     const p = ((site && site.pots) || []).find(x => x && x.id === id);
     if (p) return p.slotId || null;
+  }
+  return null;
+}
+/* ★★ 2026-11-01 총괄 F ① — **시루 한 그루에 «하는» 열쇠 하나.** 말풍선 · 걸어가기(doAct) · 게이지 · 뜨는 글자가 이 열쇠를 같이 쓴다.
+     ⛔ 예전: 말풍선은 «방뷰가 쥔 열쇠»(free:crop_01_01 · 09-06 §cropMarks rvKeyOf)인데 doAct 는 siruKey = slotId(banjiha-dresser:1)로 걸었다.
+       걷기는 되지만(resolveKey 가 둘 다 푼다) markGauge 가 actingKey 와 같은 말풍선을 못 찾아 «🚶 가는 중…» · 게이지가
+       누른 말풍선이 아니라 아래 막대에 떴다 — test_quiet C 옛 빨강(재 보니 막대가 «가는 중» → «심는 중» · 말풍선은 🌱 그대로).
+     ⇒ 식은 말풍선 것 그대로: 방뷰 열쇠 › slotId › (at 이면) free:id. rvKeyOf 를 주면 그것으로 방뷰 열쇠를 찾는다(말풍선이 한 번 지은 표).
+     ⚠ siruKey(slotId 만)는 놓기 · 고르기 · 확인 바 길이 그대로 쓴다 — 거기는 이 고침 몫이 아니다. */
+function siruActKey(id, rvKeyOf = null) {
+  let rv = null;
+  try {
+    if (rvKeyOf) rv = rvKeyOf(id);
+    else for (const q of (roomView && roomView.plants ? roomView.plants() : [])) if (q && q.potId === id) { rv = q.key || null; break; }
+  } catch { rv = null; }
+  if (rv) return rv;
+  for (const site of (() => { try { return cropSites(S.firstPlay); } catch { return []; } })()) {
+    const p = ((site && site.pots) || []).find(x => x && x.id === id);
+    if (p) return p.slotId || (p.at ? `free:${p.id}` : null);
   }
   return null;
 }
