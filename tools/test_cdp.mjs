@@ -69,7 +69,7 @@ export async function launch(opts = {}) {
   page.gl = want; page.glRenderer = r;
   return page;
 }
-async function launchGL(opts, gl) {
+async function launchGL(opts, gl, attempt = 1) {   /* attempt — ★ 2026-11-01 총괄 F: 못 뜨면 다른 포트로 한 번 더 */
   const chrome = findChrome();
   const port = 9222 + Math.floor(Math.random() * 400);
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'byeot-cdp-'));
@@ -87,14 +87,19 @@ async function launchGL(opts, gl) {
   const proc = spawn(chrome, args, { stdio: 'ignore' });
 
   let wsUrl = null;
-  for (let i = 0; i < 100 && !wsUrl; i++) {
+  for (let i = 0; i < (attempt > 1 ? 200 : 100) && !wsUrl; i++) {
     await sleep(150);
     try {
       const r = await fetch(`http://127.0.0.1:${port}/json/version`);
       wsUrl = (await r.json()).webSocketDebuggerUrl;
     } catch { /* 아직 안 떴다 */ }
   }
-  if (!wsUrl) { proc.kill(); throw new Error('크롬이 안 떴습니다'); }
+  if (!wsUrl) {
+    proc.kill();
+    /* ★ 2026-11-01 총괄 F — 무작위 포트가 다른 창 크롬과 겹치거나 뜨는 것이 늦을 때(판 밖 빨강) · 다른 포트 · 새 프로필로 한 번 더(30초) */
+    if (attempt < 2) { console.warn(`[test_cdp] 크롬이 포트 ${port} 에서 ${(100 * 150 / 1000) | 0}초 안에 안 떠 다른 포트로 한 번 더 띄웁니다`); return launchGL(opts, gl, attempt + 1); }
+    throw new Error('크롬이 안 떴습니다');
+  }
 
   const ws = new WebSocket(wsUrl);
   await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error('CDP 소켓 실패')); });

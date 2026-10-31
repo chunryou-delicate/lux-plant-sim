@@ -823,6 +823,13 @@ check('D99 ⑤ · plan-to-core-d99 §4 · §1-1 — varie_bright 어디서든 �
   assert.equal(questTodo(q, MS(126, { brightFree: false, lampUnlocked: true, lampPlaced: null })), '밝은 빈자리가 없습니다 — 식물등을 다세요');
   assert.equal(questTodo(q, MS(126, { brightFree: false, lampUnlocked: true, lampPlaced: 1 })), '밝은 빈자리가 없습니다 — 식물등을 더 다세요');
   for (const s2 of [MS(126, { brightFree: false, lampUnlocked: true, lampPlaced: 2 })]) assert.ok(questTodo(q, s2).length <= 28);
+  /* plan 65ab329e — 다 사고 다 단 판 */
+  const full = { brightFree: false, lampUnlocked: true, lampOwned: 3, lampPlaced: 3, lampsAllBought: true };
+  assert.equal(questTodo(q, MS(126, { ...full, clipLampPlaced: 1 })), '밝은 빈자리가 없습니다 — 집게형 식물등을 옮기세요');
+  assert.equal(questTodo(q, MS(126, { ...full, clipLampPlaced: 0 })), '밝은 빈자리가 없어도 뿌리는 납니다');
+  assert.equal(questTodo(q, MS(126, { ...full, lampPlaced: 2, clipLampPlaced: 1 })), '밝은 빈자리가 없습니다 — 식물등을 더 다세요', '가방에 안 단 등이 있는데 «옮기세요»');
+  assert.equal(questTodo(q, MS(126, { ...full, lampsAllBought: null, clipLampPlaced: 1 })), '밝은 빈자리가 없습니다 — 식물등을 더 다세요', '모르는데 «옮기세요»');
+  for (const c of [1, 0]) assert.ok(questTodo(q, MS(126, { ...full, clipLampPlaced: c })).length <= 28);
   const rc = (n) => Array.from({ length: n }, (_, i) => ({ id: 'r' + i, varieFromCut: true, status: i % 2 ? 'established' : 'rooted' }));
   assert.equal(questTodo(qs, MS(200, { movedOut: true, cuttings: rc(2) })), '뿌리낸 무늬 삽수 하나는 남기고 파세요');
   assert.equal(questTodo(qs, MS(200, { movedOut: true, cuttings: rc(1) })), '뿌리낸 무늬 삽수가 둘이 되면 하나를 파세요');

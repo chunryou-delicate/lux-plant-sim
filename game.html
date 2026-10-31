@@ -560,6 +560,9 @@
   /* ★ 2026-08-18 — **할 일 창도 같은 [✕]**을 쓴다(`#questPanel`). 새 모양을 안 지었다 */
   #monthPanel .popcard,#questPanel .popcard{position:relative}
   #monthPanel .ptitle,#questPanel .ptitle{padding-right:46px}   /* 제목이 ✕ 밑으로 안 들어가게 */
+  /* ★ 2026-11-01 비판 넷째 판 ⑧(b128) — 긴 달에도 [알겠습니다] · 쪽 넘기기가 늘 보이게 창 바닥에 붙인다 */
+  #monthPanel .mfoot{position:sticky;bottom:-15px;margin:10px -14px -15px;padding:8px 14px 12px;
+    background:linear-gradient(180deg,rgba(20,16,32,.0),#141020 18%);z-index:2}
   #monthClose,#questClose{position:absolute;right:9px;top:9px;width:44px;height:44px;border-radius:50%;
     background:rgba(255,255,255,.07);border:0;color:var(--dim);font-size:15px;line-height:1}
   #ledger .tip{margin-top:7px;padding:7px 9px;border-radius:9px;line-height:1.55;
@@ -1366,6 +1369,7 @@
        아래를 가리키는 손(👇)을 옆에 두면 다시 「반대를 가리키는」 그 사고가 난다. */
   #hint.side{transform:translate(0,-50%);display:none;align-items:center;gap:1px}
   #hint.side.on{display:flex}
+  #hint.side .say{white-space:normal;max-width:min(60vw,250px);border-radius:14px;text-align:left}   /* ★ 2026-11-01 비판 넷째 판 ⑧(b104) — 긴 꼬리표가 화면 밖 */
   #hint.side .hand{margin-top:0;font-size:26px;animation:handBobXR 1.1s ease-in-out infinite}
   #hint.side.toRight{flex-direction:row-reverse}   /* 대상이 왼쪽 — 손이 왼쪽에서 가리킨다 */
   #hint.side.toRight .hand{animation:handBobXL 1.1s ease-in-out infinite}
@@ -2454,6 +2458,7 @@
     <div id="monthNote" class="plots"></div>
     <!-- ★★ 달 넘기기 — **쌓인 달이 둘 이상일 때만** 뜬다(하나뿐인데 ‹›가 있으면 회색 둘이다).
          ⚠ 줄 모양은 고르개들과 **같은 `.prow`** 다 — 새 CSS 를 안 지었고 44px 도 그것이 지킨다. -->
+    <div class="mfoot">   <!-- ★ D99 ⑧ 창 바닥에 붙는 단추 줄 -->
     <div class="prow" id="monthNav" style="display:none">
       <button id="monthPrev" class="ghost" type="button">‹ 이전 달</button>
       <button id="monthWhich" class="ghost pcount" type="button" disabled>1 / 1</button>
@@ -2461,6 +2466,7 @@
     </div>
     <div class="pbtns">
       <button id="monthGo" class="go" type="button">알겠습니다</button>
+    </div>
     </div>
   </div>
 </div>
@@ -3918,6 +3924,8 @@ function fillLamps() {
 /* 가구 종류 → 사람이 쓰는 이름. **키워드 포함**으로 찾는다 —
    slotId 는 `{가구 uid}:{단}` 이고 uid 는 `banjiha-sill` 처럼 프리셋 이름이 아닐 수도 있어서
    앞뒤를 잘라 맞추면 raw 문자열이 그대로 화면에 남는다(실제로 남았다). */
+/* ★ 2026-11-01 비판 넷째 판 ⑧ — 프리셋 이름(name_ko «선반-다단-3단»)이 배너에 그대로 나왔다 · 자리 이름표와 같은 사람 말(아래 표)로 */
+function furnKoOfPreset(preset) { const p = String(preset || ''); const hit = FURN_KO.find(([k]) => p.includes(k)); return hit ? hit[1] : null; }
 const FURN_KO = [
   ['sill', '창턱 화분받침'], ['etagere', '3단 선반'], ['ladder', '사다리 선반'],
   ['growrack', '재배 선반'], ['cart', '이동 선반'], ['shelf_low', '낮은 선반'], ['shelf', '선반'],
@@ -5449,7 +5457,7 @@ const detail = {
       btns.push({ ko: '📮 중고에 내놓기', go: () => { try { window.__byeotSheet.open('plants'); } catch { } } });
     return {
       art: CUT_ART[c.container] || CUT_ART.jar,
-      title: `삽수 ${c.id}`,
+      title: `${c.varieFromCut || c.variegated ? '무늬 삽수' : '삽수'} ${Math.max(1, cuttingsOf(S).indexOf(c) + 1)}`,   /* ★ D99 ⑧ — «삽수 cut_01» 속 이름 대신 순번 */
       sub: `${cont.ko || ''} · ${where}`,
       body: (v ? r2('잎', `${v.leaves}장` + (v.variegatedLeaves ? ` · 무늬 ${v.variegatedLeaves}장` : '')) : '')
         + (v ? r2('상태', v.statusKo || v.status) : '')
@@ -10810,6 +10818,9 @@ function questSnapshotNow(turn) {
     lampOwned: (ts.lamp && ts.lamp.owned) || 0,
     /* ★ 2026-10-08 ([plan] b3a49dbc · D19) — buy_lamp 는 «단 등»으로 끝난다(첫 등이 공짜로 가방에 와 받는 순간 끝나 할 일에 0번 떴다) */
     lampPlaced: (ts.lamp && ts.lamp.placed) || 0,
+    /* ★ 2026-11-01 plan 65ab329e(D99 §4 덧) — 더 살 등이 없나(산 수 ≥ 값 목록 길이 · 목록이 없으면 null) · 단 집게형 등(둘째로 다는 등 · §bagLamp 차례 벽부형 → 집게형 → 거치형) */
+    lampsAllBought: (() => { try { const L = ts.rules && ts.rules.lampPricesWon; return Array.isArray(L) && L.length ? ((ts.lamp && ts.lamp.owned) || 0) >= L.length : null; } catch { return null; } })(),
+    clipLampPlaced: (() => { try { return ((ts.lamp && ts.lamp.placed) || 0) >= 2 ? 1 : 0; } catch { return null; } })(),
     /* ★ 초반 사슬 ⑥「몬스테라 자리 잡기」가 이 둘로 판정한다. 정본은 `firstPlay.monstera` 다 */
     monsteraArrived: !!(fp.monstera && fp.monstera.arrived),
     monsteraHomed: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved),
@@ -17923,7 +17934,7 @@ async function startPhonePlaceFurnitureBag(uid, hangAt = null) {
   try {
     io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S));
   } catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
-  const ko = (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.preset;
+  const ko = furnKoOfPreset(row.preset) || (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.preset;   /* ★ D99 ⑧ 사람 말 */
   pushLog(S, `🪑 ${josa(ko, '을', '를')} 방에 놓았습니다 — 눌러서 [옮기기]로 자리를 고르세요`);
   banner(`${josa(ko, '을', '를')} 놓았습니다`, '눌러서 [옮기기]로 자리를 고를 수 있습니다');
   try { window.__byeotSheet.close(); } catch { }
@@ -18048,7 +18059,7 @@ async function startPhonePlaceFurnitureStock(itemId, hangAt = null) {
   catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false }; }
   try { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); }
   catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
-  const ko = (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.ko || row.preset;
+  const ko = furnKoOfPreset(row.preset) || (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.ko || row.preset;   /* ★ D99 ⑧ */
   if (hangAt) {
     pushLog(S, `🖼 ${josa(ko, '을', '를')} 벽에 걸었습니다`);
     banner(`${josa(ko, '을', '를')} 걸었습니다`, '눌러서 [옮기기]로 다른 자리에 걸 수 있습니다');
@@ -18620,9 +18631,9 @@ const FURN_LIGHT_KO = Object.freeze({
   higherGrow: '창틀 높이로 올리면 여름엔 등 없이도 자랍니다',
   /* ★ D53(plan 67783383 · 594babb1 · 873b11e3 · house 6e3f22d5·d116738d·5e970015) — 엔진 clipTop 이 있으면 둘째 줄.
        atTop(가르는 자리가 이미 맨 윗단)이면 «맨 윗단에 두고 » → «여기에 » · «집게등»은 화면에서 «클립형 식물등»(상점 이름) */
-  clipWinter: '{at}클립형 식물등을 물리면 겨울에도 자랍니다',
-  clipSummer: '{at}클립형 식물등을 물리면 여름엔 자랍니다',
-  clipNovice: '{at}클립형 식물등을 물리면 자랍니다',
+  clipWinter: '{at}집게형 식물등을 물리면 겨울에도 자랍니다',   /* ★ 2026-11-01 plan 65ab329e — 상점 · 가방 · 산 배너의 «집게형»과 한 이름 */
+  clipSummer: '{at}집게형 식물등을 물리면 여름엔 자랍니다',
+  clipNovice: '{at}집게형 식물등을 물리면 자랍니다',
   /* ⏸ 무늬 «그루» 첫 줄은 없다 — 무늬 모주도 자람 문턱 2.7(plant_grow §growthMin · plan e6421e0d) · 같은 첫 줄을 쓴다.
      ★ D57(총괄 · plan 10fcda13 · house ffaf0d84) — **무늬 삽수**(placeVerdict kind:'cutting' · variegated)만 첫 줄이 따로다(문턱 ×1.4 · 참) */
   cA:  '여기면 무늬 삽수가 겨울에도 자랍니다',

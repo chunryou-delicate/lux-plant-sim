@@ -226,6 +226,7 @@ export function emptySnapshot() {
            /* ★ 2026-10-08 [plan] — 단 등. null = 「모른다」(§buy_lamp done) */
            lampPlaced: null,
            brightFree: null,   /* ★ D99 ⑤ — 무늬 삽수 밝은 빈자리가 있나(game §varieBrightFreeNow) · 모르면 null */
+           lampsAllBought: null, clipLampPlaced: null,   /* ★ plan 65ab329e — 더 살 등 없나 · 단 집게형 등 수 · 모르면 null */
            /* ★ 2026-10-08 D25 — 자르기 문과 같은 자(§first_cut). null = 「모른다」 */
            motherVarieMatured: null,
            /* ★ 2026-10-30 D90 ④ — 남는 건 판다(§sell_surplus). [core] 곳간 팔기 횟수(잉여 넘김 포함 · 삽수·그루 판매 안 셈) ·
@@ -820,9 +821,13 @@ const MAIN_QUESTS = Object.freeze([
     teaches: ['빛이 무늬 등급을 정한다'],
     why: '뿌리는 어디서든 납니다. 어두운 자리는 산반이 흔하고, 밝은 자리는 하프문·풀문이 잘 납니다.',
     /* brightFree — 무늬 삽수가 놓일 수 있는 빈 칸 가운데 무늬 띠 bright 가 있나(game §varieBrightFreeNow) · null = 모름(첫 줄) · 등이 안 열린 판도 첫 줄 */
-    todo: (q, s) => (s && s.brightFree === false && yes(s.lampUnlocked))
-      ? (num(s.lampPlaced) >= 1 ? '밝은 빈자리가 없습니다 — 식물등을 더 다세요' : '밝은 빈자리가 없습니다 — 식물등을 다세요')
-      : '무늬 삽수를 밝은 자리에서 뿌리내리세요',
+    /* ★ 2026-11-01 plan 65ab329e(D99 §4 덧) — 다 사고 다 단 판: 집게형이 있으면 «옮기세요» · 없으면 «그래도 뿌리는 납니다»(살 수 없는 것을 안 시킨다) */
+    todo: (q, s) => {
+      if (!(s && s.brightFree === false && yes(s.lampUnlocked))) return '무늬 삽수를 밝은 자리에서 뿌리내리세요';
+      const bagLamp = num(s.lampOwned) > num(s.lampPlaced);
+      if (bagLamp || s.lampsAllBought !== true) return num(s.lampPlaced) >= 1 ? '밝은 빈자리가 없습니다 — 식물등을 더 다세요' : '밝은 빈자리가 없습니다 — 식물등을 다세요';
+      return num(s.clipLampPlaced) >= 1 ? '밝은 빈자리가 없습니다 — 집게형 식물등을 옮기세요' : '밝은 빈자리가 없어도 뿌리는 납니다';
+    },
     /* ★ 2026-10-09 [plan] 재미 점검 — **자를 수 있는 날에 연다(first_cut 과 같은 자 · D25).** 무늬 잎이 하나만 나도 열려
        자르기 문(박사님 «지금 규칙 유지»)이 열리기 석 달 전부터 «뿌리내리세요»를 시켰다 — 할 수 없는 일([core]·총괄 봇 cut1008c Day 48~165).
        칸(motherVarieMatured)이 없으면 무늬 잎 수 ≥ 2 로 어림(first_cut 과 같음). */
