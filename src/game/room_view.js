@@ -4647,6 +4647,12 @@ export async function createRoomView(canvas, opts = {}) {
     const u = own.userData || {};
     if (u.hangFromCeiling) return '매달린 조명 위에는 못 놓습니다';
     if (u.mount && !(u.slots && u.slots.length)) return '벽걸이·붙박이 위에는 못 놓습니다';
+    /* ★ 2026-11-01 총괄 F ② — 식물등(거치형 머리 판 · 집게등 갓)도 면이 아니다. test_place_grid R-1 이 잡았다:
+         거치형 머리 판(0.30×0.16 · 높이 1.38m)이 «가구 윗면»으로 열려 있어 화분이 등 위에 올라갔고(빛을 가린다),
+         판이 화분(0.202)보다 좁아 격자 한가운데서도 반지름만큼 삐져나왔다(1408 자리 중 5).
+         원룸 topGridSpot(가구 윗면을 넓게 쏨)도 그 판을 «밝은 빈자리» 후보로 집을 수 있었다.
+       ⚠ 바 등(under-shelf)은 위 벽걸이 줄이 이미 막는다 · 자리를 내는 가구(slots)는 예외(벽걸이 줄과 같은 꼴) */
+    if (u.grow && !(u.slots && u.slots.length)) return '식물등 위에는 못 놓습니다';
     return null;
   }
 
