@@ -73,6 +73,6 @@
 lampUnlocked[0] «하나 알려 줄게» · brokeTalk[3] «오늘 하루는» · statusBagCuttings[0] · movedInBagCuttings[0] · statusBagCuttingsMove[0] «하루가 안 가» · statusPhaseOpening[1] «하루에 조금씩» · statusStreak[0] «하루도 안 쉬고» · chatDailySpend[1] «하루가 그만큼씩» · questSiru5[4] «하루에 물 줄 수 있는 횟수» · chatLowCash1[1] «세 번 볼 시간에» · chatAutumnShort[1] «이불 하나 더» · endingHome[5] «잎 하나씩» · questOneroomRecut[2] · nudgeRecutPush[0] «하나씩» · questCareKinds3[0] «하나씩» · questCareAllKinds[0] «한 번씩» · shortMoney[4] «한 번만» · nudgeMixOffer[0] «한 상에» · questLeafTwo[2] «같은 한 달이어도» · statusOneroomYear[1] «한 바퀴» · questBuyLamp[3] «둘째 창턱»
 
 ## 쓰는 법 (F 다듬기 때)
-- ㉠만 걷는다. 걷을 때도 «무엇을 · 어디서»는 남기고 수만 뺀다(예: «하루면 와» → «시키면 곧 와» · «단골이 셋이야» → «단골이 꽤 늘었어»). 수는 화면(할 일 칩 · 배너)이 말한다.
-- ㉠ 가운데 moveNoVarie · ppTradeDone 은 D99 ① 한 규칙과 같은 줄이라 먼저 걷어도 된다(«무늬는 들고 가자» · «다 팔지 말고 남겨 둬»).
+- ㉠만 걷는다(총괄 11-01 결정 · ㉠′ · ㉡ · ㉢ 은 그대로). 걷을 때도 «무엇을 · 어디서»는 남기고 수만 뺀다(예: «하루면 와» → «시키면 곧 와» · «단골이 셋이야» → «단골이 꽤 늘었어»). 수는 화면(할 일 칩 · 배너)이 말한다.
+- ㉠ 가운데 moveNoVarie · ppTradeDone 은 D99 ① 한 규칙(«하나는 남기고 둘째부터»)을 그대로 말하는 줄이라 **둔다**(총괄 11-01 결정). F 때 ㉠ 을 걷을 때도 «규칙 줄»로 남긴다.
 - 검사: 걷은 줄은 test_dialogue_coverage 의 몬이 수 정규식 목록(D97 check)에 넣어 다시 안 들어오게 한다.
