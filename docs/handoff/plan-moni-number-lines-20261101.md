@@ -1,7 +1,7 @@
 # 2026-11-01 · plan — 몬이 대사 속 수 낱말 목록 (F 다듬기 대비 · 걷지 않음)
 
 > 근거: 총괄 D99 뒤 «몬이 수 낱말 마흔 남짓은 지금 걷지 않는다. 나중에 F 다듬기 때 게임 값(원 · 날수 · 개수)이라 판이 바뀌면 거짓이 될 수 있는 줄만 걷고, 굳은 말은 둔다. 그 전에 목록만».
-> 합: 진짜 수 낱말 66줄 = ㉠ 34 · ㉠′ 2 · ㉡ 9 · ㉢ 21.
+> 합: 진짜 수 낱말 64줄 = ㉠ 34 · ㉠′ 2 · ㉡ 9 · ㉢ 19. (11-01 D100 e8e7224d 뒤 — ㉢ 둘이 줄째 바뀌어 빠짐: chatDailySpend[1] «하루가 그만큼씩» · questBuyLamp[3] «둘째 창턱»)
 > 판: HEAD ab3f7205 뒤 `src/game/dialogue.js` SCRIPTS 의 who:'moni' 줄 전부를 정규식으로 긁고(94줄 걸림), 사람 눈으로 거짓 걸림을 뺐다.
 > 거짓 걸림(뺀 것): «대단한 · 흔한 · 급한 · 정직한 · 원하는 · 연한 · 조용한 · 주문한 · 안 한 지 · 한 거야»(하다) · «월세»(세) · «네 방 · 네 집 · 네 가게 · 네 거 · 네 품종 · 네 밭 · 네 화분 · 네 것»(너의) · «남겨 둘»(두다).
 
@@ -68,9 +68,9 @@
 | shopNewRegular[0] «단골이 하나 늘었어.» | 하나 | 단골이 는 그 사건 |
 | shopTown[1] · questDoneShopTown[1] «창턱 하나에서 여기까지 왔네.» | 하나 | 지난 이야기(반지하 창턱) |
 
-## ㉢ 굳은 말 (21줄 · 둠)
+## ㉢ 굳은 말 (19줄 · 둠)
 
-lampUnlocked[0] «하나 알려 줄게» · brokeTalk[3] «오늘 하루는» · statusBagCuttings[0] · movedInBagCuttings[0] · statusBagCuttingsMove[0] «하루가 안 가» · statusPhaseOpening[1] «하루에 조금씩» · statusStreak[0] «하루도 안 쉬고» · chatDailySpend[1] «하루가 그만큼씩» · questSiru5[4] «하루에 물 줄 수 있는 횟수» · chatLowCash1[1] «세 번 볼 시간에» · chatAutumnShort[1] «이불 하나 더» · endingHome[5] «잎 하나씩» · questOneroomRecut[2] · nudgeRecutPush[0] «하나씩» · questCareKinds3[0] «하나씩» · questCareAllKinds[0] «한 번씩» · shortMoney[4] «한 번만» · nudgeMixOffer[0] «한 상에» · questLeafTwo[2] «같은 한 달이어도» · statusOneroomYear[1] «한 바퀴» · questBuyLamp[3] «둘째 창턱»
+lampUnlocked[0] «하나 알려 줄게» · brokeTalk[3] «오늘 하루는» · statusBagCuttings[0] · movedInBagCuttings[0] · statusBagCuttingsMove[0] «하루가 안 가» · statusPhaseOpening[1] «하루에 조금씩» · statusStreak[0] «하루도 안 쉬고» · questSiru5[4] «하루에 물 줄 수 있는 횟수» · chatLowCash1[1] «세 번 볼 시간에» · chatAutumnShort[1] «이불 하나 더» · endingHome[5] «잎 하나씩» · questOneroomRecut[2] · nudgeRecutPush[0] «하나씩» · questCareKinds3[0] «하나씩» · questCareAllKinds[0] «한 번씩» · shortMoney[4] «한 번만» · nudgeMixOffer[0] «한 상에» · questLeafTwo[2] «같은 한 달이어도» · statusOneroomYear[1] «한 바퀴»
 
 ## 쓰는 법 (F 다듬기 때)
 - ㉠만 걷는다(총괄 11-01 결정 · ㉠′ · ㉡ · ㉢ 은 그대로). 걷을 때도 «무엇을 · 어디서»는 남기고 수만 뺀다(예: «하루면 와» → «시키면 곧 와» · «단골이 셋이야» → «단골이 꽤 늘었어»). 수는 화면(할 일 칩 · 배너)이 말한다.
