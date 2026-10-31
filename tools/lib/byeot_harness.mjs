@@ -231,7 +231,9 @@ export function questSnapshotOf(S, io, opt = {}) {
   const ts = S.tutorial || {};
   let cropPots = [];
   try { cropPots = (cropPotList(fp, S.day) || []).map(r => ({ kind: r.kind || 'beansprout', harvestCount: r.harvestCount || 0,
-                                                               placed: !!r.placed, watered: r.startedOnDay != null || !!r.growing || !!r.ready || !!r.harvested })); } catch { cropPots = []; }
+                                                               placed: !!r.placed, watered: r.startedOnDay != null || !!r.growing || !!r.ready || !!r.harvested,
+                                                               /* ★ 2026-10-31 plan — game.html §questSnapshotNow 와 같은 자(돌던 것 · 놓였나와 무관 — oneroom_unpack 채소 갈래) */
+                                                               growing: !!(r.started && !r.harvested) })); } catch { cropPots = []; }
   let motherLeaves = 0, motherVarieLeaves = 0, motherVarieMatured = 0;
   if (hasPlant(S)) {
     try { const st = io.growth.leafStats(); motherLeaves = (st && st.leaves) || 0; motherVarieLeaves = (st && st.variegatedLeaves) || 0; } catch { }

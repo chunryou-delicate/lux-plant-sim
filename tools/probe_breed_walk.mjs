@@ -7,6 +7,7 @@
      ready         500만(엔딩 «전») — [내 집 마련] → [계약한다] → 장면 → 진로 카드 → [육종을 시작한다] → 투룸 · 판 자리 메모판(D85) · 기록장(빈 칸 글) · 대사
      breedSample   첫 표본 — 그 줄 첫 표본 대사 · 기록 줄 «📒 표본 — …» · 기록장 셈 막대
      breedCand     첫 후보 — breedCandidate 대사 · 기록장 «같은 조건 2/3»
+                   ★ 10-31 총괄 — 같은 날 등록까지 갔으면(서로 다른 그루가 한날 함께 나 0→3) 후보 대사 없음 · 이름 칸(등록) — 하네스 날 흐름에 안 묶임
      breedReg      첫 등록 대기 — 이름 칸이 뜬다(자동 이름 미리 채움) → 이름 적고 [이 이름으로 등록] → 상금 · 기록 줄 «🏷 새 품종» · breedRegister 대사 · 기록장 «등록»
      breedEnd      품종 셋 다음 날 아침 — breedEnding 대사 · 끝맺음 카드(«무늬 육종가» · 품종 이름들) · 할 일 머리 칭호 · 다시 켜도 카드 안 뜸
    단계마다: 방이 선다 · 처리 안 된 예외 0 · 저장 → 다시 켬 왕복(그 판 그대로) */
@@ -125,9 +126,22 @@ try {
     await load('breedCand_pre');
     const nd = await nextDayTalk(/한 번만 더 나오면 우연이 아니야/, 'breedCand_talk');
     console.log('  대사 —', nd.lines.slice(0, 6).join(' / '));
-    ok(nd.shotTaken, '[첫 후보] breedCandidate 대사', nd.lines.slice(0, 3).join(' / '));
+    /* ★ 2026-10-31 총괄 — 기대가 하네스의 «하루 하나씩»에 묶여 있었다(8b2c6f41 판: 무늬 어미 구근 셋이 598일 한날 0→3 · 후보와 등록 대기가 같은 날).
+         그날 후보 대사(«한 번만 더 나오면»)는 거짓이라 게임이 안 낸다(job_breed §noteRepro sameDayRegister · dialogue §scriptOf) ⇒ 두 갈래로 잰다:
+           오늘 후보가 된 칸이 다 오늘 등록 대기면 — 후보 대사 없음 · 이름 칸(등록)이 뜬다(또는 기록장 [이름 짓기])
+           아니면(하루 하나씩) — 예전 그대로 후보 대사 · 기록장 «같은 조건 2/3» */
+    const cj = await J(`(()=>{ const S=window.__S(), B=S.jobBreed||{}; return { day:S.day, cands:Object.entries(B.candidates||{}).filter(([,d])=>d===S.day).map(([k])=>k), pend:(B.pending||[]).filter(p=>p.day===S.day).map(p=>p.slot) }; })()`);
+    const same = cj.cands.length > 0 && cj.cands.every(k => cj.pend.includes(k));
+    console.log('[첫 후보] 오늘 후보 · 등록 대기 —', JSON.stringify(cj), same ? '(같은 날 등록까지)' : '');
     const b = await board();
-    ok(b && b.slots.some(x => /같은 조건 2\/3/.test(x)), '[첫 후보] 기록장 «같은 조건 2/3»', b && b.slots.join(' | '));
+    if (same) {
+      ok(!nd.shotTaken && !nd.lines.some(l => /한 번만 더 나오면 우연이 아니야/.test(l)), '[첫 후보] 같은 날 등록까지 — 후보 대사 없음', nd.lines.slice(0, 3).join(' / '));
+      const nm = await J(`(()=>window.__byeotBreedName())()`);
+      ok((nm && nm.open) || (b && b.nameBtn), '[첫 후보] 같은 날 등록까지 — 이름 칸(등록)이 뜬다', JSON.stringify({ nm, nameBtn: b && b.nameBtn }));
+    } else {
+      ok(nd.shotTaken, '[첫 후보] breedCandidate 대사', nd.lines.slice(0, 3).join(' / '));
+      ok(b && b.slots.some(x => /같은 조건 2\/3/.test(x)), '[첫 후보] 기록장 «같은 조건 2/3»', b && b.slots.join(' | '));
+    }
     await shot('breedCand_board');
     await closeSheet(); await roundTrip('breedCand');
     const ne = exc.slice(e0); ok(ne.length === 0, '[첫 후보] 처리 안 된 예외 0', ne.slice(0, 2).join(' / '));

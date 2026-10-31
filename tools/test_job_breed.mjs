@@ -13,6 +13,7 @@ import assert from 'node:assert';
 import * as JS from '../src/game/job_shop.js';
 import * as JB from '../src/game/job_breed.js';
 import * as SP from '../src/game/species.js';
+import { scriptsForEvents } from '../src/game/dialogue.js';   /* C-2 — 같은 날 등록까지 간 후보는 대사 없음 */
 
 let bad = 0;
 const T = (name, fn) => { try { fn(); console.log('PASS ', name); } catch (e) { bad++; console.log('FAIL ', name, '\n     ', e && e.stack ? e.stack.split('\n').slice(0, 3).join(' | ') : e); } };
@@ -72,6 +73,24 @@ T('C 몬스테라 — 같은 밝기 서로 다른 삽수 셋 · 후보 둘 · �
   assert.deepStrictEqual(J.pending.map(p => [p.slot, p.cond, p.auto]), [['monstera_halfmoon', 'bright', '볕 하프문 1호']]);
   assert.deepStrictEqual(J.tally.monstera.bright, { halfmoon: 5, plain: 1, sanban: 1 });
   grow(c, true, 'halfmoon'); day(S); assert.strictEqual(J.pending.length, 1, '대기 칸이 또 섰다');
+});
+
+/* ★ 2026-10-31 총괄 — 서로 다른 그루가 한날 함께 나 0→3 이면 후보(n=2)와 등록 대기(n=3)가 같은 날이다 —
+     후보 사건은 남기되(기록 줄 · 하네스 셈) 표시(sameDayRegister)를 달고, 대사 고르기는 후보 대사를 안 낸다(«한 번만 더 나오면»이 거짓) */
+T('C-2 같은 날 0→3 — 후보 사건은 남고 표시 · 후보 대사 없음 · 등록 대기 · 하루 하나씩이면 예전대로', () => {
+  const S = breedS(); JB.openBreed(S);
+  for (const id of ['a', 'b', 'c']) { const k = cut(S, id, 'bright'); grow(k, true, 'halfmoon'); }
+  const d = day(S);
+  const ev = d.events.find(e => e.id === 'breed_candidate');
+  assert.ok(ev && ev.sameDayRegister === true, '같은 날 후보에 표시가 없다');
+  assert.deepStrictEqual(JB.jobBreedOf(S).pending.map(p => p.slot), ['monstera_halfmoon'], '등록 대기가 안 섰다');
+  assert.ok(!scriptsForEvents(d.events).includes('breedCandidate'), '같은 날 등록까지 갔는데 후보 대사가 섰다');
+  /* 하루 하나씩(둘째 날 후보 · 셋째 날 등록)은 예전 그대로 후보 대사 */
+  const S2 = breedS(); JB.openBreed(S2);
+  const a2 = cut(S2, 'a', 'bright'), b2 = cut(S2, 'b', 'bright');
+  grow(a2, true, 'halfmoon'); day(S2); grow(b2, true, 'halfmoon'); const d2 = day(S2);
+  const ev2 = d2.events.find(e => e.id === 'breed_candidate');
+  assert.ok(ev2 && !ev2.sameDayRegister && scriptsForEvents(d2.events).includes('breedCandidate'), '하루 하나씩인데 후보 대사가 안 섰다');
 });
 
 T('D 등록 — 이름 · 자동 이름 · 상금(잎 한 장 값) · 이정표 1 · 다음 차례', () => {

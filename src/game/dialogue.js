@@ -3371,6 +3371,8 @@ const EVENT_ORDER = [
 function scriptOf(ev, S = null) {
   const id = typeof ev === 'string' ? ev : (ev && ev.id);
   if (!id) return null;
+  /* ★ 2026-10-31 [core] 총괄 — 같은 날 등록까지 간 후보(job_breed §noteRepro sameDayRegister)는 후보 대사를 안 낸다 — «한 번만 더»가 그날 거짓 · 등록 창이 말한다 */
+  if (id === 'breed_candidate' && ev && ev.sameDayRegister) return null;
   /* ★ 2026-10-08 [plan] D20 — 겨울은 방으로 갈린다(§winterCameBanjiha). 사건이 실으면(ev.movedOut) 그것을, 아니면 S 를 본다.
      둘 다 모르면 예전 그대로(winterCame) — 판을 안 바꾼다. */
   if (id === 'season' && ev.season === 'winter') {

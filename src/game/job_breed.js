@@ -165,7 +165,13 @@ function noteRepro(S, J, s, events) {
       J.candidates[slot.id] = S.day ?? 0;
       events.push({ id: 'breed_candidate', slot: slot.id, cond: key, ko: `후보 — ${slot.ko}` });
     }
-    if (r.n >= BJ.need) J.pending.push({ slot: slot.id, cond: key, day: S.day ?? 0, auto: autoNameOf(J, slot) });
+    if (r.n >= BJ.need) {
+      J.pending.push({ slot: slot.id, cond: key, day: S.day ?? 0, auto: autoNameOf(J, slot) });
+      /* ★ 2026-10-31 총괄 — **같은 날** 후보와 등록 대기가 함께 났으면(서로 다른 그루가 한날 함께 남 · 8b2c6f41 판 무늬 어미 구근 셋 0→3)
+           후보 대사 «한 번만 더 나오면 우연이 아니야»가 그날 거짓이다. 사건은 남긴다(기록 줄 «🔎 후보» · 하네스 후보 날 셈 · breedCand 세이브) —
+           표시만 달아 대사 고르기(dialogue §scriptOf)가 건너뛴다. 글은 안 바꿈 */
+      for (const e of events) if (e && e.id === 'breed_candidate' && e.slot === slot.id) e.sameDayRegister = true;
+    }
   }
 }
 function recordSample(S, J, s, events) {
