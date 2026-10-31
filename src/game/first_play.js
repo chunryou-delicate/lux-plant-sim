@@ -3041,10 +3041,11 @@ export function cropSurplusQuote(fp) {
 
 /* 장부를 비우고 받을 값을 낸다. **지갑은 안 만진다**(위 §잉여 판매 마지막 줄).
    ⚠ 곳간(`pantryWon`)을 안 건드린다 — 그 한 줄이 이 계통의 전부다. */
-export function takeCropSurplus(fp) {
+export function takeCropSurplus(fp, opt = {}) {
   if (!fp || !fp.food) throw new Error('[잉여] 첫 플레이 상태가 없습니다');
   const q = cropSurplusQuote(fp);
   if (q.pendingWon <= 0) return { ...q, won: 0 };
+  noteLastSold(fp, opt);
   fp.food.surplusWon = 0;
   fp.food.totalSurplusSoldWon = Math.round((fp.food.totalSurplusSoldWon || 0) + q.won);
   fp.food.pantrySoldCount = (Number.isFinite(fp.food.pantrySoldCount) ? fp.food.pantrySoldCount : 0) + 1;   /* ★ 2026-10-30 D90 ④ §pantrySoldCountOf — 잉여 넘김도 한 번 */
@@ -3153,17 +3154,77 @@ export function pantryLotsWithGrams(fp) {
    ★ 새 꾸러미부터 끼니를 세어 14끼 몫만 남기고, 그 앞(옛 것)이 남는 몫이다 — pantrySaleQuote 가 앞에서부터 고르므로 «남는 몫 = 앞의 sellLots 판»이다.
    ⚠ 끼니 칸이 없는 꾸러미(옛 세이브를 쪼갠 몫 · meals 0)는 끼니로 안 센다 — 하네스와 같은 자를 쓰려고 지어내지 않는다(남기는 쪽으로 기운다).
    반환 { keepMeals, keepLots, keepGrams, sellLots, overKeepGrams } · 곳간이 14끼에 못 미치면 sellLots 0 · overKeepGrams 0 */
+/* ★★★ 2026-10-31 총괄 D93 ⑤ M3 (plan 28edd259 §1 «파는 말 한 규칙») — **작물마다 g 으로 · 이레치**
+     ⛔ 위 14끼(lot.meals)로 셌더니 — meals 는 품질 표시(3·2·1끼)라 1kg 도 350g 도 «3끼» ⇒ 14끼 ≈ 5판 ≈ 보름치였고
+       (비판 둘째 판 Day 31: 5kg 이 쌓였는데 남는 몫 100g · 가계부 «+700원»), 작물을 안 가려 새 꾸러미가 다 콩나물이면
+       무순 꾸러미가 «남는 몫»으로 팔렸다(M3 ④ · Day 39 «밥상은 그대로입니다» → Day 42 둘째 몫 없음).
+     ⇒ 작물(꾸러미 kind)마다 **새 것부터** g 을 세어 그 작물의 이레치 밥상 몫(한 몫 mealPortionGrams × PANTRY_KEEP_DAYS)에 닿는
+       꾸러미까지 남긴다 — 경계 꾸러미는 통째로 남긴다(남기는 쪽으로 기운다). 그 앞(먼저 거둔 것)이 그 작물의 **남는 몫**이다.
+       콩나물 300g × 7 = 2.1kg · 무순 200g × 7 = 1.4kg — 곳간에 그 작물 꾸러미가 있을 때만 센다.
+     ⚠ kind 없는 꾸러미(옛 세이브를 쪼갠 몫)는 남긴다 — 무엇인지 모르므로 «팔아도 된다»고 말하지 않는다.
+     ⚠ 둘째 인자로 끼니 수를 주면 옛 14끼 자다(옛 하네스 길 · PANTRY_KEEP_MEALS 는 그 길로만 남는다).
+     반환 { keepDays, byKind[{ kind, keepGrams(그 작물 이레치 g) · keptGrams · keepLots · sellLots · sellGrams }],
+            keepLots · keepGrams(남긴 g 합) · sellLots · sellIdx[](pantryLotsOf 순번 · 먼저 거둔 것부터) · overKeepGrams(남는 꾸러미 g 합) }
+     ★ 밥상 판 · 상점 줄 · 판매 창 · 가계부 · 할 일(sell_surplus) · 하네스가 **이 함수 하나**만 본다 */
+export const PANTRY_KEEP_DAYS = 7;
 export const PANTRY_KEEP_MEALS = 14;
-export function pantryKeepStatus(fp, keepMeals = PANTRY_KEEP_MEALS) {
+/* ★ 견줄 깃발(총괄 10-31) — 옛 규칙(14끼 · 앞에서 n판)으로 되돌린다 · 게임 ?m3=0 · 하네스 probe_branches --legacy-pantry.
+     ⚠ 값이 아니라 «옛 숫자와 견주기» 전용이다 — 판은 늘 새 규칙으로 돈다 */
+let pantryLegacyOn = false;
+export function setPantryLegacyRule(on) { pantryLegacyOn = !!on; }
+export function pantryLegacyRule() { return pantryLegacyOn; }
+/* 그 작물의 이레치 밥상 몫(g) — 한 몫 × 이레. 작물 표가 정본이다(§몫) */
+export function pantryKeepGramsOf(fp, kind) {
+  const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
+  return cropMealPortionGrams(rules, lotKindIndexOf(rules, kind)) * PANTRY_KEEP_DAYS;
+}
+export function pantryKeepStatus(fp, keepMeals) {
   const L = pantryLotsOf(fp);
-  let m = 0, keepLots = 0, keepGrams = 0;
-  for (let i = L.length - 1; i >= 0 && m < keepMeals; i--) { m += L[i].meals || 0; keepLots++; keepGrams += gramsOfWon(L[i].won); }
-  const total = pantryGramsOf(fp);
-  return { keepMeals, keepLots, keepGrams, sellLots: Math.max(0, L.length - keepLots), overKeepGrams: Math.max(0, total - keepGrams) };
+  if (Number.isFinite(keepMeals) || pantryLegacyOn) {
+    /* 옛 14끼 자 — 작물을 안 가리고 새 것부터 끼니를 센다(앞의 sellLots 판이 남는 몫) */
+    if (!Number.isFinite(keepMeals)) keepMeals = PANTRY_KEEP_MEALS;
+    let m = 0, keepLots = 0, keepGrams = 0;
+    for (let i = L.length - 1; i >= 0 && m < keepMeals; i--) { m += L[i].meals || 0; keepLots++; keepGrams += gramsOfWon(L[i].won); }
+    const total = pantryGramsOf(fp), sellLots = Math.max(0, L.length - keepLots);
+    return { keepMeals, keepLots, keepGrams, sellLots, sellIdx: [...Array(sellLots).keys()], overKeepGrams: Math.max(0, total - keepGrams), byKind: [] };
+  }
+  const byKind = new Map(), sell = [];
+  for (let i = L.length - 1; i >= 0; i--) {
+    const l = L[i];
+    if (typeof l.kind !== 'string') continue;
+    let k = byKind.get(l.kind);
+    if (!k) { k = { kind: l.kind, keepGrams: pantryKeepGramsOf(fp, l.kind), keptGrams: 0, keepLots: 0, sellLots: 0, sellGrams: 0 }; byKind.set(l.kind, k); }
+    const g = gramsOfWon(l.won);
+    if (k.keptGrams < k.keepGrams) { k.keptGrams += g; k.keepLots++; }
+    else { k.sellLots++; k.sellGrams += g; sell.push(i); }
+  }
+  sell.sort((a, b) => a - b);
+  const overKeepGrams = sell.reduce((a, i) => a + gramsOfWon(L[i].won), 0);
+  return { keepDays: PANTRY_KEEP_DAYS, byKind: [...byKind.values()],
+           keepLots: L.length - sell.length, keepGrams: pantryGramsOf(fp) - overKeepGrams,
+           sellLots: sell.length, sellIdx: sell, overKeepGrams };
+}
+/* ★ 2026-10-31 D93 ⑤ M3 — **파는 차례**(pantryLotsOf 순번) — 남는 몫(먼저 거둔 것부터) 다음에 남길 몫(먼저 거둔 것부터).
+     ⛔ 예전엔 «앞에서 n판»(FIFO)이라 섞인 곳간의 앞 n판에 무순 남길 몫이 끼였다(M3 ④ 그 길).
+     ⇒ 고르개가 남는 몫 안이면 남는 몫만 · 넘으면 남길 몫 중 먼저 거둔 것부터 더한다(plan §1-2 권함).
+     opt.kind 를 주면 그 작물의 꾸러미만(남는 몫 → 남길 몫 · 같은 차례) */
+export function pantrySaleOrder(fp, opt = {}) {
+  const L = pantryLotsOf(fp);
+  const kind = opt && opt.kind ? String(opt.kind) : null;
+  const sellSet = new Set(pantryKeepStatus(fp).sellIdx);
+  const idx = [...L.keys()].filter(i => !kind || (L[i] && L[i].kind === kind));
+  if (pantryLegacyOn) return idx;   /* 옛 차례(앞에서부터 · 견줄 깃발) */
+  return [...idx.filter(i => sellSet.has(i)), ...idx.filter(i => !sellSet.has(i))];
 }
 
 /* ★ 2026-10-30 총괄 D90 ④ — 곳간(보유 채소)을 판 횟수(잉여 넘김 포함 · 삽수·그루 판매는 안 셈) — 할 일 sell_surplus 가 본다(quest §pantrySoldCount).
    셈은 아래 §takeCropSurplus · §takePantryCrop 이 정말 덜어 낸 때만 하나씩. 옛 세이브는 칸이 없다 → 판 돈이 있으면 1(«한 번은 팔았다»만 참) */
+/* ★ 2026-10-31 총괄 D93 ⑤ M3 (plan 28edd259 §2-2) — 곳간을 마지막으로 판 날(잉여 넘김 포함 · pantrySoldCount 와 같은 셈).
+     할 일 sell_surplus 의 끝은 «줄이 열린 뒤에» 판 것만 친다(quest §sell_surplus · 열리는 걸음에 끝나 끝 대사가 아무것도 안 판 날 섰다 — Day 24).
+     날은 부르는 쪽(state §sellPantryCrop · §sellCropSurplus)이 opt.day 로 준다 — fp 는 오늘을 모른다 · 안 주면 안 적는다(«모른다» → 예전 그대로) */
+function noteLastSold(fp, opt) {
+  if (opt && Number.isInteger(opt.day) && opt.day >= 0) fp.food.pantryLastSoldDay = opt.day;
+}
 export function pantrySoldCountOf(fp) {
   const f = (fp && fp.food) || {};
   if (Number.isFinite(f.pantrySoldCount)) return f.pantrySoldCount;
@@ -3187,13 +3248,14 @@ export function pantryGramsOf(fp) {
 export function pantrySaleQuote(fp, count, opt = {}) {
   const rules = (fp && fp.rules) || FIRST_PLAY_RULES;
   const all = pantryLotsOf(fp);
-  const kind = opt && opt.kind ? String(opt.kind) : null;
-  const lots = kind ? all.filter(l => l && l.kind === kind) : all;
-  const maxLots = lots.length;
+  /* ★ 2026-10-31 D93 ⑤ M3 — 앞에서 n판이 아니라 **파는 차례**(§pantrySaleOrder · 남는 몫 먼저)에서 n판 */
+  const order = pantrySaleOrder(fp, opt);
+  const maxLots = order.length;
   const n = Number.isFinite(count)
     ? Math.max(0, Math.min(maxLots, Math.floor(count)))
     : maxLots;
-  const picked = lots.slice(0, n);
+  const pickedIdx = order.slice(0, n);
+  const picked = pickedIdx.map(i => all[i]);
   const pendingWon = picked.reduce((a, l) => a + l.won, 0);
   /* ★ 2026-08-16 — g 도 같이 낸다(§그램). **낱개를 더해서** 낸다 — 화면에 줄마다 적힌
      g 을 손으로 더한 값과 합계가 같아야 한다. */
@@ -3218,6 +3280,7 @@ export function pantrySaleQuote(fp, count, opt = {}) {
     picked: picked.map((l, i) => ({ ...l, g: pickedG[i],
                                     won: l.won, saleWon: pickedWon[i],
                                     wonPerGram: pickedWonPerG[i] })),
+    pickedIdx,   /* ★ D93 ⑤ pantryLotsOf 순번 — 덜어 낼 때 · 목록에 ▶ 를 찍을 때 이것을 본다 */
     canSell: n > 0 && pendingWon > 0 && won > 0
   };
 }
@@ -3229,19 +3292,14 @@ export function takePantryCrop(fp, count, opt = {}) {
   const q = pantrySaleQuote(fp, count, opt);
   if (q.lots <= 0 || q.pendingWon <= 0) return { ...q, won: 0, lossWon: 0 };
   const lots = pantryLotsOf(fp);
-  const kind = opt && opt.kind ? String(opt.kind) : null;
-  /* ★ 갈래를 골랐으면 **그 갈래의 앞에서부터** 그만큼만 뺀다. 다른 작물은 손대지 않는다.
-     ⚠ `slice(q.lots)` 로 뭉텅 자르면 갈래를 고른 뜻이 사라진다 — 남의 꾸러미가 같이 잘린다. */
-  if (kind) {
-    let left = q.lots;
-    fp.food.pantryLots = lots.filter(l => {
-      if (left > 0 && l && l.kind === kind) { left--; return false; }
-      return true;
-    });
-  } else fp.food.pantryLots = lots.slice(q.lots);
+  /* ★ 2026-10-31 D93 ⑤ M3 — 견적이 고른 순번(§pantrySaleOrder) **그대로** 덜어 낸다. 갈래를 골랐으면 그 작물 것만 골라져 있다.
+     ⚠ `slice(q.lots)` 로 뭉텅 자르면 고른 뜻이 사라진다 — 남길 몫(무순 이레치)이 같이 잘린다. */
+  const gone = new Set(q.pickedIdx);
+  fp.food.pantryLots = lots.filter((_, i) => !gone.has(i));
   fp.food.pantryWon = Math.max(0, Math.round((fp.food.pantryWon || 0) - q.pendingWon));
   fp.food.totalPantrySoldWon = Math.round((fp.food.totalPantrySoldWon || 0) + q.won);
   fp.food.pantrySoldCount = (Number.isFinite(fp.food.pantrySoldCount) ? fp.food.pantrySoldCount : 0) + 1;   /* ★ 2026-10-30 D90 ④ §pantrySoldCountOf */
+  noteLastSold(fp, opt);
   /* ⚠ `q.pantryGrams` 는 **덜어 내기 전** 값이라 그대로 내면 거짓말이 된다. 다시 센다 */
   return { ...q, pantryWon: fp.food.pantryWon, pantryGrams: pantryGramsOf(fp) };
 }

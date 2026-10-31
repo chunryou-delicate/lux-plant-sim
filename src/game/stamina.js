@@ -230,9 +230,18 @@ export function canAct(S, kind) {
   if (!st) return { ok: true, left: null, cost, reason: null };
   if (cost <= 0) return { ok: true, left: st.left, cost, reason: null };
   if (st.left >= cost) return { ok: true, left: st.left, cost, reason: null };
-  return { ok: false, left: st.left, cost, max: st.max,
+  return { ok: false, left: st.left, cost, max: st.max, code: 'stamina',
            reason: `오늘 손이 다 떨어졌습니다 (0/${st.max}) — ` +
                    `[다음 날]을 누르면 ${st.max}만큼 다시 채워집니다` };
+}
+/* ★ 2026-10-31 총괄 D93 ⑤ m9 (plan 28edd259 §4) — 체력이 막은 던짐 하나(심기 · 물 주기 · 거두기 · 자르기 · 옮겨 심기가 같이 씀).
+     글(e.message)은 그대로 — «[심기] 오늘 손이 다 떨어졌습니다 …» · 표(e.stamina)를 달아 화면 §guard 가 머리말을 고른다
+     (예전 머리말 «고친 뒤 다시 눌러 주세요»는 체력에 안 맞았다 — 고칠 것이 없고 내일이면 찬다) */
+export function staminaError(tag, what, st) {
+  const e = new Error(`${tag} ` + st.reason);
+  e.tutorialInput = true;
+  e.stamina = { what, max: st.max };
+  return e;
 }
 
 /* 실제로 쓴다. **부족하면 안 쓰고 false 를 낸다** — 음수로 안 내려간다.
@@ -349,5 +358,8 @@ export function staminaView(S) {
            /* ★ 다음 칸까지 — 화면이 "조금만 더"를 그릴 근거다. 천장이면 need 가 null 이다 */
            xp: st.xp, xpNeed: need, atCap: need == null,
            xp01: need ? Math.max(0, Math.min(1, st.xp / need)) : 1,
+           /* ★ 2026-10-31 총괄 D93 ⑤ (plan 28edd259 §5) — 최대 체력이 하나 늘 때까지 «돌봄 몇 번»(손 한 번 = cost 1 × xpPerStamina) · 천장이면 null.
+                ⛔ «다음 체력까지 82번»은 무엇이 82번인지 안 말했다. 화면이 다시 세지 않게 여기서 낸다(퀘스트 보상으로 더 빨리 오를 수 있어도 «N번 더 하면»은 참) */
+           handsToNext: need == null ? null : Math.max(0, Math.ceil((need - st.xp) / (rulesOf(S).xpPerStamina || 1))),
            totalSpent: st.totalSpent };
 }

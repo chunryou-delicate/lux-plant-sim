@@ -30,7 +30,7 @@ import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, wate
          boxedCropPots } from './first_play.js';
 import { createTutorialState, yearDay0Of } from './tutorial.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
-import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
+import { spend as spendStamina, canAct as canActStamina, createStaminaState, staminaError } from './stamina.js';
 import { createShopState, useStock, assertStockAll, stockOf,
          creditCropSurplus,
          /* ★ 2026-08-17 · 가구를 사고 판다 (아래 §가구를 사고 판다) */
@@ -663,7 +663,7 @@ export function plantMonsteraSeed(S, io, opt = {}) {
   /* ① 체력 — **아무것도 바꾸기 전에** 묻는다. 심기는 `sow` 와 같은 손이다(새 비용을 안 만든다). */
   {
     const st = canActStamina(S, 'sow');
-    if (!st.ok) { const e = new Error('[심기] ' + st.reason); e.tutorialInput = true; throw e; }
+    if (!st.ok) throw staminaError('[심기]', '심기', st);   /* ★ D93 ⑤ m9 */
   }
   /* ★★★ 2026-08-17 — **이미 놓인 화분에 심을 때는 그릇을 또 안 쓴다** (박사님 실측 제보:
        *"화분 배치는 되는데 몬스테라 씨앗을 못 심네."*)
@@ -1195,7 +1195,7 @@ export function waterCrop(S, opt = {}) {
      ⚠ **아무것도 바꾸기 전에** 묻는다. 반쯤 준 물은 없다. */
   {
     const st = canActStamina(S, 'water');
-    if (!st.ok) { const e = new Error('[물주기] ' + st.reason); e.tutorialInput = true; throw e; }
+    if (!st.ok) throw staminaError('[물주기]', '물 주기', st);   /* ★ D93 ⑤ m9 */
   }
   const r = waterBeansprout(fp, S.day, opt);
   /* 실제로 준 날만 깎는다 — 이미 준 시루에 또 눌러 봤자 아무 일도 안 나는데
@@ -1322,7 +1322,7 @@ export function waterPot(S, opt = {}) {
   if (!opt.free) {
     /* ★ 체력 — **아무것도 바꾸기 전에** 묻는다. 반쯤 준 물은 없다(waterCrop 과 같은 순서). */
     const sta = canActStamina(S, 'water');
-    if (!sta.ok) { const e = new Error('[물주기] ' + sta.reason); e.tutorialInput = true; throw e; }
+    if (!sta.ok) throw staminaError('[물주기]', '물 주기', sta);   /* ★ D93 ⑤ m9 */
   }
   p.wateredOnDay = S.day;
   if (!opt.free) spendStamina(S, 'water');
@@ -1396,7 +1396,7 @@ export function resowCrop(S, opt = {}) {
   /* ★ 체력 — 재고를 빼기 **전에** 묻는다. 씨앗만 나가고 안 심기면 그 씨앗이 사라진다 */
   {
     const st = canActStamina(S, 'sow');
-    if (!st.ok) { const e = new Error(`[${k.ko}] ` + st.reason); e.tutorialInput = true; throw e; }
+    if (!st.ok) throw staminaError(`[${k.ko}]`, '심기', st);   /* ★ D93 ⑤ m9 */
   }
   /* ★★ 2026-08-09 — **묻는 것과 빼는 것을 갈랐다.**
      예전에는 시루를 먼저 빼고 씨앗을 나중에 뺐다. 씨앗에서 던지면 이미 빠진 시루가
@@ -1454,7 +1454,7 @@ export function sellCropSurplus(S, opt = {}) {
     e.tutorialInput = true;
     throw e;
   }
-  const taken = takeCropSurplus(fp);
+  const taken = takeCropSurplus(fp, { day: S.day });   /* ★ D93 ⑤ 판 날(first_play §noteLastSold) */
   /* ⚠ `opt.log` 를 넘기지 않는다 — 바로 아래에서 `pushLog` 로 한 줄을 적는다.
      둘 다 켜면 같은 일이 로그에 두 번 적힌다(다른 문장으로 적혀서 더 나쁘다). */
   const r = creditCropSurplus(S, taken.won);
@@ -1509,7 +1509,7 @@ export function sellPantryCrop(S, count, opt = {}) {
     e.tutorialInput = true;
     throw e;
   }
-  const taken = takePantryCrop(fp, count, opt);
+  const taken = takePantryCrop(fp, count, { ...opt, day: S.day });   /* ★ D93 ⑤ 판 날(first_play §noteLastSold) */
   /* 무엇을 팔았나 — 종류별로 센다. 「콩나물 2판」처럼 적으려고 */
   const byKind = new Map();
   for (const l of taken.picked) {

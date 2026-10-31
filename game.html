@@ -3341,6 +3341,7 @@ import {
   slotFitsDiameter,
   cropQualityOf,
   pantryKeepStatus, pantrySoldCountOf,   /* ★ 2026-10-30 D90 ④⑤ 이레치 밥상 몫 · 남는 몫 · 곳간 판 횟수 */
+  setPantryLegacyRule, eatFromPantry,    /* ★ 2026-10-31 D93 ⑤ M3 견줄 깃발(?m3=0) · 밥상 판 «먹은 뒤» 남는 몫 셈(복사본에만) */
   pantrySaleQuote,                       /* ★ 2026-10-31 D90 ③ 가계부 «남는 채소를 팔면» */
   monsteraArrivalLeft,
   /* 2종째 작물(무순). 자리 이름·종류표·자리 찾기 — 숫자를 화면이 또 갖지 않는다 */
@@ -3420,6 +3421,8 @@ import { noteZoomOpened } from './src/game/leaf_wait.js';
      ⚠ 예전엔 URL 깃발(?endingTarget=)만 읽어, ending.js 주석의 «homes.json 에 한 칸 적으면 화면은 그대로 돈다»가 사실이 아니었다.
      검수 깃발: ?endingTarget=N 이 먼저 · ?endingTarget=none 은 «목표 없음» 판(ENDING_RULES · targetWon null) */
 const ENDING_URL = (() => { try { return new URLSearchParams(location.search).get('endingTarget'); } catch { return null; } })();
+/* ★ 2026-10-31 D93 ⑤ M3 견줄 깃발 — ?m3=0 이면 곳간을 옛 규칙(14끼 · 앞에서 n판)으로 판다(first_play §setPantryLegacyRule · 옛 판과 나란히 재기 전용) */
+try { if (new URLSearchParams(location.search).get('m3') === '0') setPantryLegacyRule(true); } catch { }
 let ENDING_NOW = (() => {
   try { const n = Number(ENDING_URL);
         if (ENDING_URL != null && Number.isFinite(n) && n > 0) return endingRulesFrom({ targetWon: n }); } catch { }
@@ -5749,7 +5752,7 @@ function bindDetail() {
     if (cropCell && cropCell.dataset.crop) {
       e.stopPropagation();
       pantrySellKind = cropCell.dataset.crop;
-      pantrySellOpen = true; pantrySellN = 1;
+      pantrySellOpen = true; pantrySellN = pantrySellDefaultN(pantrySellKind);   /* ★ 2026-10-31 D93 ⑤ 그 작물의 남는 몫(예전 1판) */
       try { window.__byeotSheet.tab('shop'); } catch { }
       draw();
       return;
@@ -6597,6 +6600,9 @@ function updateHint() {
      ⚠ 말은 새로 안 짓는다 — 이미 쓰던 그 줄들이다. */
   const markLive = (ko) => {
     try {
+      /* ★ 2026-10-31 D93 ⑤ (core 자 probe_m3 사진) — 체력이 바닥이면 돌봄 말풍선은 «지금 되는» 일이 아니다. [몬스테라 물] 단추는 체력을 안 보고 서 있어
+           손가락이 «몬스테라에 물을 줍니다»를 짚고 → 눌러도 «오늘 손이 다 떨어졌습니다» → 또 짚었다. ⇒ 아래 사는 갈래 · [다음 날]로 내려간다 */
+      { const sv = staminaView(S); if (sv && sv.empty) return false; }
       /* ★ 2026-09-04 — 몬스테라 물 말풍선도 «산다»(아래 [몬스테라 물] 단추가 살아 있을 때). 폰 실측 d19~23: 이 말풍선이 시트에 가린 채
          한 자리를 차지해 익은 시루의 말풍선이 못 떴고, 아래 단추들은 시트 뒤 화면 밖이라 손가락이 통째로 없었다. */
       if (/몬스테라/.test(ko)) { const w = $('waterPot'); return !!(w && !w.disabled); }
@@ -6643,9 +6649,10 @@ function updateHint() {
     if (/거두/.test(say) ? !markLive('거두') : !markLive('물')) continue;
     const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR);
   }
-  if (!careActing && pointStill && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest))
+  /* ★ D93 ⑤ — 아래 [거두기] · [물]도 «지금 되는가»(§markLive · 체력 바닥이면 안 됨)를 같이 본다 */
+  if (!careActing && pointStill && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest) && markLive('거두'))
     return hintAt(btnHarvest, '거둘 때가 됐습니다');
-  if (!careActing && pointStill && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater))
+  if (!careActing && pointStill && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater) && markLive('물'))
     return hintAt(btnWater, '물을 주면 자라기 시작합니다');
   /* ★ D93 ② — [다시 심기] 알약도 돌봄이다(그 종류 씨앗이 있을 때만 — 주문 지름길(dataset.buy)이면 «사기»라 아래 갈래 몫) */
   const btnResow = $('resow');
@@ -7567,10 +7574,11 @@ function drawMonthPanel() {
     w.style.display = Number.isFinite(wd) ? '' : 'none';
     if (Number.isFinite(wd)) w.textContent = `지난 이레 ${wd >= 0 ? '+' : '−'}${Math.abs(wd).toLocaleString('ko-KR')}원`;
     const v = line('monthVeg', w);
-    let vw = 0;
-    try { const k = pantryKeepStatus(S.firstPlay); vw = k.sellLots > 0 ? (pantrySaleQuote(S.firstPlay, k.sellLots).won || 0) : 0; } catch { vw = 0; }
-    v.style.display = vw > 0 ? '' : 'none';
-    if (vw > 0) v.textContent = `남는 채소를 팔면 +${vw.toLocaleString('ko-KR')}원`; }
+    /* ★ 2026-10-31 D93 ⑤ M3 ④ — 같은 견적(§pantrySurplusOf) · 무엇이 남는 몫인지 g 으로 */
+    let vs = { won: 0, grams: 0 };
+    try { vs = pantrySurplusOf(null); } catch { vs = { won: 0, grams: 0 }; }
+    v.style.display = vs.won > 0 ? '' : 'none';
+    if (vs.won > 0) v.textContent = `이레치 밥상 몫을 넘는 채소 ${formatGram(vs.grams)} — 팔면 +${vs.won.toLocaleString('ko-KR')}원`; }
 
   /* ★★ 한 줄 요약 — 이 창의 전부다 */
   const up = r.net >= 0;
@@ -8687,10 +8695,14 @@ function bagHelpHTML(anyPlaceable) {
                 '<b>어두운 칸을 갈라</b> 놓으면 하루 밥값이 그만큼 돕니다');
   else if (coming > 0)
     out += more('시루 <b>' + coming + '개</b>가 오는 중입니다 — 도착하면 <b>다른 어두운 칸</b>에 놓으세요');
-  else
+  /* ★ 2026-10-31 총괄 D93 ⑤ (plan 28edd259 §2-1) — «하나로는»은 놓인 시루가 하나일 때만 참이다. 열여섯에서 «더 주문해»는 할 일과 어긋났다(비판 둘째 판 Day 45).
+       둘 이상이면 늘리라는 말은 할 일 줄(siru8 · siru16)이 한다(한 곳에서만) */
+  else if (placed <= 1)
     out += more('방에서 도는 시루가 <b>' + placed + '개</b>입니다. 하나로는 하루 밥값이 안 메꿔집니다 — ' +
                 '<b>[상점]</b> 에서 시루를 더 주문해 <b>어두운 칸을 갈라</b> 놓으세요. ' +
                 '놓인 것은 <b>눌러서 [옮기기]</b> 로 자리를 다시 고릅니다');
+  else
+    out += more('방에서 도는 시루가 <b>' + placed + '개</b>입니다. 놓인 것은 <b>눌러서 [옮기기]</b> 로 자리를 다시 고릅니다');
   return out;
 }
 
@@ -10433,6 +10445,8 @@ function questSnapshotNow(turn) {
          곳간 g − 이레치 밥상 몫 g(first_play §pantryKeepStatus · 14끼) — 하네스 §questSnapshotOf 와 같은 함수 */
     pantrySoldCount: (() => { try { return pantrySoldCountOf(fp); } catch { return null; } })(),
     pantryOverKeepGrams: (() => { try { return pantryKeepStatus(fp).overKeepGrams; } catch { return null; } })(),
+    /* ★ 2026-10-31 D93 ⑤ — 곳간을 마지막으로 판 날(first_play §noteLastSold · quest §sell_surplus 끝 = 열린 뒤 판 것) · 하네스 §questSnapshotOf 와 같은 칸 */
+    pantryLastSoldDay: (() => { const d = fp && fp.food && fp.food.pantryLastSoldDay; return Number.isInteger(d) ? d : null; })(),
     /* ★ 2026-09-02 — 무순 줄(crop_mix)이 「집 잡은 «다음 날»」로 열리게 — 있는 칸 둘을 옮겨 적는다 */
     monsteraHomedDays: (fp.monstera && fp.monstera.guide && fp.monstera.guide.movedDays) || 0,
     monsteraGrewOnce: !!(fp.monstera && fp.monstera.guide && fp.monstera.guide.grewOnce),
@@ -10612,7 +10626,10 @@ function questViewNow() {
 }
 /* 칩 한 줄 — 기다림이면 「기다리는 중 — …」 · 아니면 그 줄의 할 일(D51 집 자금 줄은 날마다 글이 바뀐다 · questTodo) */
 function questChipLineOf(v) {
-  const c = v && v.chip;
+  return questRowChipLine(v && v.chip);
+}
+/* ★ 2026-10-31 D93 ⑤ m7 — 줄 하나의 칩 글(칩이 고른 줄이 새 줄이어도 같은 꼴로 · §drawQuest 칩) */
+function questRowChipLine(c) {
   if (!c) return null;
   /* [plan] 85af8fd7 — 기다림인데 «먼저 할 손»(waitDo · 지금은 cropReady «익은 시루부터 거두세요»)이 있으면 그 말을 보통 할 일처럼 */
   if (c.waiting && c.waitDo) return c.waitDo;
@@ -11304,7 +11321,7 @@ function drawStamina() {
      그때가 「오늘은 끝」이라 가장 맥빠지는 순간이고, 늘어나는 것이 보여야 다시 누른다. */
   $('staText').textContent = v.empty
     ? '오늘은 여기까지 — [다음 날]을 누르면 다시 움직입니다' +
-      (v.atCap ? '' : ` · 다음 체력까지 ${Math.max(0, v.xpNeed - v.xp)}번`)
+      (v.atCap ? '' : ` · 돌봄 ${v.handsToNext ?? Math.max(0, v.xpNeed - v.xp)}번 더 하면 최대 체력이 하나 늡니다`)   /* ★ D93 ⑤ §5 stamina §handsToNext */
     : `오늘 손 ${v.left}/${v.max}`;
 }
 
@@ -12266,7 +12283,7 @@ function drawJourney() {
     staEl.textContent = `${sv.left}/${sv.max}`;
     /* ★ 길게 누르면(title) 다음 칸까지가 보인다 — 칩은 좀아 숫자를 더 못 넣는다 */
     staEl.title = sv.atCap ? `오늘 손 ${sv.left}/${sv.max} · 더 늘지 않습니다`
-      : `오늘 손 ${sv.left}/${sv.max} · 돌보면 늘어납니다 (${sv.xp}/${sv.xpNeed})`;
+      : `오늘 손 ${sv.left}/${sv.max} · 돌봄 ${sv.handsToNext ?? Math.max(0, sv.xpNeed - sv.xp)}번 더 하면 최대 체력이 하나 늡니다`;   /* ★ D93 ⑤ §5 */
     staEl.parentElement.classList.toggle('empty', sv.empty);
     const fill = $('resStaFill');
     if (fill) fill.style.width = `${Math.max(0, Math.min(100, sv.left / Math.max(1, sv.max) * 100))}%`;
@@ -12464,9 +12481,15 @@ function drawJourney() {
     questGoal = questChipLineOf(qv);
     /* ★ 2026-10-08 D12 — 초반 사슬 몇 번째인가(quest.js questView 가 이미 센다 · 여기서 다시 안 센다)
          ⚠ D50 — 칩 줄이 사슬 줄(next)과 같을 때만 머리에 「n/5」를 단다(다르면 머리와 몸이 다른 줄을 말한다) */
-    questChain = (qv.chain && qv.next && qv.chip && qv.chip.id === qv.next.id) ? { index: qv.chain.index, total: qv.chain.total, id: qv.next.id, ko: qv.next.ko } : null;
+    /* ★★ 2026-10-31 총괄 D93 ⑤ m7 (plan 28edd259 §3) — **칩은 줄 하나를 고르고 머리와 몸을 다 그 줄에서** 가져온다.
+         ⛔ 머리 차례(사슬 › 새 줄 › 할 일)와 몸 차례(새 줄 › 칩 줄)가 달라 «4/5 · 씨앗 주문 — 몬스테라를 밝은 자리로 옮기세요»(머리 order_seed · 몸 monstera_home)가 떴다.
+         고르는 차례: ① 새 줄 fresh[0] — 기다림이 아닐 때만(leaf_two 같은 늘 기다림 줄이 48시간 칩을 막지 않게) · ② qv.chip.
+         머리: 고른 줄이 사슬의 next 면 «n/total · 짧은 이름» · 새 줄이면 «새 {ko}» · 아니면 «할 일». 몸: 고른 줄의 칩 글(§questRowChipLine) */
+    const fresh0 = (Array.isArray(qv.fresh) && qv.fresh[0] && !qv.fresh[0].waiting) ? qv.fresh[0] : null;
+    const pick = fresh0 || qv.chip || null;
+    questChain = (qv.chain && qv.next && pick && pick.id === qv.next.id) ? { index: qv.chain.index, total: qv.chain.total, id: qv.next.id, ko: qv.next.ko } : null;
     /* ★ 2026-10-08 [plan] b3a49dbc P3 — 새로 열린 줄(열린 날이 오늘·어제 · current 아님)을 48시간 칩 첫 줄로 */
-    questFresh = (Array.isArray(qv.fresh) && qv.fresh[0]) ? { id: qv.fresh[0].id, ko: qv.fresh[0].ko, todo: qv.fresh[0].todo || null } : null;
+    questFresh = fresh0 ? { id: fresh0.id, ko: fresh0.ko, todo: questRowChipLine(fresh0) } : null;
   } catch { questGoal = null; questChain = null; }
 
   /* ★ 2026-10-24 총괄 다듬기 6-2(core 뿌리 찾음) — 이사한 뒤엔 튜토리얼 줄(quest[fp.phase])로 절대 안 떨어진다.
@@ -13354,9 +13377,16 @@ function guard(fn) {
          박사님 사진에서 「다시 심기 실패」와 「하루 안 넘어감」이 같은 말로 읽힌 까닭이 이것이다.
          ⚠ 무엇이 안 됐는지는 **`e.message` 가 이미 말한다**(「…다시 심습니다」·「…놓아 주세요」).
            머리말은 「됐나 안 됐나」와 「고칠 수 있나」만 말한다. */
-      errBox.push(
+      /* ★★ 2026-10-31 총괄 D93 ⑤ m9 (plan 28edd259 §4) — 체력이 막은 것(e.stamina · stamina §staminaError)은 머리말이 다르다:
+           고칠 것이 없고 내일이면 찬다 ⇒ «⚠ 오늘 손이 다 떨어졌습니다» + «{무엇}은 내일 할 수 있습니다 — [다음 날]을 누르면 {max}만큼 다시 찹니다».
+           ★ 다른 tutorialInput 머리말 «고친 뒤 다시 눌러 주세요»도 사람이 고장 낸 것이 아니라 어색했다 ⇒ «까닭은 아래에 있습니다»(plan §4 곁 · core 고름) */
+      if (recoverable && e.stamina) {
+        const what = e.stamina.what || '그 일';
+        errBox.push(`⚠ 오늘 손이 다 떨어졌습니다<br>${josa(what, '은', '는')} 내일 할 수 있습니다 — ` +
+                    `[다음 날]을 누르면 ${e.stamina.max}만큼 다시 찹니다`);
+      } else errBox.push(
         `${recoverable ? '⚠ 안 됐습니다' : '⛔ 진행을 멈췄습니다'} — ` +
-        `${stateText}<br>${e.message}`);
+        `${stateText === '고친 뒤 다시 눌러 주세요' ? '까닭은 아래에 있습니다' : stateText}<br>${e.message}`);
       console.error(e);
     }
   };
@@ -13776,11 +13806,17 @@ function drawMealPanel() {
     /* ★★ **남는 것을 반드시 말한다**(박사님: *"남는 거 팔아먹든 하는 거"*) —
        버려지는 줄 알면 급하게 팔거나 시루를 안 늘린다. */
     + row('남는 보유 채소', formatGram(ms.restGrams), ms.restGrams > 0 ? '' : 'dim')
-    + (ms.restGrams > 0 ? why('버려지지 않습니다 — 그대로 쌓이고 [상점]에서 팔 수 있습니다') : '');
+    /* ★ 2026-10-31 D93 ⑤ M3 ①-3 — 파는 말은 아래 한 문장(§mealSay)만 한다(한 판에 두 번 안 말함) · 곳간은 쉬지 않는다 */
+    + (ms.restGrams > 0 ? why('버려지지 않습니다 — 그대로 쌓여 다음 밥상에 오릅니다') : '');
 
   /* ══ ★ 「왜 이 값인가」 한 줄 — **네 갈래를 갈라 말한다** ═══════════════════════
      ⚠ 옛 화면은 넷을 「곳간이 그만큼 없습니다」 하나로 뭉갰고, 그래서 셋에서 거짓말을 했다. */
   const say = $('mealSay');
+  /* ★★ 2026-10-31 총괄 D93 ⑤ M3 (plan 28edd259 §1 ①) — «오늘 먹은 뒤»의 남는 몫(작물마다 이레치 밥상 몫 위) · 판 값은 판매 창 기본값과 같은 셈 */
+  let mealSur = { lots: 0, grams: 0, won: 0 };
+  try { mealSur = pantrySurplusOf(null, pantryAfterMealFp()); } catch { }
+  const surSay = mealSur.lots > 0
+    ? `이레치 밥상 몫을 남기고도 ${formatGram(mealSur.grams)}이 더 있습니다 — [상점]에서 팔면 ${won(mealSur.won)}입니다.` : '';
   if (ms.savedWon <= 0) {
     /* ★ 0g 은 고를 수 있어야 한다(모아서 파는 길). 다만 **밥값이 그대로 나간다**는 것을
        그 자리에서 말한다 — 안 말하면 「아꼈다」로 오해한다. */
@@ -13796,16 +13832,17 @@ function drawMealPanel() {
     /* ★★★ 여기가 옛 화면이 거짓말하던 자리다(위 ㉠). 곳간은 남아 있다 — **규칙이 안 올린다** */
     /* ★ 2026-10-30 [plan] D90 ⑤ 한 목소리 «하루 밥상에 오를 몫은 먹고, 그 위로 쌓이는 것은 판다» — «숫자 벽»(비판 판 ④)을 걷었다.
          참: 이 갈래 = 규칙이 더 안 올림(같은 작물 둘째 몫 1,200원 < 판 값) · 곳간이 남음 · 곳간은 안 쉰다 */
+    /* ★ D93 ⑤ ① — «남은 N 은 파는 편이 낫습니다»는 다음 밥상까지 «팔라»로 읽혔다(비판 둘째 판 M3 ① · 첫 수확 700g 은 다음 이틀 밥상) */
     say.textContent =
       `오늘 밥상에 오를 몫은 다 올렸습니다 — 둘째 몫을 같은 작물로 채우면 파는 것보다 못합니다. ` +
-      `남은 ${formatGram(ms.restGrams)}은 [상점]에서 파는 편이 낫습니다.`;
+      (surSay || `남은 ${formatGram(ms.restGrams)}은 다음 밥상에 오릅니다.`);
     say.className = 'pquote';
   } else if (ms.savedWon < ms.capWon) {
     /* 진짜로 곳간이 모자란 판 — 이때만 곳간을 탓한다 */
     say.textContent = `보유 채소가 모자라 오늘 아낄 수 있는 ${won(ms.capWon)}을 다 못 채웠습니다.`;
     say.className = 'pquote warn';
   } else {
-    say.textContent = `오늘 아낄 수 있는 만큼 다 아꼈습니다 (하루 상한 ${won(ms.capWon)}).`;
+    say.textContent = `오늘 아낄 수 있는 만큼 다 아꼈습니다 (하루 상한 ${won(ms.capWon)}).` + (surSay ? ' ' + surSay : '');   /* ★ D93 ⑤ ①-2 두 작물을 다 먹는 날에도 남는 몫은 생긴다 */
     say.className = 'pquote';
   }
 }
@@ -19701,11 +19738,6 @@ function lotsBriefKo(list, fallbackKo) {
 function drawPantrySale() {
   /* ★ 「다 팔면 몇 %」 — 위 안내 한 줄만 쓰는 물음이다. 못 재면 넘어온 값을 그대로 쓴다
      (모르면 «지어내지 않는다» — 옛 값이 그르더라도 새 거짓말을 만들진 않는다). */
-  const pantryHintRate = (n, fallback) => {
-    try { const q = pantrySaleStatus(S, n, { kind: pantrySellKind });
-          return (q && Number.isFinite(q.rate) && q.rate > 0) ? q.rate : fallback; }
-    catch { return fallback; }
-  };
   const btn = $('sellPantry'), hint = $('pantryHint'), panel = $('pantryPanel');
   if (!btn || !panel) return;
   let ps = null;
@@ -19744,6 +19776,8 @@ function drawPantrySale() {
   const cashWon = (S.tutorial && S.tutorial.cashWon) || 0;
   const lowCash = Number.isFinite(rentWon) && rentWon > 0 && cashWon < rentWon;
   let allWon = 0;
+  let sur = { lots: 0, grams: 0, won: 0 };
+  try { sur = pantrySurplusOf(pantrySellKind); } catch { }
   if (lowCash && max > 0) {
     try { allWon = (pantrySaleStatus(S, max, { kind: pantrySellKind }) || {}).won || 0; } catch { }
   }
@@ -19753,19 +19787,14 @@ function drawPantrySale() {
         /* ⚠ `textContent` 라 `**굵게**` 가 글자로 그대로 나온다 — 대사(§dlgText)와 다르다 */
         ? `지금은 월세가 먼저입니다 — 다 팔면 ${allWon.toLocaleString()}원, ` +
           `월세의 ${(allWon / rentWon * 10).toFixed(1).replace(/\.0$/, '')}할입니다`
-        /* ⚠⚠ 2026-08-23 — 여기서 `ps.rate` 를 쓰면 «틀린 수»가 나온다.
-             `ps` 는 `pantrySaleStatus(S, pantrySellN, …)` 이고 `pantrySellN` 은 처음에 **1** 이라,
-             이 줄은 «맨 앞 한 판»의 비율을 말하고 있었다. 그런데 문장은 「N판이 있습니다」다.
-           ★ 눌러서 쟀다(`tools/probe_pantrysale.mjs`) — 곳간이 섞이면 이렇게 갈린다:
-               콩나물 2 + 무순 2 (콩나물 먼저)  화면 «70%»  · 다 팔면 74%   ⇒ 덜 준다고 말한다
-               무순 2 + 콩나물 2 (무순 먼저)    화면 «80%»  · 다 팔면 74%   ⇒ ⛔ «더» 준다고 말한다
-           ⇒ ⛔ 뒤엣것이 나쁘다 — 「팔면 80% 받는다」를 읽고 팔았는데 74% 만 들어온다.
-           ⇒ ★ 그래서 이 줄만 **「다 팔 때」**로 다시 묻는다. 문장이 「N판이 있습니다」라고
-             말하고 있으니 비율도 **그 N판의 비율**이어야 한다.
-           ⚠ `ps` 자체는 안 건드린다 — ± 고르개가 그 값을 쓴다. 여기 한 줄만 다른 물음이다. */
-        : `보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판이 있습니다 — ` +
-          `밥으로 먹을 몫입니다. 팔면 ${Math.round(pantryHintRate(max, ps.rate) * 100)}%만 받습니다`)
-    : '보유 채소가 없습니다 — 거둔 채소가 쌓이면 여기서 팔 수 있습니다 (밥으로 먹는 편이 이득입니다)';
+        /* ★★ 2026-10-31 총괄 D93 ⑤ M3 (plan 28edd259 §1 ②) — 한 규칙(이레치 밥상 몫은 남기고 그 위는 판다)으로 말한다.
+             ⛔ 예전 «밥으로 먹을 몫입니다. 팔면 N%만 받습니다»는 남는 몫까지 «팔지 마라»로 읽혀 밥상 판의 «파는 편이 낫습니다»와 반대로 말했다(비판 둘째 판 M3 ①).
+             «N%만»은 걷었다 — 파는 손해는 남길 몫 안에서만 참이고, 그 말은 판매 창이 «얼마나 파고드나»로 한다 */
+        : (sur.lots > 0
+            ? `보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판 — 이레치 밥상 몫을 넘는 ${sur.lots}판(${formatGram(sur.grams)})은 팔아도 밥상이 그대로입니다`
+            : `보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판 — 아직 이레치 밥상 몫에 못 미칩니다. 팔면 다음 수확 전에 밥상이 빌 수 있습니다`))
+    /* ★ D93 ⑤ ②-2 — 판 직후 «밥으로 먹는 편이 이득»이 «방금 판 것이 틀렸다»로 읽혔다(M3 ①) */
+    : '보유 채소가 없습니다 — 거둔 채소는 밥상에 먼저 오르고, 이레치 밥상 몫을 넘게 쌓이면 여기서 팝니다';
 
   /* ★ 2026-08-17 — 팝업이 됐다(`.pop.on`). 예전에는 시트 안 구르는 칸에 붙어 있어
      **눌러도 화면 밖(실측 y=1211 · 화면 844)에 떴다.** 스크림과 카드가 한 요소라
@@ -19775,13 +19804,16 @@ function drawPantrySale() {
   if (!pantrySellOpen || max <= 0) return;
 
   pantrySellN = Math.max(1, Math.min(max, pantrySellN));
-  try { ps = pantrySaleStatus(S, pantrySellN); } catch { return; }
+  /* ★ 2026-10-31 D93 ⑤ — 고른 갈래를 같이 묻는다(예전엔 여기서 빠져 ▶ 가 섞인 곳간 앞 n판에 찍혔다 — 파는 것은 [이 값에 팔기]가 갈래로 팔았다) */
+  try { ps = pantrySaleStatus(S, pantrySellN, { kind: pantrySellKind }); } catch { return; }
 
   /* 무엇이 몇 판 있는지 — 먼저 거둔 것이 앞이다. 나갈 판에 표시를 남긴다 */
   /* ★ 2026-08-16 — **날짜만 뗐다.** 여기서는 줄을 안 합친다 —
      `▶` 가 「이번에 나갈 판」을 가리키므로 합치면 몇 판이 나가는지가 안 보인다. */
+  /* ★ 2026-10-31 D93 ⑤ M3 — ▶ 는 «앞에서 n판»이 아니라 견적이 고른 꾸러미(§pantrySaleOrder · 남는 몫 먼저)에 찍는다 */
+  const pickedSet = new Set(ps.pickedIdx || []);
   $('pantryList').textContent = ps.list
-    .map((l, i) => `${i < ps.lots ? '▶ ' : ''}${l.kindKo} ${formatGram(l.g)}`)
+    .map((l, i) => `${pickedSet.has(i) ? '▶ ' : ''}${l.kindKo} ${formatGram(l.g)}`)
     .join(' · ');
   /* ★ 갈래를 골랐으면 **그 이름을 제목에 적는다** — 「무엇을 파는지」가 창에 없으면
      콩나물을 눌렀는데 무순이 팔려도 사람이 알 길이 없다(2026-08-17). */
@@ -19799,13 +19831,20 @@ function drawPantrySale() {
   /* ★ 2026-10-30 총괄 D90 ⑤ — 글은 plan(plan-to-core-d90 ⑤-1) · 이레치 = 14끼(first_play §PANTRY_KEEP_MEALS · growth 하네스 keepMeals 와 같은 자).
        남는 몫을 꼭 맞게 팔 때 «이레치 밥상 몫은 남깁니다» · 그보다 더 팔면 «밥상에 올릴 몫까지» · 덜 팔면 예전 글(둔 g 이 참).
        갈래(그 채소만)를 골랐을 때는 남는 몫을 갈래로 못 가르므로 예전 글 그대로 */
-  const keep = (() => { try { return pantrySellKind ? null : pantryKeepStatus(S.firstPlay); } catch { return null; } })();
-  const leftG = Math.max(0, ps.pantryGrams - ps.pendingGrams);
+  /* ★★ 2026-10-31 총괄 D93 ⑤ M3 (plan 28edd259 §1 ③ · ③-5) — 작물마다 세므로 갈래 창(그 채소만)도 같은 넷으로 말한다.
+       ③-3 남는 몫보다 많이 — «얼마나 파고드나»(이레치 밥상 몫 중 N g) · 지갑 < 월세면 «지금은 월세가 먼저입니다»(M3 ③: 1kg 만 남겨도 늘 같은 말이던 것) */
+  let sur2 = { lots: 0, grams: 0, won: 0 };
+  try { sur2 = pantrySurplusOf(pantrySellKind); } catch { }
+  const haveG = pantrySellKind ? ps.list.filter(l => l.kind === pantrySellKind).reduce((a, l) => a + (l.g || 0), 0) : ps.pantryGrams;
+  const leftG = Math.max(0, haveG - ps.pendingGrams);
   const sayWon = `${formatGram(ps.pendingGrams)}을 ${ps.won.toLocaleString()}원에 팝니다.`;
-  $('pantryQuote').textContent = !leftG ? `${sayWon} 다 팝니다 — 밥상에 올릴 채소가 안 남습니다.`
-    : (keep && keep.sellLots > 0 && ps.lots === keep.sellLots)
+  $('pantryQuote').textContent = !leftG
+    ? `${sayWon} 다 팝니다 — 밥상에 올릴 ${kindKo ? josa(kindKo, '이', '가') : '채소가'} 안 남습니다.`
+    : (sur2.lots > 0 && ps.lots === sur2.lots)
     ? `이레치 밥상 몫은 남깁니다 — 나머지 ${formatGram(ps.pendingGrams)}을 ${ps.won.toLocaleString()}원에 팝니다. 밥상은 그대로입니다.`
-    : (keep && ps.lots > keep.sellLots) ? `${sayWon} 밥상에 올릴 몫까지 팝니다 — 그만큼 밥값이 나갑니다.`
+    : (ps.lots > sur2.lots)
+    ? `${sayWon} 이레치 밥상 몫 중 ${formatGram(Math.max(0, ps.pendingGrams - sur2.grams))}까지 팝니다 — ` +
+      (lowCash ? '지금은 월세가 먼저입니다.' : '다음 수확 전에 밥상이 빌 수 있습니다.')
     : `${sayWon} ${formatGram(leftG)}은 그대로 둡니다.`;
   $('pantryGo').disabled = !ps.canSell;
 }
@@ -19813,13 +19852,34 @@ function drawPantrySale() {
 $('sellPantry').onclick = guard(() => {
   /* ★ 누르면 바로 안 판다 — **고르는 자리가 먼저 뜬다**(박사님 요청) */
   pantrySellOpen = !pantrySellOpen;
+  pantrySellKind = null;                /* ★ 2026-10-31 D93 ⑤ 상점 단추는 섞어서 — 가방 채소 칸에서 고른 갈래가 남아 «보유 채소 팔기»가 그 작물만 팔 뻔했다 */
   pantrySellN = pantrySellDefaultN();   /* ★ 2026-10-30 D90 ⑤ 남는 몫 */
   drawPantrySale();
 });
 /* ★ 2026-10-30 총괄 D90 ⑤ — 섞어 파는 창의 기본 판 수 = 남는 몫(곳간 − 이레치 밥상 몫 · first_play §pantryKeepStatus) · 남는 몫이 없으면 예전대로 1판.
      ⚠ 그 채소만 파는 창(가방 채소 칸)은 1판 그대로 — 남는 몫을 갈래로 못 가른다 */
-function pantrySellDefaultN() {
-  try { const k = pantryKeepStatus(S.firstPlay); return k.sellLots > 0 ? k.sellLots : 1; } catch { return 1; }
+/* ★★ 2026-10-31 총괄 D93 ⑤ M3 (plan 28edd259 §1-2) — 그 채소만 파는 창(가방 채소 칸)도 그 작물의 남는 몫 판 수가 기본이다(이제 작물마다 센다) */
+function pantrySellDefaultN(kind) {
+  try { const n = pantrySurplusOf(kind || null).lots; return n > 0 ? n : 1; } catch { return 1; }
+}
+/* ★★★ 2026-10-31 총괄 D93 ⑤ M3 (plan 28edd259 §1 «파는 말 한 규칙») — **남는 몫 견적 하나**.
+     밥상 판 · 상점 줄 · 판매 창 · 가계부가 이것만 본다(규칙은 first_play §pantryKeepStatus — 작물마다 이레치 밥상 몫은 남기고 그 위는 판다).
+     kind 를 주면 그 작물만(갈래 창) · fp 를 주면 그 곳간(밥상 판의 «먹은 뒤» 복사본).
+     반환 { lots(남는 판 수) · grams · won(그 판들을 판 값 = 판매 창 기본값과 같은 셈) } */
+function pantrySurplusOf(kind, fp) {
+  fp = fp || S.firstPlay;
+  const k = pantryKeepStatus(fp);
+  const lots = kind ? (((k.byKind || []).find(b => b.kind === kind) || {}).sellLots || 0) : k.sellLots;
+  const q = lots > 0 ? pantrySaleQuote(fp, lots, kind ? { kind } : {}) : null;
+  return { lots, grams: q ? q.pendingGrams : 0, won: q ? q.won : 0 };
+}
+/* 밥상 판이 말하는 «오늘 먹은 뒤»의 곳간 — 복사본에서만 먹는다(진짜 곳간은 [다음 날]의 §eatFromPantry 가 먹는다 · 두 번 먹지 않게) */
+function pantryAfterMealFp() {
+  const fp = S.firstPlay;
+  if (!fp || !fp.food) return fp;
+  const sim = { ...fp, food: JSON.parse(JSON.stringify(fp.food)) };
+  eatFromPantry(sim);
+  return sim;
 }
 $('pantryMinus').onclick = guard(() => { pantrySellN -= 1; drawPantrySale(); });
 $('pantryPlus').onclick  = guard(() => { pantrySellN += 1; drawPantrySale(); });
@@ -19836,7 +19896,7 @@ $('pantryCancel').onclick = guard(() => { closePantryPanel(); });
    ★ 셋 다 **돈이 안 나간다.** 파는 것은 [이 값에 팔기] 하나뿐이다.
    ⚠ 뒤 누르기는 `e.target === 팝업 자신` 일 때만이다. 카드 안을 누른 것이 위로 올라와
      닫히면 ± 를 누를 때마다 창이 사라진다. */
-function closePantryPanel() { pantrySellOpen = false; pantrySellN = 1; drawPantrySale(); }
+function closePantryPanel() { pantrySellOpen = false; pantrySellN = 1; pantrySellKind = null; drawPantrySale(); }
 for (const [id, close] of [['pantryPanel', closePantryPanel], ['mealPanel', closeMealPanel],
                            ['buyPanel', closeBuyPanel], ['monthPanel', closeMonthPanel],
                            ['questPanel', closeQuestPanel]]) {

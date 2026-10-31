@@ -35,7 +35,7 @@ import { useStock, assertStockAll, shopOf, CATALOG,
 /* ★ 체력 — 하루에 돌볼 수 있는 양. **규칙도 값도 전부 그쪽 모듈이 갖는다**(docs/stamina.md).
    여기서 새 비용을 만들지 않는다 — `ACT_COST.cut` · `ACT_COST.repot` 을 그대로 쓴다.
    ⚠ 이 import 는 한 방향이다: propagation → stamina. stamina 는 아무것도 안 부른다. */
-import { canAct as canActStamina, spend as spendStamina } from './stamina.js';
+import { canAct as canActStamina, spend as spendStamina, staminaError } from './stamina.js';
 
 /* ★ 2026-08-17 — `cutting/1`(키메라 세 갈래) → **`cutting/2`**(빛이 정한다).
    ⚠ 이 값으로 **막지 않는다.** 옛 판(`cutting/1`)이 그대로 열려야 하고, 실제로 열린다 —
@@ -1246,7 +1246,7 @@ export function takeCutting(S, opt = {}) {
        안 붙이면 판이 통째로 잠긴다. */
   {
     const st = canActStamina(S, 'cut');
-    if (!st.ok) { const e = new Error('[삽수] ' + st.reason); e.tutorialInput = true; throw e; }
+    if (!st.ok) throw staminaError('[삽수]', '자르기', st);   /* ★ D93 ⑤ m9 */
   }
 
   /* ★ 용기를 실제로 쓴다 — 여기서 재고가 하나 빠진다(§용기값). 없으면 `useStock` 이 던지고,
@@ -2205,7 +2205,7 @@ export function repotCutting(S, cuttingOrId, opt = {}) {
        그래서 `tutorialInput` 이 맞다(고장이 아니라 "오늘은 여기까지"라는 안내다). */
   {
     const st = canActStamina(S, 'repot');
-    if (!st.ok) { const e = new Error('[삽수] ' + st.reason); e.tutorialInput = true; throw e; }
+    if (!st.ok) throw staminaError('[삽수]', '옮겨 심기', st);   /* ★ D93 ⑤ m9 */
   }
 
   /* ★ 분갈이도 **포트를 하나 쓴다**. 옮겨 심으려면 심을 그릇이 있어야 한다 —

@@ -42,7 +42,7 @@ import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES
          unpackCropsAfterMove } from './lib/byeot_harness.mjs';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop, placedItems } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
-import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote, pantryKeepStatus } from '../src/game/first_play.js';
+import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote, pantryKeepStatus, setPantryLegacyRule } from '../src/game/first_play.js';
 import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
 import { useStock, creditSpeciesSale, furnitureItemIdOf } from '../src/game/shop.js';
@@ -395,7 +395,8 @@ export async function play(name, seed, opt = {}) {
       if (P.follow && S.day % 5 === 0) {
         try { const q = pantrySaleQuote(S.firstPlay, 0);
               /* ★ 10-30 keepMeals — first_play §pantryKeepStatus(core 975f4c67 · 새 꾸러미부터 끼니를 세어 그 몫만 남김 · sellLots = 앞의 남는 판 수)와 한 자리 */
-              const n = Number.isFinite(P.keepMeals) ? pantryKeepStatus(S.firstPlay, P.keepMeals).sellLots : (q && q.maxLots || 0) - PANTRY_KEEP;
+              /* ★ 10-31 core D93 ⑤ M3 — 게임과 같은 자(작물마다 이레치 g · 남는 몫 먼저 판다 · sellPantryCrop 의 앞 n판 = 남는 몫) · --legacy-pantry 면 옛 14끼 · 앞에서부터 */
+              const n = Number.isFinite(P.keepMeals) ? pantryKeepStatus(S.firstPlay).sellLots : (q && q.maxLots || 0) - PANTRY_KEEP;
               if (n > 0) { hand('sell'); const r = led('veg', () => sellPantryCrop(S, n)); out.pantrySoldWon = (out.pantrySoldWon || 0) + ((r && r.won) || 0); } } catch { }
       }
       /* ── 가구(화분대) — 가구점이 열리면 한 번씩(D47 · 돈만) ── */
@@ -1360,6 +1361,7 @@ export async function play(name, seed, opt = {}) {
 /* ══ 자식 판(--one) ══ */
 if (arg('one', null)) {
   const o = JSON.parse(arg('one'));
+  if (o.legacyPantry) setPantryLegacyRule(true);   /* ★ D93 ⑤ 옛 곳간 규칙(14끼 · 앞에서부터)과 견주기 */
   const r = await play(o.name, o.seed, o);
   process.stdout.write(JSON.stringify(r) + '\n');
   process.exit(0);
@@ -1379,12 +1381,14 @@ const MOVECOST = arg('movecost', null) == null ? null : Number(arg('movecost'));
 const CROPMULT = arg('cropmult', null) == null ? null : Number(arg('cropmult'));
 const TRACE = !!arg('trace', false);
 const LEGACY_SEAT = !!arg('legacy-seat', false);   /* ★ D92 ㉯ — 이사 뒤 작물을 옛 손(sill:0 한 점)으로 · 옛 숫자와 견주기 */
+const LEGACY_PANTRY = !!arg('legacy-pantry', false);   /* ★ D93 ⑤ — 곳간을 옛 규칙(14끼 · 앞에서 n판)으로 · 옛 숫자와 견주기 */
 const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false), nodoor: !!arg('nodoor', false),
                                                          ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}),
                                                          ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}), ...(TRACE ? { trace: true } : {}),
                                                          ...(Number.isFinite(MOVECOST) ? { movecost: MOVECOST } : {}),
                                                          ...(Number.isFinite(CROPMULT) ? { cropmult: CROPMULT } : {}),
-                                                         ...(LEGACY_SEAT ? { legacySeat: true } : {}) })));
+                                                         ...(LEGACY_SEAT ? { legacySeat: true } : {}),
+                                                         ...(LEGACY_PANTRY ? { legacyPantry: true } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {

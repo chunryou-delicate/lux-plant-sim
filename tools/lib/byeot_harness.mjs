@@ -255,6 +255,8 @@ export function questSnapshotOf(S, io, opt = {}) {
     /* ★ 2026-10-30 D90 ④ — game.html §questSnapshotNow 와 같은 함수(곳간 판 횟수 · 이레치 밥상 몫 넘친 g) */
     pantrySoldCount: (() => { try { return pantrySoldCountOf(fp); } catch { return null; } })(),
     pantryOverKeepGrams: (() => { try { return pantryKeepStatus(fp).overKeepGrams; } catch { return null; } })(),
+    /* ★ 2026-10-31 D93 ⑤ — game.html §questSnapshotNow 와 같은 칸(곳간을 마지막으로 판 날 · first_play §noteLastSold) */
+    pantryLastSoldDay: (() => { const d = fp && fp.food && fp.food.pantryLastSoldDay; return Number.isInteger(d) ? d : null; })(),
     /* ★ 2026-10-08 — game.html questSnapshotNow §monsteraGrowing 과 같은 자(그날 하늘 · 자리 표 · bandOf · 안 자람 셋 아님). real 판의 날씨 기댓값은 화면만 쓴다 */
     monsteraGrowing: (() => { const p0 = pot0(S); if (!p0 || !p0.slotId) return false;
       try { const sky = io.light.skyFor(S.day, S.sim); const d = io.light.dliOfSlot(p0.at ? p0 : p0.slotId, { weather: sky.weather, season: sky.season, lampCount: (S.lamps && S.lamps.count) || 0, litHours: (S.lamps && S.lamps.litHours) || 0 });

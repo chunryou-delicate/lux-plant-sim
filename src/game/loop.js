@@ -81,7 +81,7 @@ import { cropPotList as cropPotListNow } from './first_play.js';
 import { pantryLotsOf } from './first_play.js';   /* ★ D35 — 반찬가게가 가져갈 곳간 꾸러미(§neighborOrderStep) */
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { resetDay, spend as spendStamina, canAct as canActStamina,
-         staminaView } from './stamina.js';
+         staminaView, staminaError } from './stamina.js';
 import { weekStats, WEATHER_P } from '../engine/weather.js';
 import { judgeDLI } from '../engine/daily_light.js';
 /* ★ 퀘스트가 아는 문턱을 읽으려고 부른다(§cropEnough). quest.js 는 loop 을 안 부르므로 순환이 아니다 */
@@ -1625,7 +1625,7 @@ export function harvestCrop(S, io, opt = {}) {
      ⚠ `tutorialInput` 을 붙인다 — 이건 고장이 아니라 안내다(game.html isRecoverable). */
   {
     const st = canActStamina(S, 'harvest');
-    if (!st.ok) { const e = new Error('[수확] ' + st.reason); e.tutorialInput = true; throw e; }
+    if (!st.ok) throw staminaError('[수확]', '거두기', st);   /* ★ D93 ⑤ m9 */
   }
   /* ★★ 2026-08-04 — `b.harvested`(하나라도 거뒀나)로 막지 않는다. 시차 판에서는 거의 늘 true 라
      **둘째 시루가 익어도 못 거두게 된다.** 판정은 언제나 "익은 시루가 있나"다(first_play.js). */

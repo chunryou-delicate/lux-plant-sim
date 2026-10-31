@@ -179,9 +179,10 @@ console.log('\n== B. ★★★ 받을 돈이 팝업 안에 있고 «손해»는 
   ok('★★ 받을 돈이 적혀 있다(«N원에 팝니다»)', /[\d,]+원에 팝니다/.test(say) && nums.length >= 1 && nums[0] > 0, say);
   /* ★ 2026-10-30 [core] D90 ⑤ — 이레치 밥상 몫(14끼 · first_play §pantryKeepStatus)이 들어와 글이 넷이다: 남는 몫만 «이레치 밥상 몫은 남깁니다» ·
        더 팔면 «밥상에 올릴 몫까지 팝니다» · 덜 팔면 «그대로 둡니다» · 다 팔면 «다 팝니다». 이 판은 거둔 두 판(끼니 < 14)이라 한 판도 밥상 몫이다(§H 가 남는 몫을 잰다) */
-  const meals = await page.eval(`(window.__S().firstPlay.food.pantryLots||[]).reduce((a,l)=>a+(l.meals||0),0)`);
-  ok('★ 남는 것 · 다 파는 날의 무게를 말한다', /그대로 둡니다|다 팝니다 — 밥상에 올릴 채소가 안 남습니다|밥상에 올릴 몫까지 팝니다|이레치 밥상 몫은 남깁니다/.test(say), say);
-  if (meals < 14) ok('★ 곳간이 이레치(14끼)에 못 미치면 한 판도 «밥상에 올릴 몫까지»', /밥상에 올릴 몫까지 팝니다/.test(say), `끼니 ${meals} · ${say}`);
+  /* ★ 2026-10-31 core D93 ⑤ M3 (plan 28edd259 §1) — 이레치 = 작물마다 한 몫 × 7(g · 콩나물 2.1kg) · 더 팔면 «이레치 밥상 몫 중 N 까지 팝니다 — …» */
+  const sellLots = await page.eval(`(async()=>(await import('./src/game/first_play.js')).pantryKeepStatus(window.__S().firstPlay).sellLots)()`, true);
+  ok('★ 남는 것 · 다 파는 날의 무게를 말한다', /그대로 둡니다|다 팝니다 — 밥상에 올릴 채소가 안 남습니다|이레치 밥상 몫 중 .+까지 팝니다|이레치 밥상 몫은 남깁니다/.test(say), say);
+  if (sellLots === 0) ok('★ 곳간이 이레치 밥상 몫에 못 미치면 한 판도 «이레치 밥상 몫 중 … 까지»', /이레치 밥상 몫 중 .+까지 팝니다 — (다음 수확 전에 밥상이 빌 수 있습니다|지금은 월세가 먼저입니다)\./.test(say), `남는 판 ${sellLots} · ${say}`);
   ok('★ 무게도 g 으로 적혀 있다', /\d+(\.\d+)?\s*(g|kg)/.test(say), say);
 }
 
@@ -284,7 +285,8 @@ await sleep(400);
      !!card && card.y >= 0 && card.y + card.h <= vp.h &&
      Math.abs((card.x + card.w / 2) - vp.w / 2) <= 2, JSON.stringify(card));
   /* ★ 2026-10-30 [plan] D90 ⑤ — 밥상 글이 한 목소리로 바뀌었다(«… 남은 Ng은 [상점]에서 파는 편이 낫습니다» · c8448676). 총괄 고정 판 걸음에서 잡힘 */
-  ok('★ 남는 몫을 말한다', /쌓입니다|아낍니다|파는 편이 낫습니다/.test(await txt('#mealSay')), await txt('#mealSay'));
+  /* ★ 2026-10-31 core D93 ⑤ ① — «파는 편이 낫습니다» → 남는 몫 있으면 «이레치 밥상 몫을 남기고도 …» · 없으면 «다음 밥상에 오릅니다» */
+  ok('★ 남는 몫을 말한다', /쌓입니다|아낍니다|다음 밥상에 오릅니다|이레치 밥상 몫을 남기고도/.test(await txt('#mealSay')), await txt('#mealSay'));
 
   /* [그만두기] — 하루가 **안** 간다 */
   const b1 = await money();
@@ -363,8 +365,9 @@ for (const w of [360, 390, 430]) {
 }
 
 /* ══ H. 남는 몫 — 기본 판 수 · 글 넷(core 10-30 · 총괄 D90 ⑤) ═════════════
-   ⚠ 지름길로 곳간을 세운다(§G 와 같은 까닭) — 재는 것은 «기본 판 수 = 곳간 − 이레치 밥상 몫(14끼)»과 그 글이다.
-   한 판 3끼 × 10판 = 30끼 ⇒ 새 것부터 5판(15끼)을 남기고 앞 5판이 남는 몫 */
+   ⚠ 지름길로 곳간을 세운다(§G 와 같은 까닭) — 재는 것은 «기본 판 수 = 곳간 − 이레치 밥상 몫»과 그 글이다.
+   ★ 2026-10-31 core D93 ⑤ M3 — 이레치 = 작물마다 한 몫 × 7(g · 콩나물 300g × 7 = 2.1kg · plan 28edd259 §1).
+     콩나물 300g × 10판 = 3kg ⇒ 새 것부터 7판(2.1kg)을 남기고 앞 3판이 남는 몫 (옛 14끼 자: 5판) */
 console.log('\n== H. ★★ 남는 몫 — 기본 판 수 · 이레치 밥상 몫 글 ==');
 {
   await page.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: false });
@@ -376,14 +379,15 @@ console.log('\n== H. ★★ 남는 몫 — 기본 판 수 · 이레치 밥상 �
   await click('sellPantry'); await sleep(500);
   ok('★ 고르개가 열린다', await on('pantryPanel'));
   const n0 = await txt('#pantryCount'), q0 = await txt('#pantryQuote');
-  ok('★★ 기본 판 수 = 남는 몫(10판 − 이레치 5판)', n0 === '5판', n0);
+  ok('★★ 기본 판 수 = 남는 몫(10판 − 이레치 7판)', n0 === '3판', n0);
   ok('★★ «이레치 밥상 몫은 남깁니다 — 나머지 … 밥상은 그대로입니다»', /^이레치 밥상 몫은 남깁니다 — 나머지 .+원에 팝니다\. 밥상은 그대로입니다\.$/.test(q0), q0);
   await click('pantryMinus'); await sleep(250);
   const q1 = await txt('#pantryQuote');
-  ok('★ 덜 팔면 «그대로 둡니다»(4판)', /그대로 둡니다/.test(q1) && !/이레치|밥상에 올릴 몫/.test(q1), `${await txt('#pantryCount')} · ${q1}`);
+  ok('★ 덜 팔면 «그대로 둡니다»(2판)', /그대로 둡니다/.test(q1) && !/이레치|밥상에 올릴 몫/.test(q1), `${await txt('#pantryCount')} · ${q1}`);
   await click('pantryPlus'); await sleep(200); await click('pantryPlus'); await sleep(250);
   const q2 = await txt('#pantryQuote');
-  ok('★ 더 팔면 «밥상에 올릴 몫까지 팝니다 — 그만큼 밥값이 나갑니다»(6판)', /밥상에 올릴 몫까지 팝니다 — 그만큼 밥값이 나갑니다/.test(q2), `${await txt('#pantryCount')} · ${q2}`);
+  /* ★ D93 ⑤ ③-3 — «얼마나 파고드나»(한 판 300g) · 끝은 «빌 수 있습니다» 또는 지갑 < 월세면 «월세가 먼저» */
+  ok('★ 더 팔면 «이레치 밥상 몫 중 300g까지 팝니다 — …»(4판)', /이레치 밥상 몫 중 300g까지 팝니다 — (다음 수확 전에 밥상이 빌 수 있습니다|지금은 월세가 먼저입니다)\./.test(q2), `${await txt('#pantryCount')} · ${q2}`);
   await click('pantryAll'); await sleep(250);
   const q3 = await txt('#pantryQuote');
   ok('★ 다 팔면 «다 팝니다» 그대로', /다 팝니다 — 밥상에 올릴 채소가 안 남습니다/.test(q3), `${await txt('#pantryCount')} · ${q3}`);
@@ -394,7 +398,7 @@ console.log('\n== H. ★★ 남는 몫 — 기본 판 수 · 이레치 밥상 �
   const hasBag = await page.eval(`!!document.getElementById('bagSellCrop')`);
   if (hasBag) {
     await page.eval(`document.getElementById('bagSellCrop').click()`, false); await sleep(600);
-    ok('★ 가방 [보유 채소 팔기]도 기본 = 남는 몫', (await txt('#pantryCount')) === '5판', await txt('#pantryCount'));
+    ok('★ 가방 [보유 채소 팔기]도 기본 = 남는 몫', (await txt('#pantryCount')) === '3판', await txt('#pantryCount'));
     await click('pantryCancel'); await sleep(300);
   } else ok('★ 가방 [보유 채소 팔기] 단추가 있다', false, '없음');
   await page.eval(`window.__byeotSheet.close()`, false); await sleep(300);

@@ -801,7 +801,9 @@ function packFirstPlay(fp) {
                                   'firstPlay.food.totalPantrySoldWon', { min: 0 }),
       /* ★ 2026-10-30 총괄 D90 ④ — 곳간 판 횟수(first_play §pantrySoldCountOf · 할 일 sell_surplus). 안 실으면 저장 한 번에 사라져 그 줄이 다시 «안 끝남».
          옛 세이브·아직 안 판 판은 칸이 없다 → 칸을 안 만든다(0 으로 채우면 «판 돈이 있으면 1» 셈이 막힌다) */
-      ...(f.pantrySoldCount == null ? {} : { pantrySoldCount: needInt(f.pantrySoldCount, 'firstPlay.food.pantrySoldCount', { min: 0 }) })
+      ...(f.pantrySoldCount == null ? {} : { pantrySoldCount: needInt(f.pantrySoldCount, 'firstPlay.food.pantrySoldCount', { min: 0 }) }),
+      /* ★ 2026-10-31 총괄 D93 ⑤ — 곳간을 마지막으로 판 날(first_play §noteLastSold · 할 일 sell_surplus 끝). 옛 세이브 · 안 판 판은 칸이 없다 → 안 만든다(«모른다») */
+      ...(f.pantryLastSoldDay == null ? {} : { pantryLastSoldDay: needInt(f.pantryLastSoldDay, 'firstPlay.food.pantryLastSoldDay', { min: 0 }) })
     },
     monstera: {
       arrived: !!m.arrived,
