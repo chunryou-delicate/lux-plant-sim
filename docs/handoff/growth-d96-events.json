@@ -1,0 +1,2418 @@
+{
+ "pinned": "4e9de1da",
+ "cmd": "probe_branches --persona humanQ,guide --seeds g,1-10 --days 700 --targets 5000000 --jobs 6 --trace [--ev=0 | (기본) | --ev-choice=b]",
+ "runs": {
+  "humanQ": {
+   "off": {
+    "move": {
+     "done": 11,
+     "med": 135,
+     "p90": 140
+    },
+    "home": {
+     "done": 11,
+     "med": 350,
+     "p90": 440
+    },
+    "starved": 0,
+    "crash": 0,
+    "bjMinMed": 845500,
+    "bottomMed": 2880,
+    "bottomMin": 642,
+    "reliefRuns": 7,
+    "reliefBeforeMove": 0,
+    "reliefRelMed": 1,
+    "perSeed": [
+     {
+      "seed": 5,
+      "move": 135,
+      "home": 330,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 4,
+      "move": 135,
+      "home": 357,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 3,
+      "move": 133,
+      "home": 350,
+      "starved": null,
+      "bottom": 220852,
+      "cashAfterMoveCost": 228156,
+      "relief": []
+     },
+     {
+      "seed": "g",
+      "move": 135,
+      "home": 410,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 1,
+      "move": 135,
+      "home": 425,
+      "starved": null,
+      "bottom": 303864,
+      "cashAfterMoveCost": 331880,
+      "relief": []
+     },
+     {
+      "seed": 2,
+      "move": 140,
+      "home": 505,
+      "starved": null,
+      "bottom": 53886,
+      "cashAfterMoveCost": 60190,
+      "relief": []
+     },
+     {
+      "seed": 6,
+      "move": 140,
+      "home": 330,
+      "starved": null,
+      "bottom": 642,
+      "cashAfterMoveCost": 67190,
+      "relief": [
+       153
+      ]
+     },
+     {
+      "seed": 10,
+      "move": 135,
+      "home": 255,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 9,
+      "move": 140,
+      "home": 313,
+      "starved": null,
+      "bottom": 354134,
+      "cashAfterMoveCost": 410190,
+      "relief": []
+     },
+     {
+      "seed": 8,
+      "move": 135,
+      "home": 323,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 7,
+      "move": 135,
+      "home": 440,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     }
+    ]
+   },
+   "a": {
+    "move": {
+     "done": 11,
+     "med": 135,
+     "p90": 140
+    },
+    "home": {
+     "done": 11,
+     "med": 350,
+     "p90": 440
+    },
+    "starved": 0,
+    "crash": 0,
+    "bjMinMed": 845500,
+    "bottomMed": 4676,
+    "bottomMin": 3380,
+    "reliefRuns": 7,
+    "reliefBeforeMove": 0,
+    "reliefRelMed": 2,
+    "perSeed": [
+     {
+      "seed": 5,
+      "move": 135,
+      "home": 330,
+      "starved": null,
+      "bottom": 4676,
+      "cashAfterMoveCost": 10380,
+      "relief": [
+       137
+      ]
+     },
+     {
+      "seed": 4,
+      "move": 135,
+      "home": 357,
+      "starved": null,
+      "bottom": 4676,
+      "cashAfterMoveCost": 10380,
+      "relief": [
+       137
+      ]
+     },
+     {
+      "seed": 3,
+      "move": 133,
+      "home": 350,
+      "starved": null,
+      "bottom": 228352,
+      "cashAfterMoveCost": 235656,
+      "relief": []
+     },
+     {
+      "seed": "g",
+      "move": 135,
+      "home": 410,
+      "starved": null,
+      "bottom": 4676,
+      "cashAfterMoveCost": 10380,
+      "relief": [
+       137
+      ]
+     },
+     {
+      "seed": 1,
+      "move": 135,
+      "home": 425,
+      "starved": null,
+      "bottom": 311364,
+      "cashAfterMoveCost": 339380,
+      "relief": []
+     },
+     {
+      "seed": 2,
+      "move": 140,
+      "home": 505,
+      "starved": null,
+      "bottom": 61386,
+      "cashAfterMoveCost": 67690,
+      "relief": []
+     },
+     {
+      "seed": 6,
+      "move": 135,
+      "home": 330,
+      "starved": null,
+      "bottom": 3380,
+      "cashAfterMoveCost": 3380,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 10,
+      "move": 135,
+      "home": 255,
+      "starved": null,
+      "bottom": 4676,
+      "cashAfterMoveCost": 10380,
+      "relief": [
+       137
+      ]
+     },
+     {
+      "seed": 9,
+      "move": 140,
+      "home": 313,
+      "starved": null,
+      "bottom": 361634,
+      "cashAfterMoveCost": 417690,
+      "relief": []
+     },
+     {
+      "seed": 8,
+      "move": 135,
+      "home": 323,
+      "starved": null,
+      "bottom": 4676,
+      "cashAfterMoveCost": 10380,
+      "relief": [
+       137
+      ]
+     },
+     {
+      "seed": 7,
+      "move": 135,
+      "home": 440,
+      "starved": null,
+      "bottom": 4676,
+      "cashAfterMoveCost": 10380,
+      "relief": [
+       137
+      ]
+     }
+    ]
+   },
+   "b": {
+    "move": {
+     "done": 11,
+     "med": 135,
+     "p90": 140
+    },
+    "home": {
+     "done": 11,
+     "med": 350,
+     "p90": 440
+    },
+    "starved": 0,
+    "crash": 0,
+    "bjMinMed": 845500,
+    "bottomMed": 2880,
+    "bottomMin": 642,
+    "reliefRuns": 7,
+    "reliefBeforeMove": 0,
+    "reliefRelMed": 1,
+    "perSeed": [
+     {
+      "seed": 5,
+      "move": 135,
+      "home": 330,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 4,
+      "move": 135,
+      "home": 357,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 3,
+      "move": 133,
+      "home": 350,
+      "starved": null,
+      "bottom": 220852,
+      "cashAfterMoveCost": 228156,
+      "relief": []
+     },
+     {
+      "seed": "g",
+      "move": 135,
+      "home": 410,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 1,
+      "move": 135,
+      "home": 425,
+      "starved": null,
+      "bottom": 303864,
+      "cashAfterMoveCost": 331880,
+      "relief": []
+     },
+     {
+      "seed": 2,
+      "move": 140,
+      "home": 505,
+      "starved": null,
+      "bottom": 53886,
+      "cashAfterMoveCost": 60190,
+      "relief": []
+     },
+     {
+      "seed": 6,
+      "move": 140,
+      "home": 330,
+      "starved": null,
+      "bottom": 642,
+      "cashAfterMoveCost": 67190,
+      "relief": [
+       153
+      ]
+     },
+     {
+      "seed": 10,
+      "move": 135,
+      "home": 255,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 9,
+      "move": 140,
+      "home": 313,
+      "starved": null,
+      "bottom": 354134,
+      "cashAfterMoveCost": 410190,
+      "relief": []
+     },
+     {
+      "seed": 8,
+      "move": 135,
+      "home": 323,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     },
+     {
+      "seed": 7,
+      "move": 135,
+      "home": 440,
+      "starved": null,
+      "bottom": 2880,
+      "cashAfterMoveCost": 2880,
+      "relief": [
+       136
+      ]
+     }
+    ]
+   }
+  },
+  "guide": {
+   "off": {
+    "move": {
+     "done": 11,
+     "med": 145,
+     "p90": 150
+    },
+    "home": {
+     "done": 11,
+     "med": 360,
+     "p90": 450
+    },
+    "starved": 0,
+    "crash": 0,
+    "bjMinMed": 780048,
+    "bottomMed": 58810,
+    "bottomMin": 2700,
+    "reliefRuns": 6,
+    "reliefBeforeMove": 0,
+    "reliefRelMed": 1,
+    "perSeed": [
+     {
+      "seed": "g",
+      "move": 145,
+      "home": 350,
+      "starved": null,
+      "bottom": 3396,
+      "cashAfterMoveCost": 9700,
+      "relief": [
+       147
+      ]
+     },
+     {
+      "seed": 4,
+      "move": 145,
+      "home": 343,
+      "starved": null,
+      "bottom": 3396,
+      "cashAfterMoveCost": 9700,
+      "relief": [
+       147
+      ]
+     },
+     {
+      "seed": 3,
+      "move": 133,
+      "home": 360,
+      "starved": null,
+      "bottom": 65852,
+      "cashAfterMoveCost": 73156,
+      "relief": []
+     },
+     {
+      "seed": 2,
+      "move": 142,
+      "home": 410,
+      "starved": null,
+      "bottom": 199466,
+      "cashAfterMoveCost": 240314,
+      "relief": []
+     },
+     {
+      "seed": 1,
+      "move": 135,
+      "home": 435,
+      "starved": null,
+      "bottom": 149464,
+      "cashAfterMoveCost": 177480,
+      "relief": []
+     },
+     {
+      "seed": 6,
+      "move": 150,
+      "home": 346,
+      "starved": null,
+      "bottom": 180794,
+      "cashAfterMoveCost": 408810,
+      "relief": []
+     },
+     {
+      "seed": 5,
+      "move": 145,
+      "home": 477,
+      "starved": null,
+      "bottom": 3396,
+      "cashAfterMoveCost": 9700,
+      "relief": [
+       147
+      ]
+     },
+     {
+      "seed": 10,
+      "move": 150,
+      "home": 269,
+      "starved": null,
+      "bottom": 58810,
+      "cashAfterMoveCost": 58810,
+      "relief": [
+       151
+      ]
+     },
+     {
+      "seed": 9,
+      "move": 140,
+      "home": 320,
+      "starved": null,
+      "bottom": 199134,
+      "cashAfterMoveCost": 255190,
+      "relief": []
+     },
+     {
+      "seed": 7,
+      "move": 145,
+      "home": 450,
+      "starved": null,
+      "bottom": 2700,
+      "cashAfterMoveCost": 2700,
+      "relief": [
+       146
+      ]
+     },
+     {
+      "seed": 8,
+      "move": 145,
+      "home": 445,
+      "starved": null,
+      "bottom": 2700,
+      "cashAfterMoveCost": 2700,
+      "relief": [
+       146
+      ]
+     }
+    ]
+   },
+   "a": {
+    "move": {
+     "done": 11,
+     "med": 145,
+     "p90": 150
+    },
+    "home": {
+     "done": 11,
+     "med": 360,
+     "p90": 450
+    },
+    "starved": 0,
+    "crash": 0,
+    "bjMinMed": 782548,
+    "bottomMed": 66310,
+    "bottomMin": 3192,
+    "reliefRuns": 6,
+    "reliefBeforeMove": 0,
+    "reliefRelMed": 2,
+    "perSeed": [
+     {
+      "seed": "g",
+      "move": 145,
+      "home": 350,
+      "starved": null,
+      "bottom": 3192,
+      "cashAfterMoveCost": 17200,
+      "relief": [
+       148
+      ]
+     },
+     {
+      "seed": 4,
+      "move": 145,
+      "home": 343,
+      "starved": null,
+      "bottom": 3192,
+      "cashAfterMoveCost": 17200,
+      "relief": [
+       148
+      ]
+     },
+     {
+      "seed": 2,
+      "move": 142,
+      "home": 410,
+      "starved": null,
+      "bottom": 206966,
+      "cashAfterMoveCost": 247814,
+      "relief": []
+     },
+     {
+      "seed": 3,
+      "move": 133,
+      "home": 360,
+      "starved": null,
+      "bottom": 73352,
+      "cashAfterMoveCost": 80656,
+      "relief": []
+     },
+     {
+      "seed": 1,
+      "move": 135,
+      "home": 435,
+      "starved": null,
+      "bottom": 156964,
+      "cashAfterMoveCost": 184980,
+      "relief": []
+     },
+     {
+      "seed": 6,
+      "move": 150,
+      "home": 346,
+      "starved": null,
+      "bottom": 188294,
+      "cashAfterMoveCost": 416310,
+      "relief": []
+     },
+     {
+      "seed": 5,
+      "move": 145,
+      "home": 477,
+      "starved": null,
+      "bottom": 3192,
+      "cashAfterMoveCost": 17200,
+      "relief": [
+       148
+      ]
+     },
+     {
+      "seed": 10,
+      "move": 150,
+      "home": 269,
+      "starved": null,
+      "bottom": 66310,
+      "cashAfterMoveCost": 66310,
+      "relief": [
+       151
+      ]
+     },
+     {
+      "seed": 9,
+      "move": 140,
+      "home": 320,
+      "starved": null,
+      "bottom": 206634,
+      "cashAfterMoveCost": 262690,
+      "relief": []
+     },
+     {
+      "seed": 7,
+      "move": 145,
+      "home": 450,
+      "starved": null,
+      "bottom": 3896,
+      "cashAfterMoveCost": 10200,
+      "relief": [
+       147
+      ]
+     },
+     {
+      "seed": 8,
+      "move": 145,
+      "home": 445,
+      "starved": null,
+      "bottom": 3896,
+      "cashAfterMoveCost": 10200,
+      "relief": [
+       147
+      ]
+     }
+    ]
+   },
+   "b": {
+    "move": {
+     "done": 11,
+     "med": 145,
+     "p90": 150
+    },
+    "home": {
+     "done": 11,
+     "med": 360,
+     "p90": 450
+    },
+    "starved": 0,
+    "crash": 0,
+    "bjMinMed": 780048,
+    "bottomMed": 58810,
+    "bottomMin": 2700,
+    "reliefRuns": 6,
+    "reliefBeforeMove": 0,
+    "reliefRelMed": 1,
+    "perSeed": [
+     {
+      "seed": "g",
+      "move": 145,
+      "home": 350,
+      "starved": null,
+      "bottom": 3396,
+      "cashAfterMoveCost": 9700,
+      "relief": [
+       147
+      ]
+     },
+     {
+      "seed": 4,
+      "move": 145,
+      "home": 343,
+      "starved": null,
+      "bottom": 3396,
+      "cashAfterMoveCost": 9700,
+      "relief": [
+       147
+      ]
+     },
+     {
+      "seed": 2,
+      "move": 142,
+      "home": 410,
+      "starved": null,
+      "bottom": 199466,
+      "cashAfterMoveCost": 240314,
+      "relief": []
+     },
+     {
+      "seed": 3,
+      "move": 133,
+      "home": 360,
+      "starved": null,
+      "bottom": 65852,
+      "cashAfterMoveCost": 73156,
+      "relief": []
+     },
+     {
+      "seed": 1,
+      "move": 135,
+      "home": 435,
+      "starved": null,
+      "bottom": 149464,
+      "cashAfterMoveCost": 177480,
+      "relief": []
+     },
+     {
+      "seed": 6,
+      "move": 150,
+      "home": 346,
+      "starved": null,
+      "bottom": 180794,
+      "cashAfterMoveCost": 408810,
+      "relief": []
+     },
+     {
+      "seed": 5,
+      "move": 145,
+      "home": 477,
+      "starved": null,
+      "bottom": 3396,
+      "cashAfterMoveCost": 9700,
+      "relief": [
+       147
+      ]
+     },
+     {
+      "seed": 10,
+      "move": 150,
+      "home": 269,
+      "starved": null,
+      "bottom": 58810,
+      "cashAfterMoveCost": 58810,
+      "relief": [
+       151
+      ]
+     },
+     {
+      "seed": 9,
+      "move": 140,
+      "home": 320,
+      "starved": null,
+      "bottom": 199134,
+      "cashAfterMoveCost": 255190,
+      "relief": []
+     },
+     {
+      "seed": 7,
+      "move": 145,
+      "home": 450,
+      "starved": null,
+      "bottom": 2700,
+      "cashAfterMoveCost": 2700,
+      "relief": [
+       146
+      ]
+     },
+     {
+      "seed": 8,
+      "move": 145,
+      "home": 445,
+      "starved": null,
+      "bottom": 2700,
+      "cashAfterMoveCost": 2700,
+      "relief": [
+       146
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "cards": {
+  "humanQ": {
+   "a": [
+    {
+     "seed": 5,
+     "move": 135,
+     "siru16": 49,
+     "first": 37,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "37:parcela",
+      "47:cat1a",
+      "55:cat2a",
+      "59:trucka",
+      "64:cat3a",
+      "69:kids1a",
+      "77:chuseoka",
+      "83:kids2a",
+      "87:grandmaa"
+     ],
+     "followups": [
+      "38:kimchi+2500",
+      "79:side_dish+2500",
+      "80:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 4,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:cat1a",
+      "43:kids1a",
+      "47:cat2a",
+      "51:parcela",
+      "57:kids2a",
+      "62:cat3a",
+      "66:trucka",
+      "75:chuseoka",
+      "85:grandmaa"
+     ],
+     "followups": [
+      "52:kimchi+2500",
+      "77:side_dish+2500",
+      "78:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 3,
+     "move": 133,
+     "siru16": 49,
+     "first": 38,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "38:parcela",
+      "46:trucka",
+      "56:kids1a",
+      "65:cat1a",
+      "71:chuseoka",
+      "75:kids2a",
+      "79:cat2a",
+      "83:grandmaa",
+      "93:cat3a"
+     ],
+     "followups": [
+      "39:kimchi+2500",
+      "73:side_dish+2500",
+      "74:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": "g",
+     "move": 135,
+     "siru16": 49,
+     "first": 37,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "37:trucka",
+      "47:cat1a",
+      "55:parcela",
+      "62:cat2a",
+      "66:chuseoka",
+      "73:cat3a",
+      "77:kids1a",
+      "86:grandmaa",
+      "94:kids2a"
+     ],
+     "followups": [
+      "56:kimchi+2500",
+      "68:side_dish+2500",
+      "69:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 1,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:trucka",
+      "43:parcela",
+      "52:kids1a",
+      "60:cat1a",
+      "66:chuseoka",
+      "70:cat2a",
+      "74:kids2a",
+      "78:grandmaa",
+      "82:cat3a"
+     ],
+     "followups": [
+      "44:kimchi+2500",
+      "68:side_dish+2500",
+      "69:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 2,
+     "move": 140,
+     "siru16": 49,
+     "first": 38,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "38:parcela",
+      "47:kids1a",
+      "55:cat1a",
+      "62:trucka",
+      "66:kids2a",
+      "70:cat2a",
+      "74:chuseoka",
+      "78:cat3a",
+      "83:grandmaa"
+     ],
+     "followups": [
+      "39:kimchi+2500",
+      "76:side_dish+2500",
+      "77:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 6,
+     "move": 135,
+     "siru16": 49,
+     "first": 38,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "38:parcela",
+      "46:trucka",
+      "53:kids1a",
+      "59:cat1a",
+      "63:kids2a",
+      "67:chuseoka",
+      "72:cat2a",
+      "76:grandmaa",
+      "83:cat3a"
+     ],
+     "followups": [
+      "39:kimchi+2500",
+      "69:side_dish+2500",
+      "70:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 10,
+     "move": 135,
+     "siru16": 49,
+     "first": 38,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "38:cat1a",
+      "46:parcela",
+      "50:cat2a",
+      "55:trucka",
+      "59:cat3a",
+      "63:chuseoka",
+      "71:kids1a",
+      "81:grandmaa",
+      "85:kids2a"
+     ],
+     "followups": [
+      "47:kimchi+2500",
+      "65:side_dish+2500",
+      "66:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:trucka",
+      "46:parcela",
+      "52:cat1a",
+      "62:cat2a",
+      "66:chuseoka",
+      "73:cat3a",
+      "77:grandmaa",
+      "86:kids1a",
+      "99:kids2a"
+     ],
+     "followups": [
+      "47:kimchi+2500",
+      "68:side_dish+2500",
+      "69:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 8,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:cat1a",
+      "46:cat2a",
+      "50:trucka",
+      "55:cat3a",
+      "59:parcela",
+      "68:kids1a",
+      "78:chuseoka",
+      "87:kids2a",
+      "92:grandmaa"
+     ],
+     "followups": [
+      "60:kimchi+2500",
+      "80:side_dish+2500",
+      "81:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 7,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:kids1a",
+      "46:trucka",
+      "55:kids2a",
+      "59:parcela",
+      "67:chuseoka",
+      "75:cat1a",
+      "83:grandmaa",
+      "87:cat2a",
+      "99:cat3a"
+     ],
+     "followups": [
+      "60:kimchi+2500",
+      "69:side_dish+2500",
+      "70:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    }
+   ],
+   "b": [
+    {
+     "seed": 5,
+     "move": 135,
+     "siru16": 49,
+     "first": 37,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "37:parcelb",
+      "47:cat1b",
+      "57:chuseokb",
+      "65:kids1b",
+      "69:cat2b",
+      "73:truckb",
+      "79:grandmaa",
+      "85:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 4,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "36:cat1b",
+      "43:kids1b",
+      "51:parcelb",
+      "57:cat2b",
+      "62:chuseokb",
+      "72:truckb",
+      "78:grandmaa",
+      "82:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 3,
+     "move": 133,
+     "siru16": 49,
+     "first": 38,
+     "n": 8,
+     "minGap": 6,
+     "cards": [
+      "38:parcelb",
+      "46:truckb",
+      "56:kids1b",
+      "65:cat1b",
+      "71:chuseokb",
+      "78:grandmaa",
+      "90:cat2b",
+      "105:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": "g",
+     "move": 135,
+     "siru16": 49,
+     "first": 37,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "37:truckb",
+      "47:cat1b",
+      "55:parcelb",
+      "62:chuseokb",
+      "70:cat2b",
+      "74:kids1b",
+      "85:grandmaa",
+      "90:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 1,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 6,
+     "cards": [
+      "36:truckb",
+      "43:parcelb",
+      "52:kids1b",
+      "60:cat1b",
+      "66:chuseokb",
+      "75:grandmaa",
+      "83:cat2b",
+      "100:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 2,
+     "move": 140,
+     "siru16": 49,
+     "first": 38,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "38:parcelb",
+      "47:kids1b",
+      "55:cat1b",
+      "62:truckb",
+      "71:chuseokb",
+      "75:cat2b",
+      "79:grandmaa",
+      "94:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 6,
+     "move": 140,
+     "siru16": 49,
+     "first": 38,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "38:parcelb",
+      "46:truckb",
+      "53:kids1b",
+      "59:cat1b",
+      "67:chuseokb",
+      "75:cat2b",
+      "79:grandmaa",
+      "92:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 10,
+     "move": 135,
+     "siru16": 49,
+     "first": 38,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "38:cat1b",
+      "46:parcelb",
+      "52:truckb",
+      "56:cat2b",
+      "60:kids1b",
+      "67:chuseokb",
+      "74:grandmaa",
+      "81:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "36:truckb",
+      "46:parcelb",
+      "52:cat1b",
+      "62:chuseokb",
+      "72:kids1b",
+      "76:cat2b",
+      "82:grandmaa",
+      "94:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 8,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "36:cat1b",
+      "46:truckb",
+      "52:kids1b",
+      "59:cat2b",
+      "63:parcelb",
+      "72:chuseokb",
+      "82:grandmaa",
+      "86:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 7,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "36:kids1b",
+      "46:truckb",
+      "56:parcelb",
+      "62:cat1b",
+      "72:chuseokb",
+      "81:cat2b",
+      "85:grandmaa",
+      "98:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    }
+   ]
+  },
+  "guide": {
+   "a": [
+    {
+     "seed": "g",
+     "move": 145,
+     "siru16": 49,
+     "first": 37,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "37:trucka",
+      "47:cat1a",
+      "55:parcela",
+      "62:cat2a",
+      "66:chuseoka",
+      "73:cat3a",
+      "77:kids1a",
+      "86:grandmaa",
+      "94:kids2a"
+     ],
+     "followups": [
+      "56:kimchi+2500",
+      "68:side_dish+2500",
+      "69:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 4,
+     "move": 145,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:cat1a",
+      "43:kids1a",
+      "47:cat2a",
+      "51:parcela",
+      "57:kids2a",
+      "62:cat3a",
+      "66:trucka",
+      "75:chuseoka",
+      "85:grandmaa"
+     ],
+     "followups": [
+      "52:kimchi+2500",
+      "77:side_dish+2500",
+      "78:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 2,
+     "move": 142,
+     "siru16": 49,
+     "first": 38,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "38:parcela",
+      "47:kids1a",
+      "55:cat1a",
+      "62:trucka",
+      "66:kids2a",
+      "70:cat2a",
+      "74:chuseoka",
+      "78:cat3a",
+      "83:grandmaa"
+     ],
+     "followups": [
+      "39:kimchi+2500",
+      "76:side_dish+2500",
+      "77:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 3,
+     "move": 133,
+     "siru16": 49,
+     "first": 38,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "38:parcela",
+      "46:trucka",
+      "56:kids1a",
+      "65:cat1a",
+      "71:chuseoka",
+      "75:kids2a",
+      "79:cat2a",
+      "83:grandmaa",
+      "93:cat3a"
+     ],
+     "followups": [
+      "39:kimchi+2500",
+      "73:side_dish+2500",
+      "74:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 1,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:trucka",
+      "43:parcela",
+      "52:kids1a",
+      "60:cat1a",
+      "66:chuseoka",
+      "70:cat2a",
+      "74:kids2a",
+      "78:grandmaa",
+      "82:cat3a"
+     ],
+     "followups": [
+      "44:kimchi+2500",
+      "68:side_dish+2500",
+      "69:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 6,
+     "move": 150,
+     "siru16": 49,
+     "first": 38,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "38:parcela",
+      "46:trucka",
+      "53:kids1a",
+      "59:cat1a",
+      "63:kids2a",
+      "67:chuseoka",
+      "72:cat2a",
+      "76:grandmaa",
+      "83:cat3a"
+     ],
+     "followups": [
+      "39:kimchi+2500",
+      "69:side_dish+2500",
+      "70:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 5,
+     "move": 145,
+     "siru16": 49,
+     "first": 37,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "37:parcela",
+      "47:cat1a",
+      "55:cat2a",
+      "59:trucka",
+      "64:cat3a",
+      "69:kids1a",
+      "77:chuseoka",
+      "83:kids2a",
+      "87:grandmaa"
+     ],
+     "followups": [
+      "38:kimchi+2500",
+      "79:side_dish+2500",
+      "80:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 10,
+     "move": 150,
+     "siru16": 49,
+     "first": 38,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "38:cat1a",
+      "46:parcela",
+      "50:cat2a",
+      "55:trucka",
+      "59:cat3a",
+      "63:chuseoka",
+      "71:kids1a",
+      "81:grandmaa",
+      "85:kids2a"
+     ],
+     "followups": [
+      "47:kimchi+2500",
+      "65:side_dish+2500",
+      "66:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:trucka",
+      "46:parcela",
+      "52:cat1a",
+      "62:cat2a",
+      "66:chuseoka",
+      "73:cat3a",
+      "77:grandmaa",
+      "86:kids1a",
+      "99:kids2a"
+     ],
+     "followups": [
+      "47:kimchi+2500",
+      "68:side_dish+2500",
+      "69:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 7,
+     "move": 145,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:kids1a",
+      "46:trucka",
+      "55:kids2a",
+      "59:parcela",
+      "67:chuseoka",
+      "75:cat1a",
+      "83:grandmaa",
+      "87:cat2a",
+      "99:cat3a"
+     ],
+     "followups": [
+      "60:kimchi+2500",
+      "69:side_dish+2500",
+      "70:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 8,
+     "move": 145,
+     "siru16": 49,
+     "first": 36,
+     "n": 9,
+     "minGap": 4,
+     "cards": [
+      "36:cat1a",
+      "46:cat2a",
+      "50:trucka",
+      "55:cat3a",
+      "59:parcela",
+      "68:kids1a",
+      "78:chuseoka",
+      "87:kids2a",
+      "92:grandmaa"
+     ],
+     "followups": [
+      "60:kimchi+2500",
+      "80:side_dish+2500",
+      "81:side_dish+2500"
+     ],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    }
+   ],
+   "b": [
+    {
+     "seed": "g",
+     "move": 145,
+     "siru16": 49,
+     "first": 37,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "37:truckb",
+      "47:cat1b",
+      "55:parcelb",
+      "62:chuseokb",
+      "70:cat2b",
+      "74:kids1b",
+      "85:grandmaa",
+      "90:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 4,
+     "move": 145,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "36:cat1b",
+      "43:kids1b",
+      "51:parcelb",
+      "57:cat2b",
+      "62:chuseokb",
+      "72:truckb",
+      "78:grandmaa",
+      "82:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 2,
+     "move": 142,
+     "siru16": 49,
+     "first": 38,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "38:parcelb",
+      "47:kids1b",
+      "55:cat1b",
+      "62:truckb",
+      "71:chuseokb",
+      "75:cat2b",
+      "79:grandmaa",
+      "94:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 3,
+     "move": 133,
+     "siru16": 49,
+     "first": 38,
+     "n": 8,
+     "minGap": 6,
+     "cards": [
+      "38:parcelb",
+      "46:truckb",
+      "56:kids1b",
+      "65:cat1b",
+      "71:chuseokb",
+      "78:grandmaa",
+      "90:cat2b",
+      "105:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 1,
+     "move": 135,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 6,
+     "cards": [
+      "36:truckb",
+      "43:parcelb",
+      "52:kids1b",
+      "60:cat1b",
+      "66:chuseokb",
+      "75:grandmaa",
+      "83:cat2b",
+      "100:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 6,
+     "move": 150,
+     "siru16": 49,
+     "first": 38,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "38:parcelb",
+      "46:truckb",
+      "53:kids1b",
+      "59:cat1b",
+      "67:chuseokb",
+      "75:cat2b",
+      "79:grandmaa",
+      "92:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 5,
+     "move": 145,
+     "siru16": 49,
+     "first": 37,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "37:parcelb",
+      "47:cat1b",
+      "57:chuseokb",
+      "65:kids1b",
+      "69:cat2b",
+      "73:truckb",
+      "79:grandmaa",
+      "85:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 10,
+     "move": 150,
+     "siru16": 49,
+     "first": 38,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "38:cat1b",
+      "46:parcelb",
+      "52:truckb",
+      "56:cat2b",
+      "60:kids1b",
+      "67:chuseokb",
+      "74:grandmaa",
+      "81:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 9,
+     "move": 140,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "36:truckb",
+      "46:parcelb",
+      "52:cat1b",
+      "62:chuseokb",
+      "72:kids1b",
+      "76:cat2b",
+      "82:grandmaa",
+      "94:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 7,
+     "move": 145,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "36:kids1b",
+      "46:truckb",
+      "56:parcelb",
+      "62:cat1b",
+      "72:chuseokb",
+      "81:cat2b",
+      "85:grandmaa",
+      "98:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    },
+    {
+     "seed": 8,
+     "move": 145,
+     "siru16": 49,
+     "first": 36,
+     "n": 8,
+     "minGap": 4,
+     "cards": [
+      "36:cat1b",
+      "46:truckb",
+      "52:kids1b",
+      "59:cat2b",
+      "63:parcelb",
+      "72:chuseokb",
+      "82:grandmaa",
+      "86:cat3a"
+     ],
+     "followups": [],
+     "clashTalk": [],
+     "onMove": [],
+     "afterMove": [],
+     "onRent": []
+    }
+   ]
+  }
+ },
+ "parcel": {
+  "humanQ": [
+   {
+    "seed": 5,
+    "parcel": 37,
+    "choiceA": 0,
+    "handA": 8,
+    "handB": 8,
+    "handOff": 8,
+    "handSumA": 1299,
+    "handSumB": 1299,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 38,
+     "a": 862100,
+     "b": 859600,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 135,
+    "homeA": 330,
+    "homeB": 330
+   },
+   {
+    "seed": 4,
+    "parcel": 51,
+    "choiceA": 0,
+    "handA": 14,
+    "handB": 14,
+    "handOff": 14,
+    "handSumA": 1299,
+    "handSumB": 1299,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 52,
+     "a": 1026034,
+     "b": 1023534,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 135,
+    "homeA": 357,
+    "homeB": 357
+   },
+   {
+    "seed": 3,
+    "parcel": 38,
+    "choiceA": 0,
+    "handA": 7,
+    "handB": 7,
+    "handOff": 7,
+    "handSumA": 1278,
+    "handSumB": 1278,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 39,
+     "a": 856100,
+     "b": 853600,
+     "diff": 2500
+    },
+    "moveA": 133,
+    "moveB": 133,
+    "homeA": 350,
+    "homeB": 350
+   },
+   {
+    "seed": "g",
+    "parcel": 55,
+    "choiceA": 0,
+    "handA": 6,
+    "handB": 6,
+    "handOff": 6,
+    "handSumA": 1299,
+    "handSumB": 1299,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 56,
+     "a": 1105482,
+     "b": 1102982,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 135,
+    "homeA": 410,
+    "homeB": 410
+   },
+   {
+    "seed": 1,
+    "parcel": 43,
+    "choiceA": 0,
+    "handA": 13,
+    "handB": 13,
+    "handOff": 13,
+    "handSumA": 1306,
+    "handSumB": 1306,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 44,
+     "a": 884600,
+     "b": 882100,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 135,
+    "homeA": 425,
+    "homeB": 425
+   },
+   {
+    "seed": 2,
+    "parcel": 38,
+    "choiceA": 0,
+    "handA": 7,
+    "handB": 7,
+    "handOff": 7,
+    "handSumA": 1359,
+    "handSumB": 1359,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 39,
+     "a": 856100,
+     "b": 853600,
+     "diff": 2500
+    },
+    "moveA": 140,
+    "moveB": 140,
+    "homeA": 505,
+    "homeB": 505
+   },
+   {
+    "seed": 6,
+    "parcel": 38,
+    "choiceA": 0,
+    "handA": 7,
+    "handB": 7,
+    "handOff": 7,
+    "handSumA": 1300,
+    "handSumB": 1356,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 39,
+     "a": 856100,
+     "b": 853600,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 140,
+    "homeA": 330,
+    "homeB": 330
+   },
+   {
+    "seed": 10,
+    "parcel": 46,
+    "choiceA": 0,
+    "handA": 14,
+    "handB": 14,
+    "handOff": 14,
+    "handSumA": 1299,
+    "handSumB": 1299,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 47,
+     "a": 950624,
+     "b": 948124,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 135,
+    "homeA": 255,
+    "homeB": 255
+   },
+   {
+    "seed": 9,
+    "parcel": 46,
+    "choiceA": 0,
+    "handA": 14,
+    "handB": 14,
+    "handOff": 14,
+    "handSumA": 1359,
+    "handSumB": 1359,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 47,
+     "a": 950624,
+     "b": 948124,
+     "diff": 2500
+    },
+    "moveA": 140,
+    "moveB": 140,
+    "homeA": 313,
+    "homeB": 313
+   },
+   {
+    "seed": 8,
+    "parcel": 59,
+    "choiceA": 0,
+    "handA": 10,
+    "handB": 10,
+    "handOff": 10,
+    "handSumA": 1299,
+    "handSumB": 1299,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 60,
+     "a": 1195130,
+     "b": 1192630,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 135,
+    "homeA": 323,
+    "homeB": 323
+   },
+   {
+    "seed": 7,
+    "parcel": 59,
+    "choiceA": 0,
+    "handA": 10,
+    "handB": 10,
+    "handOff": 10,
+    "handSumA": 1299,
+    "handSumB": 1299,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 60,
+     "a": 1195130,
+     "b": 1192630,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 135,
+    "homeA": 440,
+    "homeB": 440
+   }
+  ],
+  "guide": [
+   {
+    "seed": "g",
+    "parcel": 55,
+    "choiceA": 0,
+    "handA": 6,
+    "handB": 6,
+    "handOff": 6,
+    "handSumA": 1407,
+    "handSumB": 1407,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 56,
+     "a": 950482,
+     "b": 947982,
+     "diff": 2500
+    },
+    "moveA": 145,
+    "moveB": 145,
+    "homeA": 350,
+    "homeB": 350
+   },
+   {
+    "seed": 4,
+    "parcel": 51,
+    "choiceA": 0,
+    "handA": 14,
+    "handB": 14,
+    "handOff": 14,
+    "handSumA": 1407,
+    "handSumB": 1407,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 52,
+     "a": 871634,
+     "b": 869134,
+     "diff": 2500
+    },
+    "moveA": 145,
+    "moveB": 145,
+    "homeA": 343,
+    "homeB": 343
+   },
+   {
+    "seed": 2,
+    "parcel": 38,
+    "choiceA": 0,
+    "handA": 7,
+    "handB": 7,
+    "handOff": 7,
+    "handSumA": 1384,
+    "handSumB": 1384,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 39,
+     "a": 814100,
+     "b": 811600,
+     "diff": 2500
+    },
+    "moveA": 142,
+    "moveB": 142,
+    "homeA": 410,
+    "homeB": 410
+   },
+   {
+    "seed": 3,
+    "parcel": 38,
+    "choiceA": 0,
+    "handA": 7,
+    "handB": 7,
+    "handOff": 7,
+    "handSumA": 1276,
+    "handSumB": 1276,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 39,
+     "a": 814100,
+     "b": 811600,
+     "diff": 2500
+    },
+    "moveA": 133,
+    "moveB": 133,
+    "homeA": 360,
+    "homeB": 360
+   },
+   {
+    "seed": 1,
+    "parcel": 43,
+    "choiceA": 0,
+    "handA": 13,
+    "handB": 13,
+    "handOff": 13,
+    "handSumA": 1304,
+    "handSumB": 1304,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 44,
+     "a": 850200,
+     "b": 847700,
+     "diff": 2500
+    },
+    "moveA": 135,
+    "moveB": 135,
+    "homeA": 435,
+    "homeB": 435
+   },
+   {
+    "seed": 6,
+    "parcel": 38,
+    "choiceA": 0,
+    "handA": 7,
+    "handB": 7,
+    "handOff": 7,
+    "handSumA": 1475,
+    "handSumB": 1475,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 39,
+     "a": 814100,
+     "b": 811600,
+     "diff": 2500
+    },
+    "moveA": 150,
+    "moveB": 150,
+    "homeA": 346,
+    "homeB": 346
+   },
+   {
+    "seed": 5,
+    "parcel": 37,
+    "choiceA": 0,
+    "handA": 8,
+    "handB": 8,
+    "handOff": 8,
+    "handSumA": 1407,
+    "handSumB": 1407,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 38,
+     "a": 820100,
+     "b": 817600,
+     "diff": 2500
+    },
+    "moveA": 145,
+    "moveB": 145,
+    "homeA": 477,
+    "homeB": 477
+   },
+   {
+    "seed": 10,
+    "parcel": 46,
+    "choiceA": 0,
+    "handA": 14,
+    "handB": 14,
+    "handOff": 14,
+    "handSumA": 1475,
+    "handSumB": 1475,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 47,
+     "a": 796224,
+     "b": 793724,
+     "diff": 2500
+    },
+    "moveA": 150,
+    "moveB": 150,
+    "homeA": 269,
+    "homeB": 269
+   },
+   {
+    "seed": 9,
+    "parcel": 46,
+    "choiceA": 0,
+    "handA": 14,
+    "handB": 14,
+    "handOff": 14,
+    "handSumA": 1357,
+    "handSumB": 1357,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 47,
+     "a": 796224,
+     "b": 793724,
+     "diff": 2500
+    },
+    "moveA": 140,
+    "moveB": 140,
+    "homeA": 320,
+    "homeB": 320
+   },
+   {
+    "seed": 7,
+    "parcel": 59,
+    "choiceA": 0,
+    "handA": 10,
+    "handB": 10,
+    "handOff": 10,
+    "handSumA": 1409,
+    "handSumB": 1409,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 60,
+     "a": 1040130,
+     "b": 1037630,
+     "diff": 2500
+    },
+    "moveA": 145,
+    "moveB": 145,
+    "homeA": 450,
+    "homeB": 450
+   },
+   {
+    "seed": 8,
+    "parcel": 59,
+    "choiceA": 0,
+    "handA": 10,
+    "handB": 10,
+    "handOff": 10,
+    "handSumA": 1408,
+    "handSumB": 1408,
+    "firstHandDiff": null,
+    "firstCashDiff": {
+     "day": 60,
+     "a": 1040130,
+     "b": 1037630,
+     "diff": 2500
+    },
+    "moveA": 145,
+    "moveB": 145,
+    "homeA": 445,
+    "homeB": 445
+   }
+  ]
+ }
+}

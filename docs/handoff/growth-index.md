@@ -293,6 +293,31 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-10-31 · D96 반지하 사건 첫 묶음 — 끔 · 켬(첫 단추) · 켬(둘째 단추) (총괄 · core 4e9de1da)
+
+```
+[잰 것] probe_branches(4e9de1da 고정 복사본 · humanQ · guide · g,1-10 · 700일 · --trace) — --ev=0 / 기본 / --ev-choice=b
+  이사 · 내 집  humanQ 135 · 350 / guide 145 · 360 — 세 판 같음 · 굶음 0 · 단 humanQ 6 은 첫 단추 판만 140 → 135
+  둘째 단추     22판 모두 끈 판과 날마다 지갑 · 손일까지 같음(값 0)
+  첫 단추       반지하 지갑 +7,500(김치 1 · 반찬 2) · 이사 뒤 0원 · 구호금이 하루 늦음 · 0원 판 수 같음(humanQ 7 · guide 6)
+  카드          9장 / 8장(22판 모두) · 첫 Day 36~38 · 마지막 81~105 · 사이 ≥ 4일(4일이 첫 단추 판 35%)
+                월세 · 이사 · 0원 · 이사 뒤 · 대사 표 사건 날 0장 · 할 일 끝(leaf_three Day 76) 날 판마다 2장
+                siru16 은 하네스에서 Day 49 에 끝나 «늦어도 Day 35» 길로 열림 → siru16 열린 동안 판마다 2장
+  택배 체력 1   손일이 갈린 날 0(22판)
+```
+> ★ 사건 돈 +7,500 이 asap 이사를 5일 당겨 «몇천 원 남기고 이사 → 이튿날 0원» 꼴로 보낸 판이 하나(humanQ 6).
+>   전문 `growth-d96-events-20261031.md` · `growth-d96-events.json`.
+
+### 2026-10-31 · D95 원룸 이사 뒤 1~3일 0원 — 돈 드나듦 (총괄 · 45bcb36f)
+
+```
+[잰 것] probe_branches(45bcb36f 고정 복사본 · humanQ · guide · g,1-10 · --trace) + 복사본에만 돈 자리 열한 곳 기록 줄(cashLog)
+  0원 13판 중 11판   200만 원 넘긴 날 바로 이사(asap) → 2,700~9,700 원 남고 원룸 하루 지출 5,204 원에 1~2일
+  2판                원룸 첫 월세 151일(월세 시계는 이사로 안 바뀜) — guide 10 이사 다음 날 · humanQ 6 이사 뒤 11일
+  말                 몬이 «보증금이랑 첫 달 월세랑 이삿짐값» · moveOutCostWon 주석 «첫 달 월세 선납» ↔ homes.json · D31 «첫 달 월세 밖»
+```
+> ★ 총괄 ⑧: 값 그대로 · 이사비에 첫 달 월세 안 듦(말을 코드에 맞춤) · 이사 되묻기 창에 남는 돈 · 첫 월세 날. 전문 `growth-move-broke-20261031.md`.
+
 ### 2026-10-31 · D93 ⑤ M3 곳간 새 규칙 — 갈래 판 숫자 (총괄 · core 9710f644)
 
 ```
