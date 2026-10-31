@@ -259,6 +259,11 @@ async function main() {
   ok('B 시루 하나가 더하는 드로우콜을 안다 (표가 흔들리면 여기서 걸린다 · 시루 한 그루 9±2 · 무리 안 시루 하나 4±1)',
      oneSiru >= 7 && oneSiru <= 11 && perSiru >= 3 && perSiru <= 5,
      `시루 한 그루 +${oneSiru}콜 · 무리 안 시루 1개당 +${perSiru}콜 · 1개 ${siru[1].calls} → 12개 ${siru[12].calls} → 24개 ${siru[24].calls}콜`);
+  /* ★ 2026-11-01 [house] 무순 재배판도 포기를 합친다(room_view §mergeSprouts · 총괄) — 판 6 + 무순 GLB 메시 3 + 1 = 10.
+     합치기 전엔 판 6 + 12포기 × 3 + 1 = 43 이었다. 자람 단계(포기 3→12)와 상관없이 10 이다. 삼각형은 그대로. */
+  const oneMusun = withMusun.calls - withMon.calls;
+  ok('B2 무순 재배판 한 판이 더하는 드로우콜을 안다 (판 10±2 · 합치기 전 43)',
+     oneMusun >= 8 && oneMusun <= 12, `재배판 한 판 +${oneMusun}콜 · +${withMusun.tris - withMon.tris}삼각형`);
   const idleDefault = idleRows[0];
   const cap = JSON.parse(await page.eval(`JSON.stringify(window.view.stats().idleCap)`));
   /* ★ 24 → 18 (박사님 2026-08-07 확정 · room_view §ANIM_IDLE_FPS).

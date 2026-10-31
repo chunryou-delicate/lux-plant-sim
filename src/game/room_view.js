@@ -2217,13 +2217,16 @@ export async function createRoomView(canvas, opts = {}) {
        47 → 68 은 66508ad9(10-08 · 포기 4~11 → 6~16 · 콩 판)에서 늘었다(고정 복사본 c15c59d1 47 · 66508ad9 68 · 0b3830a0 68).
      지금: 포기 자리(행렬)만 모아, GLB 메시 하나마다 꼭짓점을 그 행렬들로 옮겨 «한 기하»로 붙인다.
        재질은 위에서 복제한 그대로라 그림은 같고 메시 수만 준다 ⇒ 다 자란 시루 하나 3 + 1 + 4 = 8콜.
-     ★ 합친 메시들은 한 묶음에 넣고 `userData.sprouts` 에 포기 수를 적는다 — 그루 자식 수로 포기를 세던
-       검사(test_multisiru ①-D · test_musun_view ①-A)가 이 수를 읽는다.
+     ★ 합친 메시들은 한 묶음에 넣고 `userData.sprouts` 에 포기 수, `userData.at` 에 포기마다 자리 [x, y, z](그루 좌표)를 적는다 —
+       그루 자식 수·자식 자리로 포기를 세고 재던 검사(test_multisiru ①-D · test_musun_view ①-A · ②-G 밑동 · 격자)가 이것을 읽는다.
+     ★ 무순 재배판도 같이 쓴다(11-01 총괄) — 판 하나 6 + 12포기 × 3 = 42콜 → 6 + 3 = 9콜.
+       포기마다 따로 움직이는 손은 없다: 포기 수(3→12)·단계(s·m·l)는 판 하나의 progress01 로 정해지고 바뀌면 통째로 다시 짓는다(§needsRebuild) · 거두기도 판 통째.
      ⚠ 합친 기하는 이 그루 몫이다 — disposeObject 가 버려도 GLB 캐시 기하는 안 다친다.
      ⚠ 원본에 normal 이 없으면(콩나물 GLB) 합친 기하에도 안 넣는다 — GLTFLoader 가 그 재질을 flatShading 으로 둔다. */
   function mergeSprouts(body, xforms) {
     const bundle = new THREE.Group();
     bundle.userData.sprouts = xforms.length;
+    bundle.userData.at = xforms.map(T => [T.elements[12], T.elements[13], T.elements[14]]);
     if (!xforms.length) return bundle;
     body.updateMatrixWorld(true);
     const M = new THREE.Matrix4(), N = new THREE.Matrix3(), v = new THREE.Vector3();
@@ -2417,18 +2420,20 @@ export async function createRoomView(canvas, opts = {}) {
     const cellX = 0.072 * k;                                  // 이웃한 두 칸의 가로 거리[m]
     const bodyW = rotationSafeDiameter(body, body) || cellX;
     const bodyK = Math.min(1, cellX / bodyW);
+    /* 포기 자리(행렬)만 모으고 한 번에 합친다(§mergeSprouts · 11-01) — 자리·배율·향은 예전 clone 과 같은 값 */
+    const tmp = new THREE.Object3D(), xforms = [];
     for (let i = 0; i < n; i++) {
-      const c = i === 0 ? body : body.clone(true);
       const s = TRAY_S_SLOTS[i];
-      c.scale.setScalar(bodyK);
+      tmp.scale.setScalar(bodyK);
       /* 칸 좌표는 판 좌표계 값이다 — 판을 줄인 배율 k 를 곱하고, 판을 내린 만큼 따라 내린다 */
-      c.position.set(s.x * k, s.y * k + tray.position.y, s.z * k);
+      tmp.position.set(s.x * k, s.y * k + tray.position.y, s.z * k);
       /* 뿌린 씨앗이라 향이 제각각이다. **난수를 안 쓴다** — 하루가 갈 때마다 다시 짓는데
          그때마다 방향이 바뀌면 판이 들썩인다. 황금각으로 칸마다 다른 향을 준다. */
-      c.rotation.y = i * 2.39996;
-      c.rotation.z = ((i % 3) - 1) * 0.05;
-      g.add(c);
+      tmp.rotation.set(0, i * 2.39996, ((i % 3) - 1) * 0.05);
+      tmp.updateMatrix();
+      xforms.push(tmp.matrix.clone());
     }
+    g.add(mergeSprouts(body, xforms));
     g.userData.kind = 'musun';
     g.userData.leaves = [];
     return g;

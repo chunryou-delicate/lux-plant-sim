@@ -88,7 +88,8 @@ const INSTALL = `(() => {
       pot: window.__bbox(pot),
       whole: window.__bbox(g),
       finite: g.children.every(c => Number.isFinite(c.position.x) && Number.isFinite(c.position.y)
-                                 && Number.isFinite(c.position.z) && Number.isFinite(c.scale.x)),
+                                 && Number.isFinite(c.position.z) && Number.isFinite(c.scale.x)
+                                 && (!Array.isArray(c.userData && c.userData.at) || c.userData.at.every(p => p.every(Number.isFinite)))),
       /* 시루끼리 겹치나 — 이웃한 두 시루의 중심 거리와 시루 한 개의 지름을 잰다 */
       potXZ: pot.children ? pot.children.map(c => [r5(c.position.x), r5(c.position.z)]) : []
     };

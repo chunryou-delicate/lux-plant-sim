@@ -67,8 +67,10 @@ const INSTALL = `(() => {
     if (!g) return null;
     const pot = window.__potPart(g);
     const kids = g.children.filter(c => c !== pot);
-    /* ★ 콩나물 포기는 한 묶음으로 합쳐 선다(room_view §mergeSprouts · 2026-11-01) — 묶음은 적힌 포기 수로 센다(무순은 그대로 하나씩) */
+    /* ★ 콩나물·무순 포기는 한 묶음으로 합쳐 선다(room_view §mergeSprouts · 2026-11-01) — 묶음은 적힌 포기 수로 세고,
+       자리는 묶음이 적어 둔 포기마다 자리(userData.at · 그루 좌표 [x, y, z])로 잰다. 묶음이 아닌 자식은 제 position 그대로 */
     const nOf = c => (c.userData && Number.isInteger(c.userData.sprouts)) ? c.userData.sprouts : 1;
+    const atOf = c => (c.userData && Array.isArray(c.userData.at)) ? c.userData.at : [[c.position.x, c.position.y, c.position.z]];
     return {
       kind: g.userData.kind || null,
       pos: { x: r5(g.position.x), y: r5(g.position.y), z: r5(g.position.z) },
@@ -79,9 +81,10 @@ const INSTALL = `(() => {
       whole: window.__bbox(g),
       /* NaN 사냥 — 좌표·배율에 하나라도 유한하지 않은 값이 있으면 여기서 잡힌다 */
       finite: g.children.every(c => Number.isFinite(c.position.x) && Number.isFinite(c.position.y)
-                                 && Number.isFinite(c.position.z) && Number.isFinite(c.scale.x)),
+                                 && Number.isFinite(c.position.z) && Number.isFinite(c.scale.x)
+                                 && atOf(c).every(p => p.every(Number.isFinite))),
       /* 포기가 실제로 판 안에 서 있나 — 판 bbox 안쪽 여부(위로는 자라도 된다) */
-      bodyXZ: kids.map(c => [r5(c.position.x), r5(c.position.z)])
+      bodyXZ: kids.flatMap(c => atOf(c).map(p => [r5(p[0]), r5(p[2])]))
     };
   };
   /* 그루를 **완전히 새로** 짓게 한다. 같은 날이면 방뷰가 옮기기만 하기 때문이다
@@ -344,7 +347,9 @@ async function main() {
       for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(m); mx = Math.max(mx, v.y); }
       soilTop = +mx.toFixed(5);
     });
-    const bases = g.children.slice(1).map(c => +c.position.y.toFixed(5));
+    /* 포기 밑동 높이 — 합친 묶음(§mergeSprouts)은 포기마다 자리 userData.at 의 y 로 */
+    const bases = g.children.slice(1).flatMap(c => (c.userData && Array.isArray(c.userData.at))
+      ? c.userData.at.map(p => +p[1].toFixed(5)) : [+c.position.y.toFixed(5)]);
     return { soilTop, base: bases[0], allSame: new Set(bases).size === 1 };
   })()`);
   ok('②-G 포기 밑동이 판의 흙 윗면에 정확히 앉는다 (뜨지도 박히지도 않는다)',
