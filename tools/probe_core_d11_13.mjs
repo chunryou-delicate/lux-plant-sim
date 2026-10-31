@@ -74,7 +74,9 @@ const nextBtn = () => J(`(()=>{ const n=document.getElementById('next'); if(!n||
 const rows = [];
 /* D13_SEED=1 — 곳간을 «넉넉히» 채워 놓고 잰다(시루 하나 판은 수확이 닷새에 한 번이라 «어제와 같은 날»이 안 생긴다 · 잰 것).
    콩나물 꾸러미 3,000g(30,000원) 하나 — first_play §곳간 꾸러미 모양 그대로. 값이 아니라 판을 세우는 것이다 */
-if (process.env.D13_SEED === '1') {
+/* ★ 2026-10-31 core(총괄 D95 F) — 곳간 세움을 «기본 켬»으로(D13_SEED=0 이면 끔). 세움 없이는 시루 하나 판이 닷새에 한 번 거둬 «어제와 같은 날»이 안 생겨
+     D13 이 늘 «넘긴 날 0»으로 빨갛다(위 머리말이 이미 적은 그대로 · 총괄 판 «D13 0일» · 6b959889 에도 같음) */
+if (process.env.D13_SEED !== '0') {
   console.log('■ D13 곳간 세움 —', JSON.stringify(await J(`(()=>{ const fp=window.__S().firstPlay; fp.food.pantryWon = 30000;
     fp.food.pantryLots = [{ kind:'beansprout', day: window.__S().day, won: 30000, meals: 3 }]; try { window.__redraw(); } catch(e){}
     return { pantryWon: fp.food.pantryWon }; })()`)));
@@ -90,10 +92,23 @@ for (let i = 0; i < DAYS; i++) {
   }
   const d0 = await J(`window.__S().day`);
   const n = await nextBtn(); if (!n) { console.log('  ⚠ [다음 날]이 안 눌린다'); break; }
+  /* ★ 2026-10-31 core(총괄 D95 F · «D13 0일» 가르기) — 대사가 닫힌 뒤 0.7초 안의 사람 누름은 게임이 듣지 않는다(game.html §next · D90 버그 3 NEXT_AFTER_TALK_MS).
+       ⛔ 이 자는 quiet() 가 대사를 닫자마자 [다음 날]을 눌러 Day 0 첫 누름이 삼켜졌다(d0→d0 · «날이 매번 하루씩» 빨강) — 사람 손처럼 한 숨 쉬고 누른다 */
+  await sleep(900);
   await tapAt(n.x, n.y); await sleep(500);
-  const afterTap = await J(`({ pop: document.getElementById('mealPanel').classList.contains('on'), day: window.__S().day,
+  const readTap = () => J(`({ pop: document.getElementById('mealPanel').classList.contains('on'), day: window.__S().day,
     other: [...document.querySelectorAll('.pop.on')].map(e=>e.id).filter(id=>id!=='mealPanel').join(',') || null,
     banner: (()=>{ const e=document.getElementById('event'); if (!e || !e.classList.contains('on')) return ''; return (e.innerText||'').trim().replace(/\\s*\\n\\s*/g,' / ').slice(0,80); })() })`);
+  let afterTap = await readTap();
+  /* ★ D95 F — 아무 일도 안 났으면(날 그대로 · 창 없음) 그때 화면을 적고 한 번 더 누른다. 손가락 손(물 주러 걷기 · 대사)이 끝나기 전 누름이 삼켜진 것과
+       «[다음 날]이 영영 안 먹는다»(진짜 고장)를 가른다 — 두 번째도 안 먹으면 그대로 빨강이다 */
+  if (!afterTap.pop && afterTap.day === d0 && !afterTap.other) {
+    const why = await J(`({ talking: document.getElementById('stage').classList.contains('talking'), dayanim: document.getElementById('stage').classList.contains('dayanim'), nextDis: !!(document.getElementById('next')||{}).disabled, hint: (document.querySelector('.hintTarget')||{}).id || null, err: ((document.getElementById('errBox')||{}).innerText||'').slice(0,80) })`);
+    console.log(`  ↻ d${d0} 첫 누름이 안 먹음 — ${JSON.stringify(why)} · 한 숨 뒤 다시 누른다`);
+    await quiet(); await sleep(1500);
+    const n2 = await nextBtn(); if (n2) { await tapAt(n2.x, n2.y); await sleep(500); }
+    afterTap = await readTap();
+  }
   let popped = afterTap.pop;
   if (popped) {
     /* #4 — 밥상 창의 돈 줄(「오늘 지갑에서 나가는 돈」)과 다음 날 소지금이 줄어든 만큼이 같은가 */
@@ -111,7 +126,9 @@ for (let i = 0; i < DAYS; i++) {
   if (afterTap.other) { try { await page.eval(`(()=>{ const p=document.querySelector('.pop.on:not(#mealPanel)'); const b=p&&([...p.querySelectorAll('button.go,button.primary,button')].pop()); if(b) b.click(); })()`, false); } catch {} }
   if (popped && globalThis.__mealOut) { const cash1 = await J(`(window.__S().tutorial||{}).cashWon`);
     const mo = globalThis.__mealOut; globalThis.__mealOut = null;
-    console.log(`  ${mo.out != null && mo.cash - cash1 === mo.out ? 'OK  ' : 'FAIL'} #4 밥상 창 「오늘 지갑에서 나가는 돈」 = 소지금이 줄어든 만큼 → 창 ${mo.out} · 실제 ${mo.cash - cash1} (월세 날이면 다르다)`); }
+    /* ★ D95 F — 월세 날(줄어든 만큼 − 창 = 반지하 월세)은 다른 것이 맞다 — «FAIL» 글자가 FAIL 줄 세기(run_at · 요약)에 잡히지 않게 «월세날»로 적는다 */
+    const rentGap = mo.out != null && (mo.cash - cash1 - mo.out) === (await J(`(window.__S().tutorial||{rules:{}}).rules.rentWon`));
+    console.log(`  ${mo.out != null && mo.cash - cash1 === mo.out ? 'OK  ' : rentGap ? '월세날' : 'FAIL'} #4 밥상 창 「오늘 지갑에서 나가는 돈」 = 소지금이 줄어든 만큼 → 창 ${mo.out} · 실제 ${mo.cash - cash1} (월세 날이면 다르다)`); }
   rows.push({ d0, d1, popped, banner: afterTap.banner, pantry, other: afterTap.other });
   console.log(`  d${d0}→d${d1} · 밥상 ${popped ? '팝업' : '—'} · 배너 「${afterTap.banner}」`);
 }
