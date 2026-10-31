@@ -31,7 +31,7 @@
      `unit` 문자열을 반드시 받아 머리글에 그대로 적는다. 색은 상대(파랑=최소·빨강=최대)라
      머리글이 그 양 끝 숫자도 같이 말한다 — 색만 보고 밝기를 짐작하지 않게.
 ============================================================ */
-import { sampleLightGrid, buildCellHeatmap, updateCellHeatmap, heatColorHex, heatGrayHex } from './lighting_viz.js';
+import { sampleLightGrid, buildCellHeatmap, updateCellHeatmap, heatColorHex, heatGrayHex, heatDarkHex, heatShadeHex } from './lighting_viz.js';
 
 /* 값 → 글자. **자리 수를 그 격자의 최대값으로 고른다.**
    ★ 왜 값마다가 아니라 격자마다인가 — 반지하 바닥은 DLI 가 0.00~0.32 다. 한 자리로 적으면
@@ -106,6 +106,36 @@ export function createLightGridLabels(o = {}) {
   const v3 = new THREE.Vector3();
   let box = { l: -1, t: -1, w: -1, h: -1 };
 
+  /* ★★ 2026-10-31 총괄 D95 ⑤ (plan-to-core-d95 §2) — **칸은 낱말 위 · 수 아래 작게**(박사님 08-16 «작은 숫자» 지킴).
+       낱말 표(어둠 ≤ dark · 그늘 < grow · 밝음 < split · 아주 밝음) — 문턱은 부르는 쪽이 엔진에서 읽어 bands 로 넘긴다(여기 숫자 없음).
+       bands.dark · bands.ko.dark 가 없으면 예전처럼 수만 적는다(다른 부르는 쪽 · 검수 판 그대로) */
+  const wordsOn = () => !!(bands && Number.isFinite(bands.dark) && Number.isFinite(bands.grow) && bands.ko && bands.ko.dark);
+  function wordOf(v) {
+    const k = bands.ko;
+    if (v <= bands.dark) return k.dark;
+    if (v < bands.grow) return k.shade;
+    if (Number.isFinite(bands.split) && v >= bands.split) return k.split;
+    return k.grow;
+  }
+  function paintCell(el, v) {
+    if (!wordsOn()) { el.textContent = format(v); el.style.textAlign = ''; return; }
+    el.textContent = '';
+    el.style.textAlign = 'center';
+    const w = document.createElement('b');
+    w.style.cssText = `display:block;font:700 ${fontPx}px/1.1 system-ui,-apple-system,sans-serif`;
+    w.textContent = wordOf(v);
+    const n = document.createElement('small');
+    n.className = 'num';
+    n.style.cssText = `display:block;font:600 ${Math.max(8, Math.round(fontPx * 0.8))}px/1 ui-monospace,SFMono-Regular,Menlo,monospace;opacity:.85`;
+    n.textContent = format(v);
+    el.appendChild(w); el.appendChild(n);
+  }
+  /* 낱말 폭 어림[px] — 한글 1em · 빈칸 .3em(§refit 겹침 자) */
+  function wordPx() {
+    if (!wordsOn()) return 0;
+    const k = bands.ko;
+    return Math.max(...[k.dark, k.shade, k.grow, k.split].filter(Boolean).map(t => [...String(t)].reduce((a, c) => a + (c === ' ' ? 0.3 : 1), 0))) * fontPx;
+  }
   function span() {
     const el = document.createElement('span');
     el.style.cssText = `position:absolute;left:0;top:0;color:#fff;` +
@@ -167,7 +197,7 @@ export function createLightGridLabels(o = {}) {
        글자가 그보다 넓을 때 그대로 겹친다(첫 판: 최소 거리 26px 인데 글자 폭이 28px 이었다).
        한글·숫자가 아니라 등폭 글꼴이므로 폭은 글자 수 × 약 0.62em 로 정확히 어림된다. */
     const maxLen = format(grid.max).length;
-    const gapMin = Math.max(minGapPx * 0.6, fontPx * 0.62 * maxLen + 2);
+    const gapMin = Math.max(minGapPx * 0.6, fontPx * 0.62 * maxLen + 2, wordPx() + 2);   /* ★ D95 ⑤ 낱말 폭 */
     /* 줄 사이[px] — 글자 높이 + 여백. **가로로는 gapMin, 세로로는 이것**이 글자 네모다. */
     const vGap = Math.max(fontPx * 1.35, fontPx + 3);
 
@@ -264,10 +294,14 @@ export function createLightGridLabels(o = {}) {
     for (let k = 0; k < next.length; k++) {
       if (!pool[k]) pool[k] = span();
       next[k].el = pool[k];
-      pool[k].textContent = format(next[k].e.value);
+      paintCell(pool[k], next[k].e.value);   /* ★ D95 ⑤ — 낱말 위 · 수 아래(낱말 표가 없으면 수만) */
       pool[k].style.display = '';
       /* ★ 2026-10-31 D93 ⑥ — 글자 네모 크기를 한 번 재 둔다(§update 가 프레임마다 겹침을 본다 · 숨은 판이면 0 → 그 판은 안 봄) */
       next[k].w = pool[k].offsetWidth; next[k].h = pool[k].offsetHeight;
+      /* ★ D95 ⑤ — 수를 뺀 낱말만의 네모도 재 둔다(§update: 겹치면 수부터 뺀다 · 낱말은 남긴다) */
+      { const nm = pool[k].querySelector('small.num');
+        if (nm) { nm.style.display = 'none'; next[k].ww = pool[k].offsetWidth; next[k].wh = pool[k].offsetHeight; nm.style.display = ''; }
+        else { next[k].ww = next[k].w; next[k].wh = next[k].h; } }
     }
     for (let k = next.length; k < pool.length; k++) pool[k].style.display = 'none';
     shown = next;
@@ -278,6 +312,20 @@ export function createLightGridLabels(o = {}) {
     if (!grid) { cap.textContent = ''; return; }
     const lo = format(grid.min), hi = format(grid.max);
     /* ★ 2026-10-08 D — 문턱 띠가 있으면 범례가 «색이 무엇인가»를 문턱으로 말한다(이 방의 양 끝은 뒤에 작게) */
+    /* ★★ 2026-10-31 총괄 D95 ⑤ (plan-to-core-d95 §2) — 낱말 표가 있으면 범례 세 줄:
+         ① «빛 · 표면(가구 윗면 · 없으면 바닥) · 맑음 · 여름 …» ② «■어둠 콩나물 · ■그늘 무순 · ■밝음 몬스테라 자람 · ■아주 밝음 잎 갈라짐»
+         ③ (작게) «문턱 0.3 · 2.7 · 6 — DLI(mol/m²·d)» — 단위(mol/m²·d)는 셋째 줄 작은 글에만(비판 판 Q4) */
+    if (wordsOn()) {
+      const k = bands.ko, L = k.legend || {};
+      const th = [bands.dark, bands.grow, bands.split].filter(Number.isFinite).map(v => String(+v)).join(' · ');
+      const sw = (c, t, d) => `<span style="color:${c}">■</span>${escapeHtml(t)}${d ? ' ' + escapeHtml(d) : ''}`;
+      cap.style.whiteSpace = 'normal'; cap.style.maxWidth = 'calc(100% - 16px)';
+      cap.innerHTML = `<b>${escapeHtml(k.head || '빛')}</b> · ${escapeHtml(unit)}` + (extra ? ` · ${escapeHtml(extra)}` : '') + '<br>' +
+        [sw(heatDarkHex(), k.dark, L.dark), sw(heatShadeHex(), k.shade, L.shade), sw(heatColorHex(0), k.grow, L.grow),
+         Number.isFinite(bands.split) ? sw(heatColorHex(1), k.split, L.split) : null].filter(Boolean).join(' · ') + '<br>' +
+        `<small style="opacity:.8">${escapeHtml((k.thresh || '문턱 {t} — DLI(mol/m²·d)').replace('{t}', th))}</small>`;
+      return;
+    }
     if (bands && Number.isFinite(bands.grow)) {
       /* 문턱은 정본 값 그대로(2.7 · 6) — 칸 숫자 자리 맞춤(2.70)을 범례에 안 쓴다. 두 줄로 — 한 줄이면 폰 390px 를 넘어 잘렸다 */
       const g = String(+bands.grow), sp = Number.isFinite(bands.split) ? String(+bands.split) : null;
@@ -337,11 +385,15 @@ export function createLightGridLabels(o = {}) {
           s.el.style.visibility = 'hidden';
           continue;
         }
-        const hw = (s.w || 0) / 2 + 0.5, hh = (s.h || 0) / 2 + 0.5;
-        if (s.w > 0 && placedBoxes.some(q => Math.abs(q.x - p.x) < q.hw + hw && Math.abs(q.y - p.y) < q.hh + hh)) {
-          s.el.style.visibility = 'hidden';
-          continue;
-        }
+        let hw = (s.w || 0) / 2 + 0.5, hh = (s.h || 0) / 2 + 0.5;
+        const hits = (w2, h2) => placedBoxes.some(q => Math.abs(q.x - p.x) < q.hw + w2 && Math.abs(q.y - p.y) < q.hh + h2);
+        /* ★ D95 ⑤ (plan §2) — 겹치면 **수부터 뺀다**(낱말만 네모로 다시 본다) · 그래도 겹치면 통째로 감춘다 */
+        const nm = s.el.querySelector ? s.el.querySelector('small.num') : null;
+        if (s.w > 0 && hits(hw, hh)) {
+          const ww = (s.ww || 0) / 2 + 0.5, wh = (s.wh || 0) / 2 + 0.5;
+          if (nm && s.ww > 0 && !hits(ww, wh)) { nm.style.display = 'none'; hw = ww; hh = wh; }
+          else { s.el.style.visibility = 'hidden'; continue; }
+        } else if (nm && nm.style.display === 'none') nm.style.display = '';
         if (s.w > 0) placedBoxes.push({ x: p.x, y: p.y, hw, hh });
         s.el.style.visibility = '';
         s.el.style.transform = `translate(-50%,-50%) translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px)`;
@@ -401,7 +453,8 @@ export function createLightGridLabels(o = {}) {
       return shown.map(s => ({
         i: s.e.i, j: s.e.j, x: +s.e.x.toFixed(4), z: +s.e.z.toFixed(4), y: +s.e.y.toFixed(4),
         onUid: s.e.onUid, occIdx: s.e.occIdx, tier: s.e.tier,
-        text: s.el.textContent, value: s.e.value
+        text: ((s.el.querySelector && s.el.querySelector('small.num')) || s.el).textContent, value: s.e.value,   /* ★ D95 ⑤ 수만(낱말 빼고) */
+        word: (s.el.querySelector && s.el.querySelector('b')) ? s.el.querySelector('b').textContent : null
       }));
     },
     dispose() {

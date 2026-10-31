@@ -1223,6 +1223,11 @@
        "막는거 경고는 해주되, 막히면 뭐 재배치하면 되지 그 식물을") */
   #placeConfirm .warn{position:relative;display:block;padding:2px 4px 4px;max-width:220px;
     font-size:11.5px;line-height:1.4;color:#ffc98f;word-break:keep-all;white-space:normal}
+  /* ★ 2026-10-31 총괄 D95 ③ — 그 자리 빛 낱말 한 줄(§placeFitLine) · 경고와 같은 옷 · 맞음 초록 · 그럭저럭 옅은 노랑 · 안 맞음은 경고색 */
+  #placeConfirm .fit{position:relative;display:block;padding:1px 4px 2px;max-width:220px;
+    font-size:11.5px;line-height:1.4;color:#a8e6a0;word-break:keep-all;white-space:normal}
+  #placeConfirm .fit.mid{color:#e8dc9a}
+  #placeConfirm .fit.bad{color:#ffc98f}
   #moveCatcher{position:absolute;z-index:28;inset:0;display:none;touch-action:none}
   #stage.moving #moveCatcher{display:block}
   #stage.moving #plantActions,#stage.moving #furnActions{display:none}
@@ -2129,6 +2134,8 @@
       <button id="placeOk" class="primary">확인</button>
       <button id="placeAgain" class="ghost">다시 옮기기</button>
       <button id="placeCancel" class="ghost">취소</button>
+      <!-- ★ D95 ③ 빛 낱말 한 줄은 «맨 밑» — 제목 밑에 두면 첫 판 손가락(«여기에 둘까요? — [확인]» · [확인] 위)이 그 줄을 덮었다(core 사진 390_b_confirm) -->
+      <span class="fit" id="placeConfirmFit" style="display:none"></span>
     </div>
     <iframe id="growth" src="./plant_grow.html?embed=game" title="식물 확대"></iframe>
     <!-- ★★ 다음 단계까지 얼마나 왔나 (2026-08-06 박사님 · 베타테스터 "크는 게 안 보여 재미없다").
@@ -2610,6 +2617,7 @@
         <div class="gg-row"><b id="mcPhase">—</b><span id="mcNext"></span></div>
         <div class="gg-bar"><i id="mcFill"></i></div>
         <div class="mc-where" id="mcWhere"></div>
+        <div class="mc-where" id="mcVarie" style="display:none"></div>
       </div>
       <div class="quest" id="sheetQuest"></div>
       <!-- ★★★ **빛 분포 겹쳐 보기** (2026-08-16 · 박사님)
@@ -2733,7 +2741,7 @@
              probe_cutting_ui 는 id 로 찾으므로 자리가 바뀌어도 그대로 돈다. -->
       <div class="box" id="cutBox" style="display:none">
         <h3>삽수</h3>
-        <div class="sub">자르고 → 뿌리내고 → 팔아서 꾸준히 벌어요.</div>
+        <div class="sub" id="cutBoxSub">자르고 → 뿌리내고 → 팔아요.</div>
         <div class="sub2">자를 수 있는 마디</div>
         <div id="cutNodes"></div>
         <div class="sub2">가진 삽수</div>
@@ -4768,7 +4776,7 @@ function hintAvoidChip(h, hand, r) {
   })();
   /* ★ 확인 바 제목(«여기에 둘까요?»)도 — 말풍선 «여기에 둘까요? — [확인]»이 그 제목 위에 앉았다(같은 재현 판 사진) */
   const confirmWho = textBox($('placeConfirmWho'));
-  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...popTexts, confirmWho].filter(Boolean);
+  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('placeConfirmFit')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...popTexts, confirmWho].filter(Boolean);   /* ★ D95 ③ 빛 낱말 줄도 비킨다 */
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
@@ -7609,7 +7617,14 @@ function drawMonthPanel() {
     let vs = { won: 0, grams: 0 };
     try { vs = pantrySurplusOf(null); } catch { vs = { won: 0, grams: 0 }; }
     v.style.display = vs.won > 0 ? '' : 'none';
-    if (vs.won > 0) v.textContent = `이레치 밥상 몫을 넘는 채소 ${formatGram(vs.grams)} — 팔면 +${vs.won.toLocaleString('ko-KR')}원`; }
+    if (vs.won > 0) v.textContent = `이레치 밥상 몫을 넘는 채소 ${formatGram(vs.grams)} — 팔면 +${vs.won.toLocaleString('ko-KR')}원`;
+    /* ★ D95 ①-4 (plan §1) — 넷째 줄: 이사 전 · 몬스테라 온 뒤 · 이사비가 아직 모자랄 때 «무늬 삽수는 한 그루 {원}원부터 — {k}그루면 이사비가 찹니다»
+         k = ⌈모자란 돈 ÷ 값⌉ — 그루마다 값 ≥ {원}이라 k 그루면 반드시 넘는다 */
+    const vv = line('monthVarie', v);
+    const mg4 = moveGoalOf(), won4 = varieFromWon();
+    const on4 = !!(mg4 && !mg4.done && mg4.left > 0 && won4 && S.firstPlay && S.firstPlay.monstera && S.firstPlay.monstera.arrived && !(S.tutorial && S.tutorial.movedOut));
+    vv.style.display = on4 ? '' : 'none';
+    if (on4) vv.textContent = VARIE_VALUE_KO.month.replace('{won}', won4.toLocaleString('ko-KR')).replace('{k}', Math.ceil(mg4.left / won4)); }
 
   /* ★★ 한 줄 요약 — 이 창의 전부다 */
   const up = r.net >= 0;
@@ -9046,6 +9061,8 @@ function shopGroupOf(it) {
   return 'grow';
 }
 let shopGroup = 'all';
+/* ★ D95 ⑥ — 반지하 가구 탭 머리(plan §3 문안 · 여기 한 곳) */
+const SHOP_FURN_NOTE_KO = '선반 · 받침대는 지금 화분 놓을 데를 늘립니다. 꾸미는 가구는 급할 것 없습니다 — 산 가구는 이사 때 가방에 담겨 따라갑니다.';
 function drawShopGroups(shown) {
   const bar = $('shopGroups');
   if (!bar) return;
@@ -9233,6 +9250,15 @@ function drawShop() {
       <button class="ghost" data-buy="${it.id}">주문</button>
     </div>`;
   }).join('');
+  /* ★ 2026-10-31 총괄 D95 ⑥ (plan-to-core-d95 §3 · 비판 둘째 판 «팔기까지 먼 길») — 반지하(이사 전)에서 가구 줄이 시작되는 자리 위에 한 줄.
+       «가구» 갈래면 맨 위 · «전체»면 가구 줄 첫 줄 위. 원룸엔 안 띄운다(원룸 자리는 가구 윗면에서 생겨 «급할 것 없다»가 거짓) */
+  try {
+    const firstFurn = (S.tutorial && !S.tutorial.movedOut)
+      ? shown.filter(it => shopGroupOf(it) === shopGroup || shopGroup === 'all').find(it => shopGroupOf(it) === 'furn') : null;
+    const row = firstFurn ? $('shopList').querySelector(`[data-buy="${firstFurn.id}"]`) : null;
+    const rowEl = row && row.closest('.shopRow');
+    if (rowEl) rowEl.insertAdjacentHTML('beforebegin', `<div class="sub" id="shopFurnNote" style="margin:10px 2px 6px">${SHOP_FURN_NOTE_KO}</div>`);
+  } catch (e) { console.warn('[가구 탭 머리]', e && e.message); }
   /* ★ 줄이 매번 다시 지어지므로 손잡이도 매번 다시 건다 — `data-buy` 와 같은 규약이다 */
   for (const b of $('shopList').querySelectorAll('[data-lamp]')) b.onclick = guard(doBuyLamp);
   for (const b of $('shopList').querySelectorAll('[data-buy]')) {
@@ -9659,6 +9685,61 @@ function drawMonCard() {
   const where = band && MON_LIGHT_KO[band] ? `자리  ${MON_LIGHT_KO[band]}` : '';
   /* 멈췄으면 자리 줄 끝에 까닭 한 마디(§shortBlockWhy 그대로 — 새 말을 안 짓는다) */
   $('mcWhere').textContent = where + (why ? `${where ? ' · ' : ''}${shortBlockWhy(why)}` : '');
+  try { drawVarieValue(); } catch (e) { console.warn('[무늬 삽수 값]', e && e.message); }
+}
+/* ══ ★★ 2026-10-31 총괄 D95 ① (plan-to-core-d95 §1 · 비판 둘째 판 Q5) — **무늬 삽수 값을 일찍 · 늘 보이게** ══════
+   ⛔ 값(+350,000원)은 자를 마디가 생긴 뒤에야 식물 칸 맨 밑(#cutBox 마디 줄)에 처음 섰다 — 비판 판은 Day 36 에 우연히 봤다.
+   ★ 값은 엔진 하나(shop §priceOf — 무늬 잎 하나 · 제일 싼 무늬 등급 산반) · 손으로 박지 않는다. 무늬 삽수는 어느 것이든 이 값 이상이라 글은 늘 «{원}원부터».
+   글은 여기 한 곳(VARIE_VALUE_KO · plan 문안) */
+const VARIE_VALUE_KO = Object.freeze({
+  card: '✂ 무늬 삽수 한 그루 {won}원부터 · {state}',
+  open: '지금 자를 수 있습니다 — 아래 삽수 칸',
+  wait: '무늬 잎이 다 자라면 자를 수 있습니다',
+  cutSub: '자르고 → 뿌리내고 → 팔아요. 무늬 삽수는 한 그루 {won}원부터입니다.',
+  bannerTitle: '💰 무늬 삽수는 한 그루 {won}원부터',
+  bannerSub: '지금 시세입니다(콩나물 {kg}kg 값) — 무늬 잎이 다 자라면 잘라 물에 꽂고, 뿌리가 나면 팝니다',
+  month: '무늬 삽수는 한 그루 {won}원부터 — {k}그루면 이사비가 찹니다'
+});
+function varieFromWon() {
+  try { const w = priceOf({ leaves: 1, variegatedLeaves: 1, form: 'cutting' }).won; return Number.isFinite(w) && w > 0 ? Math.round(w) : null; } catch { return null; }   /* form 을 박아 둔다(shop §cuttingPriceOf 와 같은 셈 · 그루 ×1.4 로 안 샌다) */
+}
+/* 무늬 마디 상태 — 오늘 자를 수 있나(§varieCutOpenNow 와 같은 자) · 막혔으면 그 마디의 cutBlockedReason 글 그대로 · 아니면 기다림 */
+function varieCutStateKo() {
+  if (varieCutOpenNow() > 0) return VARIE_VALUE_KO.open;
+  try {
+    const p = pot0(S); const nodes = p ? io.growth.cuttableNodes() : null;
+    if (p && Array.isArray(nodes)) {
+      let vm = null;
+      try { const ls = io.growth.leafState(); if (Array.isArray(ls)) vm = ls.filter(r => r && r.varie && r.matured && !r.dropped).length; } catch { vm = null; }
+      const opt = { potId: p.id, ...(Number.isInteger(vm) ? { varieMaturedLeaves: vm } : {}) };
+      for (const n of cuttableNow(S, nodes, { potId: p.id }).filter(n => (n.variegatedLeaves || 0) > 0)) {
+        const why = cutBlockedReason(S, nodes, n.nodeId, opt);
+        if (why) return String(why);
+      }
+    }
+  } catch { }
+  return VARIE_VALUE_KO.wait;
+}
+function drawVarieValue() {
+  const won = varieFromWon();
+  const wonKo = won == null ? null : won.toLocaleString('ko-KR');
+  const mc = $('mcVarie');
+  if (mc) { mc.style.display = wonKo ? '' : 'none';
+            if (wonKo) mc.textContent = VARIE_VALUE_KO.card.replace('{won}', wonKo).replace('{state}', varieCutStateKo()); }
+  const cs = $('cutBoxSub');
+  if (cs) cs.textContent = wonKo ? VARIE_VALUE_KO.cutSub.replace('{won}', wonKo) : '자르고 → 뿌리내고 → 팔아요.';
+}
+/* ①-1 몬스테라 온 날 배너 한 번 — 도착 대사(monsteraArrived)가 «끝난 뒤»(§dlgPaint 빈 줄) · 수는 배너가 말한다(몬이는 수를 안 말함) */
+var varieValueBannerPending = false;
+function varieValueBannerWhenQuiet() {
+  if (!varieValueBannerPending) return false;
+  const st = $('stage'); if (st && st.classList.contains('talking')) return false;
+  varieValueBannerPending = false;
+  const won = varieFromWon(); if (won == null) return false;
+  let kg = null; try { const g = cropKindOf('beansprout').sellWonPerGram; if (Number.isFinite(g) && g > 0) kg = Math.round(won / (g * 1000)); } catch { kg = null; }
+  banners([{ title: VARIE_VALUE_KO.bannerTitle.replace('{won}', won.toLocaleString('ko-KR')),
+             sub: kg ? VARIE_VALUE_KO.bannerSub.replace('{kg}', kg) : VARIE_VALUE_KO.bannerSub.replace('(콩나물 {kg}kg 값)', '') }]);
+  return true;
 }
 function drawGrowGauge() {
   const box = $('growGauge');
@@ -12978,17 +13059,37 @@ function lightHeatOpts() {
     const th = io.light && typeof io.light.thresholdsOf === 'function' ? io.light.thresholdsOf('monstera_deliciosa', false) : null;
     if (th && Number.isFinite(th.min)) bands = { grow: th.min, split: Number.isFinite(th.fenestrate) ? th.fenestrate : null, ko: HEAT_BANDS_KO };
   } catch { bands = null; }
+  /* ★★ 2026-10-31 총괄 D95 ⑤ (plan-to-core-d95 §2) — 어둠 문턱 = 콩나물 «하얗고 아삭»(crisp_white · cropQualityOf 와 같은 표 · ≤ 경계 포함) · 못 읽으면 예전 두 갈래 */
+  if (bands) { try { const q = (cropKindOf('beansprout').quality || [])[0]; if (q && Number.isFinite(q.maxDli) && q.maxDli < bands.grow) bands.dark = q.maxDli; } catch { } }
   return {
     weather: (lastTurn && lastTurn.sky && lastTurn.sky.weather) || null,
     season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null,
     lampCount: (S.lamps && S.lamps.count) || 0,
     litHours: (S.lamps && S.lamps.litHours) || 0,
     /* ★ 2026-10-31 D93 ⑥ m6 — 범례에도 «표면»이 무엇인지(예전엔 [빛 분포 보기] 옆 글에만 · growth §4) */
-    unit: 'DLI · 표면(가구 윗면 · 없으면 바닥)',
+    /* ★ D95 ⑤ — 낱말 표가 서면 범례 첫 줄 «빛 · 표면…» · 단위 DLI(mol/m²·d)는 셋째 줄 작은 글(light_grid_labels §setCaption) */
+    unit: (bands && Number.isFinite(bands.dark)) ? '표면(가구 윗면 · 없으면 바닥)' : 'DLI · 표면(가구 윗면 · 없으면 바닥)',
     bands
   };
 }
-const HEAT_BANDS_KO = Object.freeze({ below: '안 자람', grow: '자람', split: '갈라짐' });   /* [house] 초안 «자람 2.7 · 갈라짐 6.0» */
+/* ★★ 2026-10-31 총괄 D95 ③⑤ (plan-to-core-d95 §2) — **빛 낱말 한 벌**(빛 지도 · 놓기 확인 바가 같은 말) · 글은 여기 한 곳.
+     어둠 ≤ 0.3(콩나물 crisp_white) · 그늘 < 2.7(몬스테라 min) · 밝음 < 6(fenestrate) · 아주 밝음 — 문턱은 엔진에서(lightHeatOpts).
+     «아주 밝음»은 잎 갈라짐(fenestrate)이다 — 무늬(흰 무늬 · 등급)가 아니라 범례에 «무늬»를 안 쓴다.
+     below · 옛 «자람/갈라짐»은 어둠 문턱을 못 읽은 판(두 갈래 범례)에서만 쓴다 */
+const HEAT_BANDS_KO = Object.freeze({ dark: '어둠', shade: '그늘', grow: '밝음', split: '아주 밝음', head: '빛',
+  legend: Object.freeze({ dark: '콩나물', shade: '무순', grow: '몬스테라 자람', split: '잎 갈라짐' }),
+  thresh: '문턱 {t} — DLI(mol/m²·d)',
+  below: '안 자람' });
+/* 그 빛 d 의 낱말 — 빛 지도 칸과 같은 표(§HEAT_BANDS_KO) · 문턱을 못 읽으면 null */
+function lightWordOf(d) {
+  if (!Number.isFinite(d)) return null;
+  const o = lightHeatOpts(); const b = o && o.bands;
+  if (!b || !Number.isFinite(b.dark) || !Number.isFinite(b.grow)) return null;
+  if (d <= b.dark) return HEAT_BANDS_KO.dark;
+  if (d < b.grow) return HEAT_BANDS_KO.shade;
+  if (Number.isFinite(b.split) && d >= b.split) return HEAT_BANDS_KO.split;
+  return HEAT_BANDS_KO.grow;
+}
 function drawLightHeatBtn() {
   const b = $('lightHeat'), note = $('lightHeatNote');
   if (!b) return;
@@ -13247,7 +13348,7 @@ const siruHarvest = guard((id, kind) => {
              /* ★ 2026-10-30 [plan] D90 ⑤ — «밥값 N원어치»(물건 값 10원/g)를 걷고 거둔 g 만(값 낱말은 밥상 «한 몫 2,500원 아낌» · 파는 창 «팔면 N원» 둘뿐) */
              sub: `${r.qualityKo || ''} · ${formatGram((r.perPot || []).reduce((a, x) => a + (x.grams || 0), 0))}` },
            ...surplusBannerOf(r), ...neighborOrderBannerOf(r.events)]);
-  if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
+  if (r.arrived) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); varieValueBannerPending = true; }   /* ★ D95 ①-1 */
   if (r.events && r.events.length) dlgOpen(story.events(r.events, S));
   checkQuests(lastTurn);    /* 회전이 하나 늘었다 — 다섯 줄을 다시 본다 (§퀘스트). 배너는 draw 가 낸다 */
   draw();
@@ -14386,6 +14487,7 @@ function dlgPaint() {
     try { if (openShopEndWhenQuiet()) return; } catch (e) { console.warn('[끝맺음]', e && e.message); }   /* D75 shopEnding 여섯 줄이 끝났다 → 끝맺음 카드 */
     try { if (openBreedNameWhenQuiet()) return; } catch (e) { console.warn('[품종 이름]', e && e.message); }   /* C — 같은 조건 셋 → 이름 칸 */
     try { if (openMoveAskWhenQuiet()) return; } catch (e) { console.warn('[D27]', e && e.message); }       /* D27 몬이 한 줄 뒤 → 이사 되묻기 창 */
+    try { varieValueBannerWhenQuiet(); } catch (e) { console.warn('[무늬 삽수 값]', e && e.message); }   /* ★ D95 ①-1 몬스테라 온 날 대사 뒤 배너 한 번 */
     try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
     return;
   }
@@ -17096,9 +17198,15 @@ const placeConfirm = {
     if (lampAsk.uid) {
       if (who) who.textContent = `여기에 ${josa(lampAsk.ko, '을', '를')} 달까요?`;
       const w0 = $('placeConfirmWarn'); if (w0) { w0.textContent = ''; w0.style.display = 'none'; }
+      const f0 = $('placeConfirmFit'); if (f0) { f0.textContent = ''; f0.style.display = 'none'; }   /* ★ D95 ③ 등 자리는 정해져 있다 */
       this.moveHelps = false;
       return;
     }
+    /* ★ D95 ③ — 그 자리 빛 낱말 한 줄(작물 · 그루) · 첫 판에도 띄운다(자리는 게임이 이미 골랐고 이 줄은 까닭만 말한다) */
+    { const f = $('placeConfirmFit');
+      if (f) { let fit = null; try { fit = placeFitLine(picked.slotId); } catch (e) { console.warn('[확인 바 빛 낱말]', e && e.message); fit = null; }
+               f.textContent = fit ? fit.text : ''; f.style.display = fit ? '' : 'none';
+               f.classList.toggle('mid', !!(fit && fit.tone === 'mid')); f.classList.toggle('bad', !!(fit && fit.tone === 'bad')); } }
     if (who) who.textContent = picked.slotId && !isFreeSlotId(picked.slotId)
       ? `${slotLabel(picked.slotId)}에 둘까요?` : '여기에 둘까요?';
     const warn = $('placeConfirmWarn');
@@ -17977,6 +18085,70 @@ function varieDimWarn(g) {
 }
 /* 놓은 그것의 빛 한 줄 — 안 자람이 먼저 · 그다음 무늬 띠 */
 function placeLightWarn(g) { return darkPlaceWarn(g) || varieDimWarn(g); }
+
+/* ══ ★★ 2026-10-31 총괄 D95 ③ (plan-to-core-d95 §2 · 비판 둘째 판 M4 ④ «어디가 어두운지 화면에 표시가 없어 [확인]만 누르게 된다») ══
+   놓기 확인 바(«여기에 둘까요?») 밑에 **그 자리 빛 낱말 한 줄** — 빛 지도와 같은 낱말(§HEAT_BANDS_KO · §lightWordOf).
+   ★ 자는 자동 자리가 쓰는 그것 그대로 — 그래야 «게임이 고른 자리»와 «낱말»이 다른 말을 안 한다:
+       작물(시루 · 재배판)  cropQualityOf(kind, d) · d = 이름 자리 dliBySlotId(내일 하늘 · cropCandidates 와 같은 판) · 자유 자리 dliAt(§floorGridSpot 과 같은 하늘)
+       그루(화분 · 빈 화분 · 삽수)  growBandAt(…, variegated)(§placeLightWarn 과 같은 자) — 안 자람이면 **안 띄운다**(placeLightWarn 이 말한다)
+   ★ 꼬리 «· 끌어서 다른 자리»는 닿는 빈 칸 가운데 그 작물 끼(meals)가 더 높은 칸이 있을 때만(갈 데 없는 길을 가리키지 않는다)
+   글은 여기 한 곳(plan 문안) */
+const PLACE_FIT_KO = Object.freeze({
+  crop3: '{word} — {crop}에 알맞음 ({q})',
+  crop2: '{word} — {crop}엔 그럭저럭 ({q})',
+  crop1: '{word} — {crop}엔 안 맞음 ({q})',
+  moveTail: ' · 끌어서 다른 자리',
+  growOk: '{word} — {who}에 알맞음',
+  growSlow: '{word} — {who} 느리게 자람',
+  growOver: '{word} — {who}엔 빛이 셈'
+});
+function cropRowAtKey(key) {
+  if (!key) return null;
+  let rows = []; try { rows = cropPotList(S.firstPlay, S.day) || []; } catch { rows = []; }
+  return rows.find(x => x && (x.slotId === key || (x.at && key === `free:${x.id}`) || x.id === key)) || null;
+}
+function placeFitLine(key) {
+  if (!key) return null;
+  /* 작물 */
+  const row = cropRowAtKey(key);
+  if (row) {
+    let d = null;
+    if (!isFreeSlotId(key) && row.slotId) { try { d = dliBySlotId().get(row.slotId); } catch { d = null; } }
+    if (!Number.isFinite(d) && row.at) {
+      try { const sky = io.light.skyFor(S.day + 1, S.sim);
+            d = io.light.dliAt({ x: row.at.x, y: row.at.y, z: row.at.z }, { weather: sky.weather, season: sky.season, lampCount: S.lamps.count, litHours: S.lamps.litHours, plantId: 'monstera_deliciosa' }).dli; } catch { d = null; }
+    }
+    if (!Number.isFinite(d)) return null;
+    const word = lightWordOf(d); if (!word) return null;
+    let q = null; try { q = cropQualityOf(row.kind, d); } catch { q = null; }
+    if (!q || !q.meals) return null;
+    const crop = row.kindKo || '콩나물';
+    const t = (q.meals >= 3 ? PLACE_FIT_KO.crop3 : q.meals === 2 ? PLACE_FIT_KO.crop2 : PLACE_FIT_KO.crop1)
+      .replace('{word}', word).replace('{crop}', crop).replace('{q}', q.ko || '');
+    let tail = '';
+    if (q.meals < 3) {
+      try {
+        const taken = takenSlotIds();
+        const better = (cropCandidates() || []).some(s => s && !taken.has(s.slotId) && s.slotId !== row.slotId && slotReachable(s.slotId)
+          && ((cropQualityOf(row.kind, s.dli) || {}).meals || 0) > q.meals);
+        if (better) tail = PLACE_FIT_KO.moveTail;
+      } catch { tail = ''; }
+    }
+    return { text: t + tail, tone: q.meals >= 3 ? 'ok' : q.meals === 2 ? 'mid' : 'bad' };
+  }
+  /* 그루 */
+  const g = placedGrowerAt(key);
+  if (g && g.obj && (g.obj.at || g.obj.slotId)) {
+    const here = growBandAt(g.obj.at ? g.obj : g.obj.slotId, g.variegated);
+    if (!here || here.dark) return null;              /* 안 자람 — placeLightWarn 이 말한다 */
+    const word = lightWordOf(here.dli); if (!word) return null;
+    const who = (g.kind === 'cutting' && g.variegated) ? PLACE_DARK_KO.who.varieCutting : (PLACE_DARK_KO.who[g.kind] || '몬스테라');
+    if (here.band === 'slow') return { text: PLACE_FIT_KO.growSlow.replace('{word}', word).replace('{who}', josa(who, '이', '가')), tone: 'mid' };
+    if (here.band === 'over') return { text: PLACE_FIT_KO.growOver.replace('{word}', word).replace('{who}', who), tone: 'mid' };
+    return { text: PLACE_FIT_KO.growOk.replace('{word}', word).replace('{who}', who), tone: 'ok' };
+  }
+  return null;
+}
 
 /* ══ ★★ 2026-10-09 D39 C(총괄) — **화분을 받는 가구(선반·받침대·계단식)를 옮겨 놓으면 «빛» 한 줄** ══
    갈래는 엔진이 낸다(light_adapter §placeVerdict · house b797b00f) — 그 가구 자리 중 가장 밝은 데의 «여름·겨울 × 식물등 0/전부».
@@ -19730,7 +19902,7 @@ const reallyHarvest = guard(() => {
                 ★ D95 ① — 여럿이면 g 은 합 · 질은 다 같을 때만 */
              sub: qualH.length === 1 ? `${qualH[0]} · ${formatGram(gramsH)}` : `${qualMix} · ${formatGram(gramsH)}` },
            ...surplusBannerOf({ surplusWon: rs.reduce((a, r) => a + (r.surplusWon || 0), 0) }), ...neighborOrderBannerOf(eventsH)]);
-  if (rs.some(r => r.arrived)) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); }
+  if (rs.some(r => r.arrived)) { arrivalSlotId = pot0(S) && pot0(S).slotId; fillSlots(false); varieValueBannerPending = true; }   /* ★ D95 ①-1 */
   /* 대사는 턴과 같은 창구로 낸다 — 수확 → 배움 → 식물신 → 도착 순서가 여기서 지켜진다(묶음이면 거둔 차례대로 이어 붙인다) */
   if (eventsH.length) dlgOpen(story.events(eventsH, S));
   checkQuests(lastTurn);    /* 회전이 하나 늘었다 — 다섯 줄을 다시 본다 (§퀘스트). 배너는 draw 가 낸다 */
@@ -20255,8 +20427,30 @@ const MOVE_ASK_KO = Object.freeze({
   none:   '무늬 삽수나 무늬 그루 없이 가면, 원룸에서 늘릴 게 없습니다. 그래도 갈까요?',
   /* ★ 2026-10-10 [plan] 03a35d6b — 무늬 모주는 있는데 무늬 삽수가 0 · 오늘 자를 수 있는 무늬 마디가 있을 때만(할 수 없는 일을 안 시킴) */
   noCutting: '무늬 삽수 없이 가면, 원룸에서 늘리기가 한참 늦어집니다.',
+  /* ★ 2026-10-31 총괄 D95 ⑧ (growth 239767fa · plan-to-core-d95 §4) — 이사하면 남는 돈 · 원룸 첫 월세 날(늘) · 모자라면 한 줄(막지 않음).
+       ⛔ 창은 «이사비 2,000,000원»만 말해, 200만을 넘긴 그날 바로 이사한 판이 몇천 원으로 원룸에 들어 하루이틀 만에 0원이 됐다(13판 중 11판) */
+  left:  '이사하면 남는 돈 {left}원 · 원룸 첫 월세 {rent}원{when}',
+  short: '월세 날까지 채소를 팔아 채워야 합니다{daily}',
+  shortDaily: ' — 원룸에선 하루 {daily}원쯤 나갑니다',
   go: '이사한다', goAnyway: '그래도 간다'
 });
+/* ★ D95 ⑧ — 이사하면 남는 돈 · 첫 월세까지 날 · 원룸 하루 지출(엔진 값 — 지어내지 않는다)
+     daily = 원룸 하루 지출(월세 몫 뺀 dailyCashOutWon · 이사한 셈) − 오늘 밥으로 아끼는 값 + 등 전기(밥상 창 «오늘 지갑에서 나가는 돈»과 같은 셈) · 못 읽으면 null */
+function moveMoneyNow(ts, needWon) {
+  const left = Math.round(ts.cashWon - needWon);
+  const rent = Number.isFinite(ts.rules.oneroomRentWon) ? ts.rules.oneroomRentWon : ts.rules.rentWon;
+  const today = Number.isInteger(ts.day) ? ts.day : S.day;
+  const due = ts.rent && Number.isInteger(ts.rent.nextDueDay) ? ts.rent.nextDueDay : null;
+  const d = due == null ? null : due - today;
+  let daily = null;
+  try {
+    let ms = null; try { ms = mealPlanStatus(S); } catch { ms = null; }
+    const power = lampElectricityWon(ts, { count: (S.lamps && S.lamps.count) || 0, litHours: (S.lamps && S.lamps.litHours) || 12 }) || 0;
+    const v = Math.max(0, dailyCashOutWon({ ...ts, movedOut: true }) - ((ms && ms.savedWon) || 0)) + power;
+    daily = Number.isFinite(v) ? Math.round(v) : null;
+  } catch { daily = null; }
+  return { left, rent, d, daily };
+}
 function varieSourcesNow() {
   let mine = 0; try { const ls = io.growth.leafStats(); mine = (ls && ls.variegatedLeaves) || 0; } catch { mine = 0; }
   const p0 = pot0(S);
@@ -20279,8 +20473,17 @@ function openMoveAsk() {
   const ts = S.tutorial; if (!ts || ts.movedOut) return;
   const c = canMoveOut(ts); if (!c.ok) return;
   const v = varieSourcesNow();
-  const lines = [MOVE_ASK_KO.cost.replace('{won}', Math.round(c.needWon).toLocaleString('ko-KR')),
-                 MOVE_ASK_KO.source.replace('{n}', v.n).replace('{a}', v.a).replace('{b}', v.b)];
+  const lines = [MOVE_ASK_KO.cost.replace('{won}', Math.round(c.needWon).toLocaleString('ko-KR'))];
+  /* ★ D95 ⑧ — 이사비 줄 바로 밑 · 늘(left) · 모자라면 그 밑(short) — 때: left < rent + daily × d(daily · d 를 못 읽으면 left < rent · 꼬리 뺌) */
+  try {
+    const mm = moveMoneyNow(ts, c.needWon);
+    const when = mm.d == null ? '' : mm.d <= 0 ? '은 오늘' : mm.d === 1 ? '은 내일' : `은 ${mm.d}일 뒤`;
+    lines.push(MOVE_ASK_KO.left.replace('{left}', mm.left.toLocaleString('ko-KR')).replace('{rent}', Math.round(mm.rent).toLocaleString('ko-KR')).replace('{when}', when));
+    const known = mm.daily != null && mm.d != null;
+    const short = known ? mm.left < mm.rent + mm.daily * Math.max(0, mm.d) : mm.left < mm.rent;
+    if (short) lines.push(MOVE_ASK_KO.short.replace('{daily}', known ? MOVE_ASK_KO.shortDaily.replace('{daily}', mm.daily.toLocaleString('ko-KR')) : ''));
+  } catch (e) { console.warn('[D95 ⑧ 이사 창]', e && e.message); }
+  lines.push(MOVE_ASK_KO.source.replace('{n}', v.n).replace('{a}', v.a).replace('{b}', v.b));
   if (v.n === 0) lines.push(MOVE_ASK_KO.none);
   /* D27 갈래 둘(move_no_cutting) — 무늬 그루는 있고 무늬 삽수 0 · 오늘 자를 수 있는 무늬 마디가 있을 때만 · 막지 않는다 */
   const noCut = v.n > 0 && v.a > 0 && v.b === 0 && varieCutOpenNow() > 0;

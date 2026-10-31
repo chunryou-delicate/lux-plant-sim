@@ -249,7 +249,10 @@ export function updateCellHeatmap(mesh, grid, opt = {}) {
   const pt = [];
   for (const e of grid.list) {
     const b = e.k * 4;
-    const [r, g, bl] = (bands && !(e.value >= bands.grow)) ? HEAT_GRAY : colormap((e.value - lo) / denom);
+    /* ★ 2026-10-31 총괄 D95 ⑤ (plan-to-core-d95 §2) — bands.dark(콩나물 «하얗고 아삭» 문턱)가 있으면 grow 아래를 둘로: 어둠(≤ dark) 짙은 회색 · 그늘 옅은 회색 */
+    const [r, g, bl] = (bands && !(e.value >= bands.grow))
+      ? (Number.isFinite(bands.dark) ? (e.value <= bands.dark ? HEAT_DARK : HEAT_SHADE) : HEAT_GRAY)
+      : colormap((e.value - lo) / denom);
     pt.length = 0; quadInto(pt, e);
     for (let k = 0; k < 4; k++) {
       colr.setXYZ(b + k, r, g, bl);
@@ -265,6 +268,11 @@ export function updateCellHeatmap(mesh, grid, opt = {}) {
 /* ★ 2026-10-08 D — 문턱 띠 아래(안 자람) 칸의 색. 머리글 범례도 같은 값을 쓴다(heatGrayHex) */
 const HEAT_GRAY = [0.5, 0.5, 0.5];
 export function heatGrayHex() { return '#808080'; }
+/* ★ D95 ⑤ — 어둠(짙은 회색) · 그늘(옅은 회색). 머리글 범례도 같은 값(heatDarkHex · heatShadeHex) */
+const HEAT_DARK = [0.27, 0.27, 0.29];
+const HEAT_SHADE = [0.66, 0.66, 0.68];
+export function heatDarkHex() { return '#45454a'; }
+export function heatShadeHex() { return '#a8a8ad'; }
 /* 색 눈금 — 화면 머리글이 「빨강이 무엇인가」를 말할 때 쓴다. t∈[0,1] → '#rrggbb' */
 export function heatColorHex(t) {
   const [r, g, b] = colormap(t);

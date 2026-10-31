@@ -21,7 +21,7 @@
      harvestedToday       지난번 센 뒤 시루를 거뒀나 — ⚠ 거두기는 «낮의 손»이고 이 칸은 «아침»에 센다.
                           그래서 «오늘 아침에 보니 어제 거뒀다»다(statusSiruVs 「콩나물은 또 거뒀는데」 과거형과 맞는다)
      harvestsSinceArrival 도착 뒤 거둔 수(도착을 부른 그 수확은 안 센다)
-     potOnSill            첫 그루 칸이 창턱인가(slotId 에 `sill`) · 가방이면 false
+     potOnSill            첫 그루 칸이 창턱인가(slotId 에 `sill` · 자유 좌표면 at.onUid 에 `sill` — D95 §6-1) · 가방이면 false
      band                 그 자리의 빛 낱말 'dark'|'mid'|'bright' — 무늬 등급 표(shop.varieLightStepOfBand)와 같은 낱말
      zoomOpenedSinceArrival 도착 뒤 확대창을 연 적 있나 · ⚠ 도착을 못 지켜본 옛 세이브는 null(모른다)
    ★ 2026-10-08 [plan] «단계 줄»(자르기 기다림 · plan-leafwait 단계 줄 절) 칸 셋:
@@ -141,7 +141,8 @@ export function stepLeafWatch(S, { pot = null, row = null, leaf = null } = {}) {
     arrivedOnDay,
     harvestedToday,
     harvestsSinceArrival: (total != null && int(w.harvestBase)) ? Math.max(0, total - w.harvestBase) : null,
-    potOnSill: pot ? (!inBag && /sill/i.test(String(pot.slotId || ''))) : null,
+    /* ★ 2026-10-31 plan D95 §6-1 — 자유 좌표(free:…)로 창턱 윗면에 선 그루도 창턱이다(at.onUid · place §makeAt) — 원룸 창턱은 이름 자리 둘 밖에도 설 수 있다 */
+    potOnSill: pot ? (!inBag && (/sill/i.test(String(pot.slotId || '')) || /sill/i.test(String((pot.at && pot.at.onUid) || '')))) : null,
     band,
     zoomOpenedSinceArrival: w.zoomOpened === true ? true : (w.zoomOpened === false ? false : null),
     phaseId,

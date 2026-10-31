@@ -7889,6 +7889,15 @@ export async function createRoomView(canvas, opts = {}) {
       else { wx = b.w / 2; wz = big.cu || 0; }
     }
     const slots = [...slotById.values()];
+    /* ★ 2026-10-31 총괄 D95 F — **바닥에 자유 좌표로 선 그루(`free:…`)도 «화분 자리»로 센다.**
+         ⛔ 이름 자리(slotById)만 봐서, 바닥 자리(844dd173)에 놓인 그루 코앞에 서서 그루를 가렸다
+           (probe_switch_walk [B] 돌봄 끝맺음 Day 1312 · free:sp_75 · 총괄 사진 B_ending.png).
+         ⚠ 비키는 것만 늘린다 — 이름 자리만 있는 판(바닥 그루 0)은 한 톨도 안 바뀐다 */
+    for (const [key, p] of plants) {
+      if (!isFreeSlotId(key) || !p) continue;
+      const q = p.at || (p.group && p.group.position) || null;
+      if (q && Number.isFinite(q.x) && Number.isFinite(q.z)) slots.push({ x: q.x, z: q.z });
+    }
     /* ★ 2026-10-10 총괄 ⑤(house 까닭) — 집 보기를 한 곳에 겨눈 동안(가게 진로 · §homeFrame)은 그 상자 «안»에서만 고른다.
          예전엔 투룸 7×5 전체에서 골라 가게 방 왼벽 앞쪽(상자 밖)에 서서 첫 화면 왼쪽 끝에 반쯤 걸쳤다.
          그때만 소품(입간판 등 · 가구 옷 props — 길 막힘에 안 드는 것) 위도 비킨다. 상자 안에 설 데가 없으면 예전대로 방 전체.
