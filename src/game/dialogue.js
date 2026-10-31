@@ -375,6 +375,12 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think', text: '또 달력을 본다.' },
     { who: 'moni',   face: 'calm',  text: '이번 달도 넘기자. 넘겨 왔잖아.' }
   ],
+  /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 «Day 24 = 84 또 달력을 본다») — 두 벌 번갈아가 두 달마다 같은 줄이었다 ⇒ 세 벌 돌림(§scriptOf · 낸 달 수 % 3).
+       참: rent_soon(월세 날이 곧 · 산 집 아님) · «미리 보자»는 권함. 수 없음 */
+  rentSoon3: [
+    { who: 'jachwi', face: 'think', text: '월세 날이 코앞이다.' },
+    { who: 'moni',   face: 'calm',  text: '지갑 미리 보자. 놀라지 않게.' }
+  ],
   rentFirst: [
     { who: 'jachwi', face: 'tired', text: '이십만 원. 들어오자마자 한 번에 빠져나갔다.' },
     { who: 'moni',   face: 'calm', text: '오늘이 딱 그 날이었구나. 밥값도 나갔고.' },
@@ -521,9 +527,12 @@ export const SCRIPTS = {
          바로 위 §lampUnlocked 주석의 *"몬이가 「사」라고 하지 않는다"* 가 그대로 산다.
        ★ 2026-09-25 — 「지금 급하진 않아」는 뺐다(첫 등은 공짜라 «언제 살까»도 없다 · 위 #3). */
     { who: 'moni',   text: '…그런데 없이는 안 커.' },
-    { who: 'moni',   face: 'teach',   text: '어디 다느냐가 문제야.' },
-    { who: 'jachwi', face: 'think',   text: '…제일 오래 쓸 자리에 달아야겠네.' },
-    { who: 'moni',   face: 'teach',   text: '고민할 건 그쪽이야.' }
+    /* ★ 2026-11-01 [plan] 총괄 D100 ⑤ — 옛 «어디 다느냐가 문제야 · 제일 오래 쓸 자리에 달아야겠네 · 고민할 건 그쪽이야»는 첫 등엔 거짓이었다 —
+         벽부형은 고를 자리가 없다(창 위 벽 한 자리 · [옮기기] 없음). 자리를 고르는 것은 둘째 등(집게형 · [📍 물릴 자리] · 등 옮기기)부터다.
+       참: 이 사건(lamp_unlocked)에 오는 등 = 벽부형 · 상점 sub «창 위 벽에 붙습니다 … 창턱이 밝아집니다» · 집게형은 옮길 수 있다(D99 §4 덧) */
+    { who: 'moni',   face: 'teach',   text: '이 등은 창 위 벽에 붙어. 창턱을 더 밝혀.' },
+    { who: 'jachwi', face: 'think',   text: '…자리는 못 고르는 거야?' },
+    { who: 'moni',   face: 'teach',   text: '자리를 고르는 건 다음 등부터야.' }
   ],
   lampBought: [
     { who: 'jachwi', face: 'happy', text: '샀다. 생각보다 작네.' },
@@ -699,7 +708,10 @@ export const SCRIPTS = {
      그 순간엔 아직 못 자른다 — 그래서 「아직. 둘 다 다 자라야 해」로 고쳤다.
      ⇒ 「자른 건… 죽는 거 아니야?」 이하(물에 꽂기·밝은 데)는 **자를 수 있게 된 날**의 장면(`varieHalfMoon`)으로 옮겼다. */
   varieSecond: [
-    { who: 'moni',   face: 'proud', text: '이번 잎에도 **무늬가 섞였어.**' },
+    /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 Day 92) — 옛 «이번 잎에도 무늬가 섞였어»는 식물 판(«잎 3장 (무늬 2장)» Day 79)보다 13일 늦은 «처음 알림»이었다.
+         사건 varie_lucky2 는 그 잎 무늬가 «화면에 보이는 날»(growth shown · loop.js §varieLucky — 말린 새순 땐 안 보임)에 나고, 식물 판은 잎이 세어진 날부터 센다.
+       참: 이 줄이 서는 날 = 그 잎 무늬가 처음 보이는 날 ⇒ «이제 보여» · 박사님 낱말 «섞인 무늬»는 둔다 */
+    { who: 'moni',   face: 'proud', text: '이번 잎에 섞인 **무늬가 이제 보여.**' },
     { who: 'jachwi', face: 'curious', text: '그럼 이제 잘라도 돼?' },
     { who: 'moni',   face: 'teach', text: '아직. 둘 다 **다 자라야** 해.' },
     { who: 'moni',   text: '그때 한 장은 자르고, 한 장은 남기는 거야.' },
@@ -1160,7 +1172,10 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think', text: '창턱이 제일 밝은데도 모자라면…' },
     { who: 'moni',   face: 'teach', text: '응. 그러니까 **볕을 들이는** 거야.' },
     { who: 'jachwi', face: 'surprise', text: '볕을 들여?' },
-    { who: 'moni',   face: 'teach', text: '**등 밑**이 이 방의 둘째 창턱이 돼.' },
+    /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 #6 · Day 45) — 옛 «등 밑이 이 방의 둘째 창턱이 돼»는 거짓이었다: 첫 등(벽부형)은 창 위 벽 한 자리에만 붙어
+         (house_rooms G-16 박사님 «몬스테라 위쪽으로» · game.html §벽부형 [옮기기] 없음) 이미 밝은 창턱을 더 밝힐 뿐 새 자리를 안 만든다(빛 분포 창턱 3.68 → 6.02 · 새 밝은 자리 0).
+       참: 이 줄이 서는 판(buy_lamp · 단 등 0)에 다는 등은 늘 벽부형(다는 차례 벽부형 → 집게형 → 거치형) · 상점 줄 «창 위 벽에 붙습니다 … 창턱이 밝아집니다»와 같은 말 */
+    { who: 'moni',   face: 'teach', text: '창 위에 달면 창턱이 더 밝아져.' },
     { who: 'moni',   text: '가방에서 꺼내서 방에 달아 봐.' }
   ],
   /* ★ 끝난 뒤에 **다음 줄을 가리킨다** — 밝은 자리가 생겼으니 ⑤(밝은 데서 뿌리내리기)가 열린다.
@@ -1370,7 +1385,9 @@ export const SCRIPTS = {
        이 사건(loop.js move_short_both_light)의 조건은 «시루가 넉넉하다»(cropEnough · siru5 의 수)뿐이다 ⇒ 그것만 말한다. */
   shortBothLight: [
     { who: 'jachwi', text: '시루는 이제 꽤 늘었어.' },
-    { who: 'moni',   face: 'proud', text: '응. 시루는 됐어. 이제 남은 건 볕이야.' },
+    /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 Day 16) — 옛 «시루는 됐어. 이제 남은 건 볕이야» 바로 뒤에 할 일 «시루를 8개까지»(siru8)가 열렸다 —
+         이 사건의 조건은 «시루가 넉넉하다»(cropEnough · siru5 의 수)뿐이고 시루 줄은 아직 남는다. 참: 시루가 돈다 · 볕도 «같이» 챙긴다(끝났다고 안 함) */
+    { who: 'moni',   face: 'proud', text: '응. 시루는 잘 돌아. 이제 볕도 챙기자.' },
     { who: 'jachwi', face: 'think', text: '…해 드는 방.' },
     { who: 'moni',   face: 'calm',  text: '저 화분이 거기까지 데려다줄 거야.' }
   ],
@@ -1430,6 +1447,25 @@ export const SCRIPTS = {
   moveReadyLater: [
     { who: 'moni',   face: 'cheer', text: '이제 첫 월세까지 버틸 만해.' },
     { who: 'moni',   face: 'calm',  text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
+  ],
+  /* ★★ 2026-11-01 [plan] 총괄 D100 ③(비판 다섯째 판 BLOCKER #1) — **무늬 원천 0 인 «이사 된 날»은 «오늘이어도 되고»를 안 한다.**
+       ⛔ Day 88 모그루를 팔아 무늬 원천이 0 이 된 판에서 Day 96 «됐다. 이사비도 모였고, 무늬도 봤어. … 오늘이어도 되고» → 이사 창에서야 «원룸에서 늘릴 게 없습니다».
+       갈래(§scriptOf · [core] 가 move_ready · move_ready_ok 에 ev.varieSource 를 싣는다 = varieSourcesNow().n · 이사 창 «무늬 원천 n»과 같은 자):
+         varieSource === 0 → 아래 둘(이사비 축은 말하되 «오늘»을 안 권함 · 이사 창 MOVE_ASK_KO.none 과 같은 말 «늘릴 게 없어») · 모르면 지금 그대로.
+       ⚠ 막지 않는다(«갈 수는 있어 · 정하는 건 너야» — 이사 조건은 «무늬 잎을 본 적»이라 원천 0 이어도 단추는 열린다).
+       참: «이사비는 모였는데» = canMoveOut money · «무늬가 남은 게 없어» = 무늬 그루 0 · 안 죽은 무늬 삽수 0 · «다음 방에서 늘릴 게 없어» = moveNoVarie 와 같은 말. 수 없음 */
+  moveReadyNoVarie: [
+    { who: 'moni',   face: 'worry', text: '이사비는 모였는데, 무늬가 남은 게 없어.' },
+    { who: 'jachwi', face: 'surprise', text: '그럼 못 가?' },
+    { who: 'moni',   face: 'calm',  text: '갈 수는 있어.' },
+    { who: 'moni',   face: 'worry', text: '다만 다음 방에서 늘릴 게 없어.' },
+    { who: 'moni',   face: 'calm',  text: '정하는 건 너야.' }
+  ],
+  /* 참: move_ready_ok(버틸 만해진 날 · 위 moveReadyLater 와 같은 셈) ∧ ev.varieSource === 0 */
+  moveReadyLaterNoVarie: [
+    { who: 'moni',   face: 'cheer', text: '이제 첫 월세까지 버틸 만해.' },
+    { who: 'moni',   face: 'worry', text: '다만 무늬 없이 가면 늘릴 게 없어.' },
+    { who: 'moni',   face: 'calm',  text: '정하는 건 너야.' }
   ],
 
   /* ═══ ★★ 2026-10-31 [plan] 총괄 D96 — 반지하 사건 카드를 고른 «뒤» 대사(plan-events-banjiha-d96 §1 · 카드 글은 §EVENT_CARDS) ═══
@@ -1693,7 +1729,8 @@ export const SCRIPTS = {
      중반 검토(0~60일): 「급한 건 아니야」 60일에 여섯 번 · 「무슨 일 있어?」 Day 13~19 매일 · 「그거 아직이지?」 목적어 없음.
      ⇒ 「그거」 → «할 일에 적힌 거»(가리킴을 말에 넣었다) · 「무슨 일 있어?」 → «무엇이 그대로인지»를 말한다.
      ⇒ 「급한 건 아니야」는 독촉 사다리에서 «내렸다» — 할 수 있는 퀘스트가 없는 날(다 끝났거나 시루가 도는 날)의 잡담이다(§CHATTER). */
-  nudgeOffer: [ { who: 'moni', face: 'teach', text: '해 보면 알 거야.' } ],
+  /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 Day 18 = 98 «맥락 없는 한 줄») — 무엇을 해 보라는지 붙인다. 참: 이 줄은 열린 할 일이 있는 날만(c.nudge) — 칩 · 할 일 판에 그 줄이 적혀 있다 */
+  nudgeOffer: [ { who: 'moni', face: 'teach', text: '할 일에 적힌 거, 해 보면 알 거야.' } ],
   /* ★ 2026-10-30 [plan] D90 ④ — 남는 건 판다 독촉 두 줄. 참: 상점 [보유 채소 팔기] · 곳간은 쉬지 않는다(쌓이기만 한다) */
   nudgeSurplusOffer: [ { who: 'moni', face: 'teach', text: '남는 채소는 상점에서 팔 수 있어.' } ],
   nudgeSurplusPush:  [ { who: 'moni', face: 'teach', text: '쌓아만 두면 돈이 안 돼. 남는 건 팔아.' } ],
@@ -1708,7 +1745,8 @@ export const SCRIPTS = {
        그 말이 거짓이다 — 출처는 plan(09-06 · 총괄 확인 10-08). 까닭을 «이 방 빛으론 모자라서»로 옮겼다(§autumnCame D20 · quest.js buy_lamp.why 와 같은 말).
      ★ 이제 등은 «달 때» 끝나므로(quest.js §buy_lamp) 이 줄들은 «가방에 든 등»을 가리킨다. */
   nudgeLampOffer: [ { who: 'moni', face: 'teach', text: '등은 가방에 있어. 방에 달아야 밝아져.' } ],
-  nudgeBackLamp:  [ { who: 'moni', face: 'worry', text: '이 방 창턱으론 모자라. 등을 달아야 밝은 자리가 생겨.' } ],
+  /* ★ 2026-11-01 [plan] 총괄 D100 ⑤ — 옛 «등을 달아야 밝은 자리가 생겨»도 첫 등엔 거짓(새 자리 0 · 창턱이 더 밝아질 뿐) · 참: 벽부형은 창턱을 밝힌다 */
+  nudgeBackLamp:  [ { who: 'moni', face: 'worry', text: '창턱만으론 모자라. 등을 달면 더 밝아져.' } ],
   /* ★★ 2026-10-08 [plan] D19 — 퀘스트별 «무엇을·어디서» 두 줄(권함 · 미는 말). 사슬이 멎기 쉬운 자리만 지었다.
      ⚠ 값·개수는 안 말한다 — 몬이는 수를 말하지 않는다(값은 상점 칸이 말하고, 값이 바뀌면 말이 거짓이 된다).
        총괄 예시 「씨앗 500원이면 내일 와」의 «500원»은 그래서 뺐다 — «어디서·언제»만 남겼다.
@@ -1752,6 +1790,20 @@ export const SCRIPTS = {
        사건 id `sell_last_varie`(§EVENT_SCRIPT) — story.events([{ id: 'sell_last_varie' }]) 로 낸다. 방은 안 가린다(원룸에서도 같은 막다른 길). */
   sellLastVarie: [
     { who: 'moni', face: 'worry', text: '그거 통째로 팔면 무늬 늘릴 데가 없어. 마디만 잘라 팔아도 돼.' }
+  ],
+  /* ★★ 2026-11-01 [plan] 총괄 D100 ①(비판 다섯째 판 #1 · #4) — 위 줄의 «마디만 잘라 팔아도 돼»는 자르기 문이 닫힌 날엔 거짓이다(Day 88 · 다 자란 무늬 잎 0/2).
+       갈래(§scriptOf · [core] 가 sell_last_varie 에 ev.cutOpen 을 싣는다 = varieCutOpenNow() > 0 · 이사 창 noCutting 줄과 같은 자): cutOpen === false → 이 줄 · 모르면 위 줄.
+       참: 첫 줄 = 위 줄 앞마디(sellingLastVarieSource — 팔면 원천 0) · 둘째 줄 = 자르기 문 규칙(propagation cutBlockedReason · 할 일 wait_varie «무늬 잎이 다 자란다») · 셋째 줄 = 그때 무늬 삽수는 팔린다(sell_varie). 수 없음 */
+  sellLastVarieWait: [
+    { who: 'moni', face: 'worry', text: '그거 통째로 팔면 무늬 늘릴 데가 없어.' },
+    { who: 'moni', face: 'teach', text: '자르는 건 무늬 잎이 다 자란 뒤야.' },
+    { who: 'moni', face: 'calm',  text: '그때 마디만 잘라 팔아도 돼.' }
+  ],
+  /* ★ 2026-11-01 [plan] 총괄 D100 ①(비판 다섯째 판 #3 «판 뒤 아무 반응 없음») — [거래하기]로 판 «뒤» 무늬 원천이 0 이 됐을 때 한 번(사건 sold_last_varie · [core] 가 낸다).
+       참: 판 뒤 무늬 그루 0 · 안 죽은 무늬 삽수 0(«남은 게 없어») · «새 그루에서 아주 가끔» = statusOneroomNoVarie 와 같은 말([core] D100 ④ 답: 화분이 0 이 된 뒤 심은 씨앗 그루는 첫 화분이 되어 무늬 잎이 원천으로 세어진다 · 잎마다 드물게). 수 없음 */
+  soldLastVarie: [
+    { who: 'moni', face: 'worry', text: '이제 무늬가 남은 게 없어.' },
+    { who: 'moni', face: 'calm',  text: '무늬는 새 그루에서 아주 가끔 나.' }
   ],
   /* ★★ 2026-10-08 [plan] D27(총괄 · 갈래 지도 7) — **무늬 원천 없이 이사하기 «전»의 한 줄.** D22 와 같은 결: 막지 않고 말린다.
      이사 조건은 과거 깃발(무늬 잎을 낸 적 ∨ 판 적)이라 지금 무늬 원천이 0 이어도 이사된다 — 그러면 원룸에서 늘릴 게 없다
@@ -1892,6 +1944,22 @@ export const SCRIPTS = {
      들고 간 무늬 삽수 첫 잎 sill:0 여름 등0 51일 · 등1 22일 · 에타제르면 400일 안 안 남. */
   statusOneroomNoVarie: [
     { who: 'moni', face: 'worry', text: '여긴 무늬를 늘릴 게 없어. 무늬는 새로 키운 그루에서 아주 가끔 나.' }
+  ],
+  /* ★★ 2026-11-01 [plan] 총괄 D100 ④(비판 다섯째 판 BLOCKER #1 — 원룸 할 일 «무늬를 잘라 뿌리내린다» Day 96~110 멈춤) — 무늬 할 일 넷 «닫힘» 때 한 번.
+       [core] 가 원룸에서 무늬 원천 0(varieSourcesNow().n === 0)인 날 oneroom_root_bright · settle_cutting · recut · sell 가운데 안 끝난 것을 닫고 사건 oneroom_varie_closed 를 낸다
+       (plan-to-core-d100 §4). ev.pots === 0(몬스테라 화분 0)이면 씨앗 갈래(§scriptOf) — 그 판은 할 일 «씨앗부터 다시 키운다»가 같이 열린다.
+       참: «접자» = 그 할 일들이 닫혔다 · «채소를 팔아서도 모아» = 원룸에서도 남는 채소는 팔린다(sell_surplus · 🧺) — 집 자금 할 일(home_fund)은 돈만 본다.
+         씨앗 갈래: «몬스테라도 없는데» = 화분 0 · «빈 화분에 심으면 돼» = [식물] 판 빈 화분 [🌱 심기](core D100 ④ 답 1) · «아주 가끔» = 씨앗 그루 무늬는 드물다(growth calcVarieProb · 잎 8장까지 두 장 28%). 수 없음 */
+  oneroomVarieClosed: [
+    { who: 'moni',   face: 'worry', text: '무늬를 늘리는 할 일은 여기서 접자.' },
+    { who: 'moni',   face: 'teach', text: '돈은 채소를 팔아서도 모아.' }
+  ],
+  oneroomVarieClosedSeed: [
+    { who: 'moni',   face: 'worry', text: '무늬를 늘리는 할 일은 여기서 접자.' },
+    { who: 'jachwi', face: 'think', text: '…몬스테라도 없는데.' },
+    { who: 'moni',   face: 'teach', text: '씨앗부터 다시 키우자. 빈 화분에 심으면 돼.' },
+    { who: 'moni',   face: 'calm',  text: '무늬는 아주 가끔 나. 기대는 조금만.' },
+    { who: 'moni',   face: 'teach', text: '돈은 채소를 팔아서도 모아.' }
   ],
   /* ★ 2026-10-09 [plan] D41 — 둘째 줄: 들고 온 무늬 삽수를 이사 직후 다 팔면 원룸에서 늘릴 게 없다([core] 갈래 판 안내대로 9/10) */
   statusOneroomCutSill: [
@@ -2693,7 +2761,9 @@ export const SCRIPTS = {
   ],
   statusGauge: [
     { who: 'jachwi', face: 'curious', text: '빛이 쌓인 만큼이라며. 얼마나 쌓였어?' },
-    { who: 'moni',   face: 'teach', text: '얘를 눌러 봐. 차오르는 게 그거야.' }
+    /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 ④ Day 19) — «얘를 눌러 봐»를 따라 누르면 메뉴만 떴다 · 게이지는 [확대 보기] 안에 있다(game.html §확대 보기) */
+    { who: 'moni',   face: 'teach', text: '얘를 눌러서 [확대 보기]로 봐.' },
+    { who: 'moni',   face: 'teach', text: '차오르는 게 그거야.' }
   ],
   statusStreak: [
     { who: 'moni',   face: 'proud', text: '하루도 안 쉬고 자랐어. 자리가 맞는 거야.' }
@@ -2707,6 +2777,17 @@ export const SCRIPTS = {
   statusSiruVs: [
     { who: 'jachwi', face: 'think', text: '콩나물은 또 거뒀는데 얘는 그대로다.' },
     { who: 'moni',   face: 'teach', text: '콩나물은 날짜로 자라고, 얘는 빛으로 자라.' }
+  ],
+  /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 «Day 21 = 59 · Day 25 = 70») — 두 상태 줄이 같은 두 줄로 되풀이됐다 ⇒ 펴진 잎이 둘 이상인 판(둘째 기다림부터)은 둘째 벌.
+       참(statusLeafWide2): 막내 잎 leafM ≥ 0.5 · 펴진 잎 ≥ 2(«이번 막내도» — 앞 잎이 있다) · 잎 기다림 사흘 넘음(위 첫 벌과 같은 자).
+       참(statusSiruVs2): 오늘 거둠(«또 한 바퀴») · 도착 뒤 둘째 거둠부터 · 잎이 이레 넘게 그대로(«아직») · 펴진 잎 ≥ 2 · 몬이 줄은 statusGauge 와 같은 규칙(쌓인 빛). 수 없음 */
+  statusLeafWide2: [
+    { who: 'jachwi', text: '이번 막내 잎도 넓어졌다.' },
+    { who: 'moni',   face: 'calm', text: '잘 자라고 있어. 이번 잎도.' }
+  ],
+  statusSiruVs2: [
+    { who: 'jachwi', face: 'think', text: '시루는 또 한 바퀴 돌았는데, 얘는 아직이다.' },
+    { who: 'moni',   face: 'teach', text: '얘는 쌓인 빛만큼 가. 날짜로는 못 세.' }
   ],
   /* ★★ 2026-10-30 [plan] 총괄 D90 ③ — **첫 달 끝 «들이는 달»**(약속이 아니라 일어난 것만). 반지하 첫 달은 하네스도 사람도 지갑이 준다
      (plan 답안 §0-2: D31 83.5만 · 사람 80만 · 84만). 「둘째 달부터 모인다」는 말하지 않는다 — «판다»에 걸린 말이라 안 파는 사람에겐 거짓.
@@ -2740,6 +2821,12 @@ export const SCRIPTS = {
   statusPhaseYoung: [
     { who: 'jachwi', face: 'think', text: '잎이 다 펴졌다. 아직 연하다.' },
     { who: 'moni',   face: 'teach', text: '연한 잎은 아직 값을 다 못 받아. 자라야 받아.' }
+  ],
+  /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 «Day 48 = 93») — 잎마다 같은 단계를 지나 같은 두 줄이 났다 ⇒ 펴진 잎 ≥ 3(셋째 잎부터)은 둘째 벌.
+       참: 막내 잎 단계 leaf_young 든 지 사흘 안(첫 벌과 같은 자) · 펴진 잎 ≥ 3(«이번 잎도» — 앞 잎이 같은 단계를 지났다) · «단단해질» = 다음 단계(statusPhaseMid «제법 단단해졌다»)와 같은 말 */
+  statusPhaseYoung2: [
+    { who: 'jachwi', face: 'think', text: '이번 잎도 다 펴졌다. 아직 연하네.' },
+    { who: 'moni',   face: 'calm',  text: '단단해질 때까지 두고 보자.' }
   ],
   statusPhaseMid: [
     { who: 'jachwi', text: '잎이 제법 단단해졌다.' },
@@ -3045,10 +3132,13 @@ export const SCRIPTS = {
   /* ★ 2026-08-09 — 하루 지출이 20,000 → **16,667원**으로 내려갔다(월세 20만). 대사도 따라간다.
      「만 육천 원 남짓」으로 적은 이유 — 16,667 은 유도된 값이라 딱 떨어지지 않는다.
      정확한 숫자를 대사가 읊으면 값이 조금만 움직여도 곧바로 거짓말이 된다. */
+  /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 Day 77) — 옛 «오늘도 만 육천 원 남짓»(08-09 하루 지출 16,667)이 [방] 판 «오늘 실제로 나가는 돈 5,038원»(D99 ③ 엔진 셈)과 갈렸다.
+       ⇒ 대사가 수를 안 박고 수가 적힌 자리를 가리킨다. 참: [방] 탭(아래 줄 «방») 판에 «오늘 실제로 나가는 돈» 줄이 있다(game.html §방 판 · 반지하 · 원룸 같음) · «줄일 데» = 같은 판 «콩나물로 아낌» 줄 */
   chatDailySpend: [
-    { who: 'jachwi', text: '오늘도 만 육천 원 남짓.' },
-    { who: 'moni',   face: 'worry', text: '하루가 그만큼씩 나가. 그렇게 세니까 좀 무섭다.' },   /* ★ 10-10 [plan] 몬이는 수를 안 말한다 — 수는 앞 줄(자취생)이 말한다 */
-    { who: 'jachwi', face: 'tired', text: '세지 말걸.' }
+    { who: 'jachwi', face: 'think', text: '오늘은 얼마나 나갔을까.' },
+    { who: 'moni',   face: 'teach', text: '방 판에 오늘 나가는 돈이 적혀 있어.' },
+    { who: 'jachwi', face: 'tired', text: '…보기 무섭다.' },
+    { who: 'moni',   face: 'calm',  text: '봐야 줄일 데도 보여.' }
   ],
   chatMorning: [
     { who: 'jachwi', text: '아침에 일어나서 제일 먼저 보는 게 화분이 됐다.' },
@@ -3222,7 +3312,9 @@ export const REPEATABLE = new Set(
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
-             'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf'])
+             'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf',
+             /* ★ 2026-11-01 [plan] D100 ⑤ — 되풀이 줄의 둘째 벌 · 월세 예고 셋째 벌 · 팔기 앞 말 갈래 */
+             'statusLeafWide2', 'statusSiruVs2', 'statusPhaseYoung2', 'rentSoon3', 'sellLastVarieWait'])
 );
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
@@ -3370,6 +3462,15 @@ export const EVENT_SCRIPT = Object.freeze({
   move_ready:          'moveReady',
   /* ★ 2026-10-31 [plan] D97 ① — 못 버티던 판이 버틸 만해진 날(한 번 · [core]) */
   move_ready_ok:       'moveReadyLater',
+  /* ★ 2026-11-01 [plan] 총괄 D100 — 아래 이름 넷 가운데 셋(…_no_varie · sell_last_varie_wait · rent_soon3)은 사건 id 가 아니라 §scriptOf 가 고르는 갈래 이름이다(ev_grandma_pale 과 같은 손).
+       sold_last_varie · oneroom_varie_closed 는 [core] 가 내는 사건이다(plan-to-core-d100 §1-3 · §4) */
+  move_ready_no_varie:       'moveReadyNoVarie',
+  move_ready_ok_no_varie:    'moveReadyLaterNoVarie',
+  sell_last_varie_wait:      'sellLastVarieWait',
+  sold_last_varie:           'soldLastVarie',
+  oneroom_varie_closed:      'oneroomVarieClosed',
+  oneroom_varie_closed_seed: 'oneroomVarieClosedSeed',
+  rent_soon3:                'rentSoon3',
   /* ★ 2026-10-31 [plan] 총괄 D96 — 반지하 사건 카드를 고른 뒤([core] events_banjiha §applyBjChoice · 카드 글 §EVENT_CARDS)
      ⚠ 이 id 들은 아침 차례(turn.events)에 안 선다(고른 손에서만) — 그래서 이 표에 있어도 [core] §bjBlockedBy «막는 날»을 안 건드린다.
      ev_grandma_pale 은 사건 id 가 아니라 §scriptOf 가 ev_grandma 의 pale 갈래로 고르는 이름이다(대사 이름을 이 표 한 곳에 둔다) */
@@ -3653,6 +3754,13 @@ function scriptOf(ev, S = null) {
     return mode === 'novice' ? 'plantStalledWinterBanjiha' : 'plantStalledWinter';
   }
   /* ★ 2026-10-31 [plan] 총괄 D97 ① — 이사 «된 날»은 첫 월세까지 버티나(ev.survives · [core] §moveMoneyNow 셈)로 갈린다. 모르면 오늘을 권하지 않는 줄 */
+  /* ★ 2026-11-01 [plan] 총괄 D100 ③ — 무늬 원천 0(ev.varieSource · [core] varieSourcesNow 와 같은 자)이면 «오늘이어도 되고»를 안 하고 경고 갈래 · 모르면 지금 그대로 */
+  if ((id === 'move_ready' || id === 'move_ready_ok') && ev && typeof ev === 'object' && ev.varieSource === 0)
+    return EVENT_SCRIPT[id === 'move_ready' ? 'move_ready_no_varie' : 'move_ready_ok_no_varie'];
+  /* ★ 2026-11-01 [plan] 총괄 D100 ① — 자르기 문이 닫힌 날(ev.cutOpen === false)의 팔기 앞 말은 «마디만 잘라 팔아도 돼»를 «다 자란 뒤»로 · 모르면 지금 그대로 */
+  if (id === 'sell_last_varie' && ev && typeof ev === 'object' && ev.cutOpen === false) return EVENT_SCRIPT.sell_last_varie_wait;
+  /* ★ 2026-11-01 [plan] 총괄 D100 ④ — 원룸 무늬 할 일 닫힘: 몬스테라 화분 0(ev.pots === 0)이면 씨앗 갈래 */
+  if (id === 'oneroom_varie_closed') return EVENT_SCRIPT[ev && typeof ev === 'object' && ev.pots === 0 ? 'oneroom_varie_closed_seed' : 'oneroom_varie_closed'];
   if (id === 'move_ready') {
     const sv = ev && typeof ev === 'object' ? ev.survives : undefined;
     return sv === true ? 'moveReadyNow' : sv === false ? 'moveReadyShort' : 'moveReady';
@@ -3683,7 +3791,9 @@ function scriptOf(ev, S = null) {
   if ((id === 'rent_soon' || id === 'rent') && S && S.tutorial && S.tutorial.homeOwned) return null;
   if (id === 'rent_soon') {
     const paid = S && S.tutorial && S.tutorial.rent && S.tutorial.rent.paidCount;
-    return (Number.isFinite(paid) && paid % 2 === 1) ? 'rentSoon2' : 'rentSoon';
+    /* ★ 2026-11-01 [plan] 총괄 D100 ⑤ — 세 벌 돌림(낸 달 수 % 3 · 모르면 첫 벌) */
+    const k = Number.isFinite(paid) ? paid % 3 : 0;
+    return k === 1 ? 'rentSoon2' : k === 2 ? EVENT_SCRIPT.rent_soon3 : 'rentSoon';
   }
   /* ★ 2026-08-30 [Plan] — 파산도 «첫 번»과 «그다음»이 다르다(위 §brokeTalkAgain).
      ⚠ 옛 세이브·옛 코어는 `first` 를 안 싣는다 ⇒ `undefined` 면 «첫 번»으로 읽는다.
@@ -4055,10 +4165,13 @@ export const CHATTER = [
     { id: offer, nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask
         && (!SIRU_NUDGE_QS.includes(q) || (!(c.siruBag > 0) && !(c.siruIncoming > 0)))
         /* ★ 2026-10-31 [plan] D93 m5(비판 둘째 판 Day 18) — 무순 판이 이미 방에 있으면(심었든 안 심었든) «상점에 있어»는 묵은 말 */
-        && (q !== 'crop_mix' || (!(c.musunBag > 0) && !(c.musunRoom > 0))) },
+        && (q !== 'crop_mix' || (!(c.musunBag > 0) && !(c.musunRoom > 0)))
+        /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 Day 46) — «등은 가방에 있어»가 등을 단 다음 날에 섰다(할 일 끝이 하루 늦음) · 참: 가진 등 > 단 등 */
+        && (q !== 'buy_lamp' || c.lampOwned > c.lampPlaced) },
     { id: push,  nudge: true, when: c => !!c.nudge && c.nudge.id === q && c.nudge.days >= NUDGE_DAYS.worry
         /* ★ 2026-11-01 [plan] D99 ④ — «잘라서 꽂아 봐»는 뿌리내리는 무늬 삽수가 방에도 가방에도 없을 때만(아래 nudgeVarieWait · nudgeVarieBag) */
-        && (q !== 'varie_bright' || (!(c.varieRootingPlaced > 0) && !(c.varieRootingBag > 0))) }
+        && (q !== 'varie_bright' || (!(c.varieRootingPlaced > 0) && !(c.varieRootingBag > 0)))
+        && (q !== 'buy_lamp' || c.lampOwned > c.lampPlaced) }   /* ★ D100 ⑤ — 위와 같은 까닭(단 뒤 «등을 달면»은 묵은 말) */
   ]),
   /* ★ 2026-11-01 [plan] D99 ④ — 위 varie_bright 미는 말의 짝(같은 날 창 · 하나만 참). 칸은 §chatterContext(S.cuttings 에서 바로 셈) */
   { id: 'nudgeVarieWait', nudge: true, when: c => !!c.nudge && c.nudge.id === 'varie_bright' && c.nudge.days >= NUDGE_DAYS.worry
@@ -4103,10 +4216,15 @@ export const CHATTER = [
   { id: 'statusStreak',   status: true, gap: 90, when: c => c.hasMonstera && fin(c.growStreak) && c.growStreak >= 7 && c.newLeafToday !== true },
   /* ⓓ 첫 잎 넓어짐 — 가장 어린 펴진 잎의 leafM(렌더러가 잎 크기로 쓰는 값)이 반을 넘음 · 새 잎 뒤 사흘은 안 함 */
   { id: 'statusLeafWide', status: true, gap: 30, when: c => c.hasMonstera && fin(c.youngestLeafM) && c.youngestLeafM >= 0.5
-                                            && fin(c.leafWaitDays) && c.leafWaitDays >= 3 },
+                                            && fin(c.leafWaitDays) && c.leafWaitDays >= 3 && !(fin(c.leaves) && c.leaves >= 2) },
+  /* ★ D100 ⑤ — 둘째 기다림부터는 둘째 벌(펴진 잎 ≥ 2 · 잎 수를 모르면 첫 벌) */
+  { id: 'statusLeafWide2', status: true, gap: 30, when: c => c.hasMonstera && fin(c.youngestLeafM) && c.youngestLeafM >= 0.5
+                                            && fin(c.leafWaitDays) && c.leafWaitDays >= 3 && fin(c.leaves) && c.leaves >= 2 },
   /* ⓕ 시루와 견줌 — 거둔 날 · 도착 뒤 둘째 거둠부터 · 잎이 이레 넘게 그대로. 두 이레에 한 번 */
   { id: 'statusSiruVs',   status: true, gap: 45, when: c => c.hasMonstera && c.harvestedToday === true && fin(c.harvestsSinceArrival)
-                                            && c.harvestsSinceArrival >= 2 && fin(c.leafWaitDays) && c.leafWaitDays >= 7 },
+                                            && c.harvestsSinceArrival >= 2 && fin(c.leafWaitDays) && c.leafWaitDays >= 7 && !(fin(c.leaves) && c.leaves >= 2) },
+  { id: 'statusSiruVs2',  status: true, gap: 45, when: c => c.hasMonstera && c.harvestedToday === true && fin(c.harvestsSinceArrival)
+                                            && c.harvestsSinceArrival >= 2 && fin(c.leafWaitDays) && c.leafWaitDays >= 7 && fin(c.leaves) && c.leaves >= 2 },
   /* ⓖ 지갑 — 잎이 스무 날 그대로. 「돈은 매일 줄고」는 하루 지출이 늘 있어 참 · 「잎은 줄지는 않아」는 잎 떨굼 꺼짐(growth_tuning health.drop_enabled:false) */
   /* ★ 2026-10-09 [plan] 원룸 후반 13달 — 기다림 줄 넷의 간격을 늘렸다(게이지 30→120 · 쉬지 않고 30→90 · 시루 14→45 · 지갑 30→90).
      첫 기다림(반지하)을 채우려고 지은 줄인데, 원룸에선 모주가 드물게 잎을 내 조건이 늘 참이라 판당 14~29번 되풀이됐다([core] 6ebd882e). */
@@ -4120,7 +4238,8 @@ export const CHATTER = [
   /* ★ 2026-10-08 [plan] 단계 줄 — 막내 잎 단계가 바뀐 지 사흘 안(사건·독촉 날에 걸려도 다음 빈 날에 선다) · 한 단계 한 번(gap 20 — 다음 잎의 같은 단계는 다시) */
   { id: 'statusVarieHalf',    status: true, gap: 60, when: c => c.hasMonstera && c.varieMatured === 1 },
   { id: 'statusPhaseOpening', status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'spear_opening' && fin(c.phaseDays) && c.phaseDays <= 3 },
-  { id: 'statusPhaseYoung',   status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_young'    && fin(c.phaseDays) && c.phaseDays <= 3 },
+  { id: 'statusPhaseYoung',   status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_young'    && fin(c.phaseDays) && c.phaseDays <= 3 && !(fin(c.leaves) && c.leaves >= 3) },
+  { id: 'statusPhaseYoung2',  status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_young'    && fin(c.phaseDays) && c.phaseDays <= 3 && fin(c.leaves) && c.leaves >= 3 },   /* ★ D100 ⑤ 셋째 잎부터 */
   { id: 'statusPhaseMid',     status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_mid'      && fin(c.phaseDays) && c.phaseDays <= 3 },
   { id: 'statusPhaseMature',  status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'leaf_mature'   && fin(c.phaseDays) && c.phaseDays <= 3 },
   { id: 'statusPhaseAxis',    status: true, gap: 20, when: c => c.hasMonstera && c.phaseId === 'axis_rising'   && fin(c.phaseDays) && c.phaseDays <= 3 },
