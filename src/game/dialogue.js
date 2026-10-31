@@ -1782,23 +1782,9 @@ export const SCRIPTS = {
   nudgeSeedAsk:      [ { who: 'moni', face: 'curious', text: '씨앗, 상점에서 시켰어?' } ],
   nudgeSeedWorry:    [ { who: 'moni', face: 'worry',   text: '씨앗이 없으면 시루가 놀아. 상점에 있어.' } ],
 
-  /* ★★ 2026-10-08 [plan] D22(총괄 · plan-oneroom-quests-v2 ⓐ ㉠) — **마지막 무늬 원천을 그루째 팔기 «전»의 한 줄.**
-     그루째 팔면 무늬 원천이 사라지고 되사는 창구가 없다(shop resaleRate 는 가구에만 · 판 그루는 사라짐) — 원룸에서 늘릴 게 없는 «막다른 길»(ⓐ).
-     후보: ㉠ 말로 막는다 · ㉡ 원룸에서 무늬 삽수를 «사게» 연다(사는 값 — 박사님 몫) · ㉢ 집 자금만 ⇒ 고른 것 ㉠(총괄 D22). 까닭: 값 0 · 되돌릴 수 없는 것은 말이 막는다.
-     ⛔ 막지는 않는다 — 한 줄 말하고 사람이 고른다. 「마디만 잘라 팔아도 돼」가 다른 길(sell_varie)을 가리킨다(참 — 무늬 삽수는 팔린다).
-     ⚠ 언제 뜨나([core]): 그루째 팔기 «확인» 창을 열 때, 팔고 나면 무늬 원천(무늬 잎 단 그루 · 안 죽은 무늬 삽수)이 0 이 되는 경우만.
-       사건 id `sell_last_varie`(§EVENT_SCRIPT) — story.events([{ id: 'sell_last_varie' }]) 로 낸다. 방은 안 가린다(원룸에서도 같은 막다른 길). */
-  sellLastVarie: [
-    { who: 'moni', face: 'worry', text: '그거 통째로 팔면 무늬 늘릴 데가 없어. 마디만 잘라 팔아도 돼.' }
-  ],
-  /* ★★ 2026-11-01 [plan] 총괄 D100 ①(비판 다섯째 판 #1 · #4) — 위 줄의 «마디만 잘라 팔아도 돼»는 자르기 문이 닫힌 날엔 거짓이다(Day 88 · 다 자란 무늬 잎 0/2).
-       갈래(§scriptOf · [core] 가 sell_last_varie 에 ev.cutOpen 을 싣는다 = varieCutOpenNow() > 0 · 이사 창 noCutting 줄과 같은 자): cutOpen === false → 이 줄 · 모르면 위 줄.
-       참: 첫 줄 = 위 줄 앞마디(sellingLastVarieSource — 팔면 원천 0) · 둘째 줄 = 자르기 문 규칙(propagation cutBlockedReason · 할 일 wait_varie «무늬 잎이 다 자란다») · 셋째 줄 = 그때 무늬 삽수는 팔린다(sell_varie). 수 없음 */
-  sellLastVarieWait: [
-    { who: 'moni', face: 'worry', text: '그거 통째로 팔면 무늬 늘릴 데가 없어.' },
-    { who: 'moni', face: 'teach', text: '자르는 건 무늬 잎이 다 자란 뒤야.' },
-    { who: 'moni', face: 'calm',  text: '그때 마디만 잘라 팔아도 돼.' }
-  ],
+  /* ★ 2026-11-01 [plan] 총괄 D100 — D22(마지막 무늬 원천을 그루째 팔기 «전»의 몬이 한 줄 · sellLastVarie · sellLastVarieWait)는 걷었다.
+       그 말은 이제 [내놓기] · [거래하기] 확인 창 글(game.html SELL_ASK_KO none/noneHere · cutOpen/cutWait · plan-to-core-d100 §2)이 한다 — 서는 때가 같고(팔면 원천 0) 문장마다 같은 말이라 창 안에 둘이 겹쳤다.
+       후보 ㉠ 창 안 몬이 줄을 뺀다(택함 · 총괄 승인 «D22 꼴: 몬이 줄 → 확인 창 글(뜻 같음)») · ㉡ 첫 줄만 · ㉢ 그대로. 몬이는 판 «뒤» sold_last_varie(§soldLastVarie)로 말한다. */
   /* ★ 2026-11-01 [plan] 총괄 D100 ①(비판 다섯째 판 #3 «판 뒤 아무 반응 없음») — [거래하기]로 판 «뒤» 무늬 원천이 0 이 됐을 때 한 번(사건 sold_last_varie · [core] 가 낸다).
        참: 판 뒤 무늬 그루 0 · 안 죽은 무늬 삽수 0(«남은 게 없어») · «새 그루에서 아주 가끔» = statusOneroomNoVarie 와 같은 말([core] D100 ④ 답: 화분이 0 이 된 뒤 심은 씨앗 그루는 첫 화분이 되어 무늬 잎이 원천으로 세어진다 · 잎마다 드물게). 수 없음 */
   soldLastVarie: [
@@ -1827,7 +1813,7 @@ export const SCRIPTS = {
      까닭([core] guide g·1-9): 이사 날 9/10 판이 «무늬 삽수 0 · 자를 무늬 마디 0 · 무늬 모주 있음» — 이사 둘째 축(무늬를 판 적)을 채우느라 다 팔았고,
        이사 날엔 모주가 잎 예산 문에 막혀 move_no_cutting 이 «할 수 없는 일»이 되어 안 섰다. 말은 «팔 때» 서야 닿는다.
      때([core]): 반지하(!movedOut) · 이 판매로 «안 죽은 무늬 삽수»가 0 이 됨. ★ 10-10 총괄 ⓐ — «이미 판 적 있음» 조건은 걷었다:
-       판 적이 이사 문이라는 말이 거짓이었고(canMoveOut 둘째 축 = 잎 낸 적 ∨ 판 적), sell_varie 는 이제 «둘 이상»일 때만 연다 — 첫 판매도 마지막 하나면 말린다. D22 sellLastVarie(마지막 무늬 «원천»)와 같은 날 겹치면 D22 가 말한다(더 센 말). 수는 안 말한다. */
+       판 적이 이사 문이라는 말이 거짓이었고(canMoveOut 둘째 축 = 잎 낸 적 ∨ 판 적), sell_varie 는 이제 «둘 이상»일 때만 연다 — 첫 판매도 마지막 하나면 말린다. (D22 마지막 무늬 «원천»은 2026-11-01 D100 부터 확인 창 글이 말한다 — 몬이 겹침 거르개는 걷었다.) 수는 안 말한다. */
   sellKeepOne: [
     { who: 'moni', face: 'teach', text: '이건 남겨 두자. 이사할 때 들고 가면 원룸에서 바로 늘릴 수 있어.' }
   ],
@@ -1949,7 +1935,7 @@ export const SCRIPTS = {
        [core] 가 원룸에서 무늬 원천 0(varieSourcesNow().n === 0)인 날 oneroom_root_bright · settle_cutting · recut · sell 가운데 안 끝난 것을 닫고 사건 oneroom_varie_closed 를 낸다
        (plan-to-core-d100 §4). ev.pots === 0(몬스테라 화분 0)이면 씨앗 갈래(§scriptOf) — 그 판은 할 일 «씨앗부터 다시 키운다»가 같이 열린다.
        참: «접자» = 그 할 일들이 닫혔다 · «채소를 팔아서도 모아» = 원룸에서도 남는 채소는 팔린다(sell_surplus · 🧺) — 집 자금 할 일(home_fund)은 돈만 본다.
-         씨앗 갈래: «몬스테라도 없는데» = 화분 0 · «빈 화분에 심으면 돼» = [식물] 판 빈 화분 [🌱 심기](core D100 ④ 답 1) · «아주 가끔» = 씨앗 그루 무늬는 드물다(growth calcVarieProb · 잎 8장까지 두 장 28%). 수 없음 */
+         씨앗 갈래: «몬스테라도 없는데» = 화분 0 · «빈 화분에 심으면 돼» = 방 빈 화분 «🌱 씨앗 심기» 말풍선 · [식물] 판 [🌱 심기](core D100 ④ 답 1 · core 가 D100 에서 말풍선을 붙이고 걸어서 심어짐 확인) · «아주 가끔» = 씨앗 그루 무늬는 드물다(growth calcVarieProb · 잎 8장까지 두 장 28%). 수 없음 */
   oneroomVarieClosed: [
     { who: 'moni',   face: 'worry', text: '무늬를 늘리는 할 일은 여기서 접자.' },
     { who: 'moni',   face: 'teach', text: '돈은 채소를 팔아서도 모아.' }
@@ -3288,8 +3274,7 @@ export const REPEATABLE = new Set(
              /* ★ 2026-10-31 [plan] D95 ⑨ — 반지하 겨울 멈춤도 plantStalledWinter 처럼 멈출 때마다(같은 사건 갈래) */
              'plantStalledWinterBanjiha',
              'cropHandsShort', 'brokeTalk', 'brokeTalkAgain',
-             /* ★ 2026-10-08 D22 — 팔려고 할 때마다 말린다(되돌릴 수 없는 것 앞의 말은 매번이다) */
-             'sellLastVarie', 'moveNoVarie', 'moveLowCash', 'moveNoCutting', 'sellKeepOne', 'hungryTalk', 'hungryTalk2',
+             'moveNoVarie', 'moveLowCash', 'moveNoCutting', 'sellKeepOne', 'hungryTalk', 'hungryTalk2',
              'nudgeRadishOffer', 'nudgeRadishPush', 'statusHarvest10', 'statusHarvest30',
              'nudgeSettleOffer', 'nudgeSettlePush', 'nudgeRecutOffer', 'nudgeRecutPush',
              'statusNeighborAsk', 'statusLandlordPlant',
@@ -3313,8 +3298,8 @@ export const REPEATABLE = new Set(
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf',
-             /* ★ 2026-11-01 [plan] D100 ⑤ — 되풀이 줄의 둘째 벌 · 월세 예고 셋째 벌 · 팔기 앞 말 갈래 */
-             'statusLeafWide2', 'statusSiruVs2', 'statusPhaseYoung2', 'rentSoon3', 'sellLastVarieWait'])
+             /* ★ 2026-11-01 [plan] D100 ⑤ — 되풀이 줄의 둘째 벌 · 월세 예고 셋째 벌 */
+             'statusLeafWide2', 'statusSiruVs2', 'statusPhaseYoung2', 'rentSoon3'])
 );
 
 /* ── 진행 ───────────────────────────────────────────────────────────── */
@@ -3370,8 +3355,6 @@ export const EVENT_SCRIPT = Object.freeze({
      ⚠ `beansprout_harvest_again` 에는 여전히 대사를 «안 붙인다» — 그건 날마다 난다.
        이것은 **드문 날**이라야 뜨므로 위 §1684 가 걱정한 「스무 번」이 안 일어난다. */
   crop_hands_short:    'cropHandsShort',
-  /* ★ 2026-10-08 [plan] D22 — 마지막 무늬 원천을 그루째 팔기 전(§sellLastVarie). 사건은 [core] 가 확인 창을 열 때 낸다 */
-  sell_last_varie:     'sellLastVarie',
   /* ★ 2026-10-08 [plan] D27 — 무늬 원천 없이 이사 되묻기(§moveNoVarie) · 사건은 [core] 가 되묻기 창을 열 때 낸다 */
   move_no_varie:       'moveNoVarie',
   /* ★ 2026-10-09 [plan] D31 — 이사비를 내면 첫 달 월세가 모자란 이사 되묻기(§moveLowCash) · 사건은 [core] */
@@ -3462,11 +3445,11 @@ export const EVENT_SCRIPT = Object.freeze({
   move_ready:          'moveReady',
   /* ★ 2026-10-31 [plan] D97 ① — 못 버티던 판이 버틸 만해진 날(한 번 · [core]) */
   move_ready_ok:       'moveReadyLater',
-  /* ★ 2026-11-01 [plan] 총괄 D100 — 아래 이름 넷 가운데 셋(…_no_varie · sell_last_varie_wait · rent_soon3)은 사건 id 가 아니라 §scriptOf 가 고르는 갈래 이름이다(ev_grandma_pale 과 같은 손).
+  /* ★ 2026-11-01 [plan] 총괄 D100 — 아래 이름 가운데 셋(…_no_varie 둘 · rent_soon3)은 사건 id 가 아니라 §scriptOf 가 고르는 갈래 이름이다(ev_grandma_pale 과 같은 손).
+       (sell_last_varie · sell_last_varie_wait 는 D22 를 확인 창 글로 옮기며 걷었다 — §soldLastVarie 위 주석)
        sold_last_varie · oneroom_varie_closed 는 [core] 가 내는 사건이다(plan-to-core-d100 §1-3 · §4) */
   move_ready_no_varie:       'moveReadyNoVarie',
   move_ready_ok_no_varie:    'moveReadyLaterNoVarie',
-  sell_last_varie_wait:      'sellLastVarieWait',
   sold_last_varie:           'soldLastVarie',
   oneroom_varie_closed:      'oneroomVarieClosed',
   oneroom_varie_closed_seed: 'oneroomVarieClosedSeed',
@@ -3757,8 +3740,6 @@ function scriptOf(ev, S = null) {
   /* ★ 2026-11-01 [plan] 총괄 D100 ③ — 무늬 원천 0(ev.varieSource · [core] varieSourcesNow 와 같은 자)이면 «오늘이어도 되고»를 안 하고 경고 갈래 · 모르면 지금 그대로 */
   if ((id === 'move_ready' || id === 'move_ready_ok') && ev && typeof ev === 'object' && ev.varieSource === 0)
     return EVENT_SCRIPT[id === 'move_ready' ? 'move_ready_no_varie' : 'move_ready_ok_no_varie'];
-  /* ★ 2026-11-01 [plan] 총괄 D100 ① — 자르기 문이 닫힌 날(ev.cutOpen === false)의 팔기 앞 말은 «마디만 잘라 팔아도 돼»를 «다 자란 뒤»로 · 모르면 지금 그대로 */
-  if (id === 'sell_last_varie' && ev && typeof ev === 'object' && ev.cutOpen === false) return EVENT_SCRIPT.sell_last_varie_wait;
   /* ★ 2026-11-01 [plan] 총괄 D100 ④ — 원룸 무늬 할 일 닫힘: 몬스테라 화분 0(ev.pots === 0)이면 씨앗 갈래 */
   if (id === 'oneroom_varie_closed') return EVENT_SCRIPT[ev && typeof ev === 'object' && ev.pots === 0 ? 'oneroom_varie_closed_seed' : 'oneroom_varie_closed'];
   if (id === 'move_ready') {
@@ -3907,8 +3888,6 @@ export function scriptsForEvents(events = [], S = null) {
   if (out.includes('endingReady') || out.includes('endingReadyAgain')) { const q = out.indexOf('questDoneOneroomHomeFund'); if (q >= 0) out.splice(q, 1); }
   /* ★ 2026-10-08 [plan] 혹 난 날은 경고(w_node)도 같이 난다 — 같은 순간이라 «혹이 났어» 한 벌만 */
   if (out.includes('cuttingNode')) { const w = out.indexOf('cuttingWarn'); if (w >= 0) out.splice(w, 1); }
-  /* ★ 2026-10-10 [plan] — 마지막 무늬 «원천»(D22)과 마지막 무늬 «삽수»(D27 갈래 셋)가 한 손에 서면 D22 가 말한다(더 센 말) */
-  if (out.includes('sellLastVarie') && out.includes('sellKeepOne')) out.splice(out.indexOf('sellKeepOne'), 1);
   /* ★ 2026-10-10 [plan] D59 — 이정표와 그 퀘스트 끝이 같은 턴이면 퀘스트 끝 대사만(같은 말 두 번 · «단골이 셋이야»). 퀘스트를 이미 끝낸 판(두 번째 서른 등)은 이정표가 말한다 */
   for (const [ms, qd] of [['shopRegulars3', 'questDoneShopRegulars3'], ['shopSign', 'questDoneShopSign'], ['shopTown', 'questDoneShopTown'],
                           /* ★ 2026-10-23 [plan] D72 B — 돌봄 이정표 10 · 30 과 그 퀘스트 끝 */
