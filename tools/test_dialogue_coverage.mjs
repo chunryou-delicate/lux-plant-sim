@@ -642,6 +642,10 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     'god1', 'rentFirst', 'rentAgain', 'autumnCame', 'winterCame', 'winterCameBanjiha', 'brokeTalkAgain', 'hungryTalk2',
     /* ★ 2026-10-31 [plan] D95 ⑨ — 겨울 멈춤(plant_stalled_winter)이 빛 고정 판(novice)에서 갈린다 */
     'plantStalledWinterBanjiha',
+    /* ★ 2026-10-31 [plan] D97 ① — 이사 «된 날»(move_ready)이 ev.survives 로 갈린다(scriptOf) */
+    'moveReadyNow', 'moveReadyShort',
+    /* ★ 2026-10-31 [plan] D97 ④ — 등 단 판의 창턱 줄 · [core] 가 부르는 자리를 등 수로 가르기 전까지 «아직 안 부름»(plan-to-core-d97 §4) */
+    'monsteraMovedLamp',
     'cuttingWarnLast', 'cuttingVarieBright', 'cuttingVarieDark',
     /* ★ 2026-10-09 [plan] — 원룸 철 셋(season 사건이 방으로 갈림) */
     'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom',
@@ -1386,6 +1390,42 @@ check('대사 — 원룸 첫 철 겨울: 등 아래 줄 · 겨울엔 «창만으
 check('대사 — 가구점 열린 날: 꾸미는 가구는 급할 거 없다 · «사지 마» 없음(D95 ⑥)', () => {
   assert.ok(SCRIPTS.furnitureShopOpen.some(l => /급할 거 없어/.test(l.text)), 'furnitureShopOpen 에 «급할 거 없어»가 없습니다');
   for (const l of SCRIPTS.furnitureShopOpen) assert.ok(!/사지 ?마/.test(l.text), `가구점 줄이 막습니다: ${l.text}`);
+});
+
+/* ★ 2026-10-31 [plan] 총괄 D97 — 비판 셋째 판 글 몫: 이사 «된 날» 셋 갈래(①) · «둘 다 됐어» 걷음(②) · 원룸에서 «여기서 나가는»(③) · 빛 낱말과 몬이 말 맞춤(④) */
+check('대사 — 이사 «된 날»: 버티면 «오늘이어도» · 못 버티면 «더 모으고 가자»가 앞 · 모르면 오늘을 안 권함(D97 ①)', () => {
+  assert.deepEqual(scriptsForEvents([{ id: 'move_ready', survives: true }]), ['moveReadyNow']);
+  assert.deepEqual(scriptsForEvents([{ id: 'move_ready', survives: false }]), ['moveReadyShort']);
+  assert.deepEqual(scriptsForEvents([{ id: 'move_ready' }]), ['moveReady']);
+  assert.deepEqual(scriptsForEvents([{ id: 'move_ready_ok' }]), ['moveReadyLater']);
+  assert.ok(SCRIPTS.moveReadyNow.some(l => /오늘이어도/.test(l.text)), 'moveReadyNow 에 «오늘이어도»가 없습니다');
+  assert.ok(SCRIPTS.moveReadyLater.some(l => /오늘이어도/.test(l.text)), 'moveReadyLater 에 «오늘이어도»가 없습니다');
+  for (const id of ['moveReady', 'moveReadyShort'])
+    assert.ok(!SCRIPTS[id].some(l => /오늘이어도/.test(l.text)), `'${id}' 가 버틸지 모르는 판에 오늘 이사를 권합니다`);
+  const sh = SCRIPTS.moveReadyShort.map(l => l.text);
+  const iShort = sh.findIndex(t => /모자라/.test(t)), iMore = sh.findIndex(t => /더 모으고/.test(t));
+  assert.ok(iShort >= 0 && iMore > iShort, 'moveReadyShort 가 «모자라 → 더 모으고 가자» 차례가 아닙니다');
+  assert.ok(SCRIPTS.moveLowCash.some(l => /첫 월세 날까지/.test(l.text)), 'moveLowCash 가 이사 창과 같은 말(«첫 월세 날까지»)이 아닙니다');
+});
+check('대사 — «둘 다 됐어»(이사 두 축)가 자르기 말 «무늬 잎 1/2»과 겹치지 않음(D97 ②)', () => {
+  for (const id of Object.keys(SCRIPTS)) for (const l of SCRIPTS[id])
+    assert.ok(!/둘 다 됐어/.test(l.text), `'${id}' 에 «둘 다 됐어»가 남았습니다 — 무엇의 둘인지 이름으로 말하십시오: ${l.text}`);
+  assert.ok(SCRIPTS.moveReady.some(l => /이사비/.test(l.text) && /무늬/.test(l.text)), 'moveReady 가 두 축을 이름으로 말하지 않습니다');
+});
+check('대사 — 하프문 줄은 방을 안 가림(원룸에서 «여기서 나가는» 없음 · D97 ③)', () => {
+  for (const l of SCRIPTS.varieHalfMoon) assert.ok(!/여기서 나가|나가는 길/.test(l.text), `varieHalfMoon 이 방을 박습니다: ${l.text}`);
+});
+check('대사 — 몬이 말이 놓기 확인 바 빛 낱말과 같음: 창턱 «천천히» · 무순 «그늘»(D97 ④)', () => {
+  assert.ok(SCRIPTS.monsteraMoved.some(l => /천천히/.test(l.text)), 'monsteraMoved(등 0)에 «천천히»가 없습니다 — 확인 바 «느리게 자람»과 갈립니다');
+  assert.ok(!SCRIPTS.monsteraMovedLamp.some(l => /천천히|느리/.test(l.text)), 'monsteraMovedLamp(등 단 판)가 속도를 장담합니다');
+  for (const id of ['questCropMix', 'nudgeMixBag']) {
+    assert.ok(!SCRIPTS[id].some(l => /밝은 데/.test(l.text)), `'${id}' 가 무순을 «밝은 데»로 말합니다 — 확인 바는 «그늘 — 무순에 알맞음»`);
+    assert.ok(SCRIPTS[id].some(l => /그늘/.test(l.text)), `'${id}' 에 «그늘»이 없습니다`);
+  }
+  for (const id of ['monsteraMoved', 'monsteraMovedLamp', 'questCropMix', 'questDoneCropMix', 'nudgeMixBag', 'moveReady', 'moveReadyNow', 'moveReadyShort', 'moveReadyLater',
+                    'moveLowCash', 'varieHalfMoon', 'questOneroomHomeFund'])
+    for (const l of SCRIPTS[id]) if (l.who === 'moni')
+      assert.ok(!/[0-9]|하나|(^|[^거])둘(?! 다)|셋|넷|다섯|이레|하루/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);   /* «둘 다»만 예외(몬이 규칙) */
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

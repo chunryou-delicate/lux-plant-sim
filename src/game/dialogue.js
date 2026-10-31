@@ -241,7 +241,17 @@ export const SCRIPTS = {
   ],
 
   /* 창턱으로 옮긴 뒤 */
+  /* ★ 2026-10-31 [plan] 총괄 D97 ④ (비판 셋째 판 ④ — 몬이 «창턱! 제일 밝아» ↔ 놓기 확인 바 «밝음 — 몬스테라가 느리게 자람») — 둘 다 참이라 한 말로 잇는다.
+       참: 부르는 자리(game.html dlgOpen('monsteraMoved') 셋)는 §isBrightestSlot 일 때만 부른다 — «제일 밝아»는 그 자로 참.
+         등 0 이면 반지하 가장 밝은 칸도 3.68(house_rooms banjiha measured slots peak_summer · novice 맑음·여름 고정이라 이것이 최대)이고
+         몬스테라 best_lo 5 밑이라 growBandAt «slow» — «천천히 커»가 참이다.
+       등을 단 판(S.lamps.count ≥ 1)은 §monsteraMovedLamp(속도 말 없음 · 옛 두 줄) — [core] 부르는 자리가 등 수로 가른다(plan-to-core-d97 §4). 수 없음. */
   monsteraMoved: [
+    { who: 'moni', face: 'cheer', text: '창턱! 여기가 이 방에서 제일 밝아.' },
+    { who: 'moni', text: '그래도 반지하라 천천히 커.' },
+    { who: 'moni', text: '바로는 안 변해. 며칠 지나야 알아.' }
+  ],
+  monsteraMovedLamp: [
     { who: 'moni', face: 'cheer', text: '창턱! 여기가 이 방에서 제일 밝아.' },
     { who: 'moni', text: '바로는 안 변해. 며칠 지나야 알아.' }
   ],
@@ -716,8 +726,11 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'proud',    text: '이제 돼. 둘 다 다 자랐으니까.' },
     { who: 'jachwi', face: 'worry',    text: '자른 건… 죽는 거 아니야?' },
     { who: 'moni',   face: 'teach',    text: '물에 꽂아. 뿌리 나와. **밝은 데** 두고.' },
-    { who: 'jachwi', text: '…드디어 나가는 길이 보이네.' },
-    { who: 'moni',   face: 'teach',    text: '응. 그 한 장이 여기서 나가는 값이야.' }
+    /* ★ 2026-10-31 [plan] 총괄 D97 ③ (비판 셋째 판 ⑤#14 — 원룸 Day 163 «여기서 나가는 값»은 이미 나온 방에서 거짓으로 읽혔다) — 방을 안 가리는 말로.
+         부르는 자리(game.html playLeafScene · dlgOpen('varieHalfMoon'))는 방을 모른다 — 반지하 · 원룸 · 내 집 어디서나 참이어야 한다.
+         참: 하프문 등급 값(varie_grades halfmoon 750,000)이 산반(350,000)보다 크다 — D95 ② «크게 버는 쪽»과 같은 말. 수 없음. */
+    { who: 'jachwi', text: '…드디어 길이 보이네.' },
+    { who: 'moni',   face: 'teach',    text: '응. 그 한 장이 크게 벌어 줘.' }
   ],
 
   /* ═══ ★★★ §5.5 퀘스트 — **「지금 뭘 하지?」에 답하는 다섯 줄** (2026-08-17) ═══════
@@ -968,14 +981,20 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'think', text: '이제 뭘 하지.' },
     { who: 'moni',   face: 'teach', text: '콩나물만 먹고 있잖아. 매일.' },
     { who: 'jachwi', text: '나오는 게 그거니까.' },
-    { who: 'moni',   text: '같은 걸 두 번 먹으면 둘째 그릇은 반값밖에 안 쳐 줘.' },
+    /* ★ 2026-10-31 [plan] D97 — 몬이 수(«두 번» · «둘째») 뺌. 참: 같은 작물을 또 먹으면 그 몫은 반값(crop-balance §3 · 2,500 → 1,200원) */
+    { who: 'moni',   text: '같은 걸 또 먹으면 그 그릇은 반값밖에 안 쳐 줘.' },
     { who: 'jachwi', face: 'surprise', text: '…밥에도 값이 매겨져 있어?' },
-    { who: 'moni',   face: 'teach', text: '다른 걸 하나 더 길러 봐. **무순.** 걔는 **밝은 데** 두는 애야.' }
+    /* ★ 2026-10-31 [plan] 총괄 D97 ④ (비판 셋째 판 ④ — 몬이 «무순… 밝은 데» ↔ 놓기 확인 바 «협탁 · 그늘 — 무순에 알맞음») — 빛 낱말 한 벌(D95 §2)로 맞춘다.
+         참: 무순 green_crisp ≥ 0.35(first_play 품질 표) — 낱말 표로 «그늘»(0.3 < d < 2.7)부터 알맞음 · «어둠»(≤ 0.3)은 덜 파랗거나 웃자란다.
+         «밝음»도 알맞지만 창턱은 몬스테라 자리라 «그늘»로 이끈다(놓으라는 권함 · «그늘만»이라 하지 않는다).
+         ⚠ 몬이 수 — 옛 «하나 더»를 «다른 것도»로 바꿨다. */
+    { who: 'moni',   face: 'teach', text: '다른 것도 길러 봐. **무순.**' },
+    { who: 'moni',   face: 'teach', text: '걔는 어둠 말고 **그늘**에 둬.' }
   ],
   /* ★ 마지막 줄이 **체력이 오른 것**을 짚는다. 배너만 말하면 조용히 오른 것이 된다 */
   questDoneCropMix: [
     { who: 'jachwi', text: '오늘 밥상에 두 가지가 올라왔어.' },
-    { who: 'moni',   face: 'proud', text: '봐. 같은 걸 두 번 먹는 것보다 낫지.' },
+    { who: 'moni',   face: 'proud', text: '봐. 같은 걸 또 먹는 것보다 낫지.' },   /* ★ D97 — 몬이 수(«두 번») 뺌 */
     { who: 'jachwi', face: 'tired', text: '손이 두 배로 가는데.' },
     { who: 'moni',   face: 'proud', text: '그래서 손이 늘었잖아. 방금.' }
   ],
@@ -1264,7 +1283,8 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach',   text: '밝은 데서 뿌리낸 만큼 값이 붙은 거야.' }
   ],
   questOneroomHomeFund: [
-    { who: 'moni',   face: 'teach',   text: '이제 남은 건 하나야. **내 집.**' },
+    /* ★ 2026-10-31 [plan] D97 — 몬이 수(«하나») 뺌 */
+    { who: 'moni',   face: 'teach',   text: '이제 남은 건 **내 집**이야.' },
     { who: 'jachwi', face: 'curious', text: '얼마나 모아야 돼?' },
     { who: 'moni',   face: 'calm',    text: '숫자는 화면이 세. 나는 무늬만 볼게.' }
   ],
@@ -1363,10 +1383,38 @@ export const SCRIPTS = {
     { who: 'moni',   text: '다음 방도 창은 하나야. 여기서 안 배우면 거기서 똑같이 헤매.' },
     { who: 'moni',   face: 'calm', text: '그래서 짐은 아직 안 싸도 돼. 하나 남았어.' }
   ],
+  /* ★★ 2026-10-31 [plan] 총괄 D97 ①② (비판 셋째 판 ⑤#1 · #7 · #9) — 이사 «된 날» 줄을 셋으로 가른다(§scriptOf move_ready · 사건 칸 ev.survives).
+       ⛔ 옛 «됐다. 둘 다 됐어.» — «둘»은 이사 두 축(이사비 · 무늬 잎 본 적 · tutorial §canMoveOut)인데, 같은 날 할 일 «무늬 잎이 다 자라기를 1/2»
+         (자르기 문 · 다 자란 무늬 잎 2)과 낱말이 겹쳐 «자르기가 됐다»로 읽혔다(비판 판 «28일 엇갈림»의 첫 줄). ⇒ 두 축을 이름으로 말한다.
+       ⛔ 옛 «오늘이어도 되고.» — 이사하면 남는 돈이 첫 월세까지 못 버티는 판(비판 판 2,780원 → 다음 날 긴급지원)에서도 권했다.
+       갈래([core] 가 move_ready 에 survives 를 싣는다 — game.html §moveMoneyNow 와 같은 셈: 남는 돈 ≥ 원룸 첫 월세 + 원룸 하루 지출 × 월세 날까지 날수):
+         survives true  → §moveReadyNow  («오늘이어도 되고»)
+         survives false → §moveReadyShort («조금 더 모으고 가자»를 «앞에서»)
+         모름(옛 코어)  → §moveReady      (오늘을 권하지 않는다)
+       참: 첫 줄 «이사비도 모였고, 무늬도 봤어» = canMoveOut money ∧ varie(무늬 잎을 낸 적 ∨ 판 적 — 판 적이 있으면 잎도 봤다). 수 없음. */
   moveReady: [
-    { who: 'moni',   face: 'cheer', text: '됐다. 둘 다 됐어.' },
+    { who: 'moni',   face: 'cheer', text: '됐다. 이사비도 모였고, 무늬도 봤어.' },
     { who: 'jachwi', face: 'surprise', text: '진짜?' },
+    { who: 'moni',   face: 'calm', text: '언제 나갈지는 네가 정해.' }
+  ],
+  moveReadyNow: [
+    { who: 'moni',   face: 'cheer', text: '됐다. 이사비도 모였고, 무늬도 봤어.' },
+    { who: 'jachwi', face: 'surprise', text: '진짜?' },
+    /* 참: ev.survives === true — 이사하고 남는 돈으로 원룸 첫 월세 날까지 버틴다 */
     { who: 'moni',   face: 'calm', text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
+  ],
+  moveReadyShort: [
+    { who: 'moni',   face: 'cheer', text: '이사비는 모였어. 무늬도 봤고.' },
+    { who: 'jachwi', face: 'surprise', text: '그럼 나가도 돼?' },
+    /* 참: ev.survives === false — 남는 돈 < 원룸 첫 월세 + 하루 지출 × 월세 날까지(막지 않는다 · 수는 이사 창이 말한다) */
+    { who: 'moni',   face: 'worry', text: '지금 가면 첫 월세 날까지 모자라.' },
+    { who: 'moni',   face: 'calm',  text: '조금 더 모으고 가자. 정하는 건 너야.' }
+  ],
+  /* ★ 2026-10-31 [plan] 총괄 D97 ① — moveReadyShort 뒤 «버틸 만해진 날» 한 번(사건 move_ready_ok · [core] 가 survives 가 false → true 로 처음 바뀐 날 낸다).
+       참: 그날 ev.survives === true(위와 같은 셈). 한 판에 한 번(REPEATABLE 아님). 수 없음. */
+  moveReadyLater: [
+    { who: 'moni',   face: 'cheer', text: '이제 첫 월세까지 버틸 만해.' },
+    { who: 'moni',   face: 'calm',  text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
   ],
 
   /* ★반지하 구간의 끝이자 감정의 정점.
@@ -1567,7 +1615,8 @@ export const SCRIPTS = {
   nudgeMonsteraPush:  [ { who: 'moni', face: 'worry', text: '몬스테라가 아직 자라는 자리에 없어. 창턱이 이 방에서 제일 밝아.' } ],
   nudgeMixOffer:      [ { who: 'moni', face: 'teach', text: '무순도 상점에 있어. 콩나물이랑 한 상에 올려 봐.' } ],
   /* ★ 2026-10-30 [plan] 종합 5 · 비판 판 D18 — 「무순도 상점에 있어」는 이미 가방에 있는 날에도 떴다. 참: 가방에 무순 판이 있다 · 무순은 밝은 데라야 파래진다 */
-  nudgeMixBag:        [ { who: 'moni', face: 'teach', text: '무순 판이 가방에 있어. 밝은 데 놓아 길러 봐.' } ],
+  /* ★ 2026-10-31 [plan] 총괄 D97 ④ — «밝은 데» → «그늘»(위 §questCropMix 와 같은 까닭 · 빛 낱말 한 벌). 참: 가방에 무순 판이 있다 · 무순은 «그늘»부터 파랗다(≥ 0.35) */
+  nudgeMixBag:        [ { who: 'moni', face: 'teach', text: '무순 판이 가방에 있어. 그늘에 놓아 길러 봐.' } ],
   nudgeMixPush:       [ { who: 'moni', face: 'teach', text: '콩나물만으론 상이 한 가지야. 무순을 길러야 둘째 몫이 생겨.' } ],
   nudgeCutOffer:      [ { who: 'moni', face: 'teach', text: '수경병은 상점에 있어. 잎 한 장짜리 마디를 잘라 꽂아 봐.' } ],
   /* ★ 2026-10-31 [plan] D95 — 몬이가 «하나»를 말했다(수) · 뜻 그대로: 자른 마디가 새 그루가 된다 */
@@ -1626,7 +1675,10 @@ export const SCRIPTS = {
      ⚠ 수는 안 말한다(이사비·월세는 되묻기 창이 말한다). 사건 `move_low_cash` — [core] 가 이사 되묻기 창을 열 때
        «지갑 − 이사비 < 첫 달 월세»면 낸다. 무늬 원천 0(moveNoVarie)과 같이 서면 그 뒤에 선다(§EVENT_ORDER 없음 — 사건 차례 그대로). */
   moveLowCash: [
-    { who: 'moni', face: 'worry', text: '이사비 내면 첫 달 월세가 모자라. 조금만 더 모으고 가자.' }
+    /* ★ 2026-10-31 [plan] 총괄 D97 ① — «첫 달 월세» → «첫 월세 날까지»(이사 창 «원룸 첫 월세 N원은 N일 뒤» · moveReadyShort 와 같은 말) · 폰 한 줄 25자로 둘로.
+         참: [core] 가 낼 때 — 옛 «남는 돈 < 첫 월세»든 새 «!survives»(남는 돈 < 첫 월세 + 하루 지출 × 날수)든 «첫 월세 날까지 모자라»가 참 */
+    { who: 'moni', face: 'worry', text: '이사비 내면 첫 월세 날까지 모자라.' },
+    { who: 'moni', face: 'calm',  text: '조금만 더 모으고 가자.' }
   ],
   /* ★★ 2026-10-09 [plan] 재미 점검(plan-fun-audit §4) — 반지하 16주 구간(Day 50~165)의 «무순 다섯» 칩에 «무엇을»(D19).
      ⚠ 「창턱 말고도 자랄 데가 있어」 = 반지하에서 창턱을 빼고 무순 문턱을 넘는 자리가 정확히 다섯(quest.js §radish5 주석 · [Plan] 실측) — 참.
@@ -3203,6 +3255,8 @@ export const EVENT_SCRIPT = Object.freeze({
   move_short_both_crop:  'shortBothCrop',
   move_short_both_light: 'shortBothLight',
   move_ready:          'moveReady',
+  /* ★ 2026-10-31 [plan] D97 ① — 못 버티던 판이 버틸 만해진 날(한 번 · [core]) */
+  move_ready_ok:       'moveReadyLater',
   moved_out:           'movedOut',
   /* ★ 2026-08-11 — ③ 원룸의 첫 장면. `oneroom.moveIntoOneroom` 이 `moved_out` **다음에**
      내는 사건이고, game.html 의 이사 버튼이 둘을 한 번에 `story.events` 로 넘긴다. */
@@ -3424,7 +3478,7 @@ const EVENT_ORDER = [
   /* ★ 「둘 다 멀다」가 **제일 앞**이다 — 무엇부터 할지를 말하는 줄이라, 뒤에 두면
      모자란 축을 하나씩 짚는 말들 뒤에 와서 순서가 거꾸로 선다. */
   'move_short_both_crop', 'move_short_both_light',
-  'move_short_learn', 'move_short_money', 'move_ready', 'moved_out', 'moved_in_oneroom',
+  'move_short_learn', 'move_short_money', 'move_ready', 'move_ready_ok', 'moved_out', 'moved_in_oneroom',
   'ending_home'
 ];
 
@@ -3438,6 +3492,11 @@ function scriptOf(ev, S = null) {
   if (id === 'plant_stalled_winter') {
     const mode = S && S.sim && S.sim.mode ? S.sim.mode : null;
     return mode === 'novice' ? 'plantStalledWinterBanjiha' : 'plantStalledWinter';
+  }
+  /* ★ 2026-10-31 [plan] 총괄 D97 ① — 이사 «된 날»은 첫 월세까지 버티나(ev.survives · [core] §moveMoneyNow 셈)로 갈린다. 모르면 오늘을 권하지 않는 줄 */
+  if (id === 'move_ready') {
+    const sv = ev && typeof ev === 'object' ? ev.survives : undefined;
+    return sv === true ? 'moveReadyNow' : sv === false ? 'moveReadyShort' : 'moveReady';
   }
   /* ★ 2026-10-08 [plan] D20 — 겨울은 방으로 갈린다(§winterCameBanjiha). 사건이 실으면(ev.movedOut) 그것을, 아니면 S 를 본다.
      둘 다 모르면 예전 그대로(winterCame) — 판을 안 바꾼다. */
