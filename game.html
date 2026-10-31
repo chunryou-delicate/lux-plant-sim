@@ -14092,6 +14092,7 @@ function bjDeferPending(why) {
   if (k) { evPending = null; console.info('[반지하 사건] 내일로 미룸:', k, why); }
   return !!k;
 }
+var moveLowCashSaidOn = null;   /* ★ 2026-11-01 b017 — move_low_cash 대사를 낸 날(하루 한 번 · 세이브 안 함) */
 /* ★ 2026-10-31 D97 §1-1 — move_ready 에 «버티나»를 싣고(대사 셋 갈래 · plan 7832818b) · 못 버티던 판이 처음 버틸 만해진 아침에 move_ready_ok 한 번(ts 깃발 둘 · 세이브) */
 function noteMoveSurvives(turn) {
   const ts = S.tutorial; if (!ts || ts.movedOut || !turn) return;
@@ -18630,7 +18631,7 @@ const FURN_LIGHT_KO = Object.freeze({
   higher:     '창틀 높이로 올리면 여름에 더 잘 자랍니다',
   higherGrow: '창틀 높이로 올리면 여름엔 등 없이도 자랍니다',
   /* ★ D53(plan 67783383 · 594babb1 · 873b11e3 · house 6e3f22d5·d116738d·5e970015) — 엔진 clipTop 이 있으면 둘째 줄.
-       atTop(가르는 자리가 이미 맨 윗단)이면 «맨 윗단에 두고 » → «여기에 » · «집게등»은 화면에서 «클립형 식물등»(상점 이름) */
+       atTop(가르는 자리가 이미 맨 윗단)이면 «맨 윗단에 두고 » → «여기에 » · «집게등»은 화면에서 «집게형 식물등»(상점 이름 · plan 65ab329e) */
   clipWinter: '{at}집게형 식물등을 물리면 겨울에도 자랍니다',   /* ★ 2026-11-01 plan 65ab329e — 상점 · 가방 · 산 배너의 «집게형»과 한 이름 */
   clipSummer: '{at}집게형 식물등을 물리면 여름엔 자랍니다',
   clipNovice: '{at}집게형 식물등을 물리면 자랍니다',
@@ -21051,11 +21052,14 @@ function openMoveAsk() {
   /* ★ D97 §1-1 — «버티나»(§moveSurvivesNow · 창 두 줄과 같은 셈)로 · 못 세면 예전 «남는 돈 < 첫 월세» */
   const sv0 = moveSurvivesNow();
   const lowCash = sv0 != null ? !sv0 : (Number.isFinite(rent1) && (ts.cashWon - c.needWon) < rent1);
-  if (v.n === 0 || noCut || lowCash) {
+  /* ★ 2026-11-01 비판 넷째 판 b011 · b017 — 시트([방] 판)가 대사를 덮는 때는 대사를 건너뛰고 창을 바로 · «이사비 내면 …»은 하루 한 번 */
+  const talkHidden = document.documentElement.classList.contains('sheetopen');
+  const sayLow = lowCash && moveLowCashSaidOn !== S.day;
+  if (!talkHidden && (v.n === 0 || noCut || sayLow)) {
     movePanelPending = true;
     const evs = [];
     if (v.n === 0) evs.push({ id: 'move_no_varie' }); else if (noCut) evs.push({ id: 'move_no_cutting' });
-    if (lowCash) evs.push({ id: 'move_low_cash' });
+    if (sayLow) { evs.push({ id: 'move_low_cash' }); moveLowCashSaidOn = S.day; }
     try { dlgOpen(story.events(evs, S)); } catch (e) { console.warn('[D27]', e && e.message); }
     setTimeout(() => { try { openMoveAskWhenQuiet(); } catch { } }, 50);   /* 대사가 안 떴으면 바로 */
     return;
