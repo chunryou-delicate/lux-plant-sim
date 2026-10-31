@@ -24,7 +24,9 @@
    ★ THREE 를 쓰지 않는다. 자리(at)는 place.js 의 것 하나를 그대로 쓴다 —
      화분·콩나물 시루와 **같은 불변식**이다(추천 자리 위면 안정 id, 벗어나면 `free:{id}`).
 ============================================================ */
-import { resolvePlacement, atFromSlot, isFreeSlotId, inRoom } from './place.js';
+import { resolvePlacement, atFromSlot, isFreeSlotId, inRoom, slotSeater } from './place.js';
+/* ★ 2026-10-31 총괄 D92 — 방에 선 시루·재배판을 세려고(§roomThingsOf). ⚠ 한 방향이다: first_play 는 place.js 만 부른다 */
+import { cropSites } from './first_play.js';
 import { useStock, assertStockAll, shopOf, CATALOG,
 /* ★★ 2026-08-17 — 무늬 **등급**(종류)은 전부 shop 이 읽는다.
    ⚠ 정본은 `data/balance/varie_grades.json` 이고 읽는 자리는 `shop.js` 한 곳이다.
@@ -1835,23 +1837,59 @@ export function takeCuttingOut(S, cuttingOrId, opt = {}) {
    자리가 없다고 죽이면 방을 옮겼다는 이유로 삽수가 사라진다(유령의 반대쪽 사고). */
 export function rehomeCuttings(S, room, log) {
   const out = [];
-  /* ★★ 2026-08-17 — **빈 그릇(`S.emptyPots`)도 같이 본다.** 삽수가 든 그릇은 삽수가 지고
-     있어서 아래에서 같이 옮겨지지만, 빈 그릇은 **아무도 안 봤다** — 받치던 가구가 사라지면
-     허공에 남는다. 빈 화분이 생긴 2026-08-16 부터 있던 구멍이고 여기서 같이 막는다.
-     ⚠ 규칙을 새로 짓지 않는다 — 아래 삽수와 **똑같은 두 경우**(가구가 사라졌다 · 방 밖이다)다. */
-  for (const ct of emptyContainersOf(S)) {
-    let why = null;
-    if (ct.at) {
-      if (room && room.size && !inRoom(ct.at, room.size)) why = '자리가 방 밖입니다';
-      else if (ct.at.onUid && room && room.surfaces && !room.surfaces.has(ct.at.onUid))
-        why = `받치던 ${ct.at.onUid} 이(가) 사라졌습니다`;
-    } else if (ct.slotId && !isFreeSlotId(ct.slotId) &&
-               !((room && room.slots) || []).some(s => s && s.slotId === ct.slotId)) {
-      why = `슬롯 ${ct.slotId} 이(가) 이 방에 없습니다`;
+  /* ★★ 2026-10-31 총괄 D92 — 회수 자리는 **빈 이름 자리를 차례로** 나눈다(place §slotSeater) · 모자라면 가방(자리 해제).
+       ⛔ 예전: 다 «첫 자리»(room.slots[0]) 한 점에 앉혔다 — 둘이 자리를 잃으면 한 점에 겹쳐 섰고, 그 자리에 이미 선 것 위에도 앉았다
+         (원룸 이사 작물 열아홉이 oneroom-sill:0 한 점에 겹친 것과 같은 손 · core 10-31).
+       ★ 가방은 멈춤이다 — 자리 없는 삽수는 하루가 안 간다(§stepCuttings · 박사님 08-17 «회수되면 성장은 멈춰»). 놓으면 그날부터 다시 센다.
+       ★ 삽수가 먼저 고른다 — 산 것이 빈 그릇보다 앞이다(차례는 조도 창 것 · 첫 자리가 가장 밝다).
+       ⚠ «찼나»는 이 판에 선 것 전부로 잰다(§roomThingsOf) — 자리를 잃은 것의 옛 자리는 이 방 이름 자리가 아니라 안 걸린다. */
+  let seat = null;
+  const nextSeat = () => {
+    if (!seat) seat = slotSeater((room && room.slots) || [], roomThingsOf(S));
+    return seat.take();
+  };
+  /* 자리를 잃었나 — 화분(state.rehomePot)과 **같은 두 경우**(가구가 사라졌다 · 방 밖이다) + 이 방에 없는 슬롯 */
+  const lostWhy = (o) => {
+    if (o.at) {
+      if (room && room.size && !inRoom(o.at, room.size)) return '자리가 방 밖입니다';
+      if (o.at.onUid && room && room.surfaces && !room.surfaces.has(o.at.onUid))
+        return `받치던 ${o.at.onUid} 이(가) 사라졌습니다`;
+      return null;
     }
+    if (o.slotId && !isFreeSlotId(o.slotId) &&
+        !((room && room.slots) || []).some(s => s && s.slotId === o.slotId))
+      return `슬롯 ${o.slotId} 이(가) 이 방에 없습니다`;
+    return null;
+  };
+  for (const c of S.cuttings || []) {
+    /* ★ 가방에 있는 조각은 자리가 없다 — 회수할 것이 없다 */
+    if (c.status === 'bag' || (!c.at && !c.slotId)) continue;
+    const why = lostWhy(c);
     if (!why) continue;
-    const dest = ((room && room.slots) || [])[0] || null;
-    if (dest && [dest.x, dest.y, dest.z].every(v => Number.isFinite(v))) {
+    /* ★ 좌표를 `atFromSlot` 으로 그대로 옮긴다. 여기서 방 치수 검사를 다시 걸지 않는다:
+       "방이 바뀌어 옛 좌표가 방 밖"인 상황에서 새 방의 추천 자리로 옮기는 중인데,
+       그 자리를 옛 치수로 재면 회수 자체가 던진다(화분이 이미 그 규칙을 쓴다). */
+    const dest = nextSeat();
+    if (dest) {
+      c.at = atFromSlot(dest);
+      c.slotId = dest.slotId;
+      if (log) log(`삽수 ${c.id} 회수 — ${why} · ${c.slotId} 로 옮겼습니다`);
+    } else {
+      c.at = null; c.slotId = null;
+      if (log) log(`삽수 ${c.id} 가방으로 — ${why} · 빈 자리가 없습니다 (놓을 때까지 멈춥니다 · 삽수는 살아 있습니다)`);
+    }
+    /* ★ 그릇은 따로 안 옮긴다 — 삽수가 지고 있다(§⑤-2 ★★) */
+    out.push({ id: c.id, why });
+  }
+  /* ★★ 2026-08-17 — **빈 그릇(`S.emptyPots`)도 같이 본다.** 삽수가 든 그릇은 삽수가 지고
+     있어서 위에서 같이 옮겨지지만, 빈 그릇은 **아무도 안 봤다** — 받치던 가구가 사라지면
+     허공에 남는다. 빈 화분이 생긴 2026-08-16 부터 있던 구멍이고 여기서 같이 막는다.
+     ⚠ 규칙을 새로 짓지 않는다 — 위 삽수와 **똑같은 두 경우**(가구가 사라졌다 · 방 밖이다)다. */
+  for (const ct of emptyContainersOf(S)) {
+    const why = lostWhy(ct);
+    if (!why) continue;
+    const dest = nextSeat();
+    if (dest) {
       ct.at = atFromSlot(dest); ct.slotId = dest.slotId;
       if (log) log(`용기 ${ct.id} 회수 — ${why} · ${ct.slotId} 로 옮겼습니다`);
     } else {
@@ -1860,37 +1898,17 @@ export function rehomeCuttings(S, room, log) {
     }
     out.push({ id: ct.id, why, kind: 'container' });
   }
-  for (const c of S.cuttings || []) {
-    /* ★ 가방에 있는 조각은 자리가 없다 — 회수할 것이 없다 */
-    if (c.status === 'bag' || (!c.at && !c.slotId)) continue;
-    let why = null;
-    if (c.at) {
-      if (room && room.size && !inRoom(c.at, room.size)) why = '자리가 방 밖입니다';
-      else if (c.at.onUid && room && room.surfaces && !room.surfaces.has(c.at.onUid))
-        why = `받치던 ${c.at.onUid} 이(가) 사라졌습니다`;
-    } else if (c.slotId && !isFreeSlotId(c.slotId) &&
-               !((room && room.slots) || []).some(s => s && s.slotId === c.slotId)) {
-      why = `슬롯 ${c.slotId} 이(가) 이 방에 없습니다`;
-    }
-    if (!why) continue;
-
-    /* ★ 회수 자리는 **state.rehomePot 과 같은 규칙**이다 — 슬롯 목록의 첫 자리(=가장 밝은 자리).
-       좌표를 `atFromSlot` 으로 그대로 옮긴다. 여기서 방 치수 검사를 다시 걸지 않는다:
-       "방이 바뀌어 옛 좌표가 방 밖"인 상황에서 새 방의 추천 자리로 옮기는 중인데,
-       그 자리를 옛 치수로 재면 회수 자체가 던진다(화분이 이미 그 규칙을 쓴다). */
-    const dest = ((room && room.slots) || [])[0] || null;
-    if (dest && [dest.x, dest.y, dest.z].every(v => Number.isFinite(v))) {
-      c.at = atFromSlot(dest);
-      c.slotId = dest.slotId;
-      if (log) log(`삽수 ${c.id} 회수 — ${why} · ${c.slotId} 로 옮겼습니다`);
-    } else {
-      c.at = null; c.slotId = null;
-      if (log) log(`삽수 ${c.id} 자리 해제 — ${why} (삽수는 살아 있습니다)`);
-    }
-    /* ★ 그릇은 따로 안 옮긴다 — 삽수가 지고 있다(§⑤-2 ★★) */
-    out.push({ id: c.id, why });
-  }
   return out;
+}
+
+/* ★ 2026-10-31 총괄 D92 — 이 판에서 방에 «선» 것 전부(§rehomeCuttings 가 «찼나»를 잰다 · place §slotSeater).
+   화분 · 빈 그릇 · 삽수 · 시루·재배판(first_play §cropSites) · 새 두 종 그루 — 자리(slotId)나 좌표(at)가 있는 것만. */
+export function roomThingsOf(S) {
+  if (!S) return [];
+  const out = [...(S.pots || []), ...emptyContainersOf(S), ...(S.cuttings || [])];
+  for (const site of cropSites(S.firstPlay)) out.push(...((site && site.pots) || []));
+  out.push(...((S.species && S.species.pots) || []));
+  return out.filter(t => t && (t.slotId || t.at));
 }
 
 /* ============================================================

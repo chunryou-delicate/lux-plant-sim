@@ -39,6 +39,7 @@ import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, mark
 import { canMoveOut, varieView, buyLamp, dailyCashOutWon, rentWonOf, TUTORIAL_RULES } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow, cuttingsOf } from '../src/game/propagation.js';
 import { moveIntoOneroom, stageOf, STAGES } from '../src/game/oneroom.js';
+import { unpackCropsAfterMove } from './lib/byeot_harness.mjs';   /* ★ D92 ㉰ — 이사 뒤 짐 풀기 */
 import { endingRulesFrom, endingProgress } from '../src/game/ending.js';
 import { createProfileLight } from '../src/game/room_profile.js';
 
@@ -253,6 +254,8 @@ function play({ seed, rent, lamps, branch, path: pathMode, days, control }) {
       const before = { rules: ts.rules, movedOut: false };
       ts.rules = pairRules(ts.rules, rent, control);
       moveIntoOneroom(S, io);
+      /* ★ 2026-10-31 총괄 D92 ㉰ — 이삿짐을 푼다(콩나물 ONE_DARK 와 같은 칸 · LEGACY_SEAT=1 이면 옛 sill:0 한 점) */
+      out.unpack = unpackCropsAfterMove(S, io.light, { legacy: process.env.LEGACY_SEAT === '1' });
       out.pair = pairCheck(before, ts);
       out.moved = true; out.moveDay = S.day; out.cashAtMove = ts.cashWon; out.modeAfter = S.sim.mode;
       const st = pot0(S) ? io.growth.leafStats() : null;

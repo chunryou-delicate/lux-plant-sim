@@ -10,8 +10,9 @@ import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';   /* D71 — 자리 높이 표(tools/lib/drop_table) */
-import { ARRIVAL, pot0, hasPlant } from '../../src/game/state.js';
-import { firstPlayRulesFromBalance, cropSites, cropPotList, pantryKeepStatus, pantrySoldCountOf } from '../../src/game/first_play.js';
+import { ARRIVAL, pot0, hasPlant, sowCrop } from '../../src/game/state.js';
+import { firstPlayRulesFromBalance, cropSites, cropPotList, pantryKeepStatus, pantrySoldCountOf,
+         idleCropPots, placeCrop, syncCropLead } from '../../src/game/first_play.js';   /* ★ D92 — §unpackCropsAfterMove */
 import { createProfileLight } from '../../src/game/room_profile.js';
 import { cuttingsOf } from '../../src/game/propagation.js';
 import { storyOf, tutorialRulesFromHomes } from '../../src/game/oneroom.js';
@@ -190,6 +191,39 @@ export function makeSwitchingLight(start = 'banjiha') {
 }
 export const atOf = (light, id) => { const s = (light.room.slots || []).find(x => x.slotId === id); return s ? { x: s.x, y: s.y, z: s.z } : null; };
 
+/* ══ ★ 2026-10-31 총괄 D92 ㉰ — 이사 뒤 «짐 풀기»(하네스의 사람 손) ══════════════════════
+   게임은 이사 순간 방에 서 있던 시루·재배판을 가방 «이삿짐»에 넣는다(oneroom §clearPlacements · first_play §boxCropPot) —
+   돌던 것은 놓을 때까지 멈추고 · 거둔 것은 빈 용기가 된다 · 사람이 가구를 놓고 꺼내 놓는다.
+   하네스엔 그 손이 없어 원룸 채소가 영영 가방에 남는다(이사 뒤 채소 돈 0) ⇒ 이 손이 푼다(총괄 ㉰ — 기본 ㉮ · legacy ㉯):
+     ㉮ 콩나물은 beanAt(기본 banjiha-dresser:1 — 원룸 프로필 기준 배치 D 의 서랍장 · 하네스 resowCrop 이 날마다 쓰는 그 칸) ·
+        무순은 musunAt(기본 banjiha-desk:0 — 하네스 MUSUN_AT) · 빈 용기(거둔 채 이사한 것)는 씨앗이 있으면 심는다(사람의 [🌱 심기])
+     ㉯ opt.legacy — 옛 oneroom §reseatCrops 그대로 room.slots[0] 한 점(창턱 sill:0 · 옛 숫자와 견주기용 · probe_branches --legacy-seat)
+   ⚠ 한 칸에 무리로 앉히는 것은 하네스의 옛 모형 그대로다(resowCrop at — 자리 하나에 시루 전부) — 게임의 각개 자리는 안 흉내 낸다.
+   ⚠ 그 이름이 방에 없으면 room.slots[0] 으로 물러나고 fallback 에 적는다(지어내지 않는다).
+   반환 { placed, sown, left, at: {종류: 자리}, fallback: [...] } */
+export function unpackCropsAfterMove(S, light, opt = {}) {
+  const fp = S && S.firstPlay;
+  const out = { placed: 0, sown: 0, left: 0, at: {}, fallback: [] };
+  if (!fp || !fp.enabled) return out;
+  const slots = (light && light.room && light.room.slots) || [];
+  const has = id => slots.some(s => s && s.slotId === id);
+  const first = slots[0] ? slots[0].slotId : null;
+  for (const site of cropSites(fp)) {
+    const kind = site.kind || 'beansprout';
+    const want = opt.legacy ? first : kind === 'musun' ? (opt.musunAt || 'banjiha-desk:0') : (opt.beanAt || 'banjiha-dresser:1');
+    const at = want && has(want) ? want : first;
+    if (at !== want) out.fallback.push(`${kind}:${want}→${at}`);
+    if (!at) continue;
+    for (const p of idleCropPots(site)) {
+      try { placeCrop(fp, kind, at, { slots, potId: p.id, day: S.day }); out.placed++; out.at[kind] = at; }
+      catch { out.left++; continue; }
+      if (p.sown === false && !p.harvested && p.startedOnDay == null) { try { sowCrop(S, p.id, { kind }); out.sown++; } catch { } }
+    }
+    syncCropLead(site);
+  }
+  return out;
+}
+
 /* ══ 퀘스트 스냅샷 — game.html §questSnapshotNow 와 같은 칸(quest.js §스냅샷 계약) ══════════
    ⚠ mealKinds 는 턴(firstPlayEvent.portions)에서 · 모르면 [] · cash/target 은 부르는 쪽이 준다 */
 export function questSnapshotOf(S, io, opt = {}) {
@@ -231,6 +265,8 @@ export function questSnapshotOf(S, io, opt = {}) {
       const crops = (cropPotList(fp, S.day) || []).filter(r => r && r.inBag).length;
       return pots + cutsInBag + crops; } catch { return null; } })(),
     bagCuttings: (() => { try { return (cuttingsOf(S) || []).filter(c => c && c.status !== 'dead' && c.method && !c.slotId && !c.at).length   /* loop §turn.bagCuttings 와 같은 기준 · 지금 상태(놓자마자 바뀐다) */; } catch { return null; } })(),
+    /* ★ 2026-10-31 총괄 D92 — game.html §questSnapshotNow 와 같게(가방에 든 몬스테라 화분 수 · oneroom_unpack 둘째 갈래) */
+    bagPots: (() => { try { return (S.pots || []).filter(p => p && !p.slotId && !p.at).length; } catch { return null; } })(),
     varieSalesSinceMove: (movedOut && story && Number.isInteger(story.varieSaleAtMove)) ? Math.max(0, ((ts.varieSale && ts.varieSale.count) || 0) - story.varieSaleAtMove) : (movedOut ? null : 0),
     cashWon: Number.isFinite(ts.cashWon) ? ts.cashWon : null,
     targetWon: Number.isFinite(opt.targetWon) ? opt.targetWon : null,

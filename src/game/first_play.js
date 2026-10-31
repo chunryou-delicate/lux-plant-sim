@@ -1380,6 +1380,40 @@ export function recallCropPot(fp, potId) {
   }
   return { ok: false, why: '그 시루를 못 찾았습니다' };
 }
+/* ★★★ 2026-10-31 총괄 D92 — **이삿짐** (원룸 이사 · 자리를 잃은 시루·재배판)
+   ══════════════════════════════════════════════════════════════════
+   ⛔ 예전: 이사가 방에 서 있던 작물을 새 방 «첫 자리» 한 점에 다 앉혔다(oneroom §reseatCrops · save §reseat) —
+     시루 14 · 재배판 5 가 oneroom-sill:0 한 점에 겹쳐 섰다(core 10-31 잼 · 하네스 D40 판 이사).
+   ★ 이제 가방 «이삿짐»으로 간다. 멈춤은 회수(§recallCropPot)와 같다 — 하루는 놓인 것만 돌리므로(§stepCrops) 가방에서는 안 자란다.
+   ★ «가방에는 빈 용기만»의 예외다 — 그 규칙은 «가방에서 키우기»를 막으려던 것이고 이삿짐은 안 자란다(총괄 D92 · 이 표시가 붙은 것만).
+   ★ «이삿짐»이라 부르는 것은 **물을 받아 돌던 것**이다(§boxedCropPots · plan-to-core-d92 «inBag && started») — 가방 칸 · 글이 그것만 센다.
+   ⚠ 거둔 시루는 **표시 없는 빈 용기**로 넣는다 — 가방은 «안 놓였고 안 거둔 것»만 센다(§idleCropPots). 거둔 채로 넣으면 가방에서 사라진다.
+     다시 심기(§resowCrop)가 하는 그대로 지난 회전을 비우고(곳간에 든 것은 그대로) 회전 수를 올린다 · 씨앗은 놓은 뒤 [🌱 심기]가 뺀다.
+   ⚠ 심어 두고 물을 안 준 것은 표시를 단다(이삿짐 수엔 안 듦) — 빈 용기로 놓이며 씨앗이 걷히지 않게(state §placeSiru).
+   ⚠ 놓으면 표시가 떨어진다(§placeCrop) — 물을 안 받은 것은 그날부터 다시 기다린다(가방에서는 물 셈도 멈춘다). */
+export function boxCropPot(p, day) {
+  if (!p) return null;
+  p.slotId = null; p.at = null;
+  if (!p.harvested) p.moveBox = true;
+  if (p.harvested) {
+    p.harvested = false;
+    p.ageDays = 0;
+    p.dliHist = [];
+    p.quality = null;
+    p.meals = 0;
+    p.avgDli = null;
+    p.harvestMeals = 0;
+    p.savedWon = 0;
+    p.overlapIndex = 0;
+    p.startedOnDay = null;
+    p.sown = false;
+    if (Number.isInteger(day)) p.idleSinceDay = day;
+    p.cycle = (p.cycle || 1) + 1;
+  }
+  return p;
+}
+/* 가방에 있는 이삿짐 — 표시가 달렸고 물을 받아 돌던 것(§boxCropPot ★). 화면 «이삿짐» 칸 · 놓기(state §placeSiru)가 세는 자 */
+export function boxedCropPots(b) { return potsOf(b).filter(p => p && p.moveBox && !cropPotPlaced(p) && p.startedOnDay != null); }
 /* ★ 그 용기에 씨앗이 뿌려져 있나 (2026-08-11 · §sown). **없으면 심은 것이다** —
    옛 세이브·옛 코드가 만든 칸에는 이 칸이 없고 그때는 「놓기 = 심기」였다. */
 export function cropPotSown(p) { return !(p && p.sown === false); }
@@ -1792,6 +1826,11 @@ export function placeCrop(fp, kindId, target, opt = {}) {
     /* 좌표를 못 세운 경우(얇은 슬롯 · 좌표 없는 헤드리스 표)는 **null 로 남긴다.** 지어내면
        그 시루만 방 한가운데로 순간이동한다 — 그때는 예전처럼 slotId 로 돈다. */
     p.at = spot.at;
+    /* ★ 2026-10-31 총괄 D92 — 놓이면 이삿짐 표시가 떨어진다(§boxCropPot) · 물을 안 받은 것은 놓은 날부터 다시 기다린다 */
+    if (p.moveBox) {
+      delete p.moveBox;
+      if (p.startedOnDay == null && Number.isInteger(opt.day)) p.idleSinceDay = opt.day;
+    }
     keptDays = Math.max(keptDays, (p.dliHist || []).length);
   }
   syncCropLead(site);
@@ -2234,6 +2273,8 @@ export function cropPotList(fp, day) {
         placed,
         /* 가방에 있는 빈 용기인가 — 놓이지도 · 거둬지지도 않은 것 */
         inBag: !placed && !p.harvested,
+        /* ★ 2026-10-31 총괄 D92 — 이사 때 이삿짐으로 넣은 것인가(§boxCropPot) · 화면 «가방 — 이삿짐» 줄의 근거 */
+        moveBox: !!p.moveBox,
         started: p.startedOnDay != null,
         startedOnDay: p.startedOnDay ?? null,
         idleSinceDay: p.idleSinceDay ?? null,

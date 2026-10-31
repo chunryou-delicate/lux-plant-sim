@@ -529,8 +529,11 @@ check('F 없어진 slotId · 방 밖 좌표 · 사라진 가구 — 회수하고
     raw.state.firstPlay.beansprout.pots[0].at.x = 9.9;
     return deserialize(raw, { ...roomOpt(), firstPlayRules: FP_RULES });
   })();
-  assert.equal(crop.firstPlay.beansprout.slotId, eng.room.slots[0].slotId, '방 밖 시루를 안 옮겼습니다');
-  assert.ok(crop.log.some(e => /시루 회수/.test(e.msg)), '시루 회수 로그가 없습니다');
+  /* ★ 2026-10-31 총괄 D92 — 자리를 잃은 작물은 «첫 자리 한 점»(예전 기대 eng.room.slots[0]) 대신 **이삿짐**으로 가방에 간다
+       (save §reseat · first_play §boxCropPot — 여럿이 잃으면 한 점에 겹치던 것을 걷음). 방 밖 좌표를 안 들고 있으면 된다 */
+  const cp = crop.firstPlay.beansprout.pots[0];
+  assert.ok(!cp.slotId && !cp.at && cp.moveBox, `방 밖 시루를 이삿짐으로 안 넣었습니다 — ${cp.slotId} · ${JSON.stringify(cp.at)}`);
+  assert.ok(crop.log.some(e => /시루 이삿짐/.test(e.msg)), '시루 회수 로그가 없습니다');
   /* 회수했으니 하루가 돌아야 한다(안 돌면 슬롯 검증에서 던진다) */
   assert.doesNotThrow(() => eng.daily(1, crop), '회수하고도 계약이 터집니다');
 });

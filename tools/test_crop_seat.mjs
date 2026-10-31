@@ -18,7 +18,7 @@
      B  ★ 사본을 비워도 하루가 돌고 시루가 자란다 (loop.nextDay · advanceBeansproutDay)
      C  ★ 하나도 안 놓은 판은 **던지되 안내**다 — `firstPlayInput` 이 붙는다(버튼이 안 잠긴다)
      D  ★ 빨리감기 문지기도 같은 판정을 쓴다
-     E  ★★ **이사해도 시루가 방에 서 있다 — 거둔 시루도.** 못 옮긴 것은 말을 한다
+     E  ★★ 이사 — 방에 서 있던 시루는 **이삿짐**으로 가방에(총괄 D92 · 2026-10-31 — 예전 «새 방 첫 자리 한 점»을 걷음) · 말을 한다
      F  ★ 몬스테라는 **책상**에 도착한다 (서랍장이 아니다)
      G  ★ `monstera.guide` 가 저장·복원을 건넌다
 
@@ -30,9 +30,9 @@ import { readFileSync } from 'node:fs';
 import {
   createFirstPlayState, firstPlayRulesFromBalance, placeCrop, addCropPot, syncCropLead,
   advanceBeansproutDay, waterBeansprout, harvestBeansprout, cropSiteOf, cropSites,
-  placedCropPots, cropPotList, markMonsteraArrived
+  placedCropPots, cropPotList, markMonsteraArrived, boxedCropPots
 } from '../src/game/first_play.js';
-import { newState, pot0, waterCrop, waterPot, resowCrop, ARRIVAL } from '../src/game/state.js';
+import { newState, pot0, waterCrop, waterPot, resowCrop, ARRIVAL, placeSiru } from '../src/game/state.js';
 import { nextDay, harvestCrop, startFastForward } from '../src/game/loop.js';
 import { moveIntoOneroom, ONEROOM_ROOM_ID } from '../src/game/oneroom.js';
 import { createTutorialState, noteLearning, noteVarieCuttingSale,
@@ -210,8 +210,14 @@ check('D 빨리감기 — 사본이 비어도 시루가 서 있으면 막지 않
   assert.ok(e && e.firstPlayInput === true, '안 놓은 판을 안 막거나 표가 없습니다');
 });
 
-/* ══ E. ★★ 이사 — 거둔 시루도 방에 서 있다 ═══════════════════════════ */
-check('E 이사 — 거둔 시루도 새 방에 선다 (예전에는 통째로 가방행이었다)', () => {
+/* ══ E. ★★ 이사 — 방에 서 있던 시루는 «이삿짐»으로 가방에 (2026-10-31 총괄 D92) ═════════════
+   ⛔ 예전 E: «거둔 시루도 새 방에 선다» — oneroom §reseatCrops 가 새 방 «첫 자리» 한 점에 다 앉혔다.
+     그 한 점이 겹침이었다(하네스 D40 판 이사: 시루 14 · 재배판 5 가 oneroom-sill:0 한 점 · core 10-31) — 총괄 D92 로 걷었다.
+   ★ 지금 규칙(first_play §boxCropPot · oneroom §clearPlacements):
+       돌던 것 → 가방 «이삿짐»(표시 · 나이 · 빛 이력 그대로 · 놓을 때까지 안 자람)
+       거둔 것 → 표시 없는 빈 용기(다시 심기와 같은 비움 · 회전 +1 · 씨앗은 놓은 뒤 [🌱 심기])
+       이삿짐은 그 개체 id 로 놓으면(state §placeSiru opt.potId) 표시가 떨어지고 이어서 자란다 · 저장을 건넌다 */
+check('E 이사 — 방에 서 있던 시루는 이삿짐으로 가방에 · 거둔 것은 빈 용기 · 놓으면 이어서', () => {
   const ROOMS = {
     banjiha: [{ slotId: 'dark-slot', x: 0, y: 0.7, z: 0, maxPotD: 0.3 },
               { slotId: 'bright-slot', x: 0.4, y: 0.7, z: 0, maxPotD: 0.3 }],
@@ -249,17 +255,31 @@ check('E 이사 — 거둔 시루도 새 방에 선다 (예전에는 통째로 �
   assert.equal(fp.beansprout.harvested, true, '사본의 harvested 가 안 섰습니다(전제 확인)');
   assert.equal(fp.beansprout.pots.filter(p => p.harvested).length, 1);
 
-  moveIntoOneroom(S, { light });
+  const before = Object.fromEntries(fp.beansprout.pots.map(p => [p.id, { age: p.ageDays, hist: p.dliHist.length, cycle: p.cycle || 1 }]));
+  const r = moveIntoOneroom(S, { light });
   assert.equal(S.home.room, ONEROOM_ROOM_ID, '이사가 안 됐습니다');
-  const seats = fp.beansprout.pots.map(p => p.slotId);
-  info(`E 이사 뒤 자리 — ${seats.map((s, i) => `${ids[i]}:${s}`).join(' · ')}`);
-  assert.ok(seats.every(s => s && s.startsWith('oneroom-')),
-    `★이사했더니 시루가 자리를 잃었습니다 — ${seats.join(', ')}`);
-  const harvestedSeat = fp.beansprout.pots.find(p => p.harvested).slotId;
-  assert.ok(harvestedSeat && harvestedSeat.startsWith('oneroom-'),
-    '★거둔 시루가 통째로 가방으로 갔습니다');
+  const pots = fp.beansprout.pots;
+  info(`E 이사 뒤 — ${pots.map(p => `${p.id}:${p.slotId || '가방'}${p.moveBox ? '(이삿짐)' : ''}${p.harvested ? '(거둠)' : ''}`).join(' · ')}`);
+  assert.ok(pots.every(p => !p.slotId && !p.at), `★이사 순간 방에 앉은 시루가 있습니다 — ${pots.map(p => p.slotId).join(', ')}`);
+  const grown = pots.filter(p => p.id !== ids[0]), cut = pots.find(p => p.id === ids[0]);
+  assert.ok(grown.every(p => p.moveBox && p.startedOnDay != null && p.ageDays === before[p.id].age && p.dliHist.length === before[p.id].hist),
+    '★돌던 시루가 이삿짐이 아니거나 나이 · 빛 이력을 잃었습니다');
+  assert.equal(boxedCropPots(fp.beansprout).length, 2, '이삿짐 수(돌던 것만)');
+  assert.ok(cut && !cut.moveBox && !cut.harvested && cut.sown === false && cut.cycle === before[cut.id].cycle + 1,
+    '★거둔 시루가 빈 용기(표시 없음 · 안 심음 · 회전 +1)가 아닙니다');
   const rows = cropPotList(fp, S.day);
-  assert.equal(rows.filter(r => r.inBag).length, 0, '★가방으로 흘러 들어간 시루가 있습니다');
+  assert.equal(rows.filter(x => x.inBag).length, 3, '가방에 시루 셋(이삿짐 둘 + 빈 용기 하나)');
+  assert.ok((r.rehomed || []).some(m => /들고 온 시루 · 재배판 2개를 가방 «이삿짐»에 넣었습니다/.test(m)), `★이사 기록 — ${(r.rehomed || []).join(' / ')}`);
+  /* 저장을 건넌다 — 표시가 사라지면 이삿짐이 빈 용기 칸으로 섞인다 */
+  const back = deserialize(serialize(S), { firstPlayRules: RULES });
+  assert.equal(boxedCropPots(back.firstPlay.beansprout).length, 2, '★저장 → 불러오기 뒤 이삿짐 표시가 사라졌습니다');
+  /* 그 개체 id 로 놓으면 표시가 떨어지고 나이가 그대로다(이어서 자람) · 빈 용기 칸(potId 없음)은 이삿짐을 안 가져간다 */
+  const g = grown[0];
+  const p1 = placeSiru(S, 'oneroom-desk:0', { slots: ROOMS[ONEROOM_ROOM_ID], sow: false, potId: g.id });
+  assert.ok(p1.fromBox && p1.started && !g.moveBox && g.slotId === 'oneroom-desk:0' && g.ageDays === before[g.id].age, '★이삿짐을 놓았는데 이어지지 않습니다');
+  const p2 = placeSiru(S, 'oneroom-shelf:0', { slots: ROOMS[ONEROOM_ROOM_ID], sow: false });
+  assert.equal(p2.potId, cut.id, '★빈 용기 칸이 이삿짐을 가져갔습니다');
+  assert.equal(boxedCropPots(fp.beansprout).length, 1, '남은 이삿짐 하나');
 });
 
 check('E-2 못 옮기면 **말을 한다** — 조용히 사라지지 않는다', () => {
@@ -292,7 +312,8 @@ check('E-2 못 옮기면 **말을 한다** — 조용히 사라지지 않는다'
   const r = moveIntoOneroom(S, { light });
   const said = (r.rehomed || []).join(' / ');
   info(`E-2 이사 기록 — ${said || '(없음)'}`);
-  assert.ok(/옮겼습니다|가방으로/.test(said), '★이사가 시루를 어떻게 했는지 아무 말도 안 합니다');
+  /* ★ 2026-10-31 D92 — 글은 [plan] plan-to-core-d92 §2 «📦 들고 온 시루 · 재배판 N개를 가방 «이삿짐»에 넣었습니다 — 놓을 때까지 자라지 않습니다» */
+  assert.ok(/이삿짐/.test(said), '★이사가 시루를 어떻게 했는지 아무 말도 안 합니다');
 });
 
 /* ══ F. 몬스테라는 **가방**으로 도착한다 ════════════════════════════════

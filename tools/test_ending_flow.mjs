@@ -43,6 +43,7 @@ import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing,
 import { canMoveOut, varieView, TUTORIAL_RULES } from '../src/game/tutorial.js';
 import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, motherStatsNow,
          cuttingsOf, graceDaysOf, isNoviceMode } from '../src/game/propagation.js';
+import { unpackCropsAfterMove } from './lib/byeot_harness.mjs';   /* ★ D92 ㉰ — 이사 뒤 짐 풀기 */
 import { moveIntoOneroom, stageOf, STAGES, storyOf, storyRunning, storyStatus,
          ONEROOM_ROOM_ID, oneroomRulesFromHomes, withOneroomRent } from '../src/game/oneroom.js';
 import { ENDING_RULES, endingRulesFrom, endingRulesFromHomes, endingProgress,
@@ -348,6 +349,8 @@ function playToEnding(opt = {}) {
       }
       if (canMoveOut(ts).ok) {
         const r = moveIntoOneroom(S, io);
+        /* ★ 2026-10-31 총괄 D92 ㉰ — 이사가 작물을 이삿짐으로 가방에 넣는다 · 사람처럼 푼다(DARK 와 같은 칸 · LEGACY_SEAT=1 이면 옛 한 점) */
+        trace.unpack = unpackCropsAfterMove(S, light, { legacy: process.env.LEGACY_SEAT === '1', beanAt: DARK });
         trace.movedInOnDay = r.movedInOnDay;
         trace.builtRooms = light.builtRooms();
         assert.equal(S.home.room, ONEROOM_ROOM_ID, '이사했는데 방이 안 바뀌었습니다');

@@ -25,7 +25,9 @@ import { createFirstPlayState, placeBeansprout, placeCrop, resowBeansprout, wate
          ensureCropPots, syncCropLead, addCropPot, cropPotOf, adoptCropSpotToPots,
          placedCropPots, idleCropPots, cropPotList,
          /* ★ 2026-08-11 · 놓기와 심기를 가른다 (first_play §sown) */
-         sowCropPot, cropPotSown } from './first_play.js';
+         sowCropPot, cropPotSown,
+         /* ★ 2026-10-31 총괄 D92 · 이삿짐(first_play §boxCropPot) */
+         boxedCropPots } from './first_play.js';
 import { createTutorialState, yearDay0Of } from './tutorial.js';
 /* 체력 — 하루에 돌볼 수 있는 양. 규칙은 전부 그쪽 모듈이 갖는다(docs/stamina.md) */
 import { spend as spendStamina, canAct as canActStamina, createStaminaState } from './stamina.js';
@@ -1008,8 +1010,16 @@ export function placeSiru(S, at, opt = {}) {
   ensureCropPots(site);
   const sow = opt.sow !== false;              // 안 주면 예전 그대로 놓으면서 심는다
 
-  const spare = idleCropPots(site);
-  let pot = spare[0] || null, fromStock = false, seedsUsed = 0;
+  /* ★★ 2026-10-31 총괄 D92 — **이삿짐은 제 칸에서만 나간다**(first_play §boxedCropPots · plan-to-core-d92 — 가방에 «이삿짐» 묶음이 따로 선다).
+       opt.potId  그 개체를 놓는다(가방 «이삿짐» 칸 — 끌기·누르기가 다음 이삿짐의 id 를 나른다) · 가방에 없으면 던진다
+       없으면      빈 용기 칸 — 이삿짐(자라던 것)은 안 가져간다. 섞으면 «빈 시루»를 놓았는데 자라던 시루가 서고 이삿짐 칸 수가 엉뚱하게 준다 */
+  const boxed = new Set(boxedCropPots(site));
+  let pot = null, fromStock = false, seedsUsed = 0;
+  if (opt.potId) {
+    pot = idleCropPots(site).find(p => p.id === opt.potId) || null;
+    if (!pot) { const e = new Error(`[배치] 가방에 그 ${k.containerKo}가 없습니다: ${opt.potId}`); e.tutorialInput = true; throw e; }
+  } else pot = idleCropPots(site).find(p => !boxed.has(p)) || null;
+  const fromBox = !!(pot && pot.moveBox);
   if (!pot) {
     /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 */
     const need = [{ itemId: k.containerItemId, qty: 1 }];
@@ -1045,14 +1055,22 @@ export function placeSiru(S, at, opt = {}) {
        놓자마자 심긴 것이 되어 [🌱 심기] 단추가 안 뜬다(실측으로 잡았다).
      ⚠ 안 놓였고·안 시작했고·안 거둔 용기에만 건다 — 방에서 자라던 것을 되돌리지 않는다.
      ⚠ ③(놓기)이 성공한 **뒤**다. 앞에 두면 놓기가 던진 판에서 가방의 시루가 조용히 바뀐다. */
-  if (!sow && pot.startedOnDay == null && !pot.harvested) pot.sown = false;
-  pushLog(S, !sow
+  /* ★ 2026-10-31 D92 — 이삿짐은 **제 상태 그대로** 선다 — 심어 둔 판을 빈 판으로 되돌리면 뿌린 씨앗이 사라진다(거둔 것은 넣을 때 이미 빈 판이다 · §boxCropPot) */
+  if (!sow && !fromBox && pot.startedOnDay == null && !pot.harvested) pot.sown = false;
+  pushLog(S, fromBox
+    ? (pot.startedOnDay != null ? `📦 이삿짐 ${k.containerKo}를 하나 놓았습니다 — 자라던 그대로 이어서 자랍니다`
+       /* 이사 때 심어 두고 물을 안 준 것 — «이삿짐»(돌던 것)이 아니다(first_play §boxedCropPots) · 씨앗은 그대로 */
+       : cropPotSown(pot) ? `🥣 심어 둔 ${k.containerKo}를 하나 놓았습니다 (물을 줘야 시작합니다)`
+       : `🌱 빈 ${k.containerKo}를 하나 놓았습니다 (씨앗을 심어야 시작합니다)`)
+    : !sow
     ? `🌱 빈 ${k.containerKo}를 하나 놓았습니다 (씨앗을 심어야 시작합니다)`
     : fromStock
       ? `🥣 ${k.containerKo}를 하나 놓았습니다 — 씨앗 1봉지 (물을 줘야 시작합니다)`
       : `🥣 ${k.containerKo}를 하나 놓았습니다 (물을 줘야 시작합니다)`);
   return { potId: pot.id, kind: kindId, slotId: pot.slotId, at: pot.at,
            sown: cropPotSown(pot),
+           /* ★ D92 — 이삿짐에서 나왔나 · 자라던 것인가(화면이 «이어서 자란다»를 말할 근거 · [취소]가 이삿짐으로 되돌릴 근거) */
+           fromBox, started: pot.startedOnDay != null,
            fromStock, seedsUsed, sirus: placedCropPots(site).length,
            spare: idleCropPots(site).length + (stockOf(S, k.containerItemId) || 0),
            events: [{ id: 'siru_placed', ko: `${k.containerKo}를 놓았습니다`,

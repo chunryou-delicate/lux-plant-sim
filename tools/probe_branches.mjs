@@ -38,7 +38,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf, setGrowthTuningPatch, addProfileSlot, addProfileSlots } from './lib/byeot_harness.mjs';
+import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES, ROOT, cutLeafGradesOf, setGrowthTuningPatch, addProfileSlot, addProfileSlots,
+         unpackCropsAfterMove } from './lib/byeot_harness.mjs';
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop, placedItems } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote, pantryKeepStatus } from '../src/game/first_play.js';
@@ -727,6 +728,8 @@ export async function play(name, seed, opt = {}) {
               out.lowCashAtMove = (ts.cashWon - need) < rent1; out.cashAfterMoveCost = ts.cashWon - need; }
             moveIntoOneroom(S, io);
             out.moveDay = S.day;
+            /* ★ 2026-10-31 총괄 D92 ㉰ — 이사가 작물을 이삿짐으로 가방에 넣는다 · 사람처럼 푼다(기본 ㉮ · --legacy-seat 면 옛 sill:0 한 점 ㉯) */
+            out.unpack = unpackCropsAfterMove(S, light, { legacy: !!opt.legacySeat, musunAt: MUSUN_AT });
             /* ★ 2026-10-09 D8 — 원룸 월세 후보를 «짝»으로 꽂는다(probe_oneroom_econ §pairRules 그대로 · 월세 밖 하루치는 그대로):
                  oneroomRentWon = R · dailySpendWon = 반지하 dailySpend + (R − 반지하 월세)/주기 */
             if (Number.isFinite(opt.rent)) {
@@ -1375,11 +1378,13 @@ const BOOST = arg('boost', null) == null ? null : Number(arg('boost'));
 const MOVECOST = arg('movecost', null) == null ? null : Number(arg('movecost'));
 const CROPMULT = arg('cropmult', null) == null ? null : Number(arg('cropmult'));
 const TRACE = !!arg('trace', false);
+const LEGACY_SEAT = !!arg('legacy-seat', false);   /* ★ D92 ㉯ — 이사 뒤 작물을 옛 손(sill:0 한 점)으로 · 옛 숫자와 견주기 */
 const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false), nodoor: !!arg('nodoor', false),
                                                          ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}),
                                                          ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}), ...(TRACE ? { trace: true } : {}),
                                                          ...(Number.isFinite(MOVECOST) ? { movecost: MOVECOST } : {}),
-                                                         ...(Number.isFinite(CROPMULT) ? { cropmult: CROPMULT } : {}) })));
+                                                         ...(Number.isFinite(CROPMULT) ? { cropmult: CROPMULT } : {}),
+                                                         ...(LEGACY_SEAT ? { legacySeat: true } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {

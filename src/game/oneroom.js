@@ -42,10 +42,8 @@
 ============================================================ */
 
 import { canMoveOut, moveOut as tutorialMoveOut, TUTORIAL_RULES, banjihaRulesFrom } from './tutorial.js';
-import { cropSites, placeCrop, syncCropLead, CROP_SITE_IDS } from './first_play.js';
-/* ★ 거둔 시루는 `placeCrop` 이 막는다(수확 잠금). 이사는 「손으로 옮기는 것」이 아니라
-   「방이 통째로 바뀌는 것」이라 그 잠금을 우회해야 자리를 지킬 수 있다 — 자리 두 칸만 짓는다. */
-import { spotOf } from './place.js';
+/* ★ 2026-10-31 총괄 D92 — 이사가 작물을 새 방 자리에 앉히지 않는다(이삿짐 · §clearPlacements) — 옛 placeCrop · spotOf 손은 걷었다 */
+import { cropSites, syncCropLead, boxCropPot, boxedCropPots } from './first_play.js';
 import { pot0, pushLog, rehomePot, carryFurniture } from './state.js';
 import { rehomeCuttings } from './propagation.js';
 import { weatherE } from '../engine/weather.js';
@@ -313,7 +311,7 @@ export function moveIntoOneroom(S, io = {}, opt = {}) {
     const log = (m) => { rehomed.push(m); pushLog(S, '🔧 이사 — ' + m); };
     if (pot0(S)) rehomePot(S, room.slots || [], log, room);
     rehomeCuttings(S, room, log);
-    reseatCrops(S, room, log);
+    reportBoxedCrops(S, rehomed);
   }
 
   pushLog(S, `📦 ${fromRoom} → ${roomId} · 원룸에 짐을 풀었습니다`);
@@ -367,7 +365,7 @@ export function moveIntoOwnedHome(S, io = {}, opt = {}) {
     const log = (m) => { rehomed.push(m); pushLog(S, '🔧 이사 — ' + m); };
     if (pot0(S)) rehomePot(S, room.slots || [], log, room);
     rehomeCuttings(S, room, log);
-    reseatCrops(S, room, log);
+    reportBoxedCrops(S, rehomed);
   }
   pushLog(S, `📦 ${fromRoom} → ${roomId} · 우리 집에 짐을 풀었습니다`);
   return { fromRoom, roomId, roomChanged: true, roomBuilt, carried, clearedPlacements: cleared, rehomed,
@@ -388,7 +386,9 @@ function clearPlacements(S) {
      ⚠ 「가방에 있다」의 정본은 이 셋이다 — 자리 없음 · 좌표 없음 · `placedOnce === false`
        (state §rehomePot · game.html §bagPots). 새 칸을 만들지 않는다.
      ⚠ 삽수·작물은 **안 건드린다.** 그쪽은 제 회수 규칙이 따로 있고(rehomeCuttings·reseatCrops)
-       가방 칸도 없다 — 여기서 같이 「안 놓았다」로 만들면 갈 데 없이 떠 있게 된다. */
+       가방 칸도 없다 — 여기서 같이 「안 놓았다」로 만들면 갈 데 없이 떠 있게 된다.
+       (⚠ 2026-10-31 D92 — 이 줄은 낡았다: 삽수는 아래에서 자리를 지우고(가방 속 삽수는 하루가 안 간다 · propagation §stepCuttings) ·
+          작물은 이삿짐으로 가방에 간다(아래 §작물 · §reportBoxedCrops). 둘 다 가방 칸이 있다) */
   for (const p of S.pots || []) { p.at = null; p.slotId = null; p.placedOnce = false; out.pots++; }
   for (const c of S.cuttings || []) { c.at = null; c.slotId = null; out.cuttings++; }
   /* ★ 2026-10-10 D59 — **새 두 종(PP·AL) 그루도 가방으로.** 빠져 있어서 산 집(투룸)으로 옮긴 판의 그루가 떠나온 방 자리 이름
@@ -401,77 +401,37 @@ function clearPlacements(S) {
      자리 사본(site)만 비우면 시루들은 **떠나온 방의 좌표를 그대로 들고** 새 방으로 온다.
      그러면 다음 하루에 `cropDliFromReport` 가 "그 자리가 오늘 계약에 없습니다"로 던져
      이사한 판이 통째로 멈춘다 — `test_ending_flow` 가 그 자리에서 섰다. */
+  /* ★★ 2026-10-31 총괄 D92 — 방에 서 있던 시루·재배판은 **이삿짐**으로 가방에 넣는다(first_play §boxCropPot).
+       «서 있었나»를 아는 곳이 여기뿐이다 — 자리를 지운 뒤에는 가방에 있던 빈 시루와 못 가른다(옛 §reseatCrops 가 회전 시작·거둠으로 어림했던 까닭). */
   if (fp && fp.enabled)
     for (const site of cropSites(fp)) {
       if (!site) continue;
       for (const p of (site.pots || [])) {
         if (!p || !(p.slotId || p.at)) continue;
-        p.at = null; p.slotId = null; out.crops++;
+        boxCropPot(p, S.day); out.crops++;
       }
       site.at = null; site.slotId = null;
+      syncCropLead(site);
     }
   return out;
 }
 
-/* 작물 자리를 새 방에 다시 앉힌다 — `save.js` 의 복원(reseat)과 **같은 규칙**이다.
-   ★★ 2026-08-10 — 여기가 **자리 사본으로 자리를 통째로 건너뛰고 있었다.**
-     옛 줄: `if (!site || site.harvested || site.slotId) continue;`
-       · `site.harvested` 는 「**하나라도** 거뒀나」다. 시루 다섯 중 하나만 거뒀어도
-         **안 거둔 넷까지 같이** 안 옮겨졌고, `clearPlacements` 가 이미 자리를 비운 뒤라
-         그 넷은 그대로 **가방으로 갔다.** 그리고 아무 말도 안 했다.
-       · `site.slotId` 도 사본이라(first_play §makeCropSite) 여기 판단에 쓸 것이 아니다.
-     ⇒ 이제 **시루마다** 판단한다. 거둔 시루는 자리를 지키고, 안 거둔 시루도 자리를 지킨다.
-     ⚠ 정말로 못 옮긴 시루는 가방으로 가되 **반드시 말한다**(docs/silent_failures.md). */
-function reseatCrops(S, room, log) {
+/* ★★ 2026-10-31 총괄 D92 — **작물은 새 방에 안 앉힌다 · 이삿짐으로 가방에** (house 안 2e6a5723 · plan 정정)
+   ⛔ 옛 §reseatCrops: 방에 서 있던 시루를 새 방 «첫 자리» 한 점에 다 앉혔다 — 하네스 D40 판 이사에서
+     시루 14 · 재배판 5 가 oneroom-sill:0 한 점에 겹쳐 섰다(core 10-31 잼). 이사 직후 원룸 이름 자리는 창턱 받침 넷뿐이다(가구는 다 가방).
+   ★ 창턱 넷은 비워 둔다 — 들고 온 삽수 · 몬스테라 몫이다(«들고 온 삽수부터 창가에» · D43 길). 무순이 넷을 차지하면 그 말이 그날 거짓이 된다(plan).
+   ★ 콩나물은 창턱에 하루만 서도 회전 평균 빛이 올라 «하얗고 아삭»을 잃는다(house) — 어두운 칸은 가구를 놓은 뒤에 생긴다.
+   ⚠ 가방에 있는 동안 안 자라고 물 셈도 멈춘다(first_play §boxCropPot) — 잃는 날이 없다. 여기는 «말한다»만 한다(docs/silent_failures.md). */
+function reportBoxedCrops(S, rehomed) {
   const fp = S.firstPlay;
   if (!fp || !fp.enabled) return;
-  const dest = ((room && room.slots) || [])[0] || null;
-  if (!dest) {
-    /* ⚠ 새 방에 자리가 하나도 없으면 시루가 전부 가방에 남는다 — **조용히 넘기지 않는다** */
-    const n = cropSites(fp).reduce(
-      (a, s) => a + ((s && s.pots) || []).filter(p => p && (p.startedOnDay != null || p.harvested)).length, 0);
-    if (n && log) log(`⚠ 새 방에 놓을 자리가 없어 시루 ${n}개가 가방으로 들어갔습니다`);
-    return;
-  }
-  for (const site of cropSites(fp)) {
-    if (!site) continue;
-    /* ★ 이사 전에 방에 서 있던 시루만 새 방에 앉힌다 — **가방에 있던 빈 시루는 가방에 그대로**
-       (2026-08-09). 이사 왔다고 안 놓은 시루가 저절로 서면 「가방에는 빈 용기만」이 깨진다.
-       ⚠ 어느 시루가 방에 있었는지는 위 `clearPlacements` 가 이미 지웠다. 그래서 여기서는
-         **한 번이라도 회전을 돈 시루**를 기준으로 삼는다 — 그것이 방에 있던 것이다.
-       ⚠⚠ 「회전을 시작했나」만 보면 **거둔 시루가 빠진다** — `harvestBeansprout` 이 거두면서
-         `startedOnDay` 를 지우기 때문이다(다음 회전을 위해). 그래서 `harvested` 도 같이 본다.
-       ★ 거둔 시루도 방에 서 있던 시루다. 「결과가 확정이라 옮길 이유가 없다」던 옛 근거는
-         **자리를 잃어도 된다는 뜻이 아니었다** — 다시 심으면 그 자리에서 이어져야 한다. */
-    const kindId = site.kind || 'beansprout';
-    const name = CROP_SITE_IDS[kindId] || kindId;
-    const moving = (site.pots || []).filter(p => p && (p.startedOnDay != null || p.harvested));
-    if (!moving.length) continue;
-    let ok = 0;
-    const lost = [];
-    for (const p of moving) {
-      /* 시루 하나가 못 앉아도 **나머지는 앉힌다.** 통째로 포기하면 하나 때문에 전부 가방행이다.
-         ★ 거둔 시루는 `placeCrop` 이 막으므로(§수확 잠금) 자리 두 칸을 직접 적는다 —
-           같은 함수를 쓰려고 잠금을 풀면 「거둔 시루를 손으로 옮기는 것」까지 열린다. */
-      try {
-        if (p.harvested) {
-          const spot = spotOf(dest.slotId, { id: p.id, slots: room.slots });
-          p.slotId = spot.slotId; p.at = spot.at;
-        } else {
-          placeCrop(fp, kindId, dest.slotId, { slots: room.slots, potId: p.id });
-        }
-        ok++;
-      } catch (e) {
-        lost.push(`${p.id}(${e.message})`);
-      }
-    }
-    syncCropLead(site);
-    if (ok && log) log(`${name} ${ok}개를 ${dest.slotId} 로 옮겼습니다`);
-    /* ⚠ 조용히 사라지지 않게 — 못 옮긴 것은 가방에 있고, 그 사실을 말한다 */
-    if (lost.length && log)
-      log(`⚠ ${name} ${lost.length}개는 새 방에 자리를 못 잡아 **가방으로 들어갔습니다** — ` +
-          `${lost.join(' · ')}`);
-  }
+  /* 이삿짐 = 물을 받아 돌던 것(first_play §boxedCropPots) — 거둔 빈 시루 · 안 심은 판은 가방의 빈 용기 칸으로 간다 */
+  const n = cropSites(fp).reduce((a, site) => a + boxedCropPots(site).length, 0);
+  if (!n) return;
+  /* 글은 [plan] plan-to-core-d92 §2 그대로 */
+  const m = `📦 들고 온 시루 · 재배판 ${n}개를 가방 «이삿짐»에 넣었습니다 — 놓을 때까지 자라지 않습니다`;
+  pushLog(S, m);
+  if (Array.isArray(rehomed)) rehomed.push(m);
 }
 
 /* ============================================================

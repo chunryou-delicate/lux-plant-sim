@@ -45,8 +45,8 @@ import {
   SCHEMA, SIM_MODES, ARRIVAL, newState, pot0, pushLog, migratePots, rehomePot,
   /* ★ 여러 그루 (2026-08-15) — 화분마다 제 그루 이름과 제 빛 이력을 갖는다 */
   MAIN_GROWTH_ID, growthIdOf, syncPotLead, selectLeadPlant } from './state.js';
-import { createFirstPlayState, placeBeansprout, placeCrop, cropSites, cropKindOf,
-         ensureCropPots, syncCropLead } from './first_play.js';
+import { createFirstPlayState, placeBeansprout, cropSites, cropKindOf,
+         ensureCropPots, syncCropLead, boxCropPot } from './first_play.js';
 import { createTutorialState } from './tutorial.js';
 import { inRoom, isFreeSlotId, makeAt } from './place.js';
 import { PROPAGATION_SCHEMA, rehomeCuttings, syncCuttingLeaves,
@@ -653,7 +653,10 @@ function packCropPot(p, w) {
     harvestCount: needInt(o.harvestCount ?? 0, `${w}.harvestCount`, { min: 0 }),
     harvestMeals: needInt(o.harvestMeals ?? 0, `${w}.harvestMeals`, { min: 0 }),
     savedWon: needNum(o.savedWon ?? 0, `${w}.savedWon`, { min: 0 }),
-    overlapIndex: needInt(o.overlapIndex ?? 0, `${w}.overlapIndex`, { min: 0 })
+    overlapIndex: needInt(o.overlapIndex ?? 0, `${w}.overlapIndex`, { min: 0 }),
+    /* ★ 2026-10-31 총괄 D92 — **이삿짐**(first_play §boxCropPot) · 있을 때만 싣는다(옛 세이브 · 이삿짐 아닌 칸은 모양 그대로).
+       ⚠ 안 실으면 껐다 켜는 순간 이삿짐이 «가방의 빈 용기»가 된다 — 가방 «이삿짐 n» 이 사라지고, 심어 둔 판을 놓을 때 씨앗이 걷힌다(state §placeSiru). */
+    ...(o.moveBox ? { moveBox: true } : {})
   };
 }
 
@@ -1559,17 +1562,13 @@ function reseat(S, room, report) {
         why = `슬롯 ${p.slotId} 이(가) 이 방에 없습니다`;
       }
       if (!why) continue;
-      const dest = (room.slots || [])[0] || null;
-      if (!p.harvested && dest) {
-        placeCrop(fp, kindId, dest.slotId, { slots: room.slots, potId: p.id });
-        log(`${boxKo} 회수 — ${why} · ${dest.slotId} 로 옮겼습니다`);
-      } else {
-        /* 이미 수확했거나 갈 자리가 없으면 자리만 비운다 — 수확 결과는 이미 확정이라
-           옮길 이유가 없고, 그대로 두면 계약이 방 밖 좌표를 실어 매일 던진다. */
-        p.at = null;
-        if (why.startsWith('슬롯')) p.slotId = null;
-        log(`${boxKo} 자리 해제 — ${why}`);
-      }
+      /* ★★ 2026-10-31 총괄 D92 — 자리를 잃은 작물은 **이삿짐**으로 가방에 넣는다(first_play §boxCropPot · oneroom 이사와 같은 손).
+           ⛔ 예전: 안 거둔 것은 «첫 자리»(room.slots[0]) 한 점에 다 앉혔다 — 여럿이 잃으면 한 점에 겹쳤고(이사 판 19개),
+             첫 자리는 가장 밝은 자리라 콩나물은 그 하루로 «하얗고 아삭»을 잃었다(house) ·
+             거둔 것은 자리만 비워(at 만 · 슬롯은 남김) 방에도 가방에도 안 보이는 칸이 됐다(가방은 «안 거둔 것»만 센다).
+           ⚠ 가방에 있는 동안 안 자라고 물 셈도 멈춘다 — 놓으면 이어서 자란다. */
+      boxCropPot(p, S.day);
+      log(`${boxKo} 이삿짐 — ${why} · 가방에 넣었습니다(놓으면 이어서 자랍니다)`);
     }
     syncCropLead(site);
   }

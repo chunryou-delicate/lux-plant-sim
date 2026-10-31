@@ -319,6 +319,31 @@ export function slotHolds(slot, potD) {
   return isNum(slot && slot.maxPotD) && isNum(potD) && potD <= slot.maxPotD + 1e-9;
 }
 
+/* ★★ 2026-10-31 총괄 D92 — **빈 이름 자리를 차례로 나눠 준다** (회수 · 복원)
+   ⛔ 회수 손(propagation §rehomeCuttings · state §rehomePot 꼴)이 «slots[0] 한 점»에 다 앉혀 한 자리에 여럿이 겹쳤다.
+   ★ «찼나»는 방뷰(room_view §slotOccupied)와 같은 판단이다 — 그 이름 열쇠로 선 것 · 그 점(0.05m) 위에 선 자유 좌표 것.
+   ★ slots 차례 그대로 고른다(조도 창이 낸 차례 — 첫 자리가 가장 밝다).
+     things  방에 선 것들({slotId, at}) — 부르는 쪽이 모은다(propagation §roomThingsOf)
+   반환 { take(ok?) → 슬롯|null (고른 자리는 찬 것으로 친다), left() → 남은 빈 자리 수 } */
+export function slotSeater(slots, things) {
+  const list = (slots || []).filter(s => s && s.slotId && isNum(s.x) && isNum(s.y) && isNum(s.z));
+  const taken = new Set();
+  for (const t of things || []) {
+    if (!t) continue;
+    if (t.slotId && list.some(s => s.slotId === t.slotId)) taken.add(t.slotId);
+    if (t.at && isNum(t.at.x) && isNum(t.at.y) && isNum(t.at.z))
+      for (const s of list) if (samePoint(t.at, s, 0.05)) taken.add(s.slotId);
+  }
+  return {
+    take(ok) {
+      const s = list.find(v => !taken.has(v.slotId) && (!ok || ok(v))) || null;
+      if (s) taken.add(s.slotId);
+      return s;
+    },
+    left() { return list.filter(v => !taken.has(v.slotId)).length; }
+  };
+}
+
 /* ------------------------------------------------------------------
    3-1. ★ 좌표 하나 → (계약 열쇠, 정규화된 자리)  (2026-08-03)
 ------------------------------------------------------------------ */
