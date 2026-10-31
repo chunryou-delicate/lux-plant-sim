@@ -10481,6 +10481,13 @@ function questSnapshotNow(turn) {
     bagCuttings: (() => { try { return (cuttingsOf(S) || []).filter(c => c && c.status !== 'dead' && c.method && !c.slotId && !c.at).length   /* loop §turn.bagCuttings 와 같은 기준 · 지금 상태(놓자마자 바뀐다) */; } catch { return null; } })(),
     /* ★ 2026-10-31 총괄 D92 — 가방에 든 몬스테라 화분 수(위 bagPlants 의 pots 와 같은 자) · 할 일 oneroom_unpack 둘째 갈래 «몬스테라를 창가에 놓으세요»([plan]) */
     bagPots: (() => { try { return (S.pots || []).filter(p => p && !p.slotId && !p.at).length; } catch { return null; } })(),
+    /* ★ 2026-10-31 총괄 D94 ㉠ — 가방에 든 «그루 · 삽수 · 새 종» 수(작물 빼고 · 위 bagPlants 에서 시루 · 재배판을 뺀 것 + 새 종 그루) · 투룸 짐 풀기(home/care/breed_unpack)의 끝.
+         작물(이삿짐 · 빈 용기)은 가방 «이삿짐» 칸 · 상태 줄(dialogue statusBagCrops)이 말한다 — 시루 스무 개 놓기가 진로 첫 할 일을 막지 않게 */
+    bagGrowers: (() => { try {
+      const pots = (S.pots || []).filter(p => p && !p.slotId && !p.at).length;
+      const cutsInBag = (cuttingsOf(S) || []).filter(c => c && !c.slotId && !c.at).length;
+      const sp = SPC.speciesPotsOf(S).filter(q => q && !SPC.speciesPlaced(q)).length;
+      return pots + cutsInBag + sp; } catch { return null; } })(),
     /* 이사 뒤에 판 무늬 삽수 수 — 이사 날의 count 를 story.varieSaleAtMove 에 적어 둔다(oneroom §moveIntoOneroom) */
     varieSalesSinceMove: (() => { try {
       const st = storyOf(S); const now = (ts.varieSale && ts.varieSale.count) || 0;

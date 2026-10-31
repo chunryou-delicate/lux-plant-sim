@@ -238,6 +238,8 @@ export function emptySnapshot() {
            bagCuttings: null,
            /* ★ 2026-10-31 D92 — 가방에 든 몬스테라 화분 수([core] · bagPlants 의 pots 와 같은 자 — 자리 · 좌표 없음). null = 「모른다」 */
            bagPots: null,
+           /* ★ 2026-10-31 총괄 D94 ㉠ — 가방에 든 그루 · 삽수 · 새 종 수([core] · 작물 빼고). 투룸 짐 풀기(home/care/breed_unpack)의 끝 · null = 「모른다」 → 예전 bagPlants 로 */
+           bagGrowers: null,
            /* ★ 2026-10-09 D45 — 새 종([core] · null = 「모른다」 → 그 줄은 안 열리고 안 끝난다)
               ppPlants 살아 있는 핑크프린세스 그루 수 · ppPinkHoldCuts «산반·하프문 잎이 난 마디 바로 위»에서 자른 번 수(분홍 잎 마디는 안 침)
               alDormantNow 알로카시아 한 그루라도 자나(잎이 다 졌나) · alWokeCount 잠에서 깬 번 수 · alCormsFound 잠들 때 흙 속에서 찾은 구근 수(누적 · D52)
@@ -1129,6 +1131,12 @@ const shopChipTodo = (s, goal, label) => {
 const switchedIn = s => !!s && typeof s.job === 'string' && !!s.jobsEnded && typeof s.jobsEnded === 'object' &&
   Object.entries(s.jobsEnded).some(([k, v]) => k !== s.job && Number.isFinite(v));
 const isShop = s => !!s && s.movedHome === true && s.job === 'shop';
+/* ★★ 2026-10-31 총괄 D94 ㉠ — **투룸 짐 풀기는 그루 · 삽수 · 새 종만 센다**(bagGrowers · [core]).
+     ⛔ D92 뒤로 투룸 이사도 작물을 이삿짐으로 가방에 넣어(oneroom §clearPlacements), bagPlants(시루 · 재배판까지)로 끝을 걸면
+       진로 첫 할 일이 시루 · 재배판 스무 개 남짓을 하나씩 놓을 때까지 안 끝났다(fe78bb38 진로 걸음).
+     ⇒ 작물은 가방 «이삿짐» 칸 · 상태 줄(dialogue statusBagCrops)이 말한다. 칸을 모르면(null · 옛 판) 예전 bagPlants 그대로.
+     ⚠ 원룸 oneroom_unpack 은 그대로 bagPlants(plan 채소 갈래) */
+const trUnpacked = s => Number.isFinite(s.bagGrowers) ? s.bagGrowers === 0 : (Number.isFinite(s.bagPlants) && s.bagPlants === 0);
 /* ★ 2026-10-24 [plan] 총괄 D85 ③(house signOf · 끝맺음 명세 §2-3) — **간판 한 자리**: 가게 입간판(단골 10)과 돌봄 칠판 간판(살린 10)은 한 모형·한 자리라
    먼저 선 진로의 간판이 남고, 뒤에 10 에 닿은 진로의 보상은 글 배너다. 그 판에서 «간판을 단다 · 가게 간판이 섭니다»는 거짓 —
    간판 줄은 `kept`(ko · reward · why)로 바꿔 말하고 사건에 kept 를 싣는다(dialogue QUEST_*_KEPT_SCRIPT). signBy 가 null 이면 예전 그대로. */
@@ -1145,7 +1153,7 @@ const SHOP_QUESTS = Object.freeze([
       ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
     opens: s => isShop(s) && !switchedIn(s),
     skips: s => isShop(s) && switchedIn(s),      /* ★ D 나머지 — 옮겨 들어간 판은 건너뜀(§switchedIn) */
-    done:  s => isShop(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
+    done:  s => isShop(s) && trUnpacked(s)
   }),
   Object.freeze({
     id: 'shop_first_order',
@@ -1230,7 +1238,7 @@ const CARE_QUESTS = Object.freeze([
       ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
     opens: s => isCare(s) && !switchedIn(s),
     skips: s => isCare(s) && switchedIn(s),      /* ★ D 나머지 — 옮겨 들어간 판은 건너뜀(§switchedIn) */
-    done:  s => isCare(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
+    done:  s => isCare(s) && trUnpacked(s)
   }),
   Object.freeze({
     id: 'care_first',
@@ -1329,7 +1337,7 @@ const BREED_QUESTS = Object.freeze([
       ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
     opens: s => isBreed(s) && !switchedIn(s),
     skips: s => isBreed(s) && switchedIn(s),     /* ★ D 나머지 — 옮겨 들어간 판은 건너뜀(§switchedIn) */
-    done:  s => isBreed(s) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
+    done:  s => isBreed(s) && trUnpacked(s)
   }),
   Object.freeze({
     id: 'breed_first_sample',
