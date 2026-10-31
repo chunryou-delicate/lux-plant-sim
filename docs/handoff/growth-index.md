@@ -293,6 +293,16 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-10-31 · D92 이사 짐 풀기 — 갈래 판 이사 뒤 숫자 (총괄 · core 083337c5 하네스 ㉰)
+
+```
+[잰 것] probe_branches(083337c5 고정 복사본 · humanQ · guide · g,1-10 · 700일 · 문 켬) — 새 짐 풀기 / 옛 손(--legacy-seat)
+  humanQ  이사 135 / 135 · 내 집 350 / 355 · 원룸 지갑 바닥 2,072 / 2,072(이사 뒤 2일) · 0원 7 / 7 · 굶음 0 / 0
+  guide   이사 145 / 145 · 내 집 360 / 372 · 원룸 지갑 바닥 58,810 / 58,810(이사 뒤 1일) · 0원 6 / 6 · 굶음 0 / 0
+```
+> ★ 갈리는 것은 이사 뒤 첫 채소 판 날 하루다(humanQ g: 140일 105,100 / 37,100 · 145 부터 같음). 지갑 차 중앙은 +33,600 에서 멈춘다.
+>   지갑 바닥은 이사 비용과 월세가 이사 뒤 1~2일에 정하므로 D92 와 상관없다. 전문 `growth-d92-unpack-20261031.md` · `growth-d92-unpack.json`.
+
 ### 2026-10-31 · 원룸 창턱 받침 넷 철별 DLI — chatOneroomBright «거기 넷은 등 없이도 자라» 조건 (총괄 10-31)
 
 ```

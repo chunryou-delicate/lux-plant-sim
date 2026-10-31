@@ -1,0 +1,583 @@
+{
+ "humanQ": {
+  "ko": "사람 손 · 할 일 사슬대로(시루 8 → 남는 건 판다 → 16 · 남는 채소 팖 · Day 45 공짜 등을 담)",
+  "new": {
+   "n": 11,
+   "move": {
+    "done": 11,
+    "med": 135,
+    "p90": 140
+   },
+   "home": {
+    "done": 11,
+    "med": 350,
+    "p90": 440
+   },
+   "oneroomBottom": {
+    "med": 2072,
+    "min": 276,
+    "atDaysAfterMoveMed": 2
+   },
+   "brokeAfterMove": 7,
+   "reliefAfterMove": 7,
+   "starved": 0,
+   "harnessMinAfterMove": 2072
+  },
+  "old": {
+   "n": 11,
+   "move": {
+    "done": 11,
+    "med": 135,
+    "p90": 140
+   },
+   "home": {
+    "done": 11,
+    "med": 355,
+    "p90": 445
+   },
+   "oneroomBottom": {
+    "med": 2072,
+    "min": 276,
+    "atDaysAfterMoveMed": 2
+   },
+   "brokeAfterMove": 7,
+   "reliefAfterMove": 7,
+   "starved": 0,
+   "harnessMinAfterMove": 2072
+  },
+  "cashDiffAfterMoveMed": {
+   "5": 36500,
+   "10": 33600,
+   "20": 33600,
+   "30": 33600,
+   "60": 33600,
+   "90": 33600
+  },
+  "unpack": {
+   "new": {
+    "placed": 21,
+    "sown": 0,
+    "left": 0,
+    "at": {
+     "beansprout": "banjiha-dresser:1",
+     "musun": "banjiha-desk:0"
+    },
+    "fallback": []
+   },
+   "old": {
+    "placed": 21,
+    "sown": 0,
+    "left": 0,
+    "at": {
+     "beansprout": "oneroom-sill:0",
+     "musun": "oneroom-sill:0"
+    },
+    "fallback": []
+   }
+  },
+  "perSeed": [
+   {
+    "seed": 5,
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     330,
+     330
+    ],
+    "bottom": [
+     2072,
+     2072
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 4,
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     357,
+     357
+    ],
+    "bottom": [
+     2072,
+     2072
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 3,
+    "move": [
+     133,
+     133
+    ],
+    "home": [
+     350,
+     355
+    ],
+    "bottom": [
+     221752,
+     221752
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": "g",
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     410,
+     415
+    ],
+    "bottom": [
+     2072,
+     2072
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 1,
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     425,
+     430
+    ],
+    "bottom": [
+     314564,
+     314564
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 2,
+    "move": [
+     140,
+     140
+    ],
+    "home": [
+     505,
+     505
+    ],
+    "bottom": [
+     56986,
+     56986
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 6,
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     330,
+     330
+    ],
+    "bottom": [
+     276,
+     276
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 8,
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     323,
+     323
+    ],
+    "bottom": [
+     2072,
+     2072
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 9,
+    "move": [
+     140,
+     140
+    ],
+    "home": [
+     313,
+     313
+    ],
+    "bottom": [
+     363034,
+     329434
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 7,
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     440,
+     445
+    ],
+    "bottom": [
+     2072,
+     2072
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 10,
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     255,
+     260
+    ],
+    "bottom": [
+     2072,
+     2072
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   }
+  ]
+ },
+ "guide": {
+  "ko": "안내대로",
+  "new": {
+   "n": 11,
+   "move": {
+    "done": 11,
+    "med": 145,
+    "p90": 150
+   },
+   "home": {
+    "done": 11,
+    "med": 360,
+    "p90": 450
+   },
+   "oneroomBottom": {
+    "med": 58810,
+    "min": 2700,
+    "atDaysAfterMoveMed": 1
+   },
+   "brokeAfterMove": 6,
+   "reliefAfterMove": 6,
+   "starved": 0,
+   "harnessMinAfterMove": 58810
+  },
+  "old": {
+   "n": 11,
+   "move": {
+    "done": 11,
+    "med": 145,
+    "p90": 150
+   },
+   "home": {
+    "done": 11,
+    "med": 372,
+    "p90": 450
+   },
+   "oneroomBottom": {
+    "med": 58810,
+    "min": 2700,
+    "atDaysAfterMoveMed": 1
+   },
+   "brokeAfterMove": 6,
+   "reliefAfterMove": 6,
+   "starved": 0,
+   "harnessMinAfterMove": 58810
+  },
+  "cashDiffAfterMoveMed": {
+   "5": 16800,
+   "10": 33600,
+   "20": 33600,
+   "30": 33600,
+   "60": 33600,
+   "90": 33600
+  },
+  "unpack": {
+   "new": {
+    "placed": 21,
+    "sown": 0,
+    "left": 0,
+    "at": {
+     "beansprout": "banjiha-dresser:1",
+     "musun": "banjiha-desk:0"
+    },
+    "fallback": []
+   },
+   "old": {
+    "placed": 21,
+    "sown": 0,
+    "left": 0,
+    "at": {
+     "beansprout": "oneroom-sill:0",
+     "musun": "oneroom-sill:0"
+    },
+    "fallback": []
+   }
+  },
+  "perSeed": [
+   {
+    "seed": "g",
+    "move": [
+     145,
+     145
+    ],
+    "home": [
+     350,
+     355
+    ],
+    "bottom": [
+     3396,
+     3396
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 4,
+    "move": [
+     145,
+     145
+    ],
+    "home": [
+     343,
+     343
+    ],
+    "bottom": [
+     3396,
+     3396
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 2,
+    "move": [
+     142,
+     142
+    ],
+    "home": [
+     410,
+     415
+    ],
+    "bottom": [
+     199466,
+     165866
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 3,
+    "move": [
+     133,
+     133
+    ],
+    "home": [
+     360,
+     372
+    ],
+    "bottom": [
+     65852,
+     65852
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 1,
+    "move": [
+     135,
+     135
+    ],
+    "home": [
+     435,
+     435
+    ],
+    "bottom": [
+     149464,
+     149464
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 5,
+    "move": [
+     145,
+     145
+    ],
+    "home": [
+     477,
+     477
+    ],
+    "bottom": [
+     3396,
+     3396
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 6,
+    "move": [
+     150,
+     150
+    ],
+    "home": [
+     346,
+     346
+    ],
+    "bottom": [
+     180794,
+     180794
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 10,
+    "move": [
+     150,
+     150
+    ],
+    "home": [
+     269,
+     269
+    ],
+    "bottom": [
+     58810,
+     58810
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 9,
+    "move": [
+     140,
+     140
+    ],
+    "home": [
+     320,
+     320
+    ],
+    "bottom": [
+     199134,
+     165534
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 7,
+    "move": [
+     145,
+     145
+    ],
+    "home": [
+     450,
+     450
+    ],
+    "bottom": [
+     2700,
+     2700
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   },
+   {
+    "seed": 8,
+    "move": [
+     145,
+     145
+    ],
+    "home": [
+     445,
+     450
+    ],
+    "bottom": [
+     2700,
+     2700
+    ],
+    "starved": [
+     null,
+     null
+    ]
+   }
+  ]
+ },
+ "_args": {
+  "code": "083337c5(core D92 + 하네스 ㉰) 고정 복사본 · probe_branches --persona humanQ,guide --seeds g,1-10 --days 700 --targets 5000000 (문 켬) · 옛 손 = --legacy-seat",
+  "bottom": "원룸 지갑 바닥 = cashDaily 이사 날 끝 ~ 500만 원 닿기 전날의 최저 · 하네스 minCashAfterMove 는 내 집 뒤까지 본다",
+  "trace": "humanQ g 날마다(--trace · 200일): 이사 135 · 다섯째 날(140) 채소 판 돈 새 105,100 / 옛 37,100 · 145 부터 같음"
+ }
+}
