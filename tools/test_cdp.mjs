@@ -85,6 +85,38 @@ export async function launch(opts = {}) {
   page.gl = want; page.glRenderer = r;
   return page;
 }
+/* ★ 2026-11-01 총괄 F — **제가 만든 프로필은 제가 치운다.** Temp 에 byeot-cdp-* 133개(5.9GB)가 쌓였고 디스크가 차자
+     윈도 저장소 센스가 Temp 를 쓸며 시험 판 assets 연결까지 같이 사라졌다(04:32 · 판 밖 빨강).
+     ⛔ 예전: close 가 kill 뒤 200ms 만에 지웠다 — 크롬이(자식 프로세스까지) 파일을 쥔 채라 실패하고 catch 가 조용히 삼켰다 · 못 뜬 판은 아예 안 지웠다.
+     ⇒ 끝나기를 기다린 뒤(최대 3초 · 안 끝나면 kill 하고 또 2초) 지우고, 그래도 못 지우면 경고 한 줄(남은 것을 알게).
+     ⚠ 지우는 것은 이 판이 mkdtemp 로 «방금 만든» 폴더 하나뿐이다. */
+const exitOf = (proc, ms) => new Promise(res => {
+  if (proc.exitCode != null || proc.signalCode != null) return res(true);
+  const t = setTimeout(() => res(false), ms);
+  proc.once('exit', () => { clearTimeout(t); res(true); });
+});
+async function dropProfile(proc, dir, ws = null) {
+  if (ws) {
+    /* 점잖게 끝낸다 — 답은 안 기다린다(끝나면서 소켓이 닫힌다) */
+    try { ws.send(JSON.stringify({ id: 0x7ffffff0, method: 'Browser.close' })); }
+    catch (e) { /* 소켓이 이미 닫혔다 — 아래 kill 이 맡는다 */ void e; }
+  }
+  let done = await exitOf(proc, ws ? 3000 : 0);
+  if (!done) { proc.kill(); done = await exitOf(proc, 2000); }
+  if (ws) { try { ws.close(); } catch (e) { void e; /* 이미 닫혔다 */ } }
+  try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 6, retryDelay: 250 }); }
+  catch (e) { console.warn(`[test_cdp] 크롬 프로필을 못 지웠습니다(남음 · 크롬 끝남=${done}): ${dir} — ${(e && e.code) || e}`); }
+}
+/* ★ 11-01 — 자가 close 없이 끝나도(던짐 · process.exit · 시간 초과로 빠짐) 이 판의 크롬과 프로필을 거둔다.
+     'exit' 안에서는 기다릴 수 없어 kill 뒤 동기로 지운다(rmSync 가 몇 번 다시 해 본다) · 프로세스를 밖에서 죽이면(TaskStop) 이 길도 못 돈다 */
+const livePages = new Set();
+process.on('exit', () => {
+  for (const L of livePages) {
+    try { L.proc.kill(); } catch (e) { void e; /* 이미 끝났다 */ }
+    try { fs.rmSync(L.dir, { recursive: true, force: true, maxRetries: 8, retryDelay: 150 }); }
+    catch (e) { console.warn(`[test_cdp] (끝날 때) 크롬 프로필을 못 지웠습니다(남음): ${L.dir} — ${(e && e.code) || e}`); }
+  }
+});
 async function launchGL(opts, gl, attempt = 1) {   /* attempt — ★ 2026-11-01 총괄 F: 못 뜨면 다른 포트로 한 번 더 */
   const chrome = findChrome();
   const port = await pickDebugPort();   /* ★ 2026-11-01 총괄 F — 9700~9999 · 비어 있는 수 */
@@ -111,12 +143,13 @@ async function launchGL(opts, gl, attempt = 1) {   /* attempt — ★ 2026-11-01
     } catch { /* 아직 안 떴다 */ }
   }
   if (!wsUrl) {
-    proc.kill();
+    await dropProfile(proc, dir);   /* ★ 11-01 — 못 뜬 판의 프로필도 치운다(다시 띄우기가 새 것을 또 만든다) */
     /* ★ 2026-11-01 총괄 F — 무작위 포트가 다른 창 크롬과 겹치거나 뜨는 것이 늦을 때(판 밖 빨강) · 다른 포트 · 새 프로필로 한 번 더(30초) */
     if (attempt < 2) { console.warn(`[test_cdp] 크롬이 포트 ${port} 에서 ${(100 * 150 / 1000) | 0}초 안에 안 떠 다른 포트로 한 번 더 띄웁니다`); return launchGL(opts, gl, attempt + 1); }
     throw new Error('크롬이 안 떴습니다');
   }
 
+  const live = { proc, dir }; livePages.add(live);   /* ★ 11-01 — close 없이 끝나도 'exit' 가 거둔다 */
   const ws = new WebSocket(wsUrl);
   await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error('CDP 소켓 실패')); });
 
@@ -225,14 +258,14 @@ async function launchGL(opts, gl, attempt = 1) {   /* attempt — ★ 2026-11-01
       }
       throw new Error(`기다리다 지쳤습니다(${ms}ms): ${expr}`);
     },
+    profileDir: dir,   /* ★ 11-01 — 이 판의 크롬 프로필(close 뒤 없어졌나를 재는 자가 본다) */
     async shot(file) {
       const r = await S('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
       fs.mkdirSync(path.dirname(file), { recursive: true });
       fs.writeFileSync(file, Buffer.from(r.data, 'base64'));
       return file;
     },
-    async close() { try { ws.close(); } catch { } proc.kill(); await sleep(200);
-      try { fs.rmSync(dir, { recursive: true, force: true }); } catch { } }
+    async close() { livePages.delete(live); await dropProfile(proc, dir, ws); }   /* ★ 11-01 — 끝나기를 기다린 뒤 지운다(§dropProfile) */
   };
   return page;
 }
