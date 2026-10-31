@@ -38,6 +38,7 @@ import { TUTORIAL_RULES } from './tutorial.js';
 /* ★ 콩나물이 자라는 날의 정본은 `CROP_KINDS[0].harvestDays` 다 — 대사가 거기서 읽는다(아래 §BEAN_DAYS).
    ⚠ `first_play.js` 는 `dialogue.js` 를 안 불러온다 — 고리가 안 생긴다(2026-08-23 확인). */
 import { CROP_KINDS, cropPotList } from './first_play.js';
+import { ACT_COST } from './stamina.js';   /* ★ 2026-10-31 [plan] D96 — 사건 카드 «올려다 드린다 (체력 N)»의 N(§EVENT_CARDS · 지어내지 않는다) */
 /* 독촉 «기다림» 판정 — [core] 파일(D2 · 2026-10-07). 한 방향: dialogue → nudge_wait */
 import { nudgeWaiting, nudgeDaysOf, varieSourceCount } from './nudge_wait.js';
 /* 방 거름 — 반지하 줄은 이사 뒤에 독촉하지 않는다(quest.js §questRoomOk · 2026-10-07). quest.js 는 아무것도 import 하지 않아 돌지 않는다 */
@@ -1415,6 +1416,94 @@ export const SCRIPTS = {
   moveReadyLater: [
     { who: 'moni',   face: 'cheer', text: '이제 첫 월세까지 버틸 만해.' },
     { who: 'moni',   face: 'calm',  text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
+  ],
+
+  /* ═══ ★★ 2026-10-31 [plan] 총괄 D96 — 반지하 사건 카드를 고른 «뒤» 대사(plan-events-banjiha-d96 §1 · 카드 글은 §EVENT_CARDS) ═══
+     [core] events_banjiha §applyBjChoice 가 ev_<key>_<a|b>(단추 하나면 ev_<key>)를 내고, 화면이 카드를 닫은 «그 자리»에서 연다.
+     ★ 그래서 줄은 «고른 그 순간»에 참이어야 한다 — 저녁에 일어날 일을 지난 일처럼 말하지 않는다(쪽지 갈래).
+     ⚠ 몬이는 수를 말하지 않는다 — 김치 · 추석 음식 값은 이튿날 배너(§EVENT_CARDS.kimchi · side_dish)가 엔진 값으로 말한다.
+     ⚠ 빛 낱말은 화면 낱말(빛 분포 · 어둠 · 그늘 · 밝음 · 아주 밝음 · §HEAT_BANDS_KO)만 쓴다. */
+  /* E1 고양이 첫 방문 · 참: 반지하 창은 밖에서 골목 땅 높이다(house_rooms 뒷벽 띠창 · outside.js §반지하의 눈높이) */
+  evCat1A: [
+    { who: 'jachwi', face: 'happy', text: '먹고 갔다. 또 올까?' },
+    { who: 'moni',   face: 'calm',  text: '여긴 창이 땅 높이라 눈이 마주쳐.' }
+  ],
+  evCat1B: [
+    { who: 'jachwi', text: '한참 보다가 갔다.' },
+    { who: 'moni',   face: 'calm',  text: '여긴 창이 땅 높이라 눈이 마주쳐.' }
+  ],
+  /* E1 둘째 · 참: cat1 을 본 판에만 온다(«또» · «단골») */
+  evCat2A: [
+    { who: 'jachwi', face: 'happy', text: '단골이 됐네.' },
+    { who: 'moni',   face: 'calm',  text: '여기가 마음에 드나 봐.' }
+  ],
+  evCat2B: [
+    { who: 'jachwi', text: '또 한참 보다가 갔다.' },
+    { who: 'moni',   face: 'calm',  text: '여기가 마음에 드나 봐.' }
+  ],
+  /* E1 셋째 · 참: 반지하는 남향이고 빛 셈이 맑음 고정이라 골목에 볕이 든다(state.js SIM_MODES.novice) */
+  evCat3: [
+    { who: 'jachwi', face: 'happy', text: '이름을 지어 줘야겠다. …볕이.' },
+    { who: 'moni',   face: 'cheer', text: '볕 좋은 데를 잘 아네.' }
+  ],
+  /* E3 윗집 택배 · 올려다 드림 — 참: 그 손에서 올라가 건넸다(체력은 [core] 가 이미 뺐다 · 수는 카드 단추가 말했다) */
+  evParcelA: [
+    { who: 'jachwi', text: '윗집 할머니 댁이었다. 고맙다고 하셨다.' },
+    { who: 'moni',   face: 'cheer', text: '이웃이 생겼네.' }
+  ],
+  /* E3 쪽지 — 참: 고른 그 순간의 일만 말한다(체력이 없어 이 단추만 켜진 판에도 참) */
+  evParcelB: [
+    { who: 'jachwi', text: '쪽지를 붙여 놨다.' },
+    { who: 'moni',   face: 'calm',  text: '무거운 건 무리 안 해도 돼.' }
+  ],
+  /* E2 트럭 · 빛 분포를 켬 — 참: 차는 장식이라 빛 셈(dliAt)이 모른다 → 칸 색이 그대로다 · 빛 분포 = 그날 모은 빛(DLI)
+       ⚠ «어두워졌다»는 거짓이라 안 쓴다. «잠깐 그늘은 티가 안 난다»는 실제로도 참(몇 분 그늘은 하루 합에 작다) */
+  evTruckA: [
+    { who: 'jachwi', face: 'curious', text: '트럭이 섰는데 색이 그대로네?' },
+    { who: 'moni',   face: 'teach',   text: '빛 분포는 그날 모은 빛이야.' },
+    { who: 'moni',   face: 'calm',    text: '잠깐 그늘진 건 티도 안 나.' }
+  ],
+  evTruckB: [
+    { who: 'jachwi', text: '금방 갔다. 조마조마했네.' },
+    { who: 'moni',   face: 'calm',  text: '잠깐은 괜찮아. 빛은 그날 모은 합이야.' }
+  ],
+  /* E4 할머니 콩나물 말 · 참: 콩나물 품질 crisp_white ≤ 0.3(빛 분포 «어둠» 문턱과 같은 값 · D95 ⑤) · 밝을수록 초록 · 쓴맛
+       갈래(§scriptOf ev_grandma): ev.pale = 놓인 콩나물 시루 가운데 «하얗고 아삭»이 아닌 빛을 받아 온 것이 있다([core] bjContextOf) */
+  evGrandma: [
+    { who: 'moni',   face: 'teach', text: '맞아. 콩나물은 어두울수록 하얘.' },
+    /* 참: pale 이 거짓 = 놓인 콩나물 시루가 다 «하얗고 아삭» 빛(≤ 어둠 문턱)을 받아 왔다 */
+    { who: 'jachwi', face: 'think', text: '그래서 어둠 칸에 두는 거구나.' }
+  ],
+  evGrandmaPale: [
+    { who: 'moni',   face: 'teach', text: '맞아. 콩나물은 어두울수록 하얘.' },
+    /* 참: pale = 그 시루가 받아 온 빛이 어둠 문턱을 넘었다(지금 옮겼어도 «뒀던»은 참) */
+    { who: 'jachwi', face: 'think', text: '어둠 아닌 데 뒀던 시루가 있어.' },
+    { who: 'moni',   face: 'calm',  text: '빛 분포에서 어둠 칸을 찾아 봐.' }
+  ],
+  /* E9 아이들 · 참: 창이 골목 땅 높이라 쪼그려 앉은 아이 눈이 창에 닿는다 · 카드는 아침이라 «등굣길»(카드 글) */
+  evKids1A: [
+    { who: 'jachwi', face: 'happy', text: '깔깔 웃고 갔다.' },
+    { who: 'moni',   face: 'cheer', text: '쪼그려 앉으면 딱 창 높이야.' }
+  ],
+  evKids1B: [
+    { who: 'jachwi', text: '…괜히 숨었다.' },
+    { who: 'moni',   face: 'shh',   text: '쉿. 금방 갈 거야.' }
+  ],
+  /* E9 둘째 · 참: 손을 흔든 판에만 온다([core] kids.due 는 kids1 a 에서만 선다) */
+  evKids2: [
+    { who: 'jachwi', face: 'happy', text: '안녕.' },
+    { who: 'moni',   face: 'cheer', text: '아는 사이가 됐네.' }
+  ],
+  /* E8 추석 · ⚠ 정정(plan-events-banjiha-d96 E8 «엄마 전화»): 주인공은 고아다(§intro · 박사님 08-03) — 엄마 전화는 거짓이라
+       윗집 할머니의 추석 음식으로 바꿨다(새 인물 · 새 내력 없이 이미 있는 이웃 줄 E3 → statusNeighborAsk → E4 → neighborOrder 에 잇는다).
+     참: 받으면 [core] 가 이틀 뒤 · 사흘 뒤 아침에 밥 한 몫 값씩 넣는다(배너 §EVENT_CARDS.side_dish 가 수를 말한다) */
+  evChuseokA: [
+    { who: 'jachwi', face: 'happy', text: '혼자 보내는 추석이 아니네.' },
+    { who: 'moni',   face: 'calm',  text: '잘 먹자. 그게 보답이야.' }
+  ],
+  evChuseokB: [
+    { who: 'jachwi', face: 'think', text: '괜히 폐 끼치는 것 같아서.' },
+    { who: 'moni',   face: 'calm',  text: '다음엔 받아도 돼.' }
   ],
 
   /* ★반지하 구간의 끝이자 감정의 정점.
@@ -3257,6 +3346,15 @@ export const EVENT_SCRIPT = Object.freeze({
   move_ready:          'moveReady',
   /* ★ 2026-10-31 [plan] D97 ① — 못 버티던 판이 버틸 만해진 날(한 번 · [core]) */
   move_ready_ok:       'moveReadyLater',
+  /* ★ 2026-10-31 [plan] 총괄 D96 — 반지하 사건 카드를 고른 뒤([core] events_banjiha §applyBjChoice · 카드 글 §EVENT_CARDS)
+     ⚠ 이 id 들은 아침 차례(turn.events)에 안 선다(고른 손에서만) — 그래서 이 표에 있어도 [core] §bjBlockedBy «막는 날»을 안 건드린다.
+     ev_grandma_pale 은 사건 id 가 아니라 §scriptOf 가 ev_grandma 의 pale 갈래로 고르는 이름이다(대사 이름을 이 표 한 곳에 둔다) */
+  ev_cat1_a: 'evCat1A', ev_cat1_b: 'evCat1B', ev_cat2_a: 'evCat2A', ev_cat2_b: 'evCat2B', ev_cat3: 'evCat3',
+  ev_parcel_a: 'evParcelA', ev_parcel_b: 'evParcelB',
+  ev_truck_a: 'evTruckA', ev_truck_b: 'evTruckB',
+  ev_grandma: 'evGrandma', ev_grandma_pale: 'evGrandmaPale',
+  ev_kids1_a: 'evKids1A', ev_kids1_b: 'evKids1B', ev_kids2: 'evKids2',
+  ev_chuseok_a: 'evChuseokA', ev_chuseok_b: 'evChuseokB',
   moved_out:           'movedOut',
   /* ★ 2026-08-11 — ③ 원룸의 첫 장면. `oneroom.moveIntoOneroom` 이 `moved_out` **다음에**
      내는 사건이고, game.html 의 이사 버튼이 둘을 한 번에 `story.events` 로 넘긴다. */
@@ -3399,6 +3497,43 @@ export const QUEST_DONE_SCRIPT = Object.freeze({
   leaf_three:   'questDoneLeafThree',
   wait_varie:   'questDoneWaitVarie'  /* ★ 2026-10-30 D90 ③ */
 });
+/* ══ ★★ 2026-10-31 [plan] 총괄 D96 — 반지하 사건 카드 글(plan-events-banjiha-d96 §1 · [core] events_banjiha · game.html §evCardWhenQuiet 가 읽는다) ══
+   꼴: 카드 [key] = { face?, text, textPotOnly?, a, b?, aNoStamina? } · 뒷일 배너 [kimchi | side_dish] = { title, sub }(sub 의 {won} = 엔진 값)
+   ★ 카드 글 · 배너는 해설이라 수를 써도 된다 — 엔진에서 읽는다(체력 = stamina ACT_COST · 원 = [core] 가 넣은 won). 몬이 말(§SCRIPTS ev*)은 수를 안 말한다.
+   ★ 카드는 아침 대사가 끝난 «조용한 때» 뜬다 — 때 낱말은 아침에 참이어야 한다(아이들 «등굣길» · 하굣길 ×).
+   ⛔ 반지하 빛은 맑음 · 여름 고정이고 창밖 차 · 골목은 장식이다(outside.js) — «어두워졌다 · 비가 와 빛이 준다»는 거짓이라 안 쓴다.
+   ⚠ 단추 수는 [core] BJ_EVENTS · REPEAT 표(bjChoicesOf)를 따른다 — 단추 하나 카드엔 b 가 없다.
+   ⚠ face 는 손님 얼굴 묶음(portrait_npc_<face>) — 새 그림 없음(D69). 고양이 · 아이들 · 트럭은 얼굴 없이 글로만. */
+const CARRY_COST_KO = Number.isFinite(ACT_COST && ACT_COST.carry) ? ` (체력 ${ACT_COST.carry})` : '';
+export const EVENT_CARDS = Object.freeze({
+  /* E1 창밖 손님 첫 방문 · 참: 반지하 창은 밖에서 골목 땅 높이다(house_rooms 뒷벽 띠창 · outside.js) */
+  cat1: Object.freeze({ text: '창밖에 고양이 한 마리가 앉아 방을 들여다본다.', a: '멸치를 조금 내민다', b: '가만히 본다' }),
+  /* 둘째 · 참: cat1 을 본 판에만 온다(«또»). 단추는 cat1 에서 무엇을 골랐든 참인 말(«또 내민다» ×) */
+  cat2: Object.freeze({ text: '그 고양이가 또 왔다. 창밖에 식빵 자세로 앉았다.', a: '멸치를 내민다', b: '가만히 본다' }),
+  /* 셋째 · 참: 남향 · 빛 셈 맑음 고정이라 골목에 볕이 든다 */
+  cat3: Object.freeze({ text: '고양이가 창 앞 햇볕에 길게 누웠다.', a: '한참 본다' }),
+  /* E3 윗집 택배 · 참: 반지하 문은 앞벽(house_rooms) · 첫 단추는 체력을 쓴다([core] BJ_STAMINA_CHOICE · 체력 0 이면 흐림 + aNoStamina) */
+  parcel: Object.freeze({ text: '문 앞에 윗집 택배가 잘못 와 있다. 꽤 무겁다.', a: '올려다 드린다' + CARRY_COST_KO, b: '문에 쪽지를 붙인다',
+                          aNoStamina: '체력이 없습니다 — 쪽지는 붙일 수 있습니다' }),
+  /* E2 트럭 · 조건: 창턱에 그루나 시루가 있다([core] onSill) · ⚠ 방이 «어두워졌다»고 안 쓴다(그림 · 빛 셈 그대로)
+       첫 단추 = 있는 [빛 분포 보기]를 켠다([core] evChoose) — 단추 낱말이 그 단추 이름과 같다 */
+  truck: Object.freeze({ text: '창 앞에 트럭이 섰다. 엔진 소리가 웅웅 울린다.', a: '빛 분포를 켜 본다', b: '그냥 둔다' }),
+  /* E4 할머니 · 조건: Day 73~120 · 놓인 콩나물 시루가 있다 · 참: 콩나물은 어두울수록 «하얗고 아삭» · 밝으면 «초록 · 쓴맛»(first_play 품질 표) */
+  grandma: Object.freeze({ face: 'elder', text: '윗집 할머니가 들르셨다.\n"콩나물은 볕을 보면 파래지고 써. 어둡게 키워야 하얗지."', a: '고맙습니다' }),
+  /* E9 아이들 · 조건: 창턱에 그루나 시루가 있다 · text = 창턱에 시루가 있다 · textPotOnly = 창턱에 화분만(sillCrop false) — 보이는 것을 말한다
+       («저거 콩나물이다!» × — 창턱 시루가 무순일 수 있다) */
+  kids1: Object.freeze({ text: '등굣길 아이들이 창 앞에 쪼그려 앉았다.\n"저거 뭐 키우는 거야?"',
+                         textPotOnly: '등굣길 아이들이 창 앞에 쪼그려 앉았다.\n"저 잎 좀 봐!"', a: '손을 흔든다', b: '모른 척한다' }),
+  /* 둘째 · 참: 손을 흔든 판에만 온다 */
+  kids2: Object.freeze({ text: '그 아이들이 또 왔다. 창에 대고 "안녕!"', a: '손을 흔든다' }),
+  /* E8 추석 · Day 55~80(가을) · ⚠ 정정: 고아 주인공이라 «엄마 전화» 대신 윗집 할머니(§SCRIPTS evChuseokA 주석) */
+  chuseok: Object.freeze({ face: 'elder', text: '윗집 할머니가 문을 두드리셨다.\n"추석에 혼자면, 전 부치거든 좀 갖다줄게."', a: '고맙습니다', b: '괜찮아요' }),
+  /* 뒷일 배너 · 참: [core] 가 그날 아침 지갑에 won(= 밥 한 몫 값 rules.mealCostWon)을 넣는다 — «굳었다»는 그 뜻
+       side_dish 는 이틀 뒤 · 사흘 뒤 두 번 뜬다 — 두 날 다 참인 말(«왔습니다» ×) */
+  kimchi:    Object.freeze({ title: '🥬 윗집 할머니가 김치를 주셨습니다', sub: '밥 한 몫 값이 굳었습니다 (+{won}원)' }),
+  side_dish: Object.freeze({ title: '🥢 윗집 할머니가 준 추석 음식', sub: '밥 한 몫 값이 굳었습니다 (+{won}원)' })
+});
+
 /* ★ 2026-10-24 [plan] 총괄 D85 ③ — 간판 한 자리(다른 진로 간판이 이미 선 판)의 간판 줄 대사. 사건 quest_opened/quest_done 의 kept(quest §keptOf)일 때만 */
 export const QUEST_OPEN_KEPT_SCRIPT = Object.freeze({ shop_sign: 'questShopSignKept', care_sign: 'questCareSignKept' });
 export const QUEST_DONE_KEPT_SCRIPT = Object.freeze({ shop_sign: 'questDoneShopSignKept', care_sign: 'questDoneCareSignKept' });
@@ -3498,6 +3633,8 @@ function scriptOf(ev, S = null) {
     const sv = ev && typeof ev === 'object' ? ev.survives : undefined;
     return sv === true ? 'moveReadyNow' : sv === false ? 'moveReadyShort' : 'moveReady';
   }
+  /* ★ 2026-10-31 [plan] 총괄 D96 E4 — 할머니 콩나물 말 뒤 대사는 ev.pale([core] bjContextOf)로 갈린다 · 이름은 둘 다 §EVENT_SCRIPT 에 있다 */
+  if (id === 'ev_grandma') return EVENT_SCRIPT[ev && typeof ev === 'object' && ev.pale === true ? 'ev_grandma_pale' : 'ev_grandma'];
   /* ★ 2026-10-08 [plan] D20 — 겨울은 방으로 갈린다(§winterCameBanjiha). 사건이 실으면(ev.movedOut) 그것을, 아니면 S 를 본다.
      둘 다 모르면 예전 그대로(winterCame) — 판을 안 바꾼다. */
   if (id === 'season' && ev.season === 'winter') {
