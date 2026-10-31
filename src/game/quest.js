@@ -1000,8 +1000,14 @@ const ONEROOM_QUESTS = Object.freeze([
       : arr(s && s.cropPots).some(p => p && !yes(p.placed) && yes(p.growing)) ? '들고 온 채소를 가구 위에 올리세요'
       : '가방의 식물을 원룸에 놓으세요',
     opens: s => yes(s.movedOut),
-    /* bagPlants — 가방에 든 그루·삽수·시루 수(가구는 안 센다 · 원룸 첫 장면의 «끝»과 같은 말) */
-    done:  s => yes(s.movedOut) && Number.isFinite(s.bagPlants) && s.bagPlants === 0
+    /* bagPlants — 가방에 든 그루·삽수·시루 수(가구는 안 센다 · 원룸 첫 장면의 «끝»과 같은 말)
+       ★★ 2026-10-31 비판 셋째 판 B2 ③(총괄 D97) — **이삿짐(시루 · 재배판)을 다 못 풀어도 영원히 묶이지 않는다.**
+         ⛔ 재배판 넷을 놓을 자리가 없던 판에서 이 할 일이 Day 135~165 내내 그대로였고(«할 일이 며칠째 그대로야») 그 뒤 줄이 다 막혔다.
+         ⇒ 그루 · 삽수 · 새 종(bagGrowers)을 다 놓았으면, 연 지 사흘(questsOpenedOn) 뒤엔 작물이 가방에 남아도 넘어간다
+           (가방에 든 채소는 상태 줄 statusBagCrops 가 계속 말한다 · D92) · 칸을 모르면(null) 예전 그대로 */
+    done:  (s, ctx) => yes(s.movedOut) && Number.isFinite(s.bagPlants) && (s.bagPlants === 0 || (Number.isFinite(s.bagGrowers) && s.bagGrowers === 0
+             && Number.isInteger(s.day) && (() => { const on = ctx && ctx.S && ctx.S.stamina && ctx.S.stamina.questsOpenedOn; const d0 = on && on.oneroom_unpack;
+                                                     return Number.isInteger(d0) && s.day - d0 >= 3; })()))
   }),
   Object.freeze({
     id: 'oneroom_root_bright',

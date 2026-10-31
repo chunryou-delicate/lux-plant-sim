@@ -6618,6 +6618,53 @@ export async function createRoomView(canvas, opts = {}) {
     return { ok: true, reason: null };
   }
 
+  /* ★★ 2026-10-31 비판 셋째 판 B2 BLOCKER(총괄 D97) — **새 가구 하나가 설 빈 바닥**(가방 가구 «칸 누르기»가 쓴다 · game.html §startPhonePlaceFurnitureBag).
+       ⛔ 칸 누르기는 늘 방 한가운데(0, 0)에 세웠다 — 원룸에서 들고 온 가구 여덟이 한 점에 겹쳐 섰고(침대가 책상 · 선반을 뚫음), 윗면이 서로 묻혀
+         이삿짐 시루 · 재배판이 «빈 자리가 없습니다»로 30일 묶였다(비판 B036 · B038 · B042).
+       ⇒ 바닥에 선 가구 · 붙박이(창턱 · 칸막이) · 바닥 화분 · 문 앞 한 칸(몸 반지름 + 길)을 피해, 벽 쪽부터(가운데 바닥을 비움) 빈 자리를 고른다.
+         0° · 90° 둘 다 본다 · 격자(0.125m) 위 · 못 찾으면 null(부르는 쪽이 «놓을 자리가 없습니다»라고 말한다).
+       ⚠ 판정(furnitureFit)은 안 바꿨다 — 여기는 «처음 설 자리»만 고른다. 고른 자리는 같은 겹침 자(rectOverlap)로 잰다 */
+  function freeFloorSpot(w, d, opt = {}) {
+    if (!built || !Number.isFinite(w) || !Number.isFinite(d) || w <= 0 || d <= 0) return null;
+    const b = roomBox(), STEP = 0.125, PAD = Number.isFinite(opt.pad) ? opt.pad : 0.04;
+    const obstacles = [];
+    for (const n of furnNodes()) {
+      const s2 = n.userData.size;
+      if (!s2 || s2.h <= 0.05 || n.position.y > RAISED_Y) continue;      /* 러그 · 얹힌 것은 바닥을 안 막는다 */
+      obstacles.push(footRect(n));
+    }
+    for (const c of (built.colliders || [])) if (c.kind !== 'furn') obstacles.push({ x: c.x, z: c.z, w: c.w, d: c.d, rot: c.rot || 0 });
+    for (const [, p] of plants) {
+      const q = p.at || (p.group && p.group.position);
+      if (q && Number.isFinite(q.x) && (q.y || 0) < 0.05) obstacles.push({ x: q.x, z: q.z, w: 0.34, d: 0.34, rot: 0 });
+    }
+    /* 문 앞 — 몸이 드나드는 한 칸(문 폭 0.9 · 안쪽으로 몸 반지름 + 0.6) */
+    const S2 = built.size || { w: b.w, d: b.d }, inward = BODY_R + 0.6;
+    for (const dr of ((roomDef && roomDef.doors) || [])) {
+      const cu = Number.isFinite(dr.cu) ? dr.cu : 0, half = inward / 2;
+      if (dr.wall === 'front') obstacles.push({ x: cu, z: S2.d / 2 - half, w: 0.9, d: inward, rot: 0 });
+      else if (dr.wall === 'back') obstacles.push({ x: cu, z: -S2.d / 2 + half, w: 0.9, d: inward, rot: 0 });
+      else if (dr.wall === 'left') obstacles.push({ x: -S2.w / 2 + half, z: cu, w: inward, d: 0.9, rot: 0 });
+      else if (dr.wall === 'right') obstacles.push({ x: S2.w / 2 - half, z: cu, w: inward, d: 0.9, rot: 0 });
+    }
+    let best = null;
+    for (const rotDeg of [0, 90]) {
+      const r = rotDeg * Math.PI / 180, W = rotDeg ? d : w, D = rotDeg ? w : d;
+      for (let x = -b.w / 2 + W / 2; x <= b.w / 2 - W / 2 + 1e-9; x += STEP)
+        for (let z = -b.d / 2 + D / 2; z <= b.d / 2 - D / 2 + 1e-9; z += STEP) {
+          const gx = Math.round(x / STEP) * STEP, gz = Math.round(z / STEP) * STEP;
+          if (Math.abs(gx) + W / 2 > b.w / 2 + 1e-6 || Math.abs(gz) + D / 2 > b.d / 2 + 1e-6) continue;
+          const me = { x: gx, z: gz, w, d, rot: r };
+          if (obstacles.some(o => rectOverlap(me, o, PAD))) continue;
+          /* 벽에 가까울수록 · 가운데 바닥을 비울수록 좋다(같으면 앞에서 본 것) */
+          const gapWall = Math.min(b.w / 2 - Math.abs(gx) - W / 2, b.d / 2 - Math.abs(gz) - D / 2);
+          const score = gapWall - 0.02 * Math.hypot(gx, gz);
+          if (!best || score < best.score - 1e-9) best = { x: +gx.toFixed(4), z: +gz.toFixed(4), rot: rotDeg, score };
+        }
+    }
+    return best ? { x: best.x, z: best.z, rot: best.rot } : null;
+  }
+
   /* 가구를 격자에 앉힌다. 회전은 90° 단위(place.snapAngleDeg 의 근거 참고).
      ★ furnitureFit 안에서는 안 한다 — 그러면 "지금 자리 그대로" 물었을 때도 좌표가 흔들려
        제자리 불변식을 스스로 깬다. 스냅은 **놓는 길**(미리보기·커밋)에서만 한다. */
@@ -10195,6 +10242,8 @@ export async function createRoomView(canvas, opts = {}) {
     },
     /* 그 자리에 놓을 수 있나 — { ok, reason }. rot 는 도(°) */
     furnitureFit(uid, pos) { return furnitureFit(uid, pos || {}); },
+    /* ★ 2026-10-31 B2 — 새 가구(w × d) 하나가 설 빈 바닥 { x, z, rot } · 없으면 null(§freeFloorSpot) */
+    freeFloorSpot(w, d, opt) { return freeFloorSpot(+w, +d, opt || {}); },
     /* ★ 벽 걸이 v1(10-10 [house]) — 걸이 자리 · 산 그림을 걸 자리표 · 달력 계절 */
     hangSpots() { return hangSpotList(); },
     hangPose(spotId, preset) { try { return hangPoseFor(spotId, preset); } catch (e) { throw fail(e); } },

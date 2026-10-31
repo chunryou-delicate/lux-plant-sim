@@ -584,7 +584,10 @@ const tryMoveOut = async () => {
   const was = await ev(`(()=>{const s=document.getElementById('sheet');return s.classList.contains('open')?'1':'';})()`);
   await ev(`window.__byeotSheet.open('room')`, false); await settleSheet(true);
   const hit = await ev(`(()=>{ const b=document.getElementById('moveOut');
-    if(!b || b.disabled) return false; b.click(); b.click(); return true; })()`);
+    if(!b || b.disabled || b.classList.contains('dim')) return false;
+    /* ★ 2026-10-31 B1 — 이사는 확인 창의 [이사한다/그래도 간다]로만 된다(game.html §moveOut) — 단추를 두 번 누르는 대신 창을 띄우고 창의 단추를 누른다 */
+    b.click(); const p=document.getElementById('movePanel'); if (!(p && p.classList.contains('on'))) b.click();
+    if (!(p && p.classList.contains('on'))) return false; document.getElementById('moveGo').click(); return true; })()`);
   if (hit) { R.did.moveOut = (R.did.moveOut || 0) + 1; R.movedOutOnDay = R.today; }
   await sleep(500); await tapTalk(); await clearPops();
   if (!was) { await ev(`window.__byeotSheet.close()`, false); await settleSheet(false); }

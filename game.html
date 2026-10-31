@@ -1228,6 +1228,8 @@
     font-size:11.5px;line-height:1.4;color:#a8e6a0;word-break:keep-all;white-space:normal}
   #placeConfirm .fit.mid{color:#e8dc9a}
   #placeConfirm .fit.bad{color:#ffc98f}
+  /* ★ B1 ⑤ #9 — [원룸으로 이사]가 못 가는 판에 회색(눌리기는 한다 · 까닭을 말한다) */
+  #moveOut.dim{opacity:.5;filter:saturate(.3)}
   #moveCatcher{position:absolute;z-index:28;inset:0;display:none;touch-action:none}
   #stage.moving #moveCatcher{display:block}
   #stage.moving #plantActions,#stage.moving #furnActions{display:none}
@@ -2856,6 +2858,8 @@
              [식물등]으로 옮겼다(박사님: *"식물등 구매 위치가 상점으로, 새 탭 생성"*).
              ★ 사는 규칙(`tutorial.buyLamp`)은 한 글자도 안 바꿨다 — **누르는 자리만** 옮겼다.
              ⚠ 여기에 되살리지 마라. 두 자리가 되면 「어디서 사는 것인가」를 두 번 배운다. -->
+        <!-- ★ 2026-10-31 D97 (plan-to-core-d97 §1-2) — 이사비 · 지금 돈 · 모자란 것 / 됐으면 이사하면 남는 돈 · 첫 월세(§moveMoneyLineKo) -->
+        <div class="psub" id="moveMoneyLine" style="display:none;margin:6px 0 4px"></div>
         <div class="btns">
           <button id="moveOut" class="primary" disabled style="width:auto;margin-top:0">원룸으로 이사</button>
         </div>
@@ -6514,7 +6518,9 @@ function updateHint() {
      ① 가방 → ② 가구 하나 → ★③ (가구가 놓인 «순간») 「선반 아래가 어두워졌습니다 — 콩나물 자리입니다」 → ④ 식물·시루(세 갈래 문안).
      끝 = 가방의 «식물»(그루·삽수·시루·재배판)이 다 놓였다 — 가구는 다 놓지 않아도 끝(자유 · 「플레이어가 배치」). 등은 손가락 없음(퀘스트 몫).
      ⚠ 첫 플레이 손가락은 fp.completed·movedOut 이면 안 선다(§fpLive) — 이 사슬이 그 자리를 잇는다. */
-  if (ts && ts.movedOut) {
+  /* ★★ 2026-10-31 비판 셋째 판 B2 ③ — 이삿짐을 놓으려다 «자리가 없다»를 들은 판은, 가구 판이 바뀔 때까지 이 원룸 짐 풀기 갈래를 통째로 건너뛴다 —
+       ⛔ 손가락이 30일 내내 [가방]만 짚어 거두기 · 심기 · 자르기를 한 번도 안 짚었다(비판 B · Day 135~165). 아래 갈래(돌봄 먼저 · D93 ②)로 간다 */
+  if (ts && ts.movedOut && !unpackStuckNow()) {
     const home = S.home || {};
     /* ★ 2026-10-10 [plan] — 받은 물건(가게 첫날 주문판 · state §giveFurniture)은 사람이 고른 가구가 아니다 — «놓은 가구» 셈에서 뺀다 */
     const furnBag = (home.furnitureBag || []).length, furnDone = (home.furnitureAdded || []).filter(f => f && !GIVEN_FURNITURE.includes(f.preset)).length;
@@ -7153,7 +7159,12 @@ function drawTutorial(living) {
      상점 쪽은 **풀리기 전에는 아예 안 보인다** — 살 수 없는 물건을 안 띄우는 이 저장소의
      규칙(무순·수경병)에 맞췄다. `R.lampPriceWon` 도 거기서 읽는다. */
   const mv = $('moveOut'), c = canMoveOut(ts);
-  mv.disabled = !c.ok || ts.movedOut;
+  /* ★ B1 ⑤ #9 — 못 가는 판도 «눌리게» 둔다(회색 옷만 · 누르면 까닭을 말한다 · §moveOut). 잠그면 click 이 아예 안 와 말이 없었다 */
+  mv.disabled = !!ts.movedOut;
+  mv.classList.toggle('dim', !c.ok && !ts.movedOut);
+  mv.setAttribute('aria-disabled', (!c.ok || ts.movedOut) ? 'true' : 'false');
+  { const ml = $('moveMoneyLine'); if (ml) { let t = null; try { t = moveMoneyLineKo(); } catch { t = null; }
+      ml.style.display = t ? '' : 'none'; ml.style.whiteSpace = 'pre-line'; if (t) ml.textContent = t; } }   /* ★ D97 §1-2 */
   mv.textContent = ts.movedOut ? '이사 완료' : '원룸으로 이사';
   mv.title = c.ok ? '' : (c.shortWon > 0 ? `${c.shortWon.toLocaleString()}원 부족` : '아직 못 해 본 것이 있습니다');
 }
@@ -13844,8 +13855,20 @@ function showFirstPlayEvents(turn) {
   try { noteQuestWaits(S, S.day); } catch (e) { console.warn('[독촉] 기다림 적기', e && e.message); }
   /* ★ 2026-10-09 [plan] 506d1b44 — 엔딩 목표 금액(§ENDING_NOW · homes.json)을 하루 칸에 싣는다 · 목표 이정표(반 · 거의)가 이 값과 지갑으로 선다. 모르면 null */
   try { turn.homeTarget = endingOn() ? ENDING_NOW.targetWon : null; } catch { turn.homeTarget = null; }
+  try { noteMoveSurvives(turn); } catch (e) { console.warn('[이사 버팀]', e && e.message); }   /* ★ D97 §1-1 */
   const ids = story.turn(turn, S);
   if (ids.length) dlgOpen(ids);
+}
+/* ★ 2026-10-31 D97 §1-1 — move_ready 에 «버티나»를 싣고(대사 셋 갈래 · plan 7832818b) · 못 버티던 판이 처음 버틸 만해진 아침에 move_ready_ok 한 번(ts 깃발 둘 · 세이브) */
+function noteMoveSurvives(turn) {
+  const ts = S.tutorial; if (!ts || ts.movedOut || !turn) return;
+  const sv = moveSurvivesNow();
+  for (const e of (turn.events || [])) if (e && e.id === 'move_ready' && sv != null) e.survives = sv;
+  if (sv === false) ts.moveShortSeen = true;
+  else if (sv === true && ts.moveShortSeen && !ts.moveReadyOkSaid) {
+    ts.moveReadyOkSaid = true;
+    if (!(turn.events || []).some(e => e && e.id === 'move_ready')) (turn.events = turn.events || []).push({ id: 'move_ready_ok', day: S.day });
+  }
 }
 
 /* ══ [다음 날] 문지기 — **방에 선 시루가 하나라도 있나** ══════════════════
@@ -14497,6 +14520,7 @@ function dlgPaint() {
     try { if (openBreedNameWhenQuiet()) return; } catch (e) { console.warn('[품종 이름]', e && e.message); }   /* C — 같은 조건 셋 → 이름 칸 */
     try { if (openMoveAskWhenQuiet()) return; } catch (e) { console.warn('[D27]', e && e.message); }       /* D27 몬이 한 줄 뒤 → 이사 되묻기 창 */
     try { varieValueBannerWhenQuiet(); } catch (e) { console.warn('[무늬 삽수 값]', e && e.message); }   /* ★ D95 ①-1 몬스테라 온 날 대사 뒤 배너 한 번 */
+    try { homeGoalBannerWhenQuiet(); } catch (e) { console.warn('[다음 목표]', e && e.message); }   /* ★ D97 §1-3 원룸 도착 뒤 «내 집 마련» 배너 한 번 */
     try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
     return;
   }
@@ -17540,6 +17564,29 @@ function sowEmptyPot(id) {
      같이 바뀌는데, `room_view` 는 「가구 하나 더하기」 창구를 안 내준다(전문 검색: `rebuildRoom`
      은 안 내보낸다). ⇒ 이사할 때 쓰는 그 길을 그대로 쓴다 — **검증된 길이다.**
      ⛔ 무겁다. 가구를 여럿 놓으면 그만큼 여러 번 짓는다. 그 값은 재서 여기 적어야 한다. */
+/* ★★ 2026-10-31 비판 셋째 판 B2 BLOCKER(총괄 D97) — 칸 누르기로 놓는 가구(가방 · 산 것)의 «처음 설 자리»는 빈 바닥(room_view §freeFloorSpot).
+     ⛔ 늘 방 한가운데(0, 0)에 세워 들고 온 가구 여덟이 한 점에 겹쳤다(비판 B036 · B038). 자리가 없으면 null — 부르는 쪽이 «놓을 자리가 없습니다» */
+/* B2 ③ — 이삿짐 칸을 눌렀는데 놓을 자리가 없었다(그 순간의 가구 수 · 날) · 가구가 바뀌거나 이삿짐이 줄면 풀린다 */
+let unpackNoSpot = null;
+function noteUnpackNoSpot() {
+  try { const fa = ((S.home && S.home.furnitureAdded) || []).length;
+        unpackNoSpot = { day: S.day, furn: fa, left: boxedCountOf('beansprout') + boxedCountOf('musun') }; } catch { unpackNoSpot = null; }
+  try { updateHint(); } catch { }
+}
+function unpackStuckNow() {
+  if (!unpackNoSpot) return false;
+  const fa = ((S.home && S.home.furnitureAdded) || []).length;
+  const left = boxedCountOf('beansprout') + boxedCountOf('musun');
+  if (fa !== unpackNoSpot.furn || left !== unpackNoSpot.left) { unpackNoSpot = null; return false; }
+  return true;
+}
+function furnFreeSpotOf(preset) {
+  const p = furnPresets[preset] || {};
+  const w = Number(p.w), d = Number(p.d);
+  if (!(w > 0 && d > 0) || !roomView || typeof roomView.freeFloorSpot !== 'function') return { x: 0, z: 0, rot: 0 };   /* 모르면 예전 그대로 */
+  try { return roomView.freeFloorSpot(w, d); } catch (e) { console.warn('[가구 빈 자리]', e && e.message); return { x: 0, z: 0, rot: 0 }; }
+}
+const FURN_NO_SPOT_KO = Object.freeze({ title: '놓을 자리가 없습니다', sub: '놓인 가구를 옮겨 바닥을 비우면 놓을 수 있습니다' });
 async function startPhonePlaceFurnitureBag(uid, hangAt = null) {
   const one = carriedFurnitureOf(S, uid);
   if (!one) { banner('가방에 없습니다', '가방을 다시 확인해 주세요'); return { ok: false }; }
@@ -17552,7 +17599,9 @@ async function startPhonePlaceFurnitureBag(uid, hangAt = null) {
        그러니 `w/2` 는 한가운데가 아니라 **벽에 딱 붙은 금**이고, 검사도 경계라 그냥 지난다
        (ε 로 봐준다). ⇒ 화면에서는 침대가 **벽을 뚫고 반쯤 나가 보였다**(oneroom_placed.png).
      ⚠ 주석은 「한가운데」라고 말하고 값은 구석을 가리켰다 — 말과 값이 갈린 자리였다. */
-  const at = hangAt || { x: 0, z: 0, rot: 0 };
+  /* ★ B2 — 빈 바닥(§furnFreeSpotOf) · 없으면 말하고 안 놓는다(가방에 그대로) */
+  const at = hangAt || furnFreeSpotOf(one.preset);
+  if (!at) { banner(FURN_NO_SPOT_KO.title, FURN_NO_SPOT_KO.sub); return { ok: false, why: 'no-spot' }; }
   let row = null;
   try { row = placeCarriedFurniture(S, uid, at, { size: io.light.room.size }); }
   catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false }; }
@@ -17675,7 +17724,12 @@ async function startPhonePlaceFurnitureStock(itemId, hangAt = null) {
   if (!hangAt && isHangPreset(hangPreset))
   { const on = hangPick.open({ preset: hangPreset }, spotId => startPhonePlaceFurnitureStock(itemId, roomView.hangPose(spotId, hangPreset))); return { ok: on, picking: on }; }
   let row = null;
-  try { row = placeBoughtFurniture(S, itemId, hangAt || { x: 0, z: 0, rot: 0 }, { size: io.light.room.size }); }
+  /* ★ B2 — 산 가구도 빈 바닥에(§furnFreeSpotOf) · 없으면 말하고 안 놓는다 */
+  let at0 = hangAt || null;
+  if (!at0) { let pr = null; try { pr = (furnitureCatalogList(S).find(x => x.id === itemId) || {}).preset || null; } catch { pr = null; }
+              at0 = pr ? furnFreeSpotOf(pr) : { x: 0, z: 0, rot: 0 };
+              if (!at0) { banner(FURN_NO_SPOT_KO.title, FURN_NO_SPOT_KO.sub); return { ok: false, why: 'no-spot' }; } }
+  try { row = placeBoughtFurniture(S, itemId, at0, { size: io.light.room.size }); }
   catch (e) { banner('놓지 못했습니다', (e && e.message) || ''); return { ok: false }; }
   try { io.light.setFurnitureEdits(soldFurniture(S), addedFurniture(S)); }
   catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
@@ -17807,9 +17861,10 @@ function startPhonePlace(kind = 'beansprout', opt = {}) {
   if (!spot && cropSlotsAllTaken()) {
     const oneroom = !!(S.home && S.home.room === 'oneroom');
     banner('빈 자리가 없습니다', oneroom ? '가구를 더 놓거나, 놓인 것을 옮겨 자리를 비워 주세요' : '가방 칸을 방의 빈 바닥으로 끌어 놓아 주세요');
+    noteUnpackNoSpot();   /* ★ B2 ③ — 손가락이 이 칸에 묶이지 않게 */
     return;
   }
-  if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return; }
+  if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); noteUnpackNoSpot(); return; }
   let r = null;
   /* ★ 2026-08-16 — 끌어 놓기와 **같은 낱말**(`sow:false`)이라야 두 손이 같은 일을 한다.
      안 넘기면 누르기만 씨앗을 먹어서, 같은 물건이 손버릇에 따라 다른 값이 든다. */
@@ -17959,7 +18014,37 @@ function provisionalSpot(what = 'beansprout') {
          모두 이미 찬 banjiha-sill:0 에 같은 좌표로 섰다(비판 둘째 판 Day 27 · 29 · house 69f1dfe0 · 놓는 손도 안 막았다 — state §namedSlotBusy 로 막음).
        ⇒ 바닥을 더 넓게 찾는다(구석 넷 밖 · 그 작물 빛에 맞는 데 먼저) · 원룸은 방바닥 금지라 없음 → 부르는 쪽이 «빈 자리가 없습니다»를 말한다 */
   if (floorOk) { const f = floorGridSpot(potD, kindId); if (f) return f; }
+  /* ★★ 2026-10-31 비판 셋째 판 B2 BLOCKER — 원룸(방바닥 금지)은 이름 자리가 다 차면 «가구 윗면»을 넓게 쏜다(§topGridSpot).
+       ⛔ 이름 자리(창턱 · 원래 가구)만 보고 놓인 가구 윗면은 안 봐서, 들고 온 가구를 다 놓고도 재배판 넷이 «빈 자리가 없습니다»였다(비판 B042) */
+  else { const t = topGridSpot(potD, what === 'musun' ? 'musun' : 'beansprout', what === 'pot' || what === 'cutting' || what === 'species'); if (t) return t; }
   return null;
+}
+/* 원룸 — 놓인 가구 윗면을 가구마다 3×3 으로 쏴서(화면 점 → room_view surfaceAt · 겹침 · 지름 · 다른 화분은 거기서 가른다) 그 작물에 맞는 빛 먼저 · 같으면 덜 밝은 데
+   bright(그루 · 삽수 · 새 종) — 작물 띠 말고 «가장 밝은 데» 먼저(삽수 병이 제일 어두운 선반 밑을 권하지 않게) */
+function topGridSpot(potD, kindId, bright = false) {
+  let c = null; try { c = $('roomCanvas').getBoundingClientRect(); } catch { return null; }
+  let furn = []; try { furn = (roomView && roomView.furniture && roomView.furniture()) || []; } catch { furn = []; }
+  if (!roomView || typeof roomView.worldToScreen !== 'function') return null;
+  const sky = (() => { try { return io.light.skyFor(S.day + 1, S.sim); } catch { return null; } })();
+  const seen = new Set(), cands = [];
+  for (const f of furn) {
+    if (!f || !f.size || !(f.size.h > 0.15)) continue;
+    const r = (f.rot || 0) * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r);
+    for (const a of [-0.33, 0, 0.33]) for (const b of [-0.33, 0, 0.33]) {
+      const lx = a * f.size.w, lz = b * f.size.d;
+      let p = null; try { p = roomView.worldToScreen(f.x + lx * cs + lz * sn, (f.y || 0) + f.size.h + 0.004, f.z - lx * sn + lz * cs); } catch { p = null; }
+      if (!p) continue;
+      const hit = freePlace.surfaceAt(c.left + p.x, c.top + p.y, potD);
+      if (!(hit && hit.ok && hit.onUid)) continue;
+      const k = `${hit.x.toFixed(2)},${hit.y.toFixed(2)},${hit.z.toFixed(2)}`; if (seen.has(k)) continue; seen.add(k);
+      let dli = null;
+      try { dli = sky ? io.light.dliAt({ x: hit.x, y: hit.y, z: hit.z }, { weather: sky.weather, season: sky.season, lampCount: S.lamps.count, litHours: S.lamps.litHours, plantId: 'monstera_deliciosa' }).dli : null; } catch { dli = null; }
+      let meals = 0; try { meals = Number.isFinite(dli) ? ((cropQualityOf(kindId, dli) || {}).meals || 0) : 0; } catch { meals = 0; }
+      cands.push({ at: atOf(hit), dli: Number.isFinite(dli) ? dli : 99, meals });
+    }
+  }
+  cands.sort(bright ? ((a, b) => (b.dli === 99 ? -1 : b.dli) - (a.dli === 99 ? -1 : a.dli)) : ((a, b) => (b.meals - a.meals) || (a.dli - b.dli)));
+  return cands.length ? cands[0].at : null;
 }
 /* ★ D93 ③ — 이름 자리가 다 찼을 때 바닥 칸을 넓게 쏜다(5×4) · 놓이는 바닥 칸 가운데 그 작물 빛에 맞는 데(끼 많은 데 › 덜 밝은 데) */
 function floorGridSpot(potD, kindId) {
@@ -20443,6 +20528,48 @@ const MOVE_ASK_KO = Object.freeze({
   shortDaily: ' — 원룸에선 하루 {daily}원쯤 나갑니다',
   go: '이사한다', goAnyway: '그래도 간다'
 });
+/* ★★ 2026-10-31 D97 (plan-to-core-d97 §1 · 비판 셋째 판 ⑤ #1 · #9) — [방] 판 이사 줄 · 회색 단추 알림 · «버티나(survives)» 한 셈 */
+const MOVE_LINE_KO = Object.freeze({
+  short: '이사비 {need}원 · 지금 {cash}원 — {short}원 모자랍니다',
+  varie: '이사비 {need}원 · 지금 {cash}원 — 무늬 잎을 아직 못 봤습니다',
+  homeTitle: '🏠 다음 목표 — 내 집 마련 {target}원',
+  homeSub: '[방] 판과 가계부에서 남은 돈을 볼 수 있습니다'
+});
+const wonKo = n => Math.round(n || 0).toLocaleString('ko-KR');
+/* 이사하면 원룸 첫 월세 날까지 버티나 — 이사 창 두 줄(§openMoveAsk)과 같은 셈 · 못 세면 null(대사가 «오늘»을 안 권한다) */
+/* ★ D97 §1-3 — 원룸 도착 «다음 목표» 한 번 · 목표가 없으면(엔딩 꺼짐) 안 띄운다 · 수는 엔진(ENDING_NOW.targetWon) · 몬이는 수를 안 말한다 */
+var homeGoalBannerPending = false;
+function homeGoalBannerWhenQuiet() {
+  if (!homeGoalBannerPending) return false;
+  const st = $('stage'); if (st && st.classList.contains('talking')) return false;
+  homeGoalBannerPending = false;
+  let target = null; try { target = endingOn() ? ENDING_NOW.targetWon : null; } catch { target = null; }
+  if (!Number.isFinite(target) || !(target > 0)) return false;
+  banners([{ title: MOVE_LINE_KO.homeTitle.replace('{target}', wonKo(target)), sub: MOVE_LINE_KO.homeSub }]);
+  return true;
+}
+function moveSurvivesNow() {
+  try {
+    const ts = S.tutorial; if (!ts || ts.movedOut) return null;
+    const c = canMoveOut(ts); if (!c.ok) return null;
+    const mm = moveMoneyNow(ts, c.needWon);
+    if (mm.daily == null || mm.d == null) return null;
+    return mm.left >= mm.rent + mm.daily * Math.max(0, mm.d);
+  } catch { return null; }
+}
+/* [방] 판 한 줄(들) — 못 가는 판 · 갈 수 있는 판 · 이사 뒤는 null */
+function moveMoneyLineKo() {
+  const ts = S.tutorial; if (!ts || ts.movedOut) return null;
+  const c = canMoveOut(ts);
+  if (!c.money) return MOVE_LINE_KO.short.replace('{need}', wonKo(c.needWon)).replace('{cash}', wonKo(c.haveWon)).replace('{short}', wonKo(c.shortWon));
+  if (!c.varie) return MOVE_LINE_KO.varie.replace('{need}', wonKo(c.needWon)).replace('{cash}', wonKo(c.haveWon));
+  const mm = moveMoneyNow(ts, c.needWon);
+  const when = mm.d == null ? '' : mm.d <= 0 ? '은 오늘' : mm.d === 1 ? '은 내일' : `은 ${mm.d}일 뒤`;
+  const line1 = MOVE_ASK_KO.left.replace('{left}', wonKo(mm.left)).replace('{rent}', wonKo(mm.rent)).replace('{when}', when);
+  const sv = moveSurvivesNow();
+  const known = mm.daily != null && mm.d != null;
+  return sv === false ? line1 + '\n' + MOVE_ASK_KO.short.replace('{daily}', known ? MOVE_ASK_KO.shortDaily.replace('{daily}', wonKo(mm.daily)) : '') : line1;
+}
 /* ★ D95 ⑧ — 이사하면 남는 돈 · 첫 월세까지 날 · 원룸 하루 지출(엔진 값 — 지어내지 않는다)
      daily = 원룸 하루 지출(월세 몫 뺀 dailyCashOutWon · 이사한 셈) − 오늘 밥으로 아끼는 값 + 등 전기(밥상 창 «오늘 지갑에서 나가는 돈»과 같은 셈) · 못 읽으면 null */
 function moveMoneyNow(ts, needWon) {
@@ -20503,7 +20630,9 @@ function openMoveAsk() {
   /* 몬이 한 줄 — 원천 0 일 때만 · 대사가 «먼저», 창은 대사가 끝난 뒤(창이 대사를 덮었다 · 엔딩 카드 §openHomeCardWhenQuiet 와 같은 길) */
   /* ★ 2026-10-10 D31([plan] 대사 moveLowCash · core 이음) — 이사비를 내면 원룸 첫 달 월세가 모자랄 때 · 무늬 갈래 «뒤»에 선다 · 막지 않음 · 수는 안 말함 */
   const rent1 = Number.isFinite(ts.rules.oneroomRentWon) ? ts.rules.oneroomRentWon : ts.rules.rentWon;
-  const lowCash = Number.isFinite(rent1) && (ts.cashWon - c.needWon) < rent1;
+  /* ★ D97 §1-1 — «버티나»(§moveSurvivesNow · 창 두 줄과 같은 셈)로 · 못 세면 예전 «남는 돈 < 첫 월세» */
+  const sv0 = moveSurvivesNow();
+  const lowCash = sv0 != null ? !sv0 : (Number.isFinite(rent1) && (ts.cashWon - c.needWon) < rent1);
   if (v.n === 0 || noCut || lowCash) {
     movePanelPending = true;
     const evs = [];
@@ -20527,8 +20656,25 @@ function openMoveAskWhenQuiet() {
 function closeMoveAsk() { $('movePanel').classList.remove('on'); $('movePanel').setAttribute('aria-hidden', 'true'); }
 /* ⚠ 창이 열린 채 [원룸으로 이사]를 한 번 더 누르면 이사한다 — 이 저장소의 «두 번 누르면 실행»(confirmOnce) 결과 같다.
      사람에게는 창이 단추를 덮어 바뀌는 것이 없고, 두 번 누르던 자(night_play tryMoveOut)는 그대로 걷는다 */
+/* ★★ 2026-10-31 비판 셋째 판 B1 BLOCKER(총괄 D97) — **이사는 확인 창의 [이사한다 / 그래도 간다]로만 된다.**
+     ⛔ 예전 줄: «창이 열려 있거나 기다리는 중(movePanelPending)이면 한 번 더 누름 = 이사». 이사비를 내면 첫 달 월세가 모자란 판은
+       몬이 대사(move_low_cash)가 먼저 서고 창은 «조용한 때»에 열리는데, 그 사이 사람이 단추를 한 번 더 누르면(울타리에 두 번 막혀
+       세 번씩 누르는 버릇) 창을 한 번도 못 보고 이사했다 — 2,002,780 → 2,780원 → 이튿날 긴급지원(비판 판 B018 · B020 · core probe_b1_move 재현).
+   ⇒ 창이 떠 있으면 아무 일도 안 한다(창의 단추로) · 창이 대사 뒤에 기다리는 중이면 지금 바로 보여 주기만 한다 · 못 가는 판(회색)은 까닭을 말한다(⑤ #9).
+   ⚠ 막지 않는다(D95 ⑧) — 창의 [그래도 간다]는 그대로다. 두 번 누르기로 걷던 자(night_play tryMoveOut)는 같은 push 에서 [이사한다]를 누르게 고쳤다 */
 $('moveOut').onclick = guard(() => {
-  if ($('movePanel').classList.contains('on') || movePanelPending) { movePanelPending = false; closeMoveAsk(); doMoveOut(); return; }
+  const ts = S.tutorial;
+  if (!ts || ts.movedOut) return;
+  const c = canMoveOut(ts);
+  if (!c.ok) {
+    /* ⑤ #9 — 회색 단추를 눌러도 말이 없었다. 무엇이 얼마나 모자란지 말한다(값은 엔진 · canMoveOut) */
+    /* ★ D97 §1-2 — [방] 판 줄과 같은 글(plan 문안) */
+    let t = null; try { t = moveMoneyLineKo(); } catch { t = null; }
+    banner(t || '아직 이사할 수 없습니다', '');
+    return;
+  }
+  if ($('movePanel').classList.contains('on')) return;
+  if (movePanelPending) { movePanelPending = false; showMovePanel(); return; }
   openMoveAsk();
 });
 $('moveCancel').onclick = guard(() => { closeMoveAsk(); });
@@ -20587,6 +20733,7 @@ function doMoveOut() {
   } catch (e) { console.warn('[이삿짐 등]', e && e.message); }
   banners([{ title: '📦 원룸으로 이사했습니다', sub: '반지하에서 배운 것을 가지고 갑니다' }]);
   dlgOpen(story.events(r.events, S));   /* 반지하를 떠나는 장면이 여기서 나온다 */
+  homeGoalBannerPending = true;   /* ★ D97 §1-3 — 도착 대사가 다 끝난 뒤 «다음 목표» 배너 한 번(§homeGoalBannerWhenQuiet) */
   /* 방 고르개·등 개수·자리 목록은 전부 옛 방 것이다. 새 방 것으로 다시 채운다 */
   $('room').value = S.home.room;
   fillLamps(); fillSlots(false);
