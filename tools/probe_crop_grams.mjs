@@ -37,7 +37,8 @@ import {
   eatFromPantry, resowBeansprout, cropCycleSavedWon, cropSurplusRateOf,
   takeCropSurplus, cropSurplusQuote, dailyCropSaveWonOf, gramsOfWon, formatGram,
   /* ★ 2026-08-17 · 겹침 — 곳간에서 파는 창구(잉여가 0 이 되면서 이쪽이 정본이 됐다) */
-  pantrySaleQuote, takePantryCrop, overlapSavedWon
+  pantrySaleQuote, takePantryCrop, overlapSavedWon,
+  CROP_HARVEST_MULT   /* ★ 2026-10-31 core D93 ⑥ — 반지하 수확 배수(아래 «새 회전분» 기대식) */
 } from '../src/game/first_play.js';
 /* ★ 2026-08-17 — **살림(지갑)까지 굴린다.** 파산일·잔액은 밥값 절감만으로는 못 잰다:
    월세·하루 지출·씨앗값이 같이 나가야 「며칠에 마르나」가 나온다. */
@@ -80,9 +81,13 @@ assert.equal(cropCycleSavedWon(OLD_RULES, 3, 0, 0), 3000, '옛 회전분이 3,00
    ⚠ 그러니 **아래 표의 「후」는 2026-08-16 의 후가 아니다**(이 파일 머리말이 경계한 그것) —
      지금 규칙의 값이다. 08-16 의 전·후를 다시 보려면 그날 커밋에서 이 도구를 돌려라. */
 const NEW_FULL = cropCycleSavedWon(NEW, 3, 0, 0);
-assert.equal(NEW_FULL, NEW.cropKindDefs[0].gramsPerCycle * 10 +
-                       NEW.cropKindDefs[0].gramsPerQualityStep * 10,
-  `새 회전분(${NEW_FULL}원)이 콩나물 그램 표와 안 맞는다`);
+/* ★ 2026-10-31 core D93 ⑥ (총괄 · growth-critic2-m6-numbers §1) — 기대식에 반지하 수확 배수(CROP_HARVEST_MULT · 지금 ×2.0)가 빠져 있었다.
+     엔진(first_play §cropCycleGramsExact)은 그 배수를 한 곳에서 곱한다 — 최상 1,000g = 10,000원(거둠 알림 «1kg»과 같다).
+     이 줄이 지키는 것은 «그램 표와 엔진이 한 셈인가»라서, 배수도 표(rules.cropHarvestMult · 없으면 반지하 값)에서 읽는다 */
+const HARVEST_MULT = Number.isFinite(NEW.cropHarvestMult) && NEW.cropHarvestMult > 0 ? NEW.cropHarvestMult : CROP_HARVEST_MULT.banjiha;
+assert.equal(NEW_FULL, Math.round((NEW.cropKindDefs[0].gramsPerCycle +
+                       NEW.cropKindDefs[0].gramsPerQualityStep) * HARVEST_MULT) * 10,
+  `새 회전분(${NEW_FULL}원)이 콩나물 그램 표(× 수확 배수 ${HARVEST_MULT})와 안 맞는다`);
 
 /* ══ 한 판을 days 일 굴린다 ═══════════════════════════════════════════════
    ★ **시차를 둔다** — 시루 n개를 하루씩 걸러 물을 준다(박사님 그림 · §겹침).

@@ -1298,6 +1298,13 @@
          구멍 «안»에서 시작한 끌기는 붙잡기(setPointerCapture)가 끝까지 데려간다 —
          밖에 놓아도 된다. 구멍 «밖»에서 시작한 것만 덮개가 삼킨다.
        ⚠ 덮개는 **손가락이 뜰 때만** 켜진다. 손가락이 없으면 아무것도 안 막는다. */
+  /* ★ 2026-10-31 D93 ⑥ m6 — 빛 분포가 켜진 동안 방울 · 꼬리표를 걷는다: 창턱 칸 «3.68»이 무순 판 방울 · «씨앗 심기» 말풍선 밑에 깔려
+       «.68»만 보였고 «방 전체 0.00~0.68»로 읽혔다(비판 둘째 판 s105 · growth §4). display:none 이라 손가락(§onScreen)도 아래 단추 · [다음 날]로 내려간다.
+       ⚠ 끄면(§lightHeatOff · 다음 날) 그대로 돌아온다 */
+  #stage.heatOn #marks,#stage.heatOn #siruBadges{display:none}
+  /* ★ 같은 날 — 범례(render3d/light_grid_labels 머리글 · 방 밑 띠 «bottom:8px»)가 폰에서 [다음 날] · 아래 알약 밑에 깔렸다(core 자 probe_m6 사진).
+       ⇒ 방 위 «빛 분포 끄기» 칩(§#lightHeatOff top +112px) 바로 밑 오른쪽으로 — 끄는 손과 «무엇을 보고 있나»가 한 자리 · 왼쪽 탭 기둥은 비킨다 */
+  #stage .byeot-lightgrid > div:first-child{top:calc(var(--safe-t) + 152px)!important;bottom:auto!important;left:auto!important;right:8px!important;max-width:calc(100% - 84px)!important}
   #marks.busy .mark{display:none}   /* ★ 옮기는·끄는·대사 중엔 말풍선을 «감춘다» — 지우지 않는다(§drawMarks 2026-09-06) */
   #hintDim{position:fixed;inset:0;z-index:69;pointer-events:none;display:none;
     transition:opacity .18s ease}
@@ -3342,6 +3349,7 @@ import {
   cropQualityOf,
   pantryKeepStatus, pantrySoldCountOf,   /* ★ 2026-10-30 D90 ④⑤ 이레치 밥상 몫 · 남는 몫 · 곳간 판 횟수 */
   setPantryLegacyRule, eatFromPantry,    /* ★ 2026-10-31 D93 ⑤ M3 견줄 깃발(?m3=0) · 밥상 판 «먹은 뒤» 남는 몫 셈(복사본에만) */
+  cropCycleGrams,                        /* ★ 2026-10-31 D93 ⑥ m6 방 칸 «한 번 거두면» — 정본 수확 g(반지하 배수 포함 · growth 문서 §1) */
   pantrySaleQuote,                       /* ★ 2026-10-31 D90 ③ 가계부 «남는 채소를 팔면» */
   monsteraArrivalLeft,
   /* 2종째 작물(무순). 자리 이름·종류표·자리 찾기 — 숫자를 화면이 또 갖지 않는다 */
@@ -7200,8 +7208,11 @@ function drawLedger() {
      예전에는 「콩나물 최상 품질 한 회전분」이었고 지금은 **중간 품질**(300g · 3,000원)이다.
      여기 살림 표에서는 「보통 한 번 거두면 얼마」를 말하는 자리라 중간값이 오히려 맞다 —
      대신 화면이 그렇게 **말하게** 한다(아래 §한 번 거두면). */
-  const cycleWon = R.cropKindSavedWon ? R.cropKindSavedWon[0] : 0;   // 한 회전분(중간 품질)
-  let cycleG = 0; try { cycleG = Math.round(cycleWon / 10); } catch { }
+  /* ★★ 2026-10-31 총괄 D93 ⑥ m6 (growth-critic2-m6-numbers §1 · plan 28edd259 §1 ⑤) — 정본 수확 g 으로 말한다.
+       ⛔ 예전 «350g 안팎 (3,500원)»은 `cropKindSavedWon[0] ÷ 10` — 반지하 수확 배수(×2.0)가 빠져 절반이었고, 원은 장부 «물건 값»(10원/g)이라
+         팔 값도 밥값도 아니었다(비판 둘째 판: 거둠 알림 «1kg»과 갈림). ⇒ first_play §cropCycleGrams(빛 품질 1·2·3끼) · 원은 안 적는다 */
+  let cycleG = 0, cycleLo = 0, cycleHi = 0;
+  try { cycleG = cropCycleGrams(R, 2); cycleLo = cropCycleGrams(R, 1); cycleHi = cropCycleGrams(R, 3); } catch { }
   const maxSirus = R.harvestDays;                                    // 매일 거두게 되는 개수 = 주기 길이
   /* ★ 2026-08-17 — **진짜 천장은 손이다.** 물은 한 번에 하나라 하루에 줄 수 있는 수가
      체력이고, 주기 길이만큼 돌아가므로 `체력 × 주기` 가 넘어서면 소용없는 개수다.
@@ -7238,8 +7249,9 @@ function drawLedger() {
     tip = `시루 <b>${sirus}개</b> — ${R.harvestDays}일 주기라 <b>${maxSirus}개</b>까지는`
         + ` 하루씩 어긋나게 돌리면 <b>매일</b> 거둡니다.`;
   else if (sirus < handCap)
+    /* ★ D93 ⑥ (plan §1 ⑤) — «팔립니다»는 저절로 팔리는 것처럼 읽혔다 · 파는 말은 한 규칙(이레치 밥상 몫 위)으로 */
     tip = `시루 <b>${sirus}개</b> — 이제 매일 거둡니다. 하루 몫을 넘게 거둔 것은`
-        + ` <b>안 버려지고</b> <b>보유 채소</b>로 쌓였다가 [상점]에서 팔립니다.<br>`
+        + ` <b>안 버려지고</b> <b>보유 채소</b>로 쌓입니다 — 이레치 밥상 몫을 넘는 것은 [상점]에서 팝니다.<br>`
         + `★물은 한 번에 하나라 <b>하루 ${maxWaterPerDay}개</b>까지 시작할 수 있습니다`
         + ` — 그래서 <b>${handCap}개</b>가 천장입니다.`;
   else
@@ -7252,10 +7264,16 @@ function drawLedger() {
     + row('오늘 실제로 나가는 돈', won(Math.max(0, daily - savedToday)), 'net')
     + row('보유금', won(ts.cashWon || 0), 'cash')
     /* ★ 2026-08-16 — 보유 채소는 **물건**이라 g 으로 적는다. 원은 괄호 안에 남긴다(§그램) */
-    + row('보유 채소',
-          pantryWon ? `${formatGram(pantryGramsSafe())} (${won(pantryWon)})` : '없음')
+    /* ★★ 2026-10-31 D93 ⑥ m6 — 괄호 원(pantryWon · 10원/g 장부 값)을 걷었다: «14.8kg (148,000원)»인데 팔면 1kg 7,000원이었다(growth §2).
+         남는 몫이 있으면 그 g 을 붙인다(§pantrySurplusOf · 판매 창 기본값과 같은 셈 · plan §1 ⑤) */
+    + row('보유 채소', pantryWon ? (() => {
+          let sg = 0; try { sg = pantrySurplusOf(null).grams; } catch { sg = 0; }
+          return `${formatGram(pantryGramsSafe())}` + (sg > 0 ? ` · 남는 몫 ${formatGram(sg)}` : '');
+        })() : '없음')
     + row('시루', sirus ? `${sirus}개` + (waiting ? ` (${waiting}개 대기)` : '') : '없음')
-    + row('한 번 거두면', `${formatGram(cycleG)} 안팎 (${won(cycleWon)})`)
+    + row('한 번 거두면', cycleG > 0
+          ? `시루 하나에 ${formatGram(cycleG)} 안팎` + (cycleLo > 0 && cycleHi > cycleLo ? ` (빛에 따라 ${formatGram(cycleLo)}~${formatGram(cycleHi)})` : '')
+          : '—')
     + `<div class="tip">${tip}</div>`;
 }
 
@@ -12853,6 +12871,8 @@ function lightHeatOpts() {
     season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null,
     lampCount: (S.lamps && S.lamps.count) || 0,
     litHours: (S.lamps && S.lamps.litHours) || 0,
+    /* ★ 2026-10-31 D93 ⑥ m6 — 범례에도 «표면»이 무엇인지(예전엔 [빛 분포 보기] 옆 글에만 · growth §4) */
+    unit: 'DLI · 표면(가구 윗면 · 없으면 바닥)',
     bands
   };
 }
@@ -12867,6 +12887,7 @@ function drawLightHeatBtn() {
   b.textContent = on ? '🔆 빛 분포 끄기' : '🔆 빛 분포 보기';
   b.classList.toggle('primary', on);
   { const off = $('lightHeatOff'); if (off) off.style.display = on ? '' : 'none'; }   /* ★ D93 ④ m8 — 켜진 동안 방 위 끄기 */
+  { const st0 = $('stage'); if (st0) st0.classList.toggle('heatOn', on); }   /* ★ D93 ⑥ m6 — 켜진 동안 방울 · 꼬리표를 걷는다(CSS #stage.heatOn) */
   if (!note) return;
   /* ⚠ 켜져 있을 때만 말한다 — 꺼 놓고 「몇 칸을 쟀다」를 적으면 그게 거짓말이다 */
   note.style.display = on ? '' : 'none';

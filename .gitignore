@@ -168,3 +168,6 @@ assets/existing/
 
 # 밤샘 하네스가 쌓는 것 — 결과물이라 저장소에 안 넣는다 (tools/night_play.mjs)
 tools/_out/
+
+# ★ 2026-10-31 core D93 ⑥ — probe_lightview 기본 태그(now)가 남기는 사진(이름 붙인 판 b0 · s4 · s8 만 추적)
+docs/handoff/img/lightview/*_now.png

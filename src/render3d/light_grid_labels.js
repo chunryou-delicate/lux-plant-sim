@@ -266,6 +266,8 @@ export function createLightGridLabels(o = {}) {
       next[k].el = pool[k];
       pool[k].textContent = format(next[k].e.value);
       pool[k].style.display = '';
+      /* ★ 2026-10-31 D93 ⑥ — 글자 네모 크기를 한 번 재 둔다(§update 가 프레임마다 겹침을 본다 · 숨은 판이면 0 → 그 판은 안 봄) */
+      next[k].w = pool[k].offsetWidth; next[k].h = pool[k].offsetHeight;
     }
     for (let k = next.length; k < pool.length; k++) pool[k].style.display = 'none';
     shown = next;
@@ -321,6 +323,11 @@ export function createLightGridLabels(o = {}) {
       /* 줌이 30% 넘게 달라졌으면 몇 칸마다 적을지부터 다시 고른다 */
       if (px > 0.5 && (fitPx <= 0.5 || px / fitPx > 1.3 || fitPx / px > 1.3)) refit();
       let n = 0;
+      /* ★★ 2026-10-31 D93 ⑥ (core · probe_lightview «겹친 쌍 1 · 14.9px») — 고르기(§refit)는 줌이 30% 넘게 바뀔 때만 다시 한다.
+           그 사이 시점이 돌거나 카메라가 아직 움직이던 때 고른 숫자는 화면에서 서로 붙을 수 있다(대사 · 안내를 닫은 직후 켠 판).
+           ⇒ 프레임마다 자리를 잡으며 «앞서 선 숫자»와 글자 네모가 겹치는 늦은 쪽을 감춘다(먼저 온 쪽이 이긴다 — §refit 과 같은 차례).
+           ⚠ 지우지 않는다 — 다시 떨어지면 다음 프레임에 돌아온다 */
+      const placedBoxes = [];
       for (const s of shown) {
         const p0 = at(s.e);
         if (!p0) { s.el.style.visibility = 'hidden'; continue; }
@@ -330,6 +337,12 @@ export function createLightGridLabels(o = {}) {
           s.el.style.visibility = 'hidden';
           continue;
         }
+        const hw = (s.w || 0) / 2 + 0.5, hh = (s.h || 0) / 2 + 0.5;
+        if (s.w > 0 && placedBoxes.some(q => Math.abs(q.x - p.x) < q.hw + hw && Math.abs(q.y - p.y) < q.hh + hh)) {
+          s.el.style.visibility = 'hidden';
+          continue;
+        }
+        if (s.w > 0) placedBoxes.push({ x: p.x, y: p.y, hw, hh });
         s.el.style.visibility = '';
         s.el.style.transform = `translate(-50%,-50%) translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px)`;
         n++;
