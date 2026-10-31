@@ -260,7 +260,8 @@ export async function play(name, seed, opt = {}) {
   /* ★ 2026-10-09 --trace — 그날 들어온 돈(갈래별 · 장부와 같은 부름에서) · 그날 자른 수 · 그날 처음 정해진 등급 */
   let dayIn = {}, dayCuts = 0, dayGrades = [];
   /* ★ 2026-10-10 --dump <폴더> — 한 판 걸어 보기(총괄): 단계마다 게임이 읽는 세이브 꼴로 뜬다(probe_day_walk 가 게임 localStorage 에 싣는다).
-       moved(이사 다음 날) · trade(PP 교환 뒤) · ready(500만 닿음 · 엔딩 «전») · shop0(가게 연 날) · shop30(연 뒤 30일) */
+       moved(이사 다음 날) · trade(PP 교환 뒤) · ready(500만 닿음 · 엔딩 «전») · shop0(가게 연 날) · shop30(연 뒤 30일)
+       ★ D95 premove(원룸 이사 «전날» · moveDay − 1 — 게임에서 [다음 날] → 이사를 제 손으로) */
   const dumped = new Set();
   const dump = stage => {
     if (!opt.dump || dumped.has(stage)) return;
@@ -329,6 +330,9 @@ export async function play(name, seed, opt = {}) {
     dayIn = {}; dayCuts = 0; dayGrades = [];
     /* ★ D71 --dump — 둘째 두 종 사건 «전날» 세이브(게임에서 [다음 날]을 눌러 그 대사를 제 손으로 보게 · probe_species2_walk) */
     const preSave = opt.dump && ((P.sp2 && out.shop) || out.care || out.breed) ? JSON.stringify(serializeSave(S)) : null;   /* B 돌봄 · C 육종도(화면 걸음) */
+    /* ★ 2026-10-31 총괄 D95 — 원룸 이사 «전날» 세이브(premove · moveDay − 1 · 위 preSave 와 같은 꼴) — 비판 셋째 판이 이사 되묻기 → 이삿짐 풀기 → 원룸 첫 30일을 사람 손으로 걷게.
+         아직 안 옮긴 날만 아침마다(nextDay 전) 굳혀 두고, 이사한 그 걸음에 파일로 쓴다(§moveIntoOneroom 뒤) · --dump 일 때만 · 숫자는 안 건드린다(읽기만) */
+    const preMoveSave = opt.dump && !ts.movedOut && !dumped.has('premove') ? JSON.stringify(serializeSave(S)) : null;
     try { turn = nextDay(S, io).turn; } catch (e) { out.crash = (e && e.message) || String(e); break; }
     /* ★ 2026-10-09 (D30 «먼저 확인») — 모주 무늬 잎 등급(game.html §noteTurn → noteLeafGrades 와 같게: 이 턴의 밴드로 · 한 번 정하면 안 바뀜).
          ⚠ 예전엔 이 줄이 없어 장부가 비었고 무늬 삽수는 모두 legacy 산반(35만)으로 값이 매겨졌다 — lightGrade 를 바꿔도 이 판은 안 움직였다 */
@@ -731,6 +735,10 @@ export async function play(name, seed, opt = {}) {
               out.lowCashAtMove = (ts.cashWon - need) < rent1; out.cashAfterMoveCost = ts.cashWon - need; }
             moveIntoOneroom(S, io);
             out.moveDay = S.day;
+            if (preMoveSave && !dumped.has('premove')) { dumped.add('premove');   /* ★ D95 — 위 §preMoveSave */
+              try { fs.mkdirSync(opt.dump, { recursive: true }); const f = path.join(opt.dump, `${name}_${seed}_premove.json`); fs.writeFileSync(f, preMoveSave);
+                    (out.dumps = out.dumps || {}).premove = { day: S.day - 1, file: path.relative(ROOT, f) }; }
+              catch (er) { (out.dumpErr = out.dumpErr || {}).premove = String(er && er.message || er).slice(0, 200); } }
             /* ★ 2026-10-31 총괄 D92 ㉰ — 이사가 작물을 이삿짐으로 가방에 넣는다 · 사람처럼 푼다(기본 ㉮ · --legacy-seat 면 옛 sill:0 한 점 ㉯) */
             out.unpack = unpackCropsAfterMove(S, light, { legacy: !!opt.legacySeat, musunAt: MUSUN_AT });
             /* ★ 2026-10-09 D8 — 원룸 월세 후보를 «짝»으로 꽂는다(probe_oneroom_econ §pairRules 그대로 · 월세 밖 하루치는 그대로):
