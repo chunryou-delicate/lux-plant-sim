@@ -225,6 +225,7 @@ export function emptySnapshot() {
            lampUnlocked: false, lampOwned: 0,
            /* ★ 2026-10-08 [plan] — 단 등. null = 「모른다」(§buy_lamp done) */
            lampPlaced: null,
+           brightFree: null,   /* ★ D99 ⑤ — 무늬 삽수 밝은 빈자리가 있나(game §varieBrightFreeNow) · 모르면 null */
            /* ★ 2026-10-08 D25 — 자르기 문과 같은 자(§first_cut). null = 「모른다」 */
            motherVarieMatured: null,
            /* ★ 2026-10-30 D90 ④ — 남는 건 판다(§sell_surplus). [core] 곳간 팔기 횟수(잉여 넘김 포함 · 삽수·그루 판매 안 셈) ·
@@ -811,17 +812,25 @@ const MAIN_QUESTS = Object.freeze([
     /* ★ 2026-10-09 [plan] — 반지하 줄이다(원룸엔 oneroom_root_bright 가 따로 있다). 표지가 없어 이사 뒤에도 열린 채 남아
        원룸에서 반지하 독촉을 했다([core] 6ebd882e 갈래 판 · 원룸 후반 13달). §questRoomOk — 안 끝내고 이사하면 «잠김»으로 남는다. */
     room: 'banjiha',
-    ko: '밝은 데서 뿌리내리기',
+    /* ★★ 2026-11-01 총괄 D99 ⑤ · plan-to-core-d99 §4 — 어디서든 뿌리내리면 끝(비판 넷째 판: 창턱을 몬스테라가 차지해 밝은 빈자리가 없어 19일 멈춤).
+         어두운 데서 냈으면 뒤 대사(cuttingVarieDark)가 «무늬가 잘 안 난다»를 가르친다 · 밝은 빈자리가 없는 동안 손가락은 식물등(§updateHint) */
+    ko: '무늬 삽수 뿌리내리기',
     /* ★ 체력이 0 인 까닭이 곧 이 이름이다 — 보상은 **등급 자체**다(위 ⚠) */
-    reward: '무늬 등급이 오릅니다',
+    reward: '뿌리낸 자리 빛이 무늬 등급을 정합니다',
     teaches: ['빛이 무늬 등급을 정한다'],
-    why: '어두운 자리는 산반이 흔하고, 밝은 자리는 하프문·풀문이 납니다.',
-    todo: () => '무늬 삽수를 밝은 자리에서 뿌리내리세요',
+    why: '뿌리는 어디서든 납니다. 어두운 자리는 산반이 흔하고, 밝은 자리는 하프문·풀문이 잘 납니다.',
+    /* brightFree — 무늬 삽수가 놓일 수 있는 빈 칸 가운데 무늬 띠 bright 가 있나(game §varieBrightFreeNow) · null = 모름(첫 줄) · 등이 안 열린 판도 첫 줄 */
+    todo: (q, s) => (s && s.brightFree === false && yes(s.lampUnlocked))
+      ? (num(s.lampPlaced) >= 1 ? '밝은 빈자리가 없습니다 — 식물등을 더 다세요' : '밝은 빈자리가 없습니다 — 식물등을 다세요')
+      : '무늬 삽수를 밝은 자리에서 뿌리내리세요',
     /* ★ 2026-10-09 [plan] 재미 점검 — **자를 수 있는 날에 연다(first_cut 과 같은 자 · D25).** 무늬 잎이 하나만 나도 열려
        자르기 문(박사님 «지금 규칙 유지»)이 열리기 석 달 전부터 «뿌리내리세요»를 시켰다 — 할 수 없는 일([core]·총괄 봇 cut1008c Day 48~165).
        칸(motherVarieMatured)이 없으면 무늬 잎 수 ≥ 2 로 어림(first_cut 과 같음). */
     opens: s => (s.motherVarieMatured != null ? num(s.motherVarieMatured) : num(s.motherVarieLeaves)) >= 2,
-    done:  s => arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand === 'bright')
+    /* ★ D99 ⑤ — 띠가 정해졌다 = 뿌리냈다(어느 띠든) · 할 일 끝은 열린 뒤 사건만(rootedOnDay ≥ 연 날 · 모르면 센다) */
+    done:  (s, ctx) => { const on = ctx && ctx.S && ctx.S.stamina && ctx.S.stamina.questsOpenedOn; const d0 = on && on.varie_bright;
+                         return arr(s.cuttings).some(c => c && c.varieFromCut && c.varieLightBand != null
+                                                      && !(Number.isInteger(d0) && Number.isInteger(c.rootedOnDay) && c.rootedOnDay < d0)); }
   }),
 
   /* ⑥ ★★★ **탈출의 둘째 축이다.** 이것을 안 가르치면 영영 모른다.
@@ -1108,8 +1117,11 @@ const ONEROOM_QUESTS = Object.freeze([
     ko: '이 방의 무늬를 판다',
     reward: '무늬 값이 통장에 들어옵니다',
     teaches: ['밝게 뿌리낸 무늬가 더 비싸다', '늘린 것을 팔아야 돈이 된다'],
-    why: '뿌리낸 무늬 삽수나 그루를 내놓아 팝니다. 밝은 데서 뿌리낸 것일수록 값이 높습니다.',
-    todo: () => '뿌리낸 무늬 삽수를 내놓아 팔아 보세요',
+    /* ★ 2026-11-01 plan-to-core-d99 §1-1 — 한 규칙(남길 건 남기고 늘어난 것부터 판다) · 뿌리낸 무늬 삽수 수로 가른다 */
+    why: '뿌리낸 무늬 삽수는 하나 남겨 키우고, 늘어난 것을 내놓아 팝니다. 밝은 데서 뿌리낸 것일수록 비싼 무늬가 잘 납니다.',
+    todo: (q, s) => arr(s && s.cuttings).filter(c => c && c.varieFromCut && (c.status === 'rooted' || c.status === 'node' || c.status === 'established')).length >= 2
+      ? '뿌리낸 무늬 삽수 하나는 남기고 파세요'
+      : '뿌리낸 무늬 삽수가 둘이 되면 하나를 파세요',
     /* ★★ 2026-10-09 [plan] — ② 뒤에 바로 선다(③ 흙에 옮기기는 곁줄). 뿌리낸 삽수를 «바로 파는» 사람은 ③ 을 영영 안 끝내고,
        예전엔 ③ 이 이 줄과 ⑤ 집 자금 줄을 막아 엔딩 목표 퀘스트가 안 열렸다([core] 갈래 판 «안내대로» — ③ 이 판당 264일 열림).
        후보: ㉠ ③ 을 기다림으로만 둠(사슬은 그대로 막힘) · ㉡ ④ 를 ② 뒤로(택함) · ㉢ ③ 완료를 «판 것도 침»(뜻이 바뀜). */

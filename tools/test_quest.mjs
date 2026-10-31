@@ -804,6 +804,32 @@ check('D90 ④ · D91 남는 건 판다 → 열여섯 — 칸 모르면 안 열�
   assert.equal(!!q16.opens(MS(52, { pantrySoldCount: null }), c16(['siru8'])), true, '칸 없는 판에서 열여섯 길이 막힙니다');
 });
 
+check('D99 ⑤ · plan-to-core-d99 §4 · §1-1 — varie_bright 어디서든 뿌리내리면 끝(연 뒤만) · todo 세 갈래 · oneroom_sell todo 두 갈래', () => {
+  const q = questOf('varie_bright'), qs = questOf('oneroom_sell');
+  const b = newBoard(); b.stamina.questsOpenedOn = { varie_bright: 120 };
+  const ctx = { doneIds: [], S: b, q };
+  const cut = (o) => ({ id: 'c', varieFromCut: true, status: 'rooted', varieLightBand: 'mid', rootedOnDay: 125, ...o });
+  assert.equal(!!q.done(MS(126, { cuttings: [cut({})] }), ctx), true, '어두운(mid) 데서 뿌리내렸는데 안 끝납니다(D99 ⑤)');
+  assert.equal(!!q.done(MS(126, { cuttings: [cut({ varieLightBand: 'dark' })] }), ctx), true, 'dark 에서 뿌리내렸는데 안 끝납니다');
+  assert.equal(!!q.done(MS(126, { cuttings: [cut({ varieLightBand: null, status: 'rooting', rootedOnDay: null })] }), ctx), false, '뿌리 전인데 끝납니다');
+  assert.equal(!!q.done(MS(126, { cuttings: [cut({ rootedOnDay: 110 })] }), ctx), false, '연 날(120) 전에 뿌리낸 것으로 끝납니다(열린 뒤 사건만)');
+  assert.equal(!!q.done(MS(126, { cuttings: [cut({ rootedOnDay: null })] }), ctx), true, '뿌리낸 날을 모르면 셉니다(옛 세이브)');
+  assert.equal(!!q.done(MS(126, { cuttings: [cut({ varieFromCut: false })] }), ctx), false, '무늬 아닌 삽수로 끝납니다');
+  assert.equal(q.ko, '무늬 삽수 뿌리내리기');
+  assert.equal(questTodo(q, MS(126, { brightFree: null, lampUnlocked: true })), '무늬 삽수를 밝은 자리에서 뿌리내리세요', '칸 모름 → 첫 줄');
+  assert.equal(questTodo(q, MS(126, { brightFree: true, lampUnlocked: true })), '무늬 삽수를 밝은 자리에서 뿌리내리세요');
+  assert.equal(questTodo(q, MS(126, { brightFree: false, lampUnlocked: false })), '무늬 삽수를 밝은 자리에서 뿌리내리세요', '등이 안 열렸는데 식물등을 시킵니다');
+  assert.equal(questTodo(q, MS(126, { brightFree: false, lampUnlocked: true, lampPlaced: 0 })), '밝은 빈자리가 없습니다 — 식물등을 다세요');
+  assert.equal(questTodo(q, MS(126, { brightFree: false, lampUnlocked: true, lampPlaced: null })), '밝은 빈자리가 없습니다 — 식물등을 다세요');
+  assert.equal(questTodo(q, MS(126, { brightFree: false, lampUnlocked: true, lampPlaced: 1 })), '밝은 빈자리가 없습니다 — 식물등을 더 다세요');
+  for (const s2 of [MS(126, { brightFree: false, lampUnlocked: true, lampPlaced: 2 })]) assert.ok(questTodo(q, s2).length <= 28);
+  const rc = (n) => Array.from({ length: n }, (_, i) => ({ id: 'r' + i, varieFromCut: true, status: i % 2 ? 'established' : 'rooted' }));
+  assert.equal(questTodo(qs, MS(200, { movedOut: true, cuttings: rc(2) })), '뿌리낸 무늬 삽수 하나는 남기고 파세요');
+  assert.equal(questTodo(qs, MS(200, { movedOut: true, cuttings: rc(1) })), '뿌리낸 무늬 삽수가 둘이 되면 하나를 파세요');
+  assert.equal(questTodo(qs, MS(200, { movedOut: true, cuttings: [{ id: 'x', varieFromCut: true, status: 'rooting' }] })), '뿌리낸 무늬 삽수가 둘이 되면 하나를 파세요', '뿌리 전 삽수를 셉니다');
+  for (const n of [1, 2]) assert.ok(questTodo(qs, MS(200, { movedOut: true, cuttings: rc(n) })).length <= 28);
+});
+
 /* ── 보고 ────────────────────────────────────────────────────────────── */
 let fail = 0;
 for (const [st2, name, msg] of results) {

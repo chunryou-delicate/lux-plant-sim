@@ -2876,6 +2876,8 @@
              ★ 사는 규칙(`tutorial.buyLamp`)은 한 글자도 안 바꿨다 — **누르는 자리만** 옮겼다.
              ⚠ 여기에 되살리지 마라. 두 자리가 되면 「어디서 사는 것인가」를 두 번 배운다. -->
         <!-- ★ 2026-10-31 D97 (plan-to-core-d97 §1-2) — 이사비 · 지금 돈 · 모자란 것 / 됐으면 이사하면 남는 돈 · 첫 월세(§moveMoneyLineKo) -->
+        <!-- ★ 2026-11-01 plan-to-core-d99 §3 · 총괄 D99 ② — 반지하 [방] 판 월세 줄(§rentLineKo · 이사 전만) -->
+        <div class="psub" id="rentLine" style="display:none;margin:6px 0 2px"></div>
         <div class="psub" id="moveMoneyLine" style="display:none;margin:6px 0 4px"></div>
         <div class="btns">
           <button id="moveOut" class="primary" disabled style="width:auto;margin-top:0">원룸으로 이사</button>
@@ -6578,7 +6580,7 @@ function updateHint() {
     /* ★ 2026-10-10 한 판 걸음(총괄 물음 ②) — «놓인 순간»만. 예전엔 «가구가 하나라도 있으면»이라 ⓐ 투룸(가게 첫날 받은 주문판이 «첫 가구»)에서도 섰고
          ⓑ «한 번» 표시가 메모리라 다시 켤 때마다 또 섰다(새 집 첫 순간에 «어두워졌다»가 뜻 없이 겹침). ⇒ 원룸에서 · 이 켬에 0 이던 것이 1 이상이 될 때 */
     if (oneroomFurnSeen === null) oneroomFurnSeen = furnDone;
-    if (S.home && S.home.room === 'oneroom' && oneroomFurnSeen === 0 && furnDone >= 1 && !oneroomShadeSaid) { oneroomShadeSaid = true; banner('선반 아래가 어두워졌습니다', '콩나물 자리입니다'); }
+    if (S.home && S.home.room === 'oneroom' && oneroomFurnSeen === 0 && furnDone >= 1 && !oneroomShadeSaid) { oneroomShadeSaid = true; banner('가구가 빛을 가립니다', '가려진 어두운 칸은 콩나물 자리입니다 · 🔆 빛 분포에서 보입니다'); }   /* ★ D99 §5-3 — 책상을 놓아도 «선반»이라 했다 */
     if (plantsLeft > 0) {
       /* ★ 2026-10-09 D43(총괄) — **들고 온 삽수가 먼저다.** 이사가 물건 자리를 비우고(oneroom §clearPlacements) 삽수는 가방에 남는데,
            가방 속 삽수는 하루가 안 간다(D29) — 가구보다 앞에 짚는다. 말은 [plan] 몫(지금은 뜻만) */
@@ -6981,6 +6983,37 @@ function updateHint() {
     try { return ((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 1; }
     catch { return false; }
   })();
+  /* ★★ 2026-11-01 총괄 D99 ⑤ — 할 일 «무늬 삽수 뿌리내리기»가 열렸고 밝은 빈자리가 없으면 손가락은 식물등(«등이 곧 길») —
+       가방에 안 단 등이 있으면 그 칸 · 없으면 [상점]의 식물등(살 수 있을 때만 · 살 수 없는 것을 안 가리킨다) */
+  {
+    let lampWant = false;
+    try {
+      const L = S.tutorial && S.tutorial.lamp;
+      if (L && L.unlocked && !(S.tutorial && S.tutorial.movedOut)) {
+        const qv = questView(S, questSnapshotNow(lastTurn));
+        const q = ((qv && qv.all) || []).find(x => x && x.id === 'varie_bright' && x.state === 'open');
+        lampWant = !!q && varieBrightFreeNow() === false;
+      }
+    } catch (e) { console.warn('[등 손가락 D99]', e && e.message); lampWant = false; }
+    if (lampWant) {
+      let left = 0; try { const L = S.tutorial.lamp; left = Math.max(0, (L.owned || 0) - (L.placed || 0)); } catch { left = 0; }
+      if (left > 0) {
+        const cell = document.getElementById(BAG_LAMP_ID);
+        try { if (sheetShown() && cell && cell.offsetParent && !onScreen(cell)) cell.scrollIntoView({ block: 'center' }); } catch { }
+        if (onScreen(cell) && !sheetCovers(cell)) return hintAt(cell, '여기를 눌러 보세요');
+        for (const [id, say] of [['tabBag', '가방에 식물등이 있습니다'], ['openBag', '가방을 열어 보세요']]) {
+          const el = $(id);
+          if (!el || !onScreen(el) || sheetCovers(el)) continue;
+          if (el.getAttribute && el.getAttribute('aria-selected') === 'true') continue;
+          return hintAt(el, say);
+        }
+      } else {
+        const b = $('buyLamp');
+        if (b && seenAt(b) && !b.disabled && !sheetCovers(b)) return hintAt(b, '식물등을 사서 밝은 자리를 만드세요');
+        if (b) { const door = shopDoor(); if (door) return hintAt(door, '식물등을 사러 갑니다'); }
+      }
+    }
+  }
   if (seedNeed && firstCycleDone) {
     /* ★★★ 2026-08-17 — **세 걸음째가 빠져 있었다.** [주문]은 창을 하나 더 연다
        (`openBuyPanel` — 「몇 개 주문할까요」). 그 창이 뜬 순간 손가락이 쉬면 사람은
@@ -7239,6 +7272,8 @@ function drawTutorial(living) {
   mv.disabled = !!ts.movedOut;
   mv.classList.toggle('dim', !c.ok && !ts.movedOut);
   mv.setAttribute('aria-disabled', (!c.ok || ts.movedOut) ? 'true' : 'false');
+  { const rl = $('rentLine'); if (rl) { let t = null; try { t = rentLineKo(); } catch { t = null; }
+      rl.style.display = t ? '' : 'none'; if (t) rl.textContent = t; } }   /* ★ D99 §3 */
   { const ml = $('moveMoneyLine'); if (ml) { let t = null; try { t = moveMoneyLineKo(); } catch { t = null; }
       ml.style.display = t ? '' : 'none'; ml.style.whiteSpace = 'pre-line'; if (t) ml.textContent = t; } }   /* ★ D97 §1-2 */
   mv.textContent = ts.movedOut ? '이사 완료' : '원룸으로 이사';
@@ -7373,10 +7408,17 @@ function drawLedger() {
     tip = `시루 <b>${sirus}개</b> — <b>천장입니다.</b><br>`
         + `★더 사도 돌릴 손이 없습니다 (하루 ${sirusPerDay}개 × ${R.harvestDays}일 주기).`;
 
+  /* ★ 2026-11-01 총괄 D99 ③ — «오늘 실제로 나가는 돈»을 엔진 셈 그대로(tutorial §하루 결산: max(0, dailyCashOutWon − 아낀 것) + 식물등 전기).
+       ⛔ 식비 정가 − 아낀 것만 적어 원룸에서 2,500원이라 했는데 실제는 5,204원(비판 넷째 판 b100 · b120) */
+  let baseOut = daily, powerOut = 0;
+  try { const b0 = dailyCashOutWon(ts); if (Number.isFinite(b0)) baseOut = b0; } catch { baseOut = daily; }
+  try { powerOut = lampElectricityWon(ts, { count: (S.lamps && S.lamps.count) || 0, litHours: (S.lamps && S.lamps.litHours) || 12 }) || 0; } catch { powerOut = 0; }
   el.innerHTML =
       row('하루 식비', won(daily))
+    + (baseOut > daily ? row('관리비 · 공과', won(baseOut - daily)) : '')
     + row('콩나물로 아낌', savedToday ? '−' + won(savedToday) : '—', 'save')
-    + row('오늘 실제로 나가는 돈', won(Math.max(0, daily - savedToday)), 'net')
+    + (powerOut > 0 ? row('식물등 전기', won(powerOut)) : '')
+    + row('오늘 실제로 나가는 돈', won(Math.max(0, baseOut - savedToday) + powerOut), 'net')
     + row('보유금', won(ts.cashWon || 0), 'cash')
     /* ★ 2026-08-16 — 보유 채소는 **물건**이라 g 으로 적는다. 원은 괄호 안에 남긴다(§그램) */
     /* ★★ 2026-10-31 D93 ⑥ m6 — 괄호 원(pantryWon · 10원/g 장부 값)을 걷었다: «14.8kg (148,000원)»인데 팔면 1kg 7,000원이었다(growth §2).
@@ -7591,7 +7633,11 @@ function monthNoteDay(turn) {
     m.cur.run.rent   += Math.round(t.rentWon || 0);
     m.cur.run.saved  += Math.round(t.savedWon || 0);
     m.cur.run.income += Math.round(t.incomeWon || 0);
+    /* ★ 2026-11-01 plan-to-core-d99 §5-4 — 긴급지원(구호금 · 결산 안에서 지갑을 메움)은 장부에 안 잡혀 «장부에 안 잡힌 것»으로 뭉쳤다 */
+    for (const e of (t.events || [])) if (e && e.id === 'relief') m.cur.run.relief = (m.cur.run.relief || 0) + Math.round(e.won || 0);
   }
+  /* ★ D99 §5-4 · D96 뒷일 — 이웃이 준 밥 한 몫 값(김치 · 추석 음식 · events_banjiha 가 지갑에 바로 넣음) */
+  for (const e of (turn.events || [])) if (e && e.id === 'bj_followup') m.cur.run.gift = (m.cur.run.gift || 0) + Math.round(e.won || 0);
   monthSave(m);
   if (t && !t.error && (t.rentWon || 0) > 0) monthCloseNow(m);
 }
@@ -7618,8 +7664,10 @@ function monthCloseNow(m) {
   const bought = now.shopSpent - s.shopSpent;
   /* ★ `spentWon` 은 「하루 지출(식비+공과+월세몫) − 절감 + 전기」다. 전기를 빼면 살림비다 */
   const living = Math.max(0, r.out - r.power);
-  const inSum = veg + plant + r.income;
-  const outSum = r.rent + living + r.power + bought;
+  /* ★ D99 §5-4 — 덩이 돈(이사비 · 긴급지원)과 이웃 밥 몫을 줄로 세운다(옛 장부는 칸이 없다 → 0) */
+  const move = Math.round(r.move || 0), relief = Math.round(r.relief || 0), gift = Math.round(r.gift || 0);
+  const inSum = veg + plant + r.income + relief + gift;
+  const outSum = r.rent + living + r.power + bought + move;
   const net = now.cash - s.cash;
   const rep = {
     fromDay: m.cur.fromDay, toDay: (S.tutorial && S.tutorial.day) || 0, days: r.days,
@@ -7631,6 +7679,7 @@ function monthCloseNow(m) {
     cashFrom: s.cash, cashTo: now.cash, net,
     /* ★ 대차가 안 맞는 몫 — 식물등 사기·이사비가 어느 장부에도 안 적힌다(§④) */
     gap: net - (inSum - outSum),
+    move, relief, gift, lumpNet: relief - move, netAdj: net - (relief - move),   /* ★ D99 §5-4 — 견줌은 덩이를 뺀 순이익(netAdj) */
     prevNet: (typeof m.cur.prevNet === 'number') ? m.cur.prevNet : null,
     /* ★ 2026-10-08 (총괄 중반 M5) — 지난달이 «며칠짜리»였나. 첫 달은 Day 1 하루뿐(첫 월세가 몰림)인데 30일 달과 견줘 「281,667원 나빠졌습니다」라 했다 */
     prevDays: (() => { const pv = m.log.length ? m.log[m.log.length - 1] : null; return pv && Number.isFinite(pv.days) ? pv.days : null; })()
@@ -7640,7 +7689,7 @@ function monthCloseNow(m) {
   m.log.push(rep);
   while (m.log.length > MONTH_KEEP) m.log.shift();
   monthSave(m);
-  monthStart(net, m);           /* 다음 달을 연다 — 마감한 자리가 곧 새 달의 첫 값이다(목록은 이어받는다) */
+  monthStart(net - (relief - move), m);   /* 다음 달을 연다 · ★ D99 §5-4 다음 달이 견줄 값도 덩이를 뺀 순이익 */
   monthAt = monthLogList().length - 1;    /* 갓 마감한 것을 본다 */
   monthReport = rep;
   monthPending = true;          /* 대사가 끝나면 뜬다(§openMonthWhenQuiet) */
@@ -7731,11 +7780,16 @@ function drawMonthPanel() {
            첫 달 1일엔 첫 월세가 몰려 하루 평균도 거짓 견줌이 된다 */
       : (Number.isFinite(r.prevDays) && r.period && r.prevDays < r.period / 2)
       ? ` (지난달은 ${r.prevDays}일뿐이라 견주지 않습니다)`
+      /* ★ D99 §5-4 — 덩이(이사비 · 긴급지원)가 있던 달은 그것을 뺀 순이익으로 견준다 */
+      : (Number.isFinite(r.lumpNet) && r.lumpNet !== 0)
+      ? (() => { const parts = [(r.move || 0) > 0 ? '이사비' : null, (r.relief || 0) > 0 ? '긴급지원' : null].filter(Boolean).join(' · ');
+                 const lk = josa(parts, '을', '를'); const d = r.netAdj - r.prevNet;
+                 return d > 0 ? ` ${lk} 빼면 지난달보다 ${won(d)} 나아졌습니다.` : d < 0 ? ` ${lk} 빼면 지난달보다 ${won(-d)} 나빠졌습니다.` : ` ${lk} 빼면 지난달과 같습니다.`; })()
       : ` 지난달은 ${r.prevNet >= 0 ? '+' : '−'}${won(Math.abs(r.prevNet))}이었으니 ` +
         `${r.net > r.prevNet ? won(r.net - r.prevNet) + ' 나아졌습니다'
                              : r.net < r.prevNet ? won(r.prevNet - r.net) + ' 나빠졌습니다'
                                                  : '똑같습니다'}.`);
-  $('monthSum').className = up ? 'pquote' : 'pquote warn';
+  $('monthSum').className = ((Number.isFinite(r.lumpNet) && r.lumpNet !== 0) ? r.netAdj >= 0 : up) ? 'pquote' : 'pquote warn';
 
   const ate = gramList(r.ateG), got = gramList(r.gotG);
   $('monthRows').innerHTML =
@@ -7744,11 +7798,14 @@ function drawMonthPanel() {
     + row('식비 · 공과', won(r.living))
     + (r.power > 0 ? row('식물등 전기', won(r.power)) : '')
     + row('상점에서 산 것', won(r.bought))
+    + ((r.move || 0) > 0 ? row('이사비', won(r.move)) : '')   /* ★ D99 §5-4 */
     + (r.gap ? row('장부에 안 잡힌 것', won(-r.gap), 'dim') : '')
     + head('들어온 돈')
     + row('채소 판 것', won(r.veg))
     + row('식물 판 것', won(r.plant))
     + (r.income > 0 ? row('그 밖', won(r.income)) : '')
+    + ((r.relief || 0) > 0 ? row('긴급지원', won(r.relief)) : '')         /* ★ D99 §5-4 */
+    + ((r.gift || 0) > 0 ? row('밥 한 몫 값 (이웃)', won(r.gift)) : '')   /* ★ D96 뒷일 · D99 §5-4 */
     + head('아낀 돈')
     /* ★ 이 줄은 **나간 돈에서 이미 빠진 값**이다 — 또 더하면 두 번 센다. 그래서 초록이다 */
     /* M5 — 아낀 것을 초록 «−»로 적으니 «나간 돈»으로 읽혔다 ⇒ 「+N원 아낌」 */
@@ -8980,7 +9037,7 @@ function drawBag() {
                       (§bagHelp: *"시루 칸을 «끌거나 누르면»…"*). 몬스테라 줄만 「끌어」였다.
                       손가락도 이미 «끌거나 눌러서»라 말한다(§updateHint 두 자리).
                     ⇒ ★ 세 곳 중 **한 곳만** 옛말이었다. 그 한 곳이 나흘을 만들었다. */
-                 `<span class="eta">화분째 받았습니다 · 끌거나 눌러 방에 놓으세요</span></button>`;
+                 `<span class="eta">${(S.tutorial && S.tutorial.movedOut) ? '반지하에서 키운 그루 · 끌거나 눌러 방에 놓으세요' : '화분째 받았습니다 · 끌거나 눌러 방에 놓으세요'}</span></button>`;   /* ★ D99 §5-1 — 이사가 넣은 그루에 «받았습니다»는 거짓 */
         }).join('') + `</div>`;
     }
   }
@@ -9491,7 +9548,7 @@ function drawShop() {
   hint.textContent = won >= shortH
     ? '지금 내놓으면 이사 자금이 찹니다 — 연락이 온 뒤 거래해야 돈이 들어옵니다'
     : `${vl} — ${nS == null || nS > ls.leaves
-        ? `이사 자금이 ${shortH.toLocaleString()}원 모자랍니다. 더 키우거나 삽수를 내놓으세요`
+        ? `이사 자금이 ${shortH.toLocaleString()}원 모자랍니다. 더 키우거나 무늬 삽수가 둘이면 하나를 내놓으세요`   /* ★ D99 §1-2 · §6 */
         : `${nS}장이 무늬면 모자란 이사 자금 ${shortH.toLocaleString()}원이 찹니다`}`;
 }
 
@@ -10703,6 +10760,10 @@ function questSnapshotNow(turn) {
     monsteraGrowing: (() => { const p0 = pot0(S); if (!p0) return false; if (!p0.at && !p0.slotId) return false;
                               const b = growBandAt(p0.at ? p0 : p0.slotId, false); return b ? !b.dark : null; })(),
     cuttings: cuts,
+    /* ★ 2026-11-01 D99 ⑤ — varie_bright todo 가 «밝은 빈자리가 없습니다 — 식물등» 갈래에 쓴다 · 반지하 · 그 줄이 안 끝났을 때만 잰다 */
+    brightFree: (() => { try { if (ts.movedOut || ((S.stamina && S.stamina.questsTaken) || []).includes('varie_bright')) return null;
+                               if (!((S.stamina && S.stamina.questsOpenedOn) || {}).varie_bright) return null;
+                               return varieBrightFreeNow(); } catch { return null; } })(),
     /* ★ 무늬 삽수를 판 횟수 — `tutorial.js §varieSale` 이 정본이다(escapecut 확정) */
     varieSaleCount: (ts.varieSale && ts.varieSale.count) || 0,
     /* ★★ 식물등 — `tutorial.js §lamp` 이 정본이다. 퀘스트 ④(`buy_lamp`)가 이 둘로 판정한다.
@@ -10794,6 +10855,12 @@ function checkQuests(turn) {
          퀘스트 사건과 «한 묶음»으로 넘겨야 EVENT_ORDER 가 「됐다! 가자.」(quest_done) → 「집 계약은 네가 해…」(ending_ready)로 세운다 */
     let evs = r.events;
     try { const e2 = stepEndingNow(); if (e2.length) evs = [...evs, ...e2]; } catch (e) { console.warn('[엔딩]', e && e.message); }
+    /* ★ 2026-11-01 총괄 D99 ② — move_ready_ok 를 아침에만 쟀다. 낮에 채소를 팔아 버틸 만해져도(비판 넷째 판 Day 167 · 남는 돈 236,364 → 304,264)
+         33일 동안 한 번도 안 났다 ⇒ 지갑이 바뀌는 자리(이 함수)에서도 잰다 · 한 판에 한 번(ts 깃발 · 세이브) */
+    try { const ts = S.tutorial;
+          if (ts && !ts.movedOut && ts.moveShortSeen && !ts.moveReadyOkSaid && moveSurvivesNow() === true) {
+            ts.moveReadyOkSaid = true; evs = [...evs, { id: 'move_ready_ok', day: S.day }]; } }
+    catch (e) { console.warn('[이사 버팀 낮]', e && e.message); }
     if (evs.length) dlgOpen(story.events(evs, S));               /* 대사는 늘 같은 창구로 */
   } catch (e) { console.warn('[퀘스트]', e && e.message); }
 }
@@ -17538,7 +17605,7 @@ function startPhonePlacePot(what) {
 function startPhonePlaceCut(id) {
   const c = cuttingsOf(S).find(x => x && x.id === id);
   if (!c) { banner('그 삽수를 못 찾았습니다', '가방을 다시 열어 주세요'); return { ok: false, why: 'no-cut' }; }
-  const spot = provisionalSpot('cutting');
+  const spot = provisionalSpot('cutting:' + c.id);   /* ★ D99 ④ — 용기 지름 · 원룸 가구 윗면 견줌 */
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요');
                return { ok: false, why: 'no-spot' }; }
   let at = spot;
@@ -17556,7 +17623,9 @@ function startPhonePlaceCut(id) {
   }
   try { window.__byeotSheet.close(); } catch { }
   { const darkC = placeLightWarn({ obj: c, kind: 'cutting', variegated: !!c.variegated });   /* ★ 2026-10-08 A·B */
-    banner('🪴 삽수를 놓았습니다', darkC ? `⚠ ${darkC}` : '놓은 자리의 빛이 새 잎의 무늬를 정합니다'); }
+    /* ★ D99 ④ — 뿌리 전 무늬 삽수인데 이 방에 밝은 빈자리가 없으면 그렇다고 먼저 말한다(손가락은 식물등 · §updateHint) */
+    const noBright = !!(c.varieFromCut && c.status === 'rooting' && !c.varieLightBand && varieBrightFreeNow(c.id) === false);
+    banner(noBright ? '🪴 삽수를 놓았습니다 — 밝은 빈자리가 없습니다' : '🪴 삽수를 놓았습니다', darkC ? `⚠ ${darkC}` : '놓은 자리의 빛이 새 잎의 무늬를 정합니다'); }
   syncRoom(); draw();
   return { ok: true };
 }
@@ -18157,15 +18226,29 @@ function slotReachable(slotId) {
   try { const r = roomView && roomView.reach ? roomView.reach(slotId) : null; return !r || r.ok !== false; } catch { return true; }
 }
 /* 빈 · 닿는 · 화분이 올라가는 자리 중 가장 밝은 칸 — 손가락·아래글이 보는 판정(§guideBrightSlot)과 같은 표(내일 빛 · slotFitsDiameter · ARRIVAL_POT_D)에서 «빈 칸»만 */
-function brightFreeSlot(exceptSlotId) {
+function brightFreeSlot(exceptSlotId, potD = ARRIVAL_POT_D) {   /* ★ D99 ④ — potD: 삽수는 용기 지름(유리병이 화분 지름 칸만 보던 것) */
   try {
     const rep = io.light.daily(S.day + 1, S).report;
     const roomSlot = new Map((io.light.room.slots || []).map(s => [s.slotId, s]));
     const taken = takenSlotIds();
     const fits = rep.slots.filter(s => s.slotId !== exceptSlotId && !taken.has(s.slotId)
-                                    && slotFitsDiameter(roomSlot.get(s.slotId) || s, ARRIVAL_POT_D) && slotReachable(s.slotId));
+                                    && slotFitsDiameter(roomSlot.get(s.slotId) || s, potD) && slotReachable(s.slotId));
     const best = fits.sort((a, b) => b.dli - a.dli)[0];
     return best ? best.slotId : null;
+  } catch { return null; }
+}
+/* ★ 2026-11-01 총괄 D99 ④ ⑤ — 무늬 삽수가 놓일 수 있는 빈 칸 가운데 무늬 띠 bright 가 있나(병 지름 · §brightFreeSlot · 무늬 띠 §varieLightStepOfBand)
+     selfId — 이미 놓인 그 삽수의 칸은 빈 칸으로 친다(그 삽수가 이미 밝은 데 섰으면 참) · 못 재면 null */
+function varieBrightFreeNow(selfId) {
+  try {
+    const d = (CONTAINERS.jar && CONTAINERS.jar.realMaxM) || 0.12;
+    const self = selfId ? cuttingsOf(S).find(x => x && x.id === selfId) : null;
+    const sid = brightFreeSlot(null, d);
+    const cand = [sid, self && self.slotId].filter(Boolean);
+    if (!cand.length) return false;
+    let anyKnown = false;
+    for (const k of cand) { const b = growBandAt(k, true); if (!b) continue; anyKnown = true; if (varieLightStepOfBand(b.band) === 'bright') return true; }
+    return anyKnown ? false : null;
   } catch { return null; }
 }
 /* what — 무엇을 놓나: 'beansprout'·'musun'(작물 · 바닥 구석이 먼저 — 박사님 2026-08-17) · 'pot'·'cutting'·'species'(빛을 먹고 자라는 그루) */
@@ -18176,6 +18259,18 @@ function provisionalSpot(what = 'beansprout') {
        ⚠ 작물(시루·재배판)은 바닥 구석 그대로다(박사님 2026-08-17 «디폴트 위치를 좌측이나 우측 바닥으로») — 콩나물은 어두운 데가 맞다.
        ⚠ 빈 칸이 없으면 옛 길(①②③)로 떨어진다 — 경고가 붙고 손가락은 [다시 옮기기](§updateHint 확인 바 갈래) */
   if (what === 'pot' || what === 'cutting' || what === 'species') { const b = brightFreeSlot(); if (b) return b; }
+  /* ★★ 2026-11-01 총괄 D99 ④ — 삽수(cutting:<id>)는 «용기 지름»으로 가장 밝은 빈 칸 · 원룸은 가구 윗면(§topGridSpot bright)과 견줘 더 밝은 쪽.
+       ⛔ 화분 지름으로만 봐서 작은 병이 설 밝은 칸을 못 보고 «3단 선반 9번» 같은 어두운 칸을 골랐다(비판 넷째 판 b058 · b065 · b124) */
+  if (isCutPlace(what)) {
+    const d = potDOf(what);
+    const sid = brightFreeSlot(null, d);
+    let best = sid ? { at: sid, dli: (() => { try { const b = growBandAt(sid, true); return b ? b.dli : -1; } catch { return -1; } })() } : null;
+    if (S.home && S.home.room === 'oneroom') {
+      const t = topGridSpot(d, 'beansprout', true, true);
+      if (t && Number.isFinite(t.dli) && t.dli !== 99 && (!best || t.dli > best.dli)) best = { at: t.at, dli: t.dli };
+    }
+    if (best) return best.at;
+  }
   const potD = (() => { try { return potDOf('beansprout'); } catch { return 0.24; } })();
   /* ★ 2026-10-08 — 원룸은 방바닥에 시루를 못 놓는다(state §ONEROOM_FLOOR_KO · D16). 임시 자리도 «가구 위»에서 고른다 —
        바닥을 고르면 누르기로 놓기가 원룸에서 늘 「방바닥에는 못 놓습니다」로 막혔다 */
@@ -18393,7 +18488,12 @@ function varieDimWarn(g) {
   return PLACE_DARK_KO.varieDimNoBright;
 }
 /* 놓은 그것의 빛 한 줄 — 안 자람이 먼저 · 그다음 무늬 띠 */
-function placeLightWarn(g) { return darkPlaceWarn(g) || varieDimWarn(g); }
+function placeLightWarn(g) {
+  /* ★ 2026-11-01 plan-to-core-d99 §2-2 — 뿌리 전 무늬 삽수는 «자라기엔 어둡습니다»(goBest) 대신 무늬 띠 말이 먼저(뿌리는 어디서든 난다) */
+  const c = g && g.kind === 'cutting' ? g.obj : null;
+  if (c && c.varieFromCut && c.status === 'rooting' && !c.varieLightBand) return varieDimWarn(g) || darkPlaceWarn(g);
+  return darkPlaceWarn(g) || varieDimWarn(g);
+}
 
 /* ══ ★★ 2026-10-31 총괄 D95 ③ (plan-to-core-d95 §2 · 비판 둘째 판 M4 ④ «어디가 어두운지 화면에 표시가 없어 [확인]만 누르게 된다») ══
    놓기 확인 바(«여기에 둘까요?») 밑에 **그 자리 빛 낱말 한 줄** — 빛 지도와 같은 낱말(§HEAT_BANDS_KO · §lightWordOf).
@@ -18408,7 +18508,7 @@ const PLACE_FIT_KO = Object.freeze({
   crop1: '{word} — {crop}엔 안 맞음 ({q})',
   moveTail: ' · 끌어서 다른 자리',
   growOk: '{word} — {who}에 알맞음',
-  growSlow: '{word} — {who} 느리게 자람',
+  growSlow: '{word} — {who} 자람 · 더 밝으면 빨라짐',   /* ★ D99 §5-2 — «밝은데 느리다»가 부딪혔다 · 자라는 것을 먼저 */
   growOver: '{word} — {who}엔 빛이 셈'
 });
 function cropRowAtKey(key) {
@@ -18495,7 +18595,10 @@ const FURN_LIGHT_KO = Object.freeze({
   cD:  '여기선 무늬 삽수가 안 자랍니다 — 무늬 삽수는 더 밝아야 자랍니다',
   cgrow: '여기면 무늬 삽수가 자랍니다',
   clamp: '무늬 삽수는 여기선 식물등이 있어야 자랍니다',
-  cnone: '여기선 무늬 삽수가 안 자랍니다 — 창턱에 두고 등을 켜세요'
+  cnone: '여기선 무늬 삽수가 안 자랍니다 — 창턱에 두고 등을 켜세요',
+  /* ★ 2026-11-01 plan-to-core-d99 §2-1 — 뿌리 «전» 무늬 삽수(rooting · 띠 미정)는 어두워도 뿌리는 낸다(propagation §stepCuttings ①) — «안 자랍니다»는 거짓 */
+  crD:    '여기서도 뿌리는 내지만 무늬가 잘 안 납니다 — 더 밝은 데서 뿌리내리세요',
+  crnone: '여기서도 뿌리는 내지만 무늬가 잘 안 납니다 — 창턱에 두고 등을 켜세요'
 });
 function furnLightLine(uid) {
   if (!uid || !io.light || typeof io.light.placeVerdict !== 'function') return null;
@@ -18511,10 +18614,11 @@ function furnLightLine(uid) {
 }
 /* 엔진 갈래(placeVerdict) → 한 줄(+ 둘째 줄 하나). 화분을 놓을 때(무늬)도 같은 표를 쓴다
    둘째 줄 차례(plan): higherGrow > clipTop > higher — 손이 덜 드는 길부터 · 하나만 */
-function furnLightTextOf(v, novice) {
+function furnLightTextOf(v, novice, preRoot = false) {   /* preRoot — 뿌리 전 무늬 삽수(§cuttingSpotLightLine · D99 §2-1) */
   try {
     const K = FURN_LIGHT_KO;
-    const first = (v.kind === 'cutting' && v.variegated && K['c' + v.key]) ? K['c' + v.key] : K[v.key];   /* D57 — 무늬 삽수만 */
+    const first = (preRoot && v.kind === 'cutting' && v.variegated && K['cr' + v.key]) ? K['cr' + v.key]
+                : (v.kind === 'cutting' && v.variegated && K['c' + v.key]) ? K['c' + v.key] : K[v.key];   /* D57 — 무늬 삽수만 */
     const text = first + (v.key === 'C' && v.wnShort ? K.Cshort : '');
     const hGrow = !!(v.higher && !(v.key === 'A' || v.key === 'B' || v.key === 'Bp')
                      && Number.isFinite(v.higher.s0) && Number.isFinite(v.th) && v.higher.s0 >= v.th);
@@ -18543,7 +18647,7 @@ function cuttingSpotLightLine(c) {
     const seasons = (() => { try { return !!modeOf(S).rollSeason; } catch { return false; } })();
     const v = io.light.placeVerdict([pt], { novice: !seasons, kind: 'cutting', variegated: !!(c.varieFromCut || c.variegated) });
     if (!v || !FURN_LIGHT_KO[v.key]) return null;
-    return furnLightTextOf(v, !seasons);
+    return furnLightTextOf(v, !seasons, !!(c.varieFromCut && c.status === 'rooting' && !c.varieLightBand));   /* ★ D99 §2-1 */
   } catch (e) { console.warn('[삽수 자리 빛]', e && e.message); return null; }
 }
 window.__byeotCutSpotLight = (id) => cuttingSpotLightLine(cuttingsOf(S).find(x => x && x.id === id));   /* 재는 손잡이 */
@@ -20455,7 +20559,9 @@ function drawPantrySale() {
              «N%만»은 걷었다 — 파는 손해는 남길 몫 안에서만 참이고, 그 말은 판매 창이 «얼마나 파고드나»로 한다 */
         : (sur.lots > 0
             ? `보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판 — 이레치 밥상 몫을 넘는 ${sur.lots}판(${formatGram(sur.grams)})은 팔아도 밥상이 그대로입니다`
-            : `보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판 — 아직 이레치 밥상 몫에 못 미칩니다. 팔면 다음 수확 전에 밥상이 빌 수 있습니다`))
+            : pantryKeepFullNow(pantrySellKind)   /* ★ D99 §5-5 — 남길 몫(K)과 같아도 «못 미칩니다»라 했다(판매 창 셈 · pantryKeepStatus) */
+              ? `보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판 — 이레치 밥상 몫만 남았습니다. 더 팔면 다음 수확 전에 밥상이 빌 수 있습니다`
+              : `보유 채소 ${formatGram(ps.pantryGrams)} · ${max}판 — 아직 이레치 밥상 몫에 못 미칩니다. 팔면 다음 수확 전에 밥상이 빌 수 있습니다`))
     /* ★ D93 ⑤ ②-2 — 판 직후 «밥으로 먹는 편이 이득»이 «방금 판 것이 틀렸다»로 읽혔다(M3 ①) */
     : '보유 채소가 없습니다 — 거둔 채소는 밥상에 먼저 오르고, 이레치 밥상 몫을 넘게 쌓이면 여기서 팝니다';
 
@@ -20529,6 +20635,14 @@ function pantrySellDefaultN(kind) {
      밥상 판 · 상점 줄 · 판매 창 · 가계부가 이것만 본다(규칙은 first_play §pantryKeepStatus — 작물마다 이레치 밥상 몫은 남기고 그 위는 판다).
      kind 를 주면 그 작물만(갈래 창) · fp 를 주면 그 곳간(밥상 판의 «먹은 뒤» 복사본).
      반환 { lots(남는 판 수) · grams · won(그 판들을 판 값 = 판매 창 기본값과 같은 셈) } */
+/* ★ D99 §5-5 — 그 작물(없으면 다)의 남긴 g 이 이레치 몫(keepGrams)에 닿았나 · 판매 창과 같은 셈(first_play §pantryKeepStatus) · 모르면 false(예전 글) */
+function pantryKeepFullNow(kind) {
+  try {
+    const k = pantryKeepStatus(S.firstPlay);
+    const rows = (k.byKind || []).filter(b => b && (!kind || b.kind === kind));
+    return rows.length > 0 && rows.every(b => (b.keepGrams || 0) > 0 && (b.keptGrams || 0) >= b.keepGrams);
+  } catch { return false; }
+}
 function pantrySurplusOf(kind, fp) {
   fp = fp || S.firstPlay;
   const k = pantryKeepStatus(fp);
@@ -20598,6 +20712,7 @@ $('pantryGo').onclick = guard(() => {
   /* ★ 2026-10-30 [plan] D90 ⑤ — «(N원 손해)»를 걷었다(한 목소리 · 값 낱말은 «팔면 N원»). 다른 팔기 배너(§판매 «N원이 들어왔습니다»)와 같은 말 */
   banner('보유 채소를 팔았습니다',
          `${r.whatKo} ${r.whatG} · ${r.won.toLocaleString()}원이 들어왔습니다`);
+  checkQuests(lastTurn);   /* ★ 2026-11-01 총괄 D99 ② — 지갑이 바뀐 자리(§doDeal 과 같게) · 낮 move_ready_ok · 판 그 자리에서 할 일 끝 */
   draw();
 });
 
@@ -20779,6 +20894,24 @@ function moveSurvivesNow() {
     return mm.left >= mm.rent + mm.daily * Math.max(0, mm.d);
   } catch { return null; }
 }
+/* ★ 2026-11-01 plan-to-core-d99 §3 (비판 넷째 판 ④ «월세는 원래 있었다») — 반지하 [방] 판 월세 줄 · 이사 전만 · 못 읽으면 null */
+const RENT_LINE_KO = Object.freeze({
+  line: '월세 {rent}원 · 다음 월세 날 {when}',
+  same: ' — 이사해도 같은 날 같은 월세입니다',
+  diff: ' — 원룸 월세는 {r2}원입니다'
+});
+function rentLineKo() {
+  const ts = S.tutorial; if (!ts || ts.movedOut || ts.homeOwned || !ts.rules) return null;
+  const rent = ts.rules.rentWon; if (!Number.isFinite(rent)) return null;
+  const due = ts.rent && Number.isInteger(ts.rent.nextDueDay) ? ts.rent.nextDueDay : null;
+  const today = Number.isInteger(ts.day) ? ts.day : S.day;
+  if (due == null || !Number.isInteger(today)) return null;
+  const d = due - today;
+  const when = d <= 0 ? '오늘' : d === 1 ? '내일' : `${d}일 뒤`;
+  const r2 = Number.isFinite(ts.rules.oneroomRentWon) ? ts.rules.oneroomRentWon : rent;
+  return RENT_LINE_KO.line.replace('{rent}', wonKo(rent)).replace('{when}', when)
+       + (r2 === rent ? RENT_LINE_KO.same : RENT_LINE_KO.diff.replace('{r2}', wonKo(r2)));
+}
 /* [방] 판 한 줄(들) — 못 가는 판 · 갈 수 있는 판 · 이사 뒤는 null */
 function moveMoneyLineKo() {
   const ts = S.tutorial; if (!ts || ts.movedOut) return null;
@@ -20937,7 +21070,12 @@ function doMoveOut() {
        달면 그 줄도 없어진다(그쪽이 하겠다고 했다 · ⏸). 그때까지만 여기 둔다. */
   /* ★ 2026-10-10 — 무엇을 들고 가나는 §carryFurnitureListNow 한 곳(산 집 이사도 같은 손) */
   const carry = carryFurnitureListNow();
+  const cash0 = S.tutorial ? S.tutorial.cashWon : null;
   const r = moveIntoOneroom(S, io, { carry });
+  /* ★ 2026-11-01 plan-to-core-d99 §5-4 — 이사비를 그 달 장부 줄로(예전엔 «장부에 안 잡힌 것»에 긴급지원과 뭉침) */
+  try { const paid = Number.isFinite(cash0) ? Math.round(cash0 - S.tutorial.cashWon) : 0;
+        if (paid > 0) { const m = monthLoad(); if (m && m.cur && m.cur.run) { m.cur.run.move = (m.cur.run.move || 0) + paid; monthSave(m); } } }
+  catch (e) { console.warn('[가계부 이사비]', e && e.message); }
   pushLog(S, '📦 원룸으로 이사했습니다 — 반지하 튜토리얼 종료');
   /* ★ 2026-10-30 총괄 D90 ② ⓒ — 가방에 든(안 단) 등을 원룸 걸이에 단다(위 «등은 들고 온다» · plan-to-core-d90 ②).
        ⛔ 반지하에서 안 단 공짜 등이 원룸에서도 가방에 남아, 몬이 «등 밑»을 말해도 등이 없었다.
