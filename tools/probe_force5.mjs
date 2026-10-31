@@ -112,6 +112,11 @@ for (let i = 0; i < 60 * GOAL; i++) {
     if (busy !== 'true') break;
     await sleep(500);
   }
+  /* ★ 2026-10-31 D96 — 반지하 사건 카드(#evPanel · 고르기)가 떠 있으면 손가락은 일부러 물러선다 — 사람처럼 «첫 단추»를 누른다(하네스 기본과 같다 ·
+       첫 단추가 체력 0 으로 흐리면 둘째). 그건 끊긴 길이 아니다 */
+  { const ev = await page.eval(`(()=>{ const p=document.getElementById('evPanel'); if(!p||!p.classList.contains('on')) return ''; const a=document.getElementById('evA'), b=document.getElementById('evB');
+      const go = (a && !a.disabled) ? a : (b && getComputedStyle(b).display!=='none' ? b : a); const key=(window.__byeotEvCard&&window.__byeotEvCard().shown)||'?'; go && go.click(); return key + ':' + (go===a?'a':'b'); })()`);
+    if (ev) { log.push(`Day ${String(st.날).padStart(2)} · 사건 카드 ${ev} — 눌렀다`); await sleep(1200); continue; } }
   if ((st.거둔횟수 || 0) >= 2 && !JSON.parse(await fingerAt())) dry++; else dry = 0;
   if (dry >= 3) {
     log.push(`Day ${String(st.날).padStart(2)} · ✔ 안내가 끝났다 — 두 바퀴를 거두면 손가락을 뗀다(뜻대로)`);

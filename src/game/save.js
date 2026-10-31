@@ -64,6 +64,7 @@ import { packJobShop, unpackJobShop } from './job_shop.js';
 import { packJobCare, unpackJobCare } from './job_care.js';   /* ★ 2026-10-24 B 판 돌봄 */
 import { packJobBreed, unpackJobBreed } from './job_breed.js';   /* ★ 2026-10-24 C 판 육종 */
 import { packHero, unpackHero, packCharacter } from './hero_branch.js';
+import { bjEventsSnapshot } from './events_banjiha.js';   /* ★ 2026-10-31 D96 반지하 사건 저장 칸 */
 
 /* 저장 봉투의 스키마. **모르는 값이면 읽지 않는다**(fail-loud). */
 export const SAVE_SCHEMA = 'game_save/1';
@@ -928,7 +929,9 @@ function packTutorial(ts) {
     /* ★ 2026-10-31 D97 §1-1 — 이사 «버티나» 깃발 둘(못 버티던 날을 봤나 · move_ready_ok 를 냈나) · 옛 세이브는 false */
     moveShortSeen: !!ts.moveShortSeen, moveReadyOkSaid: !!ts.moveReadyOkSaid,
     cashWeek: needArr(ts.cashWeek || [], 'tutorial.cashWeek').map((v, i) => needNum(v, `tutorial.cashWeek[${i}]`)).slice(-8),
-    walletWeekUp: !!ts.walletWeekUp
+    walletWeekUp: !!ts.walletWeekUp,
+    /* ★ 2026-10-31 D96 — 반지하 사건(events_banjiha · 열린 날 · 다음 날 · 본 것 · 고른 것 · 되풀이 시계 · 예약된 뒷일). 옛 세이브는 칸이 없다 → null(처음 부를 때 만든다) */
+    bjEvents: bjEventsSnapshot(ts.bjEvents)
   };
 }
 
@@ -1901,6 +1904,7 @@ export function deserialize(raw, opt = {}) {
     ts.homeOwned = !!t.homeOwned;   /* D59 */
     ts.cashWeek = t.cashWeek; ts.walletWeekUp = t.walletWeekUp;   /* ★ 10-31 D90 ③ 이레 지갑 */
     ts.moveShortSeen = !!t.moveShortSeen; ts.moveReadyOkSaid = !!t.moveReadyOkSaid;   /* ★ 10-31 D97 §1-1 */
+    ts.bjEvents = t.bjEvents;   /* ★ 10-31 D96 반지하 사건 · null 이면 events_banjiha 가 처음 부를 때 만든다 */
     /* ★★ 옛 세이브에는 `varieSale` 칸이 **아예 없다** — 위 §무늬 삽수 판매 이관.
        ⚠ 「없다」와 「0건이다」는 다른 말이다. 그래서 `t.varieSale`(없으면 0으로 채워진다)이
          아니라 **날 세이브에 그 칸이 있었는지**를 본다. 뭉개면 실제로 0건인 판까지

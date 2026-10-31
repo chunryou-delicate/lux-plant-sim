@@ -1230,6 +1230,11 @@
   #placeConfirm .fit.bad{color:#ffc98f}
   /* ★ B1 ⑤ #9 — [원룸으로 이사]가 못 가는 판에 회색(눌리기는 한다 · 까닭을 말한다) */
   #moveOut.dim{opacity:.5;filter:saturate(.3)}
+  /* ★ D96 반지하 사건 카드 — 얼굴은 손님 카드처럼 위에 작게 · 글은 줄바꿈 그대로 */
+  #evPanel #evFace img{display:block;width:84px;height:112px;object-fit:contain;margin:0 auto 6px}
+  #evPanel #evText{white-space:pre-line;font-size:14px;line-height:1.55;color:var(--ink,#f3eee6)}
+  #evPanel #evNote{font-size:12px;opacity:.8}
+  #evPanel button:disabled{opacity:.45}
   #moveCatcher{position:absolute;z-index:28;inset:0;display:none;touch-action:none}
   #stage.moving #moveCatcher{display:block}
   #stage.moving #plantActions,#stage.moving #furnActions{display:none}
@@ -2367,6 +2372,15 @@
     <div class="pbtns"><button id="breedNameGo" class="go" type="button">이 이름으로 등록</button></div>
   </div>
 </div>
+<!-- ★ 2026-10-31 총괄 D96 — 반지하 사건 카드(events_banjiha · 글은 plan dialogue §EVENT_CARDS) · 얼굴(있으면) · 글 · 단추 하나나 둘 · 단추가 곧 닫기 -->
+<div id="evPanel" class="pop" aria-hidden="true">
+  <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="evText">
+    <div id="evFace"></div>
+    <div class="psub" id="evText"></div>
+    <div class="psub" id="evNote" style="display:none"></div>
+    <div class="pbtns"><button id="evA" class="go" type="button"></button><button id="evB" class="ghost" type="button" style="display:none"></button></div>
+  </div>
+</div>
 <div id="homePanel" class="pop" aria-hidden="true">
   <div class="popcard" role="dialog" aria-modal="true" aria-labelledby="homeTitle">
     <div class="ptitle" id="homeTitle">내 집 마련</div>
@@ -3401,6 +3415,9 @@ import { createDialogue, createStoryteller, SPEAKERS,
          QUEST_OPEN_SCRIPT, QUEST_DONE_SCRIPT,
          auditFaceKeys, auditFacePortraits } from './src/game/dialogue.js';
 import { createMusic } from './src/game/music.js';
+/* ★ 2026-10-31 총괄 D96 — 반지하 사건 카드. 글(카드 · 뒷일 배너)은 plan 몫 dialogue §EVENT_CARDS — 아직 없을 수 있어 «통째로» 받는다(이름을 꺼내 가져오면 없는 이름에서 부팅이 멎는다) */
+import * as DIALOGUE_ALL from './src/game/dialogue.js';
+import { setBanjihaEventsOn, applyBjChoice, bjChoicesOf, BJ_STAMINA_CHOICE } from './src/game/events_banjiha.js';
 /* ★ 2026-10-10 남녀·캐릭터 «추후 분기»의 길(plan-branch-job-gender §3) — 성별을 읽는 곳은 heroGenderNow() 하나 */
 import { heroGenderOf, portraitNameOf } from './src/game/hero_branch.js';
 import { setHeroGender as setHeroGenderV2 } from './src/game/v2_hero.js';
@@ -3448,6 +3465,8 @@ import { noteZoomOpened } from './src/game/leaf_wait.js';
 const ENDING_URL = (() => { try { return new URLSearchParams(location.search).get('endingTarget'); } catch { return null; } })();
 /* ★ 2026-10-31 D93 ⑤ M3 견줄 깃발 — ?m3=0 이면 곳간을 옛 규칙(14끼 · 앞에서 n판)으로 판다(first_play §setPantryLegacyRule · 옛 판과 나란히 재기 전용) */
 try { if (new URLSearchParams(location.search).get('m3') === '0') setPantryLegacyRule(true); } catch { }
+/* ★ 2026-10-31 총괄 D96 — 반지하 사건(events_banjiha) · ?ev=0 이면 통째로 끈다(growth «끔 대 켬»과 같은 깃발) */
+try { if (new URLSearchParams(location.search).get('ev') === '0') setBanjihaEventsOn(false); } catch { }
 let ENDING_NOW = (() => {
   try { const n = Number(ENDING_URL);
         if (ENDING_URL != null && Number.isFinite(n) && n > 0) return endingRulesFrom({ targetWon: n }); } catch { }
@@ -6433,6 +6452,8 @@ function updateHint() {
      ⚠ 창이 떠 있는 동안에는 그 밖의 갈래를 **아예 안 본다** — 어차피 스크림이 다 먹는다. */
   {
     const pop = document.querySelector('.pop.on');
+    /* ★ 2026-10-31 D96 — 반지하 사건 카드는 «고르기»다 — 손가락이 한쪽 단추를 짚으면 고르기가 아니게 된다(plan §2 «카드 동안 손가락은 물러선다» · core 사진 390_ev_card) */
+    if (pop && pop.id === 'evPanel') return hintAt(null, null);
     if (pop) {
       const live = (el) => el && !el.disabled && onScreen(el);
       /* ★ 2026-10-24 다듬기 6-3(core 가름) — 글 속 글자 단추(.linkBtn · 할 일 머리 줄 [진로 바꾸기])는 «창의 일하는 단추»가 아니다.
@@ -13855,6 +13876,8 @@ function showFirstPlayEvents(turn) {
   try { noteQuestWaits(S, S.day); } catch (e) { console.warn('[독촉] 기다림 적기', e && e.message); }
   /* ★ 2026-10-09 [plan] 506d1b44 — 엔딩 목표 금액(§ENDING_NOW · homes.json)을 하루 칸에 싣는다 · 목표 이정표(반 · 거의)가 이 값과 지갑으로 선다. 모르면 null */
   try { turn.homeTarget = endingOn() ? ENDING_NOW.targetWon : null; } catch { turn.homeTarget = null; }
+  /* ★ 2026-10-31 총괄 D96 — 반지하 사건: 카드는 조용한 때(§evCardWhenQuiet) · 뒷일(김치 · 반찬 택배)은 배너(plan 글이 있을 때) */
+  try { noteBjEvents(turn); } catch (e) { console.warn('[반지하 사건]', e && e.message); }
   try { noteMoveSurvives(turn); } catch (e) { console.warn('[이사 버팀]', e && e.message); }   /* ★ D97 §1-1 */
   const ids = story.turn(turn, S);
   if (ids.length) dlgOpen(ids);
@@ -13870,6 +13893,84 @@ function noteMoveSurvives(turn) {
     if (!(turn.events || []).some(e => e && e.id === 'move_ready')) (turn.events = turn.events || []).push({ id: 'move_ready_ok', day: S.day });
   }
 }
+/* ══ ★★ 2026-10-31 총괄 D96 — 반지하 사건 카드(events_banjiha · plan-events-banjiha-d96 §2 · §3) ══════════════════════
+   ★ 뜨는 때 — 아침 대사 · 상태 줄 · 다른 창이 다 끝난 «조용한 때»(§dlgPaint 빈 줄 사슬 · 대사가 없는 아침은 바로 · 그 밖은 1초마다 다시 봄).
+   ★ 글은 plan 몫 dialogue §EVENT_CARDS[key] — { face?, text, textPotOnly?, a, b?, aNoStamina? } · 뒷일 { title, sub }({won}).
+     ⚠ 글이 아직 없으면 카드를 안 띄운다(그 사건은 그날 «안 고름»으로 지나간다 — 하네스는 첫 단추로 고른다 · 지어낸 글을 화면에 안 낸다).
+   ★ 단추 = 고르기 = 닫기. 고른 뒤 대사는 storyteller 사건 ev_<key>_<a|b>(단추 하나면 ev_<key>) — plan SCRIPTS · 갈래 맥락(pale · sillCrop …)을 같이 싣는다.
+   ★ 카드가 떠 있는 동안 손가락은 물러선다(.pop.on — §hintAt 이 덮개 위 창을 본다) */
+let evPending = null, evShown = null, evTick = null;
+function evCardsText() {
+  /* 검사 손잡이 window.__byeotEvCardsOverride — plan 글이 들기 전에 카드 길을 재는 자리(core probe_d96_ev) · 사람 판엔 없다 */
+  const t = (window.__byeotEvCardsOverride && typeof window.__byeotEvCardsOverride === 'object') ? window.__byeotEvCardsOverride : (DIALOGUE_ALL && DIALOGUE_ALL.EVENT_CARDS);
+  return (t && typeof t === 'object') ? t : null;
+}
+function noteBjEvents(turn) {
+  const list = (turn && turn.events) || [];
+  const T = evCardsText();
+  const fill = (s, e) => String(s || '').replace('{won}', Math.round((e && e.won) || 0).toLocaleString('ko-KR'));
+  const ban = [];
+  for (const e of list) {
+    if (!e) continue;
+    if (e.id === 'bj_event') evPending = e;
+    else if (e.id === 'bj_followup') {
+      const c = T && T[e.key];
+      if (c && c.title) ban.push({ title: fill(c.title, e), sub: fill(c.sub, e) });
+    }
+  }
+  if (ban.length) banners(ban);
+  if (evPending) { setTimeout(() => { try { evCardWhenQuiet(); } catch { } }, 60); evTickOn(); }
+}
+function evTickOn() {
+  if (evTick != null) return;
+  evTick = setInterval(() => { try { if (!evPending) { clearInterval(evTick); evTick = null; return; } evCardWhenQuiet(); } catch { } }, 1000);
+}
+function evQuietNow() {
+  const st = $('stage');
+  if (st && (st.classList.contains('talking') || st.classList.contains('confirming') || st.classList.contains('moving'))) return false;
+  if (document.querySelector('.pop.on')) return false;
+  if (typeof dayAnimRunning !== 'undefined' && dayAnimRunning) return false;
+  return true;
+}
+function evCardWhenQuiet() {
+  if (!evPending) return false;
+  if (evPending.day !== S.day) { evPending = null; return false; }   /* 그날 못 띄웠으면 지나간다(이튿날 코어가 «안 고름»으로 닫는다) */
+  if (!evQuietNow()) return false;
+  const e = evPending; evPending = null;
+  const T = evCardsText(), c = T && T[e.key];
+  if (!c || !c.text) { console.info('[반지하 사건] 글이 아직 없습니다 — 카드를 건너뜁니다:', e.key); return false; }
+  evShown = e;
+  const face = $('evFace'); if (face) face.innerHTML = c.face ? npcFaceHTML({ group: c.face }, 'evf') : '';
+  $('evText').textContent = (e.sillCrop === false && c.textPotOnly) ? c.textPotOnly : c.text;
+  const n = bjChoicesOf(e.key);
+  const short = BJ_STAMINA_CHOICE[e.key] === 0 && !!e.staminaShort && !(S.stamina && S.stamina.left >= 1);
+  $('evA').textContent = c.a || '닫기';
+  $('evA').disabled = short;
+  const note = $('evNote'); note.style.display = short ? '' : 'none'; note.textContent = short ? (c.aNoStamina || '체력이 없습니다') : '';
+  $('evB').style.display = n >= 2 ? '' : 'none'; $('evB').textContent = c.b || '';
+  $('evPanel').classList.add('on'); $('evPanel').setAttribute('aria-hidden', 'false');
+  try { updateHint(); } catch { }
+  return true;
+}
+function evChoose(k) {
+  const e = evShown; if (!e) return;
+  const r = applyBjChoice(S, e.key, k);
+  if (!r.ok) { banner('고르지 못했습니다', r.err || ''); if (!r.stamina) closeEvCard(); return; }
+  closeEvCard();
+  /* 빛 지도를 켜 본다(트럭 첫 단추) — 있는 [빛 분포 보기] 손잡이 그대로 */
+  if (e.key === 'truck' && r.choice === 0) { try { const b = $('lightHeat'); if (b && b.getAttribute('aria-pressed') !== 'true') b.click(); } catch { } }
+  const evs = (r.events || []).map(x => ({ ...e, ...x, id: x.id }));
+  let opened = false;
+  try { const ids = story.events(evs, S); if (ids && ids.length) { dlgOpen(ids); opened = true; } } catch (err) { console.warn('[반지하 사건] 대사', err && err.message); }
+  try { saveNow(); } catch (err) { console.warn("[반지하 사건] 저장", err && err.message); }
+  if (!opened) { try { openMonthWhenQuiet(); } catch { } }
+  draw();
+}
+function closeEvCard() { evShown = null; $('evPanel').classList.remove('on'); $('evPanel').setAttribute('aria-hidden', 'true'); try { updateHint(); } catch { } }
+$('evA').onclick = guard(() => evChoose(0));
+$('evB').onclick = guard(() => evChoose(1));
+window.__byeotEvCard = () => ({ pending: evPending ? evPending.key : null, shown: evShown ? evShown.key : null,
+  state: (S.tutorial && S.tutorial.bjEvents) ? JSON.parse(JSON.stringify(S.tutorial.bjEvents)) : null });   /* 재는 손잡이 */
 
 /* ══ [다음 날] 문지기 — **방에 선 시루가 하나라도 있나** ══════════════════
    ★★ 2026-08-10 · 박사님 Day 92 판이 여기서 멈췄다.
@@ -14521,6 +14622,7 @@ function dlgPaint() {
     try { if (openMoveAskWhenQuiet()) return; } catch (e) { console.warn('[D27]', e && e.message); }       /* D27 몬이 한 줄 뒤 → 이사 되묻기 창 */
     try { varieValueBannerWhenQuiet(); } catch (e) { console.warn('[무늬 삽수 값]', e && e.message); }   /* ★ D95 ①-1 몬스테라 온 날 대사 뒤 배너 한 번 */
     try { homeGoalBannerWhenQuiet(); } catch (e) { console.warn('[다음 목표]', e && e.message); }   /* ★ D97 §1-3 원룸 도착 뒤 «내 집 마련» 배너 한 번 */
+    try { if (evCardWhenQuiet()) return; } catch (e) { console.warn('[반지하 사건]', e && e.message); }   /* ★ D96 사건 카드 — 가계부보다 앞(카드가 닫히면 가계부) */
     try { openMonthWhenQuiet(); } catch (e) { console.warn('[가계부]', e && e.message); }
     return;
   }

@@ -71,9 +71,10 @@ check('A-2 ★옮기기·돌리기·시간 보내기는 **공짜**다 (자리를
 });
 
 check('A-3 돌보는 동작은 전부 1씩 쓴다', () => {
-  for (const k of ['water', 'harvest', 'sow', 'cut', 'repot'])
+  /* ★ 2026-10-31 D96 — carry(반지하 사건 «윗집 택배를 올려다 드린다» · events_banjiha §applyBjChoice · 한 판에 한 번)가 여섯째로 들었다 */
+  for (const k of ['water', 'harvest', 'sow', 'cut', 'repot', 'carry'])
     assert.equal(costOf(k), 1, `${k} 비용이 ${costOf(k)} 입니다`);
-  assert.equal(Object.keys(ACT_COST).length, 5, '동작 표에 예상 밖의 항목이 있습니다');
+  assert.equal(Object.keys(ACT_COST).length, 6, '동작 표에 예상 밖의 항목이 있습니다');
 });
 
 /* ══ B · 셈이 맞나 ═══════════════════════════════════════════════════════ */

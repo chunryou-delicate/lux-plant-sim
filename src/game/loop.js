@@ -88,6 +88,7 @@ import { judgeDLI } from '../engine/daily_light.js';
 import { QUESTS } from './quest.js';
 /* ★ 2026-10-08 — 둘째 잎 기다림 «상태 줄»의 칸([plan] plan-leafwait ③ · turn.leafWait) */
 import { readLeafNow, stepLeafWatch } from './leaf_wait.js';
+import { stepBanjihaEvents } from './events_banjiha.js';   /* ★ 2026-10-31 D96 반지하 사건 첫 묶음 */
 
 /* ══ 걷는 속도 — 밝기가 「품질」만이 아니라 「속도」도 정한다 (2026-08-05 박사님 확정) ══
    ------------------------------------------------------------------------------
@@ -1564,7 +1565,11 @@ function nextDayBody(S, io) {
        S.cutOpenToday 는 세이브 안 함(하루짜리) · 못 세면 null */
   turn.cutOpenNow = cutOpenCountOf(S, io);
   S.cutOpenToday = { day: S.day, n: turn.cutOpenNow };
-  return { S, turn: attachEvents(S, turn, fpBefore) };
+  const done = attachEvents(S, turn, fpBefore);
+  /* ★ 2026-10-31 총괄 D96 — 반지하 사건(events_banjiha) · 다른 사건이 다 실린 «뒤»에 부른다(그날 사건 대사 · 월세 · 굶음이 섰으면 카드를 미룬다) ·
+       카드 하나와 예약된 뒷일(김치 · 반찬 택배)이 같은 turn.events 에 실린다 · 하네스도 같은 길 · ?ev=0 · --ev=0 이면 끔 */
+  try { stepBanjihaEvents(S, done); } catch (e) { done.bjError = (e && e.message) || String(e); pushLog(S, `⚠ 반지하 사건 — ${done.bjError}`); }
+  return { S, turn: done };
 }
 
 function cutOpenCountOf(S, io) {

@@ -43,6 +43,7 @@ import { makeGrowth, makeSwitchingLight, questSnapshotOf, atOf, RULES, TUT_RULES
 import { newState, pot0, setPotSlot, resowCrop, waterCrop, waterPot, sellCropSurplus, sellPantryCrop, placedItems } from '../src/game/state.js';
 import { nextDay, harvestCrop } from '../src/game/loop.js';
 import { placeBeansprout, moveMonstera, beansproutReady, pantrySaleQuote, pantryKeepStatus, setPantryLegacyRule } from '../src/game/first_play.js';
+import { setBanjihaEventsOn, applyBjChoice } from '../src/game/events_banjiha.js';   /* ★ D96 반지하 사건 — 첫 단추가 기본 · --ev=0 끔 · --ev-choice=b 둘째 */
 import { orderItem, stockOf, incomingOf, listCutting, listPot, dealListing, marketStatus, marketGate, listingFor,
          SELLABLE_CUTTING_STATUS, assignPotLeafGrades, installVarieGrades } from '../src/game/shop.js';
 import { useStock, creditSpeciesSale, furnitureItemIdOf } from '../src/game/shop.js';
@@ -334,6 +335,15 @@ export async function play(name, seed, opt = {}) {
          아직 안 옮긴 날만 아침마다(nextDay 전) 굳혀 두고, 이사한 그 걸음에 파일로 쓴다(§moveIntoOneroom 뒤) · --dump 일 때만 · 숫자는 안 건드린다(읽기만) */
     const preMoveSave = opt.dump && !ts.movedOut && !dumped.has('premove') ? JSON.stringify(serializeSave(S)) : null;
     try { turn = nextDay(S, io).turn; } catch (e) { out.crash = (e && e.message) || String(e); break; }
+    /* ★ 2026-10-31 D96 — 반지하 사건 카드는 사람처럼 아침에 고른다: 첫 단추가 기본(--ev-choice=b 면 둘째) · 체력 단추가 막히면 둘째 ·
+         뜬 날 · 고른 것 · 뒷일(김치 · 반찬)을 out.bjEvents 에 적는다(growth 가 «끔 대 켬»을 잰다) */
+    if (turn && Array.isArray(turn.events)) for (const ev of turn.events) {
+      if (ev && ev.id === 'bj_event') {
+        let r = applyBjChoice(S, ev.key, opt.evChoice === 'b' ? 1 : 0);
+        if (!r.ok && r.stamina) r = applyBjChoice(S, ev.key, 1);
+        (out.bjEvents = out.bjEvents || []).push({ day: S.day, key: ev.key, choice: r.ok ? r.choice : null });
+      } else if (ev && ev.id === 'bj_followup') (out.bjEvents = out.bjEvents || []).push({ day: S.day, key: ev.key, won: ev.won });
+    }
     /* ★ 2026-10-09 (D30 «먼저 확인») — 모주 무늬 잎 등급(game.html §noteTurn → noteLeafGrades 와 같게: 이 턴의 밴드로 · 한 번 정하면 안 바뀜).
          ⚠ 예전엔 이 줄이 없어 장부가 비었고 무늬 삽수는 모두 legacy 산반(35만)으로 값이 매겨졌다 — lightGrade 를 바꿔도 이 판은 안 움직였다 */
     if (pot0(S)) { try { const gr = assignPotLeafGrades(S, { leafState: io.growth.leafState(), band: (turn && turn.growthSpeed && turn.growthSpeed.band) || null });
@@ -1384,6 +1394,7 @@ export async function play(name, seed, opt = {}) {
 if (arg('one', null)) {
   const o = JSON.parse(arg('one'));
   if (o.legacyPantry) setPantryLegacyRule(true);   /* ★ D93 ⑤ 옛 곳간 규칙(14끼 · 앞에서부터)과 견주기 */
+  if (o.ev === 0) setBanjihaEventsOn(false);   /* ★ D96 --ev=0 — 반지하 사건 끔 */
   const r = await play(o.name, o.seed, o);
   process.stdout.write(JSON.stringify(r) + '\n');
   process.exit(0);
@@ -1404,13 +1415,16 @@ const CROPMULT = arg('cropmult', null) == null ? null : Number(arg('cropmult'));
 const TRACE = !!arg('trace', false);
 const LEGACY_SEAT = !!arg('legacy-seat', false);   /* ★ D92 ㉯ — 이사 뒤 작물을 옛 손(sill:0 한 점)으로 · 옛 숫자와 견주기 */
 const LEGACY_PANTRY = !!arg('legacy-pantry', false);   /* ★ D93 ⑤ — 곳간을 옛 규칙(14끼 · 앞에서 n판)으로 · 옛 숫자와 견주기 */
+const EV_OFF = process.argv.includes('--ev=0') || String(arg('ev', '1')) === '0';   /* ★ D96 — --ev=0 이면 반지하 사건 끔 */
+const EV_CHOICE = (process.argv.includes('--ev-choice=b') || String(arg('ev-choice', 'a')) === 'b') ? 'b' : 'a';   /* ★ D96 — --ev-choice=b 면 사건 카드 둘째 단추 */
 const tasks = NAMES.flatMap(name => SEEDS.map(seed => ({ name, seed, targets: TARGETS, days: DAYS, noprologue: !!arg('noprologue', false), nodoor: !!arg('nodoor', false),
                                                          ...(Number.isFinite(RENT) ? { rent: RENT } : {}), ...(GRADES ? { grades: GRADES } : {}),
                                                          ...(Number.isFinite(BOOST) ? { boost: BOOST } : {}), ...(TRACE ? { trace: true } : {}),
                                                          ...(Number.isFinite(MOVECOST) ? { movecost: MOVECOST } : {}),
                                                          ...(Number.isFinite(CROPMULT) ? { cropmult: CROPMULT } : {}),
                                                          ...(LEGACY_SEAT ? { legacySeat: true } : {}),
-                                                         ...(LEGACY_PANTRY ? { legacyPantry: true } : {}) })));
+                                                         ...(LEGACY_PANTRY ? { legacyPantry: true } : {}),
+                                                         ...(EV_OFF ? { ev: 0 } : {}), ...(EV_CHOICE === 'b' ? { evChoice: 'b' } : {}) })));
 const results = [];
 let next = 0;
 async function worker() {

@@ -43,7 +43,8 @@ export const ACT_COST = Object.freeze({
   harvest: 1,      // 수확
   sow: 1,          // 다시 심기
   cut: 1,          // 삽수 자르기
-  repot: 1         // 삽수 분갈이
+  repot: 1,        // 삽수 분갈이
+  carry: 1         // ★ 2026-10-31 D96 — 반지하 사건 «윗집 택배를 올려다 드린다»(events_banjiha §applyBjChoice) · 한 판에 한 번
 });
 
 /* ══════════════════════════════════════════════════════════════════════════
