@@ -429,27 +429,42 @@ async function main() {
        `null` 이 나왔고, 「null 이면 넘어간다」로 짜 놓아 두 검사가 **아무것도 안 재고 통과**했다.
        START-HERE §2.9-① 그대로다 — **안 나온 것을 「없다」로 읽으면 안 된다.**
        ⇒ 이웃 바닥을 격자로 훑고, **화면에 든 표본이 모자라면 방위를 돌려 다시 잰다.**
-         그래도 모자라면 **실패**다(못 쟀으면 못 쟀다고 한다). */
+         그래도 모자라면 **실패**다(못 쟀으면 못 쟀다고 한다).
+     ⚠⚠ 2026-11-01 [house] — 화면 «안»이라도 **그 점이 보이는지**는 따로 봐야 했다.
+       돌린 각(az ≈ 135°)에서 «이웃 바닥» 5점 중 둘의 화면 자리에 **우리 집 벽**(#c7bda7 · 불 켜진 쪽)이 찍혀,
+       그 벽 밝기(밤 83.5 · 134.3)를 이웃 값으로 셌다 — 진짜 이웃 바닥 셋은 15.2 · 15.9 · 23.1(우리 방 43.8).
+       v2(겉감·후처리)로 밤 방이 조금 어두워지자 이 섞인 평균이 뒤집혀 빨강이 됐다(그림은 맞다 · 기본 각에선 이웃 19.1 < 방 39.5).
+       ⇒ 카메라에서 점까지 광선을 쏘아 **그려지는 불투명한 것**이 먼저 막으면 그 점은 뺀다(가림 수는 따로 센다).
+         이웃·창밖 메시는 광선을 비워 두었으니 걸리는 것은 우리 쪽뿐이다.
+         안 막는 것: 숨긴 것(조상까지) · 재질 숨김 · 색을 안 쓰는 껍데기(컷어웨이는 깊이도 안 쓴다 · house.js) · 반투명 < 0.5 */
   const LUM = `((pts) => {
     const cv = document.getElementById('roomCanvas');
     window.view.redraw();
     const c2 = document.createElement('canvas');
     c2.width = cv.width; c2.height = cv.height;
     const g = c2.getContext('2d'); g.drawImage(cv, 0, 0);
-    const cam = window.view.three.cam;
-    const acc = {};
+    const cam = window.view.three.cam, scene = window.view.three.scene, rc = new THREE.Raycaster();
+    const drawn = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
+    const blocks = h => { const m = Array.isArray(h.object.material) ? h.object.material[0] : h.object.material;
+      return h.object.isMesh && drawn(h.object) && !!m && m.visible !== false && m.colorWrite !== false
+             && !(m.transparent && m.opacity < 0.5); };
+    const acc = {}, hid = {};
     for (const [name, wp] of pts) {
-      const q = new THREE.Vector3(wp[0], wp[1], wp[2]).project(cam);
+      const wv = new THREE.Vector3(wp[0], wp[1], wp[2]);
+      const q = wv.clone().project(cam);
       if (q.z > 1) continue;                                   // 카메라 뒤
       const x = Math.round((q.x * 0.5 + 0.5) * c2.width), y = Math.round((-q.y * 0.5 + 0.5) * c2.height);
       if (x < 5 || y < 5 || x >= c2.width - 5 || y >= c2.height - 5) continue;
+      const toPt = wv.distanceTo(cam.position);
+      rc.set(cam.position, wv.clone().sub(cam.position).normalize());
+      if (rc.intersectObject(scene, true).some(h => h.distance < toPt - 0.06 && blocks(h))) { hid[name] = (hid[name] || 0) + 1; continue; }
       const d = g.getImageData(x - 3, y - 3, 7, 7).data;
       let s = 0, n = 0;
       for (let i = 0; i < d.length; i += 4) { s += 0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2]; n++; }
       (acc[name] = acc[name] || []).push(s / n);
     }
     const out = {};
-    for (const k in acc) out[k] = { n: acc[k].length,
+    for (const k in acc) out[k] = { n: acc[k].length, hidden: hid[k] || 0,
                                     avg: +(acc[k].reduce((a, b) => a + b, 0) / acc[k].length).toFixed(1) };
     return out;
   })`;
@@ -473,8 +488,8 @@ async function main() {
       await page.eval(yawDrag(180), false); await sleep(520);   // 화면 밖이면 돌려서 다시 잰다
     }
     lum[t] = m;
-    console.log(`      t=${t}  우리 방 바닥 ${m.ours ? m.ours.avg + '(' + m.ours.n + '점)' : '못 쟀다'}` +
-                ` · 이웃 바닥 ${m.nbr ? m.nbr.avg + '(' + m.nbr.n + '점)' : '못 쟀다'}`);
+    console.log(`      t=${t}  우리 방 바닥 ${m.ours ? m.ours.avg + '(' + m.ours.n + '점 · 가림 ' + m.ours.hidden + ')' : '못 쟀다'}` +
+                ` · 이웃 바닥 ${m.nbr ? m.nbr.avg + '(' + m.nbr.n + '점 · 가림 ' + m.nbr.hidden + ')' : '못 쟀다'}`);
   }
   const measured = Object.values(lum).every(L => L.ours && L.ours.n >= 4 && L.nbr && L.nbr.n >= 4);
   ok('nbr_lum_measurable', measured, '낮·밤 둘 다 우리 방 4점 이상 · 이웃 4점 이상을 실제로 쟀다');
