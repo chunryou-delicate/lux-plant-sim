@@ -293,6 +293,18 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-10-31 · D98 반지하 사건 보정 셋 — D96 과 견줌 (총괄 · core 5744b193)
+
+```
+[잰 것] probe_branches(5744b193 고정 복사본 · humanQ · guide · g,1-10 · 700일 · --trace) — --ev=0 / 기본 / --ev-choice=b
+  이사 · 내 집 · 굶음 · 손일   D96 과 22판 모두 같음 · 끈 판은 날마다 지갑까지 D96 과 같음 · 둘째 단추 = 끔
+  카드        9장 / 8장 그대로 · 첫 Day 37~38 · 사이 ≥ 6일(6일이 첫 단추 판 57%)
+              할 일 끝 날 · nudge 날 카드 0(D96 2 · 14) · 미룸 16(nudge 14 · 할 일 2)
+  빈 칸       마지막 카드 → 이사 첫 단추 중앙 49 → 44일(36~59) · 둘째 단추 47 → 46일(24~63)
+  기한        추석이 창 끝 Day 80 에 선 판 4/22 · 택배 Day 64 판 2/22 — 놓친 판 0
+```
+> ★ ㉮ ㉯ 가 바란 대로 섰고 판 숫자는 안 움직였다. 전문 `growth-d98-events-20261031.md` · `growth-d98-events.json`.
+
 ### 2026-10-31 · D96 반지하 사건 첫 묶음 — 끔 · 켬(첫 단추) · 켬(둘째 단추) (총괄 · core 4e9de1da)
 
 ```
