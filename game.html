@@ -11503,11 +11503,22 @@ function bandOfPot(pot) {
       /* ★ 턴이 **주기를 정할 때 쓴 밴드**가 정본이다(loop.js §waterBand). 마른 날에는
          밝기 속도(growthSpeed)가 아예 안 재어져 `null` 로 남으므로 그것부터 보면 안 된다. */
       if (r && r.waterBand) return r.waterBand;
-      return (r && r.growthSpeed && r.growthSpeed.band) || null;
+      if (r) return (r.growthSpeed && r.growthSpeed.band) || null;
+      /* ★ 2026-10-31 총괄 D93 ⑥ 덧(growth-critic2-m6-numbers §3 첫째) — 지난 턴에 «그 그루 줄이 아예 없다» = 막 놓은 그루.
+           ⛔ «모름 → 기본 주기(8)»로 셌다가 다음 턴부터 그 자리 밴드로 바뀌어 «물 n일 뒤»가 하루 새 5 → 6 으로 튀었다(비판 둘째 판 Day 11 → 12 · 창턱).
+           ⇒ 놓인 자리의 빛 밴드(§growBandAt — 그 자리 DLI → io.growth.bandOf)로 첫날부터 센다. 다음 턴이 정하는 밴드도 그 자리 빛이라 안 튄다.
+           ⚠ 줄이 있으면(옮긴 그루 · 마른 날) 위 그대로 — 턴이 쓴 값이 정본이다 */
+      return bandHereOf(pot);
     }
   } catch { }
   /* 다개체 칸이 아예 없는 옛 턴 — 그때는 옛 칸이 곧 그 한 그루의 값이다 */
-  return (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null;
+  const b0 = (lastTurn && lastTurn.growthSpeed && lastTurn.growthSpeed.band) || null;
+  /* ★ 같은 날 — 첫 그루가 처음 선 날(지난 턴에 그루가 하나도 없었다)도 막 놓은 그루다 */
+  return b0 || (pot && (pot.slotId || pot.at) ? bandHereOf(pot) : null);
+}
+/* 놓인 자리의 빛 밴드 — 못 재면 null(코어가 «기본 주기»로 받는다 · 지어내지 않는다) */
+function bandHereOf(pot) {
+  try { const g = growBandAt(pot.at ? pot : pot.slotId, !!pot.variegated); return (g && g.band) || null; } catch { return null; }
 }
 function potWaterNow(pot) {
   if (!hasPlant(S)) return null;
@@ -11515,7 +11526,10 @@ function potWaterNow(pot) {
     return potWaterStatus(S, {
       pot: pot || undefined,
       band: bandOfPot(pot),        /* ⚠ **그 그루의** 밴드다 (§bandOfPot) */
-      season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null
+      /* ★ 2026-10-31 D93 ⑥ 덧 — 지난 턴이 없으면(세이브를 막 연 첫 화면) 철도 «모름»이라 철 보정(여름 −1)이 빠졌고, 다음 날 «N일 뒤»가 두 칸 줄었다(core 자 probe_waterband).
+           ⇒ 그날 하늘(io.light.skyFor — 턴이 물 셈에 쓰는 그 철 · 반지하는 늘 여름)로 · 막 놓은 그루의 밴드와 같은 «모름 → 기본» 꼴 */
+      season: (lastTurn && lastTurn.sky && lastTurn.sky.season)
+           || (() => { try { return io.light.skyFor(S.day, S.sim).season || null; } catch { return null; } })()
     });
   } catch { return null; }
 }
