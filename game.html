@@ -3582,6 +3582,9 @@ let S = newState({ room: 'banjiha', mode: 'novice', firstPlay: true, firstPlayRu
                         놓기와 심기가 갈리면서 씨앗 없이는 첫 걸음이 막힌다. */
                      startSeeds: 1 });
 let lastTurn = null;
+/* ★ 2026-10-31 D93 ③ M4 ㉠ — 등 «여기에 달까요?» 상태(§placeLampFromBag). uid 가 있으면 아래 확인 바는 등 갈래다(§placeConfirm.paint · §follow · placeOk/placeCancel) ·
+     ⚠ 손가락 그리기(§updateHint)가 부팅 중에도 읽으므로 앞쪽에 둔다 */
+const lampAsk = { uid: null, ko: '', pos: null };
 /* ★★ 2026-08-11 — **빛이 막혀 멈춘 날을 여기서 따로 센다.**
    ------------------------------------------------------------
    예전에는 확대창이 `daysPlanted - fedDays` 를 「멈춘 날 수」로 썼는데(§drawGrowGauge),
@@ -5752,6 +5755,7 @@ function bindDetail() {
        눌러도 **아무 일도 안 일어났다**(박사님: *"다 안 되잖아 배치"*).
        ⚠ 오류도 안 났다 — 그래서 「눌러도 반응이 없다」로만 보였다. 이 저장소가 제일 자주 앓는 병이다. */
     if (cell.dataset.place === 'beansprout') startPhonePlace();
+    else if (cell.dataset.place === 'musun') startPhonePlaceMusun();   /* ★ 2026-10-31 D93 ③ — 재배판 칸의 그림 밖을 눌러도(시루 칸과 같게) · 빠져 있어 아무 일이 없었다 */
     else if (/^box:/.test(cell.dataset.place)) startPhonePlace(cell.dataset.place.slice(4), { potId: cell.dataset.boxpot });   /* ★ D92 이삿짐 */
     else if (isPotPlace(cell.dataset.place)) startPhonePlacePot(cell.dataset.place);
     else if (isCutPlace(cell.dataset.place)) startPhonePlaceCut(cutIdOf(cell.dataset.place));
@@ -5765,6 +5769,7 @@ function bindDetail() {
     if (!cell || e.target.closest('button')) return;
     e.preventDefault();
     if (cell.dataset.place === 'beansprout') startPhonePlace();
+    else if (cell.dataset.place === 'musun') startPhonePlaceMusun();   /* ★ 2026-10-31 D93 ③ — 재배판 칸의 그림 밖을 눌러도(시루 칸과 같게) · 빠져 있어 아무 일이 없었다 */
     else if (/^box:/.test(cell.dataset.place)) startPhonePlace(cell.dataset.place.slice(4), { potId: cell.dataset.boxpot });   /* ★ D92 이삿짐 */
     else if (isPotPlace(cell.dataset.place)) startPhonePlacePot(cell.dataset.place);
     else if (isCutPlace(cell.dataset.place)) startPhonePlaceCut(cutIdOf(cell.dataset.place));
@@ -6125,7 +6130,7 @@ function updateHint() {
         const ra = again.getBoundingClientRect();
         if (ra.width > 0 && ra.height > 0) return hintAt(again, '여기를 눌러 보세요');
       }
-      if (r.width > 0 && r.height > 0) return hintAt(ok, '여기에 둘까요? — [확인]');
+      if (r.width > 0 && r.height > 0) return hintAt(ok, lampAsk.uid ? '여기에 달까요? — [확인]' : '여기에 둘까요? — [확인]');   /* ★ D93 ③ 등 갈래 */
     }
   }
   /* ★★★★ 2026-08-29 — **[옮기기] 뒤에는 «갈 자리»를 가리킨다** (박사님 ④)
@@ -16804,6 +16809,13 @@ const placeConfirm = {
   /* 글자와 경고를 채운다. **경고는 막지 않는다** — 박사님 지시가 그렇다(③). */
   paint() {
     const who = $('placeConfirmWho');
+    /* ★ D93 ③ M4 ㉠ — 등 갈래(§lampAsk): «여기에 {등}을 달까요?» · 빛·길 경고는 없다(등 자리는 정해져 있다) */
+    if (lampAsk.uid) {
+      if (who) who.textContent = `여기에 ${josa(lampAsk.ko, '을', '를')} 달까요?`;
+      const w0 = $('placeConfirmWarn'); if (w0) { w0.textContent = ''; w0.style.display = 'none'; }
+      this.moveHelps = false;
+      return;
+    }
     if (who) who.textContent = picked.slotId && !isFreeSlotId(picked.slotId)
       ? `${slotLabel(picked.slotId)}에 둘까요?` : '여기에 둘까요?';
     const warn = $('placeConfirmWarn');
@@ -16830,6 +16842,12 @@ const placeConfirm = {
       if (this.tick != null) return;
       const step = () => {
         this.tick = requestAnimationFrame(step);
+        /* ★ D93 ③ — 등 갈래면 그 등 자리를 따라간다(§lampAsk) */
+        if (this.on && lampAsk.uid && lampAsk.pos) {
+          let q = null; try { q = roomView && roomView.worldToScreen(lampAsk.pos.x, lampAsk.pos.y, lampAsk.pos.z); } catch { q = null; }
+          placeFloatMenu($('placeConfirm'), q);
+          return;
+        }
         if (!this.on || !picked.slotId) return;
         let p = null; try { p = roomView && roomView.screenPosOf(picked.slotId); } catch { }
         placeFloatMenu($('placeConfirm'), p);
@@ -17297,6 +17315,43 @@ function placeLampFromBag() {
     return;
   }
   const ko = ['벽부형 식물등', '집게형 식물등', '거치형 식물등'][L.placed || 0] || '식물등';
+  /* ★★ 2026-10-31 총괄 D93 ③ M4 ㉠ — **«여기에 달까요?»를 거친다**(비판 둘째 판 Day 45 · s138 · s141 · s148 — 확인 창 없이 바로 달려 어디 달렸는지 몰라 7분 헤맴).
+       등 자리는 방마다 정해져 있다(조도 창 growRigs 차례 · 자리는 안 옮김 — house 69f1dfe0 · G-16 창턱 7.07).
+       ⇒ 그 자리를 방에서 밝혀(roomView.highlightFurniture) 보여 주고, 아래 확인 바(§placeConfirm 등 갈래 · §lampAsk)로 [확인] · [취소].
+       ⚠ 자리를 못 보여 주면(방 뷰 없음 · 등 자리 모름) 예전처럼 바로 단다 */
+  const rig = (() => { try { return ((io.light.room && io.light.room.growRigs) || [])[L.placed || 0] || null; } catch { return null; } })();
+  if (rig && rig.uid && rig.pos && roomView && roomView.highlightFurniture && roomView.worldToScreen && !lampAsk.uid) {
+    lampAsk.uid = rig.uid; lampAsk.ko = ko; lampAsk.pos = rig.pos;
+    try { window.__byeotSheet.close(); } catch { }
+    try { picked.clear(); } catch { }
+    try { roomView.highlightFurniture(rig.uid); } catch { }
+    placeConfirm.show();
+    $('placeAgain').style.display = 'none';
+    draw();
+    return;
+  }
+  commitLampFromBag(ko, rig && rig.uid);
+}
+function lampAskEnd() {
+  lampAsk.uid = null; lampAsk.ko = ''; lampAsk.pos = null;
+  try { $('placeAgain').style.display = ''; } catch { }
+  placeConfirm.hide();
+}
+function lampAskOk() {
+  const ko = lampAsk.ko, uid = lampAsk.uid;
+  lampAskEnd();
+  commitLampFromBag(ko, uid);
+}
+function lampAskCancel() {
+  const uid = lampAsk.uid;
+  lampAskEnd();
+  try { if (roomView && roomView.highlightedFurniture && roomView.highlightedFurniture() === uid) roomView.highlightFurniture(null); } catch { }
+  banner('식물등을 달지 않았습니다', '식물등은 가방에 그대로 있습니다');
+  draw();
+}
+function commitLampFromBag(ko, uid) {
+  const L = S.tutorial && S.tutorial.lamp;
+  if (!L) return;
   L.placed = (L.placed || 0) + 1;
   S.lamps.count = L.placed;
   io.light.clearCache();
@@ -17305,6 +17360,11 @@ function placeLampFromBag() {
   try { sfx.thud(); } catch { }
   try { window.__byeotSheet.close(); } catch { }
   fillSlots(); syncRoom(); draw();
+  /* ★ D93 ③ — 단 등을 몇 초 밝혀 «어디에 달렸나»를 보인다(house 69f1dfe0 (나)) · 그 뒤 끈다(다른 것을 밝혀 두었으면 안 건드림) */
+  if (uid && roomView && roomView.highlightFurniture) {
+    try { roomView.highlightFurniture(uid); } catch { }
+    setTimeout(() => { try { if (roomView.highlightedFurniture && roomView.highlightedFurniture() === uid) roomView.highlightFurniture(null); } catch { } }, 3500);
+  }
   /* ★ 2026-10-08 [plan] 갈래 지도 9(94) — 단 날 그 등이 밝힌 칸 밑에 몬스테라·삽수가 하나도 없으면 사건 하나(대사는 plan 몫) */
   try { const u = lampUnderEmpty(); if (u && u.empty) dlgOpen(story.events([{ id: 'lamp_under_empty', ko: '등 밑에 식물이 없습니다', lit: u.lit }], S)); }
   catch (e) { console.warn('[등 밑]', e && e.message); }
@@ -17343,6 +17403,12 @@ function startPhonePlace(kind = 'beansprout', opt = {}) {
   const spare = boxId ? 1 : musun ? spareContainerOf('musun') : spareSiru();
   if (spare <= 0) { banner(musun ? '가방에 빈 재배판이 없습니다' : '가방에 빈 시루가 없습니다', musun ? '상점에서 새싹 재배판을 주문해 주세요' : '상점에서 시루를 주문해 주세요'); return; }
   const spot = provisionalSpot(musun ? 'musun' : 'beansprout');
+  /* ★ D93 ③ — 이름 자리가 다 찼으면 그렇게 말한다(찬 자리에 겹쳐 세우지 않는다 · §provisionalSpot) */
+  if (!spot && cropSlotsAllTaken()) {
+    const oneroom = !!(S.home && S.home.room === 'oneroom');
+    banner('빈 자리가 없습니다', oneroom ? '가구를 더 놓거나, 놓인 것을 옮겨 자리를 비워 주세요' : '가방 칸을 방의 빈 바닥으로 끌어 놓아 주세요');
+    return;
+  }
   if (!spot) { banner('놓을 자리를 못 찾았습니다', '방을 조금 돌린 뒤 다시 눌러 주세요'); return; }
   let r = null;
   /* ★ 2026-08-16 — 끌어 놓기와 **같은 낱말**(`sow:false`)이라야 두 손이 같은 일을 한다.
@@ -17488,7 +17554,32 @@ function provisionalSpot(what = 'beansprout') {
   const near = free.filter(s => slotReachable(s.slotId));
   const pool = (near.length ? near : free).slice().sort((a, b) => (meals(b) - meals(a)) || (a.dli - b.dli));
   if (pool.length) return pool[0].slotId;
-  return list.length ? list[0].slotId : null;
+  /* ★★ 2026-10-31 총괄 D93 ③ M4 ㉡ — **찬 이름 자리는 절대 안 준다.**
+       ⛔ 여기 «return list[0]»(후보 첫째 = 가장 밝은 창턱)이 있어, 이름 자리 15칸이 다 찬 뒤 누른 시루 · 재배판 넷이
+         모두 이미 찬 banjiha-sill:0 에 같은 좌표로 섰다(비판 둘째 판 Day 27 · 29 · house 69f1dfe0 · 놓는 손도 안 막았다 — state §namedSlotBusy 로 막음).
+       ⇒ 바닥을 더 넓게 찾는다(구석 넷 밖 · 그 작물 빛에 맞는 데 먼저) · 원룸은 방바닥 금지라 없음 → 부르는 쪽이 «빈 자리가 없습니다»를 말한다 */
+  if (floorOk) { const f = floorGridSpot(potD, kindId); if (f) return f; }
+  return null;
+}
+/* ★ D93 ③ — 이름 자리가 다 찼을 때 바닥 칸을 넓게 쏜다(5×4) · 놓이는 바닥 칸 가운데 그 작물 빛에 맞는 데(끼 많은 데 › 덜 밝은 데) */
+function floorGridSpot(potD, kindId) {
+  let c = null; try { c = $('roomCanvas').getBoundingClientRect(); } catch { return null; }
+  const sky = (() => { try { return io.light.skyFor(S.day + 1, S.sim); } catch { return null; } })();
+  const cands = [];
+  for (const fy of [0.55, 0.65, 0.75, 0.85]) for (const fx of [0.12, 0.31, 0.5, 0.69, 0.88]) {
+    let hit = null; try { hit = freePlace.surfaceAt(c.left + c.width * fx, c.top + c.height * fy, potD); } catch { hit = null; }
+    if (!(hit && hit.ok && !hit.onUid)) continue;
+    let dli = null;
+    try { dli = sky ? io.light.dliAt({ x: hit.x, y: hit.y, z: hit.z }, { weather: sky.weather, season: sky.season, lampCount: S.lamps.count, litHours: S.lamps.litHours, plantId: 'monstera_deliciosa' }).dli : null; } catch { dli = null; }
+    let meals = 0; try { meals = Number.isFinite(dli) ? ((cropQualityOf(kindId, dli) || {}).meals || 0) : 0; } catch { meals = 0; }
+    cands.push({ at: atOf(hit), dli: Number.isFinite(dli) ? dli : 99, meals });
+  }
+  cands.sort((a, b) => (b.meals - a.meals) || (a.dli - b.dli));
+  return cands.length ? cands[0].at : null;
+}
+/* ★ D93 ③ — 그 작물 후보 이름 자리가 «다 찼나»(누르기가 자리를 못 찾은 까닭을 말할 때) */
+function cropSlotsAllTaken() {
+  try { const taken = takenSlotIds(); const list = cropCandidates(); return list.length > 0 && list.every(s => taken.has(s.slotId)); } catch { return false; }
 }
 /* ══════════════════════════════════════════════════════════════════════════
    ★★★ ③ 놓기 전에 「길이 막힌다」를 말해 준다 (2026-08-09 박사님 지시)
@@ -18765,9 +18856,9 @@ function bindPicked() {
   /* ★★★ 폰 배치의 [확인] 바 (2026-08-09 · §placeConfirm).
      ⚠ `tapOnce` 를 쓴다 — 폰에서는 pointerdown 이 답이고, 그 뒤끝 click 이 밑
        캡버스로 새는 것을 그 함수가 이미 막고 있다(가구 메뉴와 같은 손). */
-  tapOnce('placeOk', () => placeConfirmOk());
+  tapOnce('placeOk', () => (lampAsk.uid ? lampAskOk() : placeConfirmOk()));   /* ★ D93 ③ — 등 갈래(§lampAsk) */
   tapOnce('placeAgain', () => { if (picked.slotId) picked.beginMove(); });
-  tapOnce('placeCancel', () => placeConfirmCancel());
+  tapOnce('placeCancel', () => (lampAsk.uid ? lampAskCancel() : placeConfirmCancel()));
   /* 메뉴 바깥 테두리(::before)를 눌러도 캔버스로 안 새게 막는다 */
   $('placeConfirm').onpointerdown = (e) => { e.stopPropagation(); };
   /* 같은 잡이판을 화분과 가구가 나눠 쓴다 — 지금 무엇을 옮기는 중인지로 갈린다.

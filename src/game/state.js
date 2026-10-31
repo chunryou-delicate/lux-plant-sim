@@ -46,9 +46,9 @@ import { createShopState, useStock, assertStockAll, stockOf,
      둘 다 알아야 답할 수 있고, 둘을 아는 자리는 여기뿐이다(§plantableInto). */
 import { CONTAINERS, placeCutContainer, containerRowOf, containerKindOf,
          containerKindOfItem, putCuttingIn, methodLeafBlock,
-         cuttingStatsNow } from './propagation.js';
+         cuttingStatsNow, roomThingsOf } from './propagation.js';
 import { atFromSlot, isFreeSlotId, makeAt, resolvePlacement, samePoint,
-         inRoom, assertFurnitureAt, followFurnitureAt, spotOf } from './place.js';
+         inRoom, assertFurnitureAt, followFurnitureAt, spotOf, slotSeater } from './place.js';
 
 export const SCHEMA = 'game_state/1';
 
@@ -947,10 +947,40 @@ function assertNotOneroomFloor(S, at, opt = {}) {
   }
 }
 
+/* ★★ 2026-10-31 총괄 D93 ③ M4 ㉡ — **찬 이름 자리에는 안 놓는다** (house 69f1dfe0 · 비판 둘째 판 Day 50 세이브)
+     ⛔ 놓는 손(first_play §placeCrop · 아래 §placeSiru · §setCropAt)이 찬 자리를 안 막아, banjiha-sill:0 한 이름 자리에
+       시루 1 · 재배판 4 · 몬스테라가 같은 좌표로 섰다(Day 27 · 29 — 이름 자리 15칸이 다 찬 뒤 «누르기» 자동 고르기가 맨 앞 칸(창턱)을 그냥 줬다).
+     ★ «찼나»는 083337c5 회수 손과 같은 판단이다(place §slotSeater · room_view §slotOccupied — 그 열쇠로 선 것 · 그 점 0.05m 위에 선 자유 좌표 것).
+     ⚠ 옮기는 그것 자신은 뺀다(self) · 자리표(opt.slots)를 모르면 막지 않는다(헤드리스 옛 호출부) · 반환: 찬 이름 자리 id 또는 null */
+function namedSlotBusy(S, target, opt, self) {
+  const slots = (opt && opt.slots) || [];
+  if (!slots.length || target == null) return null;
+  let sp = null;
+  try { sp = spotOf(target, { ...opt, id: (self && self.id) || 'probe' }); } catch (e) { return null; }
+  let sid = sp && sp.slotId && !isFreeSlotId(sp.slotId) ? sp.slotId : null;
+  if (!sid && sp && sp.at) { const s = slots.find(v => v && Number.isFinite(v.x) && samePoint(sp.at, v, 0.05)); sid = s ? s.slotId : null; }
+  if (!sid) return null;
+  const seat = slotSeater(slots, roomThingsOf(S).filter(t => t !== self));
+  return seat.has(sid) ? sid : null;
+}
+function assertNamedSlotFree(S, target, opt, self) {
+  const busy = namedSlotBusy(S, target, opt, self);
+  if (!busy) return;
+  const e = new Error('[배치] 그 자리에는 이미 다른 것이 있습니다 — 빈 자리에 놓아 주세요');
+  e.tutorialInput = true; e.slotBusy = busy;
+  throw e;
+}
+
 export function setCropAt(S, at, opt = {}) {
   assertNotOneroomFloor(S, at, opt);
   const fp = S && S.firstPlay;
   if (!fp || !fp.beansprout) throw new Error('[배치] 첫 플레이 상태가 없습니다 — 놓을 시루가 없습니다');
+  /* ★ D93 ③ — 한 시루를 옮길 때(potId)만 찬 이름 자리를 거절한다. 무리째 옮기는 옛 길(potId 없음 · 옛 호출부)은 그대로 */
+  if (opt.potId) {
+    let self = null;
+    for (const s of cropSites(fp)) { const q = cropPotOf(ensureCropPots(s), opt.potId); if (q) { self = q; break; } }
+    assertNamedSlotFree(S, at, opt, self);
+  }
   /* ★ 2026-08-05 — `opt.kind` 로 어느 작물 자리인지 고른다. 없으면 콩나물(옛 호출부).
      ⚠ 자리는 종류마다 따로다 — 무순을 놓아도 콩나물 자리는 안 움직인다(first_play §작물 자리). */
   const kindId = opt.kind || 'beansprout';
@@ -1020,6 +1050,8 @@ export function placeSiru(S, at, opt = {}) {
     if (!pot) { const e = new Error(`[배치] 가방에 그 ${k.containerKo}가 없습니다: ${opt.potId}`); e.tutorialInput = true; throw e; }
   } else pot = idleCropPots(site).find(p => !boxed.has(p)) || null;
   const fromBox = !!(pot && pot.moveBox);
+  /* ★ D93 ③ — 찬 이름 자리에는 안 세운다(§namedSlotBusy) · 아무것도 만들고 빼기 전에 */
+  assertNamedSlotFree(S, at, opt, pot);
   if (!pot) {
     /* ① **묻기만 한다.** 여기서는 한 톨도 안 뺀다 */
     const need = [{ itemId: k.containerItemId, qty: 1 }];

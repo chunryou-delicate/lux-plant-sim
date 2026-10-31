@@ -775,6 +775,9 @@ const lampFromBag = async () => {
   if (!(left > 0)) return false;
   await ev(`window.__byeotSheet.open('bag')`, false); await settleSheet(true);
   const hit = await ev('(()=>{ const b=document.getElementById("__lampbag__"); if(!b) return false; b.click(); return true; })()');
+  /* ★ 2026-10-31 D93 ③ M4 ㉠ — 이제 «여기에 달까요?» 확인 바를 거친다(game.html §lampAsk) — 뜨면 [확인] */
+  await sleep(600);
+  await ev('(()=>{ const s=document.getElementById("stage"); const ok=document.getElementById("placeOk"); if (s && s.classList.contains("confirming") && ok) { ok.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true})); ok.click(); } return 1; })()');
   await sleep(600); await tapTalk();
   const placed = await ev('(()=>{ const L=window.__S().tutorial && window.__S().tutorial.lamp; return L ? (L.placed||0) : 0; })()');
   if (hit && placed > 0) {

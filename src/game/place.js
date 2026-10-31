@@ -340,7 +340,9 @@ export function slotSeater(slots, things) {
       if (s) taken.add(s.slotId);
       return s;
     },
-    left() { return list.filter(v => !taken.has(v.slotId)).length; }
+    left() { return list.filter(v => !taken.has(v.slotId)).length; },
+    /* ★ 2026-10-31 D93 ③ — 그 이름 자리가 찼나(놓는 손이 찬 자리를 거절할 때 · state §namedSlotBusy) */
+    has(slotId) { return taken.has(slotId); }
   };
 }
 
