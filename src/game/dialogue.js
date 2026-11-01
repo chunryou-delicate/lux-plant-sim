@@ -1427,26 +1427,32 @@ export const SCRIPTS = {
   moveReady: [
     { who: 'moni',   face: 'cheer', text: '됐다. 이사비도 모였고, 무늬도 봤어.' },
     { who: 'jachwi', face: 'surprise', text: '진짜?' },
-    { who: 'moni',   face: 'calm', text: '언제 나갈지는 네가 정해.' }
+    { who: 'moni',   face: 'calm', text: '언제 나갈지는 네가 정해.' },
+    /* ★ 2026-11-02 [plan] 비판 여섯째 판 P3(#5) — 이사 단추가 어디 있는지(6판 S: [방] 판 맨 아래를 스스로 찾았다). 아래 다섯 벌도 같은 줄.
+         참: 이 사건은 canMoveOut ok 로 바뀐 때 난다 = [방] [원룸으로 이사] 단추가 산다(game.html §tutMove · c.ok). «맨 아래»는 안 쓴다(판 차례가 바뀌면 낡음). 수 없음 */
+    { who: 'moni',   face: 'teach', text: '이사는 **[방]**에서 해.' }
   ],
   moveReadyNow: [
     { who: 'moni',   face: 'cheer', text: '됐다. 이사비도 모였고, 무늬도 봤어.' },
     { who: 'jachwi', face: 'surprise', text: '진짜?' },
     /* 참: ev.survives === true — 이사하고 남는 돈으로 원룸 첫 월세 날까지 버틴다 */
-    { who: 'moni',   face: 'calm', text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
+    { who: 'moni',   face: 'calm', text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' },
+    { who: 'moni',   face: 'teach', text: '이사는 **[방]**에서 해.' }
   ],
   moveReadyShort: [
     { who: 'moni',   face: 'cheer', text: '이사비는 모였어. 무늬도 봤고.' },
     { who: 'jachwi', face: 'surprise', text: '그럼 나가도 돼?' },
     /* 참: ev.survives === false — 남는 돈 < 원룸 첫 월세 + 하루 지출 × 월세 날까지(막지 않는다 · 수는 이사 창이 말한다) */
     { who: 'moni',   face: 'worry', text: '지금 가면 첫 월세 날까지 모자라.' },
-    { who: 'moni',   face: 'calm',  text: '조금 더 모으고 가자. 정하는 건 너야.' }
+    { who: 'moni',   face: 'calm',  text: '조금 더 모으고 가자. 정하는 건 너야.' },
+    { who: 'moni',   face: 'teach', text: '이사는 **[방]**에서 해.' }
   ],
   /* ★ 2026-10-31 [plan] 총괄 D97 ① — moveReadyShort 뒤 «버틸 만해진 날» 한 번(사건 move_ready_ok · [core] 가 survives 가 false → true 로 처음 바뀐 날 낸다).
        참: 그날 ev.survives === true(위와 같은 셈). 한 판에 한 번(REPEATABLE 아님). 수 없음. */
   moveReadyLater: [
     { who: 'moni',   face: 'cheer', text: '이제 첫 월세까지 버틸 만해.' },
-    { who: 'moni',   face: 'calm',  text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' }
+    { who: 'moni',   face: 'calm',  text: '언제 나갈지는 네가 정해. 오늘이어도 되고.' },
+    { who: 'moni',   face: 'teach', text: '이사는 **[방]**에서 해.' }
   ],
   /* ★★ 2026-11-01 [plan] 총괄 D100 ③(비판 다섯째 판 BLOCKER #1) — **무늬 원천 0 인 «이사 된 날»은 «오늘이어도 되고»를 안 한다.**
        ⛔ Day 88 모그루를 팔아 무늬 원천이 0 이 된 판에서 Day 96 «됐다. 이사비도 모였고, 무늬도 봤어. … 오늘이어도 되고» → 이사 창에서야 «원룸에서 늘릴 게 없습니다».
@@ -1459,13 +1465,24 @@ export const SCRIPTS = {
     { who: 'jachwi', face: 'surprise', text: '그럼 못 가?' },
     { who: 'moni',   face: 'calm',  text: '갈 수는 있어.' },
     { who: 'moni',   face: 'worry', text: '다만 다음 방에서 늘릴 게 없어.' },
-    { who: 'moni',   face: 'calm',  text: '정하는 건 너야.' }
+    { who: 'moni',   face: 'calm',  text: '이사는 **[방]**에서 해. 정하는 건 너야.' }
   ],
   /* 참: move_ready_ok(버틸 만해진 날 · 위 moveReadyLater 와 같은 셈) ∧ ev.varieSource === 0 */
   moveReadyLaterNoVarie: [
     { who: 'moni',   face: 'cheer', text: '이제 첫 월세까지 버틸 만해.' },
     { who: 'moni',   face: 'worry', text: '다만 무늬 없이 가면 늘릴 게 없어.' },
-    { who: 'moni',   face: 'calm',  text: '정하는 건 너야.' }
+    { who: 'moni',   face: 'calm',  text: '이사는 **[방]**에서 해. 정하는 건 너야.' }
+  ],
+  /* ★ 2026-11-02 [plan] 비판 여섯째 판 P3(#5) — **판 그 자리에서 이사비가 찬 판**(6판 S Day 83: [거래하기]로 판 뒤 지갑 3,186,712원 · 무늬 원천 0).
+       판 직후엔 soldLastVarie «이제 무늬가 남은 게 없어»가 먼저 서므로, moveReadyNoVarie 첫 줄 «…무늬가 남은 게 없어»가 바로 이어 겹친다 ⇒ 첫 줄만 «이사비도 모였어».
+       갈래(§scriptOf · [core] 가 판 그 자리에서 move_ready 를 낼 때 ev.afterSale = true 를 싣는다 · varieSource === 0 일 때만): 칸이 없으면 moveReadyNoVarie.
+       참: «이사비도» = 방금 판 돈으로 canMoveOut money 가 참이 됨 · 나머지는 moveReadyNoVarie 와 같은 말. 수 없음 */
+  moveReadyAfterSale: [
+    { who: 'moni',   face: 'calm',  text: '이사비도 모였어.' },
+    { who: 'jachwi', face: 'surprise', text: '그럼 갈 수 있어?' },
+    { who: 'moni',   face: 'calm',  text: '갈 수는 있어.' },
+    { who: 'moni',   face: 'worry', text: '다만 다음 방에서 늘릴 게 없어.' },
+    { who: 'moni',   face: 'calm',  text: '이사는 **[방]**에서 해. 정하는 건 너야.' }
   ],
 
   /* ═══ ★★ 2026-10-31 [plan] 총괄 D96 — 반지하 사건 카드를 고른 «뒤» 대사(plan-events-banjiha-d96 §1 · 카드 글은 §EVENT_CARDS) ═══
@@ -1685,6 +1702,21 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'teach', text: '그리고 여기서부터 무늬는 아무도 안 줘. 있는 무늬를 잘라 늘리는 거야.' },
     /* ★ 2026-10-08 [plan] 갈래 지도 — 「…자르는 건 해 봤어.」는 한 번도 안 자르고 이사한 판(그루째 판 · sold)에선 거짓 ⇒ 다음 할 일로 받는다 */
     { who: 'jachwi', face: 'think', text: '…그럼 자르는 데부터네.' }
+  ],
+  /* ★ 2026-11-02 [plan] 총괄 비판 여섯째 판 P2(#6) — **무늬 원천 0 으로 이사한 판**의 도착 대사. 위 줄 앞 여덟 줄 그대로 · 끝 두 줄(«있는 무늬를 잘라 늘리는 거야 / 자르는 데부터네»)만 뺐다.
+       ⛔ 6판 S Day 83: 모그루를 판 뒤 이사 → «잘라 늘리는 거야 / 자르는 데부터네» → 몇 줄 뒤 oneroomVarieClosedSeed «무늬를 늘리는 할 일은 여기서 접자 / …몬스테라도 없는데».
+       후보 ㉠ 끝 두 줄을 뺀다(택함 · 무늬 말은 바로 뒤 oneroomVarieClosedSeed 가 한다) · ㉡ 두 줄을 0 판 말로 바꾼다(닫힘 대사와 같은 말이 겹침) · ㉢ 닫힘 대사를 이 대사에 합친다(사건 차례를 바꿈).
+       갈래(§scriptOf · [core] 가 moved_in_oneroom 에 ev.varieSource 를 싣는다 = varieSourcesNow().n · 이사 창 «무늬 원천 n»과 같은 자): 0 → 이 줄 · 모르면 위 줄.
+       참: 앞 여덟 줄은 원천과 무관(창 높이 · 빈 방 · 날씨 · 돈). 수 없음 */
+  movedInOneroomNoVarie: [
+    { who: 'jachwi', face: 'surprise', text: '…창이 눈높이에 있네.' },
+    { who: 'moni',   face: 'calm',   text: '높지. 지나가는 사람 발만 보이지는 않아.' },
+    { who: 'jachwi', text: '짐은 다 가방에 있고 방은 비었다. 놓을 데는 저기랑 비슷한가.' },
+    { who: 'moni',   face: 'teach', text: '자리는 가구를 놓는 만큼 생겨. 그리고 하늘이 더 보여.' },
+    { who: 'moni',   text: '그리고 여긴 바깥이 그대로 들어와. 흐린 날도, 계절도.' },
+    { who: 'jachwi', face: 'think',   text: '…저 방은 매일 똑같았는데.' },
+    { who: 'jachwi', face: 'tired',   text: '…대신 통장이 한 번에 얇아졌고.' },
+    { who: 'moni',   face: 'sad',     text: '응. 그건 나간 거 맞아.' }
   ],
 
   /* ═══ §7 작은 말들 ═════════════════════════════════════════════════════
@@ -2703,6 +2735,18 @@ export const SCRIPTS = {
   nudgeHomePush:  [ { who: 'moni', face: 'teach', text: '집 자금은 무늬에서 나와. 늘려서 내놓자.' } ],
   /* ★ 2026-10-09 [plan] — 집 자금은 13달이라 달마다 두 벌을 번갈아(§CHATTER · 기다린 날 ÷ 30 홀/짝). 「막혔냐」가 아니라 «모으는 중»의 말이다 */
   nudgeHomePush2: [ { who: 'moni', face: 'calm',  text: '잘 모으고 있어. 무늬는 늘려서 내놓고.' } ],
+  /* ★ 2026-11-02 [plan] 비판 여섯째 판 P2(#6) — 무늬 원천 0 판의 집 자금 세 벌(§CHATTER c.varieSources === 0 · 위 셋은 !== 0).
+       ⛔ 6판 S Day 92: 무늬 0 원룸에서 «집 자금은 무늬에서 나와. 늘려서 내놓자» — 몇 줄 앞 «무늬를 늘리는 할 일은 여기서 접자»와 엇갈렸다.
+       총괄: 0 판에서 집 자금이 무엇으로 오는지는 지금 게임이 하는 것(채소 · 씨앗 그루)만 말한다.
+       참: «다 집 자금이 돼» = 할 일 oneroom_home_fund 는 지갑 ≥ 목표로 끝난다(무엇으로 번 돈이든) · «씨앗에서 키운 그루도 내놓을 수 있어» = shop listPot 은 S.pots 의 아무 그루나 받고 거래 문(marketGate)은 한 번 열리면 안 닫힌다(0 판은 판 적이 있어 열림) ·
+           «잎이 많을수록 값이 나가» = quotePot 이 잎 수(와 무늬 잎 수)로 매긴다. 수 없음 */
+  nudgeHomeOfferNoVarie: [ { who: 'moni', face: 'teach', text: '남는 채소는 팔아 둬. 다 집 자금이 돼.' } ],
+  nudgeHomePushNoVarie:  [
+    { who: 'moni', face: 'teach', text: '집 자금은 채소에서 나와.' },
+    { who: 'moni', face: 'calm',  text: '씨앗에서 키운 그루도 내놓을 수 있어.' },
+    { who: 'moni', face: 'calm',  text: '잎이 많을수록 값이 나가.' }
+  ],
+  nudgeHomePush2NoVarie: [ { who: 'moni', face: 'calm',  text: '잘 모으고 있어. 남는 채소는 꼬박꼬박 팔고.' } ],
   /* ★ 목표까지 «이정표» — 처음 넘은 날 한 번씩(§CHATTER status). 수는 안 말한다 · 칸 homeTarget 은 [core](없으면 안 뜸) */
   /* ★ 2026-10-09 [plan] D51 — 내 집 자금 네 마디(¼·½·¾·거의 · quest.js HOME_MARKS). 보상 없이 말만 — «다가가는 맛». 한 판에 한 번씩(gap 400) */
   statusHomeQuarter: [
@@ -3295,6 +3339,8 @@ export const REPEATABLE = new Set(
              'springCameOneroom', 'summerCameOneroom', 'autumnCameOneroom', 'statusOneroomYear',
              'nudgeHomeOffer', 'nudgeHomePush', 'statusHomeHalf', 'statusHomeNear', 'statusHomeQuarter', 'statusHomeThreeQuarter',
              'rentSoon2', 'rentAgain2', 'nudgeHomePush2',
+             /* ★ 2026-11-02 [plan] P2 — 무늬 원천 0 판의 집 자금 세 벌(위 셋과 같은 되풀이) */
+             'nudgeHomeOfferNoVarie', 'nudgeHomePushNoVarie', 'nudgeHomePush2NoVarie',
              /* ★ 2026-10-08 상태 줄 — 기다림마다 다시 온다(§STATUS gap) */
              'statusSill', 'statusGauge', 'statusStreak', 'statusLeafWide', 'statusSiruVs', 'statusWallet',
              'statusPhaseOpening', 'statusPhaseYoung', 'statusPhaseMid', 'statusPhaseMature', 'statusPhaseAxis', 'statusVarieHalf',
@@ -3450,6 +3496,9 @@ export const EVENT_SCRIPT = Object.freeze({
        sold_last_varie · oneroom_varie_closed 는 [core] 가 내는 사건이다(plan-to-core-d100 §1-3 · §4) */
   move_ready_no_varie:       'moveReadyNoVarie',
   move_ready_ok_no_varie:    'moveReadyLaterNoVarie',
+  /* ★ 2026-11-02 [plan] 비판 여섯째 판 P2 · P3 — §scriptOf 가 고르는 갈래 이름(사건 id 아님) */
+  move_ready_after_sale:     'moveReadyAfterSale',
+  moved_in_oneroom_no_varie: 'movedInOneroomNoVarie',
   sold_last_varie:           'soldLastVarie',
   oneroom_varie_closed:      'oneroomVarieClosed',
   oneroom_varie_closed_seed: 'oneroomVarieClosedSeed',
@@ -3738,8 +3787,14 @@ function scriptOf(ev, S = null) {
   }
   /* ★ 2026-10-31 [plan] 총괄 D97 ① — 이사 «된 날»은 첫 월세까지 버티나(ev.survives · [core] §moveMoneyNow 셈)로 갈린다. 모르면 오늘을 권하지 않는 줄 */
   /* ★ 2026-11-01 [plan] 총괄 D100 ③ — 무늬 원천 0(ev.varieSource · [core] varieSourcesNow 와 같은 자)이면 «오늘이어도 되고»를 안 하고 경고 갈래 · 모르면 지금 그대로 */
+  /* ★ 2026-11-02 [plan] P3 — 판 그 자리에서 이사비가 찬 판(ev.afterSale · [core])은 판 뒤 대사와 첫 줄이 안 겹치는 벌 */
+  if (id === 'move_ready' && ev && typeof ev === 'object' && ev.varieSource === 0 && ev.afterSale === true)
+    return EVENT_SCRIPT.move_ready_after_sale;
   if ((id === 'move_ready' || id === 'move_ready_ok') && ev && typeof ev === 'object' && ev.varieSource === 0)
     return EVENT_SCRIPT[id === 'move_ready' ? 'move_ready_no_varie' : 'move_ready_ok_no_varie'];
+  /* ★ 2026-11-02 [plan] P2 — 무늬 원천 0 으로 이사한 판(ev.varieSource · [core])은 «잘라 늘리는 거야» 두 줄을 뺀 벌 · 모르면 지금 그대로 */
+  if (id === 'moved_in_oneroom' && ev && typeof ev === 'object' && ev.varieSource === 0)
+    return EVENT_SCRIPT.moved_in_oneroom_no_varie;
   /* ★ 2026-11-01 [plan] 총괄 D100 ④ — 원룸 무늬 할 일 닫힘: 몬스테라 화분 0(ev.pots === 0)이면 씨앗 갈래 */
   if (id === 'oneroom_varie_closed') return EVENT_SCRIPT[ev && typeof ev === 'object' && ev.pots === 0 ? 'oneroom_varie_closed_seed' : 'oneroom_varie_closed'];
   if (id === 'move_ready') {
@@ -4168,11 +4223,19 @@ export const CHATTER = [
   { id: 'nudgeRadishOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'radish5' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry },
   { id: 'nudgeRadishPush',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'radish5' && c.nudge.days >= NUDGE_DAYS.worry },
   /* ★ 2026-10-09 [plan] 원룸 후반 — 집 자금 줄은 13달이라 한 달에 한 번(gap 30) */
-  { id: 'nudgeHomeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry },
+  /* ★ 2026-11-02 [plan] P2 — 무늬 원천 0(c.varieSources === 0 · statusOneroomNoVarie 와 같은 칸)이면 …NoVarie 세 벌 · 모르면(null) 옛 세 벌 */
+  { id: 'nudgeHomeOffer', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry
+                                                         && c.varieSources !== 0 },
   { id: 'nudgeHomePush',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry
-                                                         && Math.floor(c.nudge.days / 30) % 2 === 0 },
+                                                         && Math.floor(c.nudge.days / 30) % 2 === 0 && c.varieSources !== 0 },
   { id: 'nudgeHomePush2', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry
-                                                         && Math.floor(c.nudge.days / 30) % 2 === 1 },
+                                                         && Math.floor(c.nudge.days / 30) % 2 === 1 && c.varieSources !== 0 },
+  { id: 'nudgeHomeOfferNoVarie', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.worry
+                                                                && c.varieSources === 0 },
+  { id: 'nudgeHomePushNoVarie',  nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry
+                                                                && Math.floor(c.nudge.days / 30) % 2 === 0 && c.varieSources === 0 },
+  { id: 'nudgeHomePush2NoVarie', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry
+                                                                && Math.floor(c.nudge.days / 30) % 2 === 1 && c.varieSources === 0 },
   /* ═══ ★ 공통 셋 — 퀘스트별 줄이 없거나 그 줄이 어제 난 날의 그물. «범용 줄»이라 30일에 한 번(gap) ═══
      ⚠ 걱정은 이제 «끝이 없다»(≥ worry) — 예전 ④ 물러섬 자리까지 걱정이 맡는다(30일에 한 번이라 잔소리가 안 된다). */
   /* ★ 2026-10-09 [plan] — 집 자금 줄(13달 · 모으는 중)은 범용 셋에서 뺀다. 「할 일이 며칠째 그대로야. 막힌 데 있어?」가 달마다 났는데
