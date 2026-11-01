@@ -16,6 +16,7 @@ core f39306c2 · faec7731 의 plan 글(#15 체력 0 단추 · ③ 내 집 뒤 �
 - 참인 조건: 남는 돈 = 그 순간 cashWon − paidWon. finishEnding 이 cashWon 에서 paidWon 을 바로 뺀다. 그 달 살림비는 그 뒤 하루씩 따로 나간다.
 - 건드리지 않는 것: «계약금»이라는 낱말. docs/oneroom.md 의 서사 장치(«계약하는 순간까지 · 집값 전액이 아니다»)다.
 - 정해지면 plan 이 글을 내고 core 가 넣는다.
+- **[정함] 총괄 11-01 ㉡.** plan 이 core 에 글을 넘겼다 — «계약하면 남는 돈 {left}원»({left} = cashWon − 집값 · wonKo) · 되묻기 창 첫 줄 밑 둘째 줄 · 이사 창의 첫 월세 꼬리는 안 붙인다. 참인 조건: 창은 cashWon ≥ 집값일 때만 열리고(openHomeAsk v.ok) finishEnding 이 집값을 바로 빼므로 계약 직후 지갑 = left ≥ 0. ㉢은 박사님 몫(master-progress-20261101 에 여쭘).
 
 ---
 
