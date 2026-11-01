@@ -4313,13 +4313,16 @@ let hintTick = null;
 /* ★ 2026-10-31 MINOR ① (총괄 ae32f79c ready_boot) — 손가락 꼬리표 «이제 식물과 시루를 놓으세요»가 조작 쪽지 «가까이 볼 수 있습니다» 제목 줄을 덮었다(둘 다 왼쪽 위 탭 기둥 옆).
      쪽지는 «평생 것»이라 지금 것(꼬리표 글)이 비킨다(§coaching 과 같은 결) — 겹치는 동안만 글을 접고, 쪽지가 걷히면 돌아온다 */
 function hintCoachMute() {
-  const h = $('hint'), c = $('coach');
+  const h = $('hint'), c = $('coach'), ev = $('event');
   if (!h) return;
-  const coachOn = !!(c && c.classList.contains('on'));
-  if (!coachOn || !h.classList.contains('on')) { h.classList.remove('mute'); return; }
-  if (h.classList.contains('mute')) return;            /* 접힌 동안은 글 자리가 없다 — 쪽지가 걷힐 때까지 그대로 */
-  const a = h.querySelector('.say').getBoundingClientRect(), b = c.getBoundingClientRect();
-  if (a.width > 0 && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) h.classList.add('mute');
+  /* ★ 2026-11-01 총괄 MINOR — 배너(#event.on)도 쪽지와 같은 갈래: 말풍선 글이 배너와 겹치면 배너가 걷힐 때까지(6초 · 누르면 바로) 글만 접는다 — 차례를 하나로(배너 먼저).
+       ⛔ 원룸 «🪴 빈 화분을 놓았습니다 — 화분까지 걸어가 🌱 …» 배너 위에 «들고 온 채소를 놓으세요» 말풍선이 앉아 둘 다 안 읽혔다.
+       ⚠ 손가락(#hint.on) · 덮개 · 울타리는 그대로 — 끄면 배너가 뜰 때마다 길이 끊긴 것으로 읽힌다(자 force5 «손가락 없음») */
+  const covers = [c && c.classList.contains('on') ? c : null, ev && ev.classList.contains('on') ? ev : null].filter(Boolean);
+  if (!covers.length || !h.classList.contains('on')) { h.classList.remove('mute'); return; }
+  if (h.classList.contains('mute')) return;            /* 접힌 동안은 글 자리가 없다 — 쪽지 · 배너가 걷힐 때까지 그대로 */
+  const a = h.querySelector('.say').getBoundingClientRect();
+  if (a.width > 0 && covers.some(x => { const b = x.getBoundingClientRect(); return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top; })) h.classList.add('mute');
 }
 function hintFollowLoop(on) {
   if (on) {
@@ -5579,8 +5582,12 @@ const detail = {
         + (() => {
             const w = potWaterNow(p);      /* ⚠ 그 그루의 물이다 */
             if (!w) return '';
-            return `<div class="row"><span>물 준 지</span><b>${w.dryDays} / ${w.interval}일`
-                 + (w.dry ? ' · <span style="color:#f0a35f">말랐습니다</span>' : '') + '</b></div>';
+            /* ★ 2026-11-01 [plan] #16 — « / {마르는 날}»을 뺀다(3/9 를 «6일 남음»으로 읽는 것이 뿌리) · 줄 수 있는 날은 단추와 같은 셈(§potWaterWaitDays) */
+            const k = potWaterWaitDays(w);
+            const tail = w.dry ? ' · <span style="color:#f0a35f">말랐습니다</span>'
+                       : w.canWater ? ' · 지금 줄 수 있습니다'
+                       : (k != null ? ` · ${k}일 뒤에 줄 수 있습니다` : '');
+            return `<div class="row"><span>물 준 지</span><b>${w.dryDays}일` + tail + '</b></div>';
           })()
         + '<p>이미 자란 개체가 도착한 것이다. <b>밝은 자리</b>라야 새순이 오르고, 어두우면 날짜만 간다.</p>'
         + '<p>흙이 마르면 <b>그날은 세어지지 않는다</b> — 죽지는 않고 날짜만 간다. '
@@ -7666,14 +7673,24 @@ function monthLogList() { const m = monthLoad(); return (m && m.log) || []; }
 /* 거둔 것 — **수확은 턴 밖**(단추)이라 여기서 받는다. `perPot` 의 g 을 그대로 더한다 */
 function monthNoteHarvest(r) {
   const rows = (r && r.perPot) || [];
-  if (!rows.length) return;
+  /* ★ 2026-11-01 비판 다섯째 판 #13 — 반찬가게 주문(D35 · loop §neighborOrderStep)은 지갑에만 들어가 장부엔 줄이 없었다 →
+       대차 차액이 «장부에 안 잡힌 것 −200,000»(나간 돈 칸)으로 떴다 ⇒ 그 달 «들어온 돈» 줄(run.neighbor) · 수확 길은 여기 · 창 끝날 결산 길은 §monthNoteDay */
+  const nb = neighborWonOf((r && r.events) || []);
+  if (!rows.length && !nb) return;
   const m = monthLoad(); if (!m) return;
   for (const p of rows) {
     const ko = p.kindKo || p.kind || '작물';
     m.cur.run.gotG[ko] = (m.cur.run.gotG[ko] || 0) + Math.round(p.grams || 0);
     m.cur.run.harvests += 1;
   }
+  if (nb > 0) m.cur.run.neighbor = (m.cur.run.neighbor || 0) + nb;
   monthSave(m);
+}
+/* ★ #13 — 사건 목록에서 반찬가게 돈(neighbor_order.won)만 더한다 · 두 길(수확 · 창 끝날 결산)이 같은 자를 쓴다 */
+function neighborWonOf(events) {
+  let w = 0;
+  for (const e of (events || [])) if (e && e.id === 'neighbor_order') w += Math.round(e.won || 0);
+  return w;
 }
 
 /* 하루가 갔다 — 그날 값을 더하고, **월세를 낸 날이면 마감한다** */
@@ -7697,6 +7714,8 @@ function monthNoteDay(turn) {
     m.cur.run.income += Math.round(t.incomeWon || 0);
     /* ★ 2026-11-01 plan-to-core-d99 §5-4 — 긴급지원(구호금 · 결산 안에서 지갑을 메움)은 장부에 안 잡혀 «장부에 안 잡힌 것»으로 뭉쳤다 */
     for (const e of (t.events || [])) if (e && e.id === 'relief') m.cur.run.relief = (m.cur.run.relief || 0) + Math.round(e.won || 0);
+    /* ★ #13 — 반찬가게 주문이 창 끝날 결산에서 났으면(§neighborOrderStep { lastDay }) 그 돈도 «들어온 돈» */
+    { const nb = neighborWonOf(t.events); if (nb > 0) m.cur.run.neighbor = (m.cur.run.neighbor || 0) + nb; }
   }
   /* ★ D99 §5-4 · D96 뒷일 — 이웃이 준 밥 한 몫 값(김치 · 추석 음식 · events_banjiha 가 지갑에 바로 넣음) */
   for (const e of (turn.events || [])) if (e && e.id === 'bj_followup') m.cur.run.gift = (m.cur.run.gift || 0) + Math.round(e.won || 0);
@@ -7705,6 +7724,8 @@ function monthNoteDay(turn) {
 }
 
 /* 마감 — 스냅샷과의 차 + 하루씩 모은 것을 한 장으로 만든다. **여기서 새로 세지 않는다** */
+/* ★ #13 가계부 줄 이름 — [plan] 11-01 «반찬가게에 판 것»(옆 줄 «채소 판 것 · 식물 판 것»과 같은 꼴 · «주문»은 게임 안에서 내가 사는 말이라 «들어온 돈» 밑에서 거꾸로 읽힌다) */
+const MONTH_NEIGHBOR_KO = '반찬가게에 판 것';
 function monthCloseNow(m) {
   const now = monthSnapNow(), s = m.cur.snap, r = m.cur.run;
   const veg   = (now.pantrySold - s.pantrySold) + (now.surplusSold - s.surplusSold);
@@ -7728,7 +7749,8 @@ function monthCloseNow(m) {
   const living = Math.max(0, r.out - r.power);
   /* ★ D99 §5-4 — 덩이 돈(이사비 · 긴급지원)과 이웃 밥 몫을 줄로 세운다(옛 장부는 칸이 없다 → 0) */
   const move = Math.round(r.move || 0), relief = Math.round(r.relief || 0), gift = Math.round(r.gift || 0);
-  const inSum = veg + plant + r.income + relief + gift;
+  const neighbor = Math.round(r.neighbor || 0);   /* ★ #13 반찬가게에 판 것(옛 장부는 칸이 없다 → 0) */
+  const inSum = veg + plant + r.income + relief + gift + neighbor;
   const outSum = r.rent + living + r.power + bought + move;
   const net = now.cash - s.cash;
   const rep = {
@@ -7741,7 +7763,7 @@ function monthCloseNow(m) {
     cashFrom: s.cash, cashTo: now.cash, net,
     /* ★ 대차가 안 맞는 몫 — 식물등 사기·이사비가 어느 장부에도 안 적힌다(§④) */
     gap: net - (inSum - outSum),
-    move, relief, gift, lumpNet: relief - move, netAdj: net - (relief - move),   /* ★ D99 §5-4 — 견줌은 덩이를 뺀 순이익(netAdj) */
+    move, relief, gift, neighbor, lumpNet: relief - move, netAdj: net - (relief - move),   /* ★ D99 §5-4 — 견줌은 덩이를 뺀 순이익(netAdj) */
     prevNet: (typeof m.cur.prevNet === 'number') ? m.cur.prevNet : null,
     /* ★ 2026-10-08 (총괄 중반 M5) — 지난달이 «며칠짜리»였나. 첫 달은 Day 1 하루뿐(첫 월세가 몰림)인데 30일 달과 견줘 「281,667원 나빠졌습니다」라 했다 */
     prevDays: (() => { const pv = m.log.length ? m.log[m.log.length - 1] : null; return pv && Number.isFinite(pv.days) ? pv.days : null; })()
@@ -7865,6 +7887,7 @@ function drawMonthPanel() {
     + head('들어온 돈')
     + row('채소 판 것', won(r.veg))
     + row('식물 판 것', won(r.plant))
+    + ((r.neighbor || 0) > 0 ? row(MONTH_NEIGHBOR_KO, won(r.neighbor)) : '')   /* ★ #13 */
     + (r.income > 0 ? row('그 밖', won(r.income)) : '')
     + ((r.relief || 0) > 0 ? row('긴급자금', won(r.relief)) : '')         /* ★ D99 §5-4 · plan 2fd71053 «긴급자금»(사건 글과 같은 이름) */
     + ((r.gift || 0) > 0 ? row('밥 한 몫 값 (이웃)', won(r.gift)) : '')   /* ★ D96 뒷일 · D99 §5-4 */
@@ -7879,7 +7902,8 @@ function drawMonthPanel() {
 
   /* ⚠ 안 맞는 몫이 있으면 **왜인지**를 적는다. 감추면 합이 안 맞는 가계부가 된다 */
   $('monthNote').textContent = r.gap
-    ? '「장부에 안 잡힌 것」은 식물등 사기·이사비처럼 지갑에서만 빠지고 장부에 안 남는 ' +
+    /* ★ [plan] 11-01 #13 덧 ① — 이사비는 D99 §5-4 부터 제 줄이 있어 «이사비처럼»이 같은 달 위 줄과 엇갈렸다 */
+    ? '「장부에 안 잡힌 것」은 식물등 사기처럼 지갑에서만 빠지고 장부에 안 남는 ' +
       '지출입니다 (돈이 0원 밑으로 안 내려가면서 생긴 차이도 여기 들어옵니다).'
     : '';
 }
@@ -12081,7 +12105,7 @@ function drawPotWater() {
       /* ★ 2026-08-10 — 여기도 **주어를 적는다**(위 drawWater 의 같은 정정).
          마른 줄·줄 수 있는 줄은 「몬스테라」라고 하는데 이 줄만 주어가 없어서,
          작물 얘기로 읽혔다. 같은 판을 두고 화면이 딴말하는 것처럼 보이던 것이 이것이다. */
-      : `💧 몬스테라${nth}는 아직 촉촉합니다 (${st.leftDays - 2}일 뒤)`;
+      : `💧 몬스테라${nth}는 아직 촉촉합니다 (${potWaterWaitDays(st)}일 뒤)`;   /* ★ #16 한 곳 */
   twoLine(b);   /* ★ D95 ① */
 }
 
@@ -13428,18 +13452,26 @@ function lightHeatOpts() {
   } catch { bands = null; }
   /* ★★ 2026-10-31 총괄 D95 ⑤ (plan-to-core-d95 §2) — 어둠 문턱 = 콩나물 «하얗고 아삭»(crisp_white · cropQualityOf 와 같은 표 · ≤ 경계 포함) · 못 읽으면 예전 두 갈래 */
   if (bands) { try { const q = (cropKindOf('beansprout').quality || [])[0]; if (q && Number.isFinite(q.maxDli) && q.maxDli < bands.grow) bands.dark = q.maxDli; } catch { } }
+  /* ★ 2026-11-01 비판 다섯째 판 #12 — 범례가 «지난 턴» 하늘(lastTurn.sky)을 읽어 이사 첫날(Day 96 원룸 · 가을)에도 반지하 하늘 «여름»이 남았다.
+       ⇒ 오늘 하늘(io.light.skyFor(S.day) — 누른 자리 DLI · 오늘 계약과 같은 자) · 못 읽으면 지난 턴 · 그것도 없으면 모름(방뷰 기본) */
+  const skyNow = (() => { try { return io.light.skyFor(S.day, S.sim); } catch { return null; } })() || (lastTurn && lastTurn.sky) || null;
   return {
-    weather: (lastTurn && lastTurn.sky && lastTurn.sky.weather) || null,
-    season: (lastTurn && lastTurn.sky && lastTurn.sky.season) || null,
+    weather: (skyNow && skyNow.weather) || null,
+    season: (skyNow && skyNow.season) || null,
     lampCount: (S.lamps && S.lamps.count) || 0,
     litHours: (S.lamps && S.lamps.litHours) || 0,
     /* ★ 2026-10-31 D93 ⑥ m6 — 범례에도 «표면»이 무엇인지(예전엔 [빛 분포 보기] 옆 글에만 · growth §4) */
     /* ★ D95 ⑤ — 낱말 표가 서면 범례 첫 줄 «빛 · 표면…» · 단위 DLI(mol/m²·d)는 셋째 줄 작은 글(light_grid_labels §setCaption) */
     /* ★ D95 ⑤ 둘째 고침(plan 4746ef5d) — 낱말 판 첫 줄은 범례 폭(≈ 276px)에 들게 «표면(가구 윗면 · 바닥)»(가장 긴 판 248px) · 옛 두 갈래 판은 그대로 */
     unit: (bands && Number.isFinite(bands.dark)) ? '표면(가구 윗면 · 바닥)' : 'DLI · 표면(가구 윗면 · 없으면 바닥)',
+    /* ★ 2026-11-01 [plan] #12 — 빛이 철을 안 타는 판(modeOf(S).rollSeason false · 반지하 novice — skyFor 가 맑음 · 여름에 못박는 그 깃발)은
+         «맑음 · 여름»이 [방] «가을 1일째»와 엇갈려 보였다 ⇒ 날씨 · 철 대신 «철 따라 안 바뀜» · 원룸(real)은 그대로(방뷰 §heatLabel) */
+    extra: (() => { try { return modeOf(S).rollSeason === false ? HEAT_FIXED_KO.replace('{n}', String((S.lamps && S.lamps.count) || 0)) : undefined; } catch (e) { return undefined; } })(),
     bands
   };
 }
+/* ★ #12 글 — [plan] 11-01(후보 ㉠ · 몬이 «이 방 빛은 겨울에도 그대로야»와 같은 말 · 범례 폭 276px 안) */
+const HEAT_FIXED_KO = '철 따라 안 바뀜 · 등 {n}개';
 /* ★★ 2026-10-31 총괄 D95 ③⑤ (plan-to-core-d95 §2) — **빛 낱말 한 벌**(빛 지도 · 놓기 확인 바가 같은 말) · 글은 여기 한 곳.
      어둠 ≤ 0.3(콩나물 crisp_white) · 그늘 < 2.7(몬스테라 min) · 밝음 < 6(fenestrate) · 아주 밝음 — 문턱은 엔진에서(lightHeatOpts).
      «아주 밝음»은 잎 갈라짐(fenestrate)이다 — 무늬(흰 무늬 · 등급)가 아니라 범례에 «무늬»를 안 쓴다.
@@ -13558,7 +13590,8 @@ function drawPlantMore() {
       w = potWaterStatus(S, { pot: p,
                               band: bandOfPot(p),   /* ⚠ 첫 그루 것을 넘기면 주기가 갈린다 */
                               season: waterSeasonNow() });   /* ★ MAJOR #6 */
-      if (w) bits.push(w.dry ? '💧 말랐습니다' : `물 준 지 ${w.dryDays}/${w.interval}일`);
+      /* ★ 2026-11-01 [plan] #16 — 목록 줄도 같은 셈(§potWaterWaitDays) · «물 준 지 d/i일» 걷음 */
+      if (w) bits.push(w.dry ? '💧 말랐습니다' : w.canWater ? '💧 물 줄 수 있습니다' : `물은 ${potWaterWaitDays(w)}일 뒤`);
     } catch { }
     if (Number.isFinite(p.daysPlanted)) bits.push(`돌본 날 ${p.daysPlanted}일`);
     /* ★★ 2026-08-17 — **단계 진행 막대** (박사님). 값은 **그 그루의 턴 줄**에서 읽는다 —
@@ -20658,14 +20691,29 @@ const reallyWaterPot = guard((pot) => {
     season: waterSeasonNow()       /* ★ MAJOR #6 — 단추(§potWaterNow)와 같은 철 */
   });
   /* 두 번 눌러도 안전하다 — 아직 촉촉하면 `already` 로 돌아온다(안 던진다) */
+  if (r.watered) potWaterFloat(p);   /* ★ #18 */
   if (r.watered && before && before.dry)
     banners([{ title: '💧 물을 줬습니다', sub: '흙이 촉촉해졌습니다 — 다시 자랍니다' }]);
   else if (r.already) waterNotYetBanner(r);   /* ★ MAJOR #6 — 눌렀는데 말 없음 금지 */
   draw();
 });
+/* ★ 2026-11-01 비판 다섯째 판 #16 — «며칠 뒤에 물을 줄 수 있나» 한 곳(단추 «아직 촉촉합니다 (N일 뒤)» · 배너 · [식물] 자세히 · 목록 줄).
+     «물 준 지 3/9일»(9 = 마르는 날)과 «(4일 뒤)»(줄 수 있는 날 = 마르기 이틀 전)가 다른 것을 세어 엇갈려 읽혔다 */
+function potWaterWaitDays(w) {
+  return w && Number.isFinite(w.leftDays) ? Math.max(1, w.leftDays - 2) : null;
+}
+/* ★ 2026-11-01 비판 다섯째 판 #18 — 몬스테라에 물을 주면 그 그루 위로 뜨는 글자(마른 날 배너는 그대로) · 열쇠는 방뷰 그루 열쇠 › 자리 › free:id
+     글은 [plan] 몫(POT_WATER_FLOAT_KO) */
+const POT_WATER_FLOAT_KO = '💧 물을 줬습니다';
+function potWaterFloat(p) {
+  if (!p) return;
+  let k = null;
+  try { for (const q of (roomView && roomView.plants ? roomView.plants() : [])) if (q && q.potId === p.id) { k = q.key || null; break; } } catch (e) { k = null; }
+  floatUp(k || p.slotId || (p.at ? `free:${p.id}` : null), POT_WATER_FLOAT_KO);
+}
 /* ★★ 2026-10-31 MAJOR #6 — 아직 촉촉해 물이 안 든 누름은 그렇다고 말한다(단추 글 «아직 촉촉합니다 (N일 뒤)»와 같은 셈 · leftDays − 유예 2) */
 function waterNotYetBanner(r) {
-  const n = r && Number.isFinite(r.leftDays) ? Math.max(1, r.leftDays - 2) : null;
+  const n = potWaterWaitDays(r);
   banner('💧 몬스테라는 아직 촉촉합니다', n ? `${n}일 뒤에 물을 줄 수 있습니다` : '');
 }
 /* ★ D95 ① — 바닥 단추 묶음: 그루마다 waterPot 한 번씩(체력 1 · 낱개와 같다 · §runBatch) · 마른 그루가 하나라도 있었으면 예전 배너 */
@@ -20677,6 +20725,7 @@ const reallyWaterPots = guard((pots) => {
     const before = potWaterNow(p);
     const r = waterPot(S, { pot: p, band: bandOfPot(p), season: waterSeasonNow() });   /* ★ MAJOR #6 */
     if (r.watered && before && before.dry) wasDry = true;
+    if (r.watered) potWaterFloat(p);   /* ★ #18 */
     return r;
   });
   if (wasDry) banners([{ title: '💧 물을 줬습니다', sub: '흙이 촉촉해졌습니다 — 다시 자랍니다' }]);

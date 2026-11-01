@@ -478,6 +478,9 @@ export async function play(name, seed, opt = {}) {
       let vm = null; try { const ls = io.growth.leafState(); vm = varieMaturedLeavesOf(ls);   /* ★ 10-30 propagation §varieMaturedLeavesOf — 화면과 같은 셈 */
                            if (S.day % 30 === 0 && Array.isArray(ls)) { const on = ls.filter(r => r && !r.dropped);
                              out.leafAt[S.day] = [on.length, on.filter(r => r.varie).length, vm, (() => { try { return Math.round(io.growth.growthDays()); } catch { return null; } })()]; } } catch { }
+      /* ★ 2026-11-01 core(총괄 «probe_cutting_ui 가름») — 모주 자르기 문이 처음 열린 날 · --one 의 dumpDoor 면 «그 자리»(그날 턴 뒤 · 자르기 손 앞) 세이브를 «door» 로 뜬다.
+           ⚠ dumpDays 의 «d<N>»은 이 고리의 머리(그 전날 손 · 턴 뒤)라 문 열린 날 아침이 아니다 — 하네스가 그날 이미 자른 판이 떠졌다(11-01 잼) · 값만 적는다(손은 그대로) */
+      if (out.cutDoorDay == null && Number.isInteger(vm) && cutDoorOpen(vm)) { out.cutDoorDay = S.day; if (opt.dumpDoor) dump('door'); }
       const room = moved ? 'oneroom' : 'banjiha';
       if (v) {
         const cand = v.nodes.length ? v.nodes.slice().sort((a, b) => (b.variegatedLeaves > 0) - (a.variegatedLeaves > 0) || a.leaves - b.leaves)[0] : null;

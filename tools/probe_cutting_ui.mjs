@@ -10,11 +10,16 @@
      ④ [분갈이] 를 누르면 사는가 · 유리병이 돌아오나
      ⑤ [팔기] 를 누르면 지갑이 느는가
 
-   ★ 부팅·시루 놓기·몬스테라 도착 경로는 tools/probe_growth_visible.mjs 를 그대로 따랐다.
+   ★ 2026-11-01 — 판을 나눴다: 하네스가 «자르기 문이 열린 날» 아침 세이브를 떠서 싣고 시작한다(아래 §판을 나눴다).
 
      python tools/serve.py 8971 .   (다른 창에서)
      node tools/probe_cutting_ui.mjs
 ============================================================ */
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { launch, sleep } from './test_cdp.mjs';
 
 /* ★자가 제한 — 재는 도구가 재는 대상보다 오래 살면 안 된다.
@@ -39,11 +44,36 @@ const errs = [];
 page.on((m, p) => { if (m === 'Runtime.exceptionThrown')
   errs.push(p.exceptionDetails.text + ' ' + ((p.exceptionDetails.exception || {}).description || '')); });
 
+/* ══ ★★ 2026-11-01 core(총괄 11-01 «probe_cutting_ui 가름») — **판을 나눴다** ═══════════════════
+   예전: 새 판에서 시루 세 번 거둠 → 몬스테라 도착 → [다음 날] 150번으로 «자를 마디가 열리는 날»을 기다렸다.
+   ⚠ 잰 것(BYEOT_DEBUG · 제한 25분으로 한 번): 날은 창 · 손가락에 안 걸리고 고르게 넘어갔다(10일에 25~45초) —
+     420초 멈춤은 «자의 시간»이었다(Day ≈ 108 에서 끊김). 그리고 150일을 다 밀어도 문(다 자란 무늬 잎 ≥ 2 · propagation §cutDoorOpen ·
+     박사님 08-24)이 안 열렸다 — 이 자의 «등 2개» 손질(S.lamps.count)은 이제 빛을 안 낸다(등은 방에 달아야 빛 · lightRigs).
+     창턱 빛만으로 Day 158 잎 4 · 문 닫힘 → 뒤 열여섯 줄이 다 빨강이었다(고장이 아니라 옛 세상을 재던 자).
+   ⇒ 하네스(probe_branches · human 손 · 씨앗 g)가 문이 처음 열린 날(out.cutDoorDay)을 재고, 그날 아침 세이브를 떠서(dumpDays) 싣고 시작한다.
+     ★ 씨앗 g 만 — 게임 첫 그루 잎 굴림이 g(92158)라 세이브를 다시 키운 잎이 하네스와 같다(다른 씨앗은 다른 잎 세계 · 11-01 거짓 갈림).
+     ★ human 손은 반지하에 머문다(이사 안 함) — 아래 줄의 반지하 자리 이름이 그대로 선다.
+     ★ 몬스테라 도착(시루 세 번)은 이 자가 재던 것이 아니다 — probe_growth_visible · test_first_play 가 잰다. */
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const HARNESS = path.join(HERE, 'probe_branches.mjs');
+const DUMP_DIR = process.env.CUT_DUMP_DIR || path.join(os.tmpdir(), 'byeot-cutting-ui');
+const runOne = (o) => JSON.parse(execFileSync(process.execPath, [HARNESS, '--one', JSON.stringify(o)],
+  { maxBuffer: 256 << 20, stdio: ['ignore', 'pipe', 'pipe'] }).toString());
+/* ★ dumpDoor — 문이 처음 열린 «그 자리»(그날 턴 뒤 · 하네스 자르기 손 앞)에서 뜬다(dumpDays 의 «d<N>»은 그날 손 뒤라 이미 잘린 판이었다) */
+const doorRun = runOne({ name: 'human', seed: 'g', days: 260, dump: DUMP_DIR, dumpDoor: true });
+const doorDay = doorRun.cutDoorDay;
+const SAVE = path.join(DUMP_DIR, 'human_g_door.json');
+if (!Number.isInteger(doorDay) || !(doorRun.dumps && doorRun.dumps.door) || !fs.existsSync(SAVE)) {
+  console.log('✘ 하네스가 자르기 문 열린 날 세이브를 못 냈다 — ' + JSON.stringify({ cutDoorDay: doorDay, dumps: doorRun.dumps || null, dumpErr: doorRun.dumpErr || null, moveDay: doorRun.moveDay }));
+  process.exit(1);
+}
+await page.goto(`${BASE}/data/balance/homes.json`);
+await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(fs.readFileSync(SAVE, 'utf8'))});
+  localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
 await page.goto(`${BASE}/game.html`);
-await page.eval('localStorage.clear()', false);
-await page.goto(`${BASE}/game.html`);
+await page.waitFor('window.__byeotBooted === true', 300000, 500);
 await page.waitFor('!!window.__rv', 150000, 300);
-await sleep(6000);
+await sleep(4000);
 const click = (id) => page.eval(`(()=>{try{document.getElementById('${id}').click()}catch{}})()`, false);
 const skipTalk = async () => {
   for (let i = 0; i < 14; i++) {
@@ -85,100 +115,14 @@ const waitAct = async (ms = 15000) => {
   return false;
 };
 
-/* ── 시루를 어두운 자리에 놓고 → **세 번** 거두면 몬스테라가 온다 ──
-   (first_play.MONSTERA_ARRIVAL_RULE.harvestCount = 3)
-   ⚠ 첫 플레이 중에는 상점 상자가 안 열려 [다시 심기] 버튼이 잠겨 있다
-     (drawShop 이 firstPlay.completed 전에는 그 버튼을 안 열어 준다).
-     여기서 재는 것은 **삽수 배선**이지 콩나물 회전이 아니므로 씨앗과 잠금만 풀어 놓고
-     그 다음부터는 손으로 누르는 것과 같은 길로 간다. */
-await page.eval(`(()=>{ const rv=window.__rv, c=document.getElementById('roomCanvas').getBoundingClientRect();
-  const sp=rv.screenPosOf('banjiha-dresser:1');
-  window.__drag.begin('beansprout', document.getElementById('cropThumb').src, {clientX:c.left+c.width*0.9, clientY:c.top+40});
-  window.__drag.move({clientX:c.left+sp.x, clientY:c.top+sp.y}); window.__drag.end(); })()`, false);
-await sleep(1200);
-await page.eval(`(()=>{ const S=window.__S(); S.shop.stock.bean_seed = 9; })()`, false);
-
-/* ★★ 2026-08-16 — **이 자가 낡아 있었다.** 40일을 굴려도 `beansprout.ageDays` 가 **0**이었다
-   (재서 잡았다). 까닭: 2026-08-16 에 시루가 **놓기 → 심기 두 걸음**이 됐는데(`76d3145` —
-   "씨앗이 자동으로 들어감 → 화분만 놓이게") 이 자는 놓기만 하고 **심기를 한 번도 안 눌렀다.**
-   ⇒ 콩나물이 영영 안 자라고, 그래서 수확도 몬스테라 도착도 없었다.
-   ⚠ 이건 코드 고장이 아니라 **재는 자가 옛 세상을 재고 있던 것**이다(START-HERE §2.9-④).
-     [심기]는 이제 **놓인 시루 줄**에 붙는다(`#siruList [data-act="plant"]`). */
-/* ★★ 시루 줄의 단추를 누른다 — `#siruList [data-act=…]`.
-   아래 버튼(`#waterCrop`·`#harvestCrop`)은 **말풍선이 같은 말을 하면 감춰진다**(§markSays)
-   므로 그것만 누르는 자는 아무것도 못 누른다. 줄 단추는 늘 거기 있다. */
-const rowAct = async (act) => {
-  let n = 0;
-  for (let k = 0; k < 8; k++) {
-    const hit = await page.eval(`(()=>{ const b=[...document.querySelectorAll(
-      '#siruList button[data-act="${act}"]')].find(x=>!x.disabled); if(!b) return false; b.click(); return true; })()`);
-    if (!hit) break;
-    n++; await waitAct(); await sleep(500); await skipTalk();
-  }
-  return n;
-};
-await page.eval(`window.__byeotSheet.open('plants')`, false); await sleep(500);
-
-for (let i = 0; i < 60; i++) {
-  if (await page.eval(`window.__S().pots.length > 0`)) break;
-  /* 손이 모자라 못 누르는 것은 이 검사의 대상이 아니다 — 재려는 것은 삽수 배선이다 */
-  await page.eval(`(()=>{const S=window.__S(); if(S.stamina) S.stamina.usedToday=0;})()`, false);
-  await rowAct('plant');              /* 놓기·심기 두 걸음(2026-08-16) — 심기가 따로다 */
-  await rowAct('water');
-  await rowAct('harvest');
-  await rowAct('sow');                /* 거둔 시루를 그 자리에 다시 심는다 */
-  await click('next'); await sleep(1000); await skipTalk();
-  if (process.env.BYEOT_DEBUG) console.log('  boot', i, await page.eval(`(()=>{const S=window.__S();const b=S.firstPlay.beansprout;
-    const one=(b.pots||[])[0]||{};
-    return JSON.stringify({d:S.day,age:one.ageDays,sown:one.sown,n:b.harvestCount,pots:S.pots.length,lock:document.body.dataset.hardLock||''})})()`));
-}
-const arrived = await page.eval(`(()=>{ const S=window.__S(); return { day:S.day, pots:S.pots.length,
-  completed: !!(S.firstPlay && S.firstPlay.completed) }; })()`);
-say(arrived.pots > 0, '몬스테라가 도착했다', JSON.stringify(arrived));
-if (!arrived.pots) { console.log('예외', JSON.stringify(errs.slice(0, 3))); await page.close(); process.exit(1); }
-
-/* ── 모주를 밝은 자리로 · 등을 켜고 · 잎이 둘 이상이 될 때까지 굴린다 ──
-   ★ 그냥 자를 수가 없다. 도착 개체는 45일이라 잎이 한 장이고,
-     한 장짜리를 자르면 모주가 끝나므로 **초보에서는 규칙이 막는다.**
-     이것도 재서 알아낸 것이다 — 배선이 틀린 게 아니라 아직 자를 때가 아니었다. */
-await page.eval(`(()=>{ const S=window.__S();
-  S.shop.stock.jar = 2; S.shop.stock.pot = 2;
-  S.tutorial.cashWon = Math.max(S.tutorial.cashWon, 100000);
-  S.lamps.count = 2; S.lamps.litHours = 14; S.tutorial.lamp.owned = 2;
-  window.__io.light.clearCache(); })()`, false);
-await page.eval(`(()=>{ const s=document.getElementById('slot'); s.value='banjiha-sill:0';
-  s.dispatchEvent(new Event('change',{bubbles:true})); })()`, false);
-await sleep(1500); await skipTalk();
-/* ★ [30일 자동]은 첫 플레이가 끝나기 전에는 잠겨 있다 — [다음 날]로 밀어야 한다.
-   자를 마디가 하나라도 살아나면 멈춘다(그 날이 곷 "삽수가 열리는 날"이다). */
-/* ★★ 2026-08-16 — **모주에 물을 줘야 자란다.** 이 자는 [다음 날]만 눌렀고, 그래서
-   기록에 「⏸ 흙이 말랐습니다 — 74일째」가 쌓이는 동안 잎이 한 장도 안 났다(재서 잡았다).
-   마른 날은 **하루가 통째로 안 세어진다**(state.js §몬스테라 물주기) — 규칙대로다.
-   ⚠ `#waterPot` 는 말풍선이 같은 말을 하면 감춰지고 `canWater` 가 아니면 잠긴다.
-     여기서 재려는 것은 물주기가 아니라 **삽수 배선**이라 잠금만 풀고 누른다. */
-const waterPotNow = async () => {
-  const hit = await page.eval(`(()=>{ const b=document.getElementById('waterPot');
-    if(!b) return false; b.disabled=false; b.style.display=''; b.click(); return true; })()`);
-  if (hit) { await waitAct(); await sleep(350); await skipTalk(); }
-};
-let openedOnDay = null;
-for (let d = 0; d < 150; d++) {
-  const on = await page.eval(`(()=>[...document.querySelectorAll('#cutNodes [data-cut]')].some(x=>!x.disabled))()`);
-  if (on) { openedOnDay = await page.eval(`window.__S().day`); break; }
-  await page.eval(`(()=>{const S=window.__S(); if(S.stamina) S.stamina.usedToday=0;})()`, false);
-  await waterPotNow();
-  await click('next'); await sleep(560); await skipTalk();
-  if (d % 10 === 9) {
-    await page.eval(`(()=>{ window.__byeotSheet.open(); window.__byeotSheet.tab('room'); })()`, false);
-    await sleep(300);
-    if (process.env.BYEOT_DEBUG) console.log('  grow', d, await page.eval(`(()=>{const S=window.__S();
-      let ls=null; try{ls=window.__io.growth.leafStats()}catch{}
-      return JSON.stringify({d:S.day, leaves:ls&&ls.leaves,
-        btns:[...document.querySelectorAll('#cutNodes [data-cut]')].filter(x=>!x.disabled).length})})()`));
-  }
-}
-say(openedOnDay != null, '★자를 마디가 생겼다 — 모주가 잎을 한 장 더 낸 뒤에야 열린다',
-    openedOnDay != null ? ('Day ' + openedOnDay + ' 에 열렸다') : '150일을 밀어도 안 열렸다');
+/* ── 문 열린 날 아침(하네스 세이브) ──
+   ★ 재고는 상점에서 사야 하지만 배송 2일 + 돈이 필요하다. 여기서 재는 것은 **배선**이라 재고를 직접 채워 넣는다(예전 자와 같은 손질 · 병 2 → 자르면 1). */
+await skipTalk();
+await page.eval(`(()=>{ const S=window.__S(); S.shop.stock.jar = 2; S.shop.stock.pot = 2; })()`, false);
+const opened = await page.eval(`(()=>{ const S=window.__S(); return JSON.stringify({ day:S.day, pots:S.pots.length, moved: !!S.tutorial.movedOut, cuttings: (S.cuttings||[]).length,
+  btns:[...document.querySelectorAll('#cutNodes [data-cut]')].filter(x=>!x.disabled).length }); })()`).then(x => JSON.parse(x));
+say(opened.day === doorDay && opened.pots > 0 && !opened.moved && opened.cuttings === 0, '★하네스 human 씨앗 g — 자르기 문이 처음 열린 날 아침 세이브(반지하 · 모주 있음)',
+    JSON.stringify({ doorDay, ...opened }));
 
 /* ── ① 삽수 상자 ────────────────────────────────────────────────────────
    ★ 재고는 상점에서 사야 하지만 배송 2일 + 돈이 필요하다. 여기서 재는 것은 **배선**이라
@@ -287,8 +231,9 @@ const potWas = await page.eval(`window.__S().shop.stock.pot||0`);
 await page.eval(`(()=>{ window.__S().shop.stock.pot = 0; })()`, false);
 const escape = await page.eval(`(()=>window.__marks.list().map(m=>({ko:m.ko,tone:m.tone})))()`);
 await page.eval(`(()=>{ window.__S().shop.stock.pot = ${potWas}; })()`, false);
-say(escape.some(m => /팔기/.test(m.ko)),
-    '★포트가 없으면 말풍선이 [팔기] 로 바뀐다 (파산해도 안 막힌다)', JSON.stringify(escape));
+/* ⚠ 2026-08-17 부터 [팔기]가 [내놓기](중고 거래)다 — 이 줄만 옛 낱말을 찾아 빨갰다(11-01 판을 나눈 뒤 처음 닿음) · 뜻(팔 길이 남는다)은 그대로 */
+say(escape.some(m => /팔기|내놓기/.test(m.ko)),
+    '★포트가 없으면 말풍선이 [내놓기] 로 바뀐다 (파산해도 안 막힌다)', JSON.stringify(escape));
 
 /* ── ④ 말풍선을 눌러서 분갈이 ── */
 const before = await page.eval(`window.__S().shop.stock.jar||0`);
