@@ -4,7 +4,7 @@
 - 기기 흉내: 헤드리스 크롬(9451 · swiftshader) · 390×844 · DPR 2 · mobile. 누름은 `Input.dispatchMouseEvent` 만. 보는 것은 화면 사진과 화면에 보이는 글뿐이다(게임 속 손 · 깃발 URL · localStorage 손대지 않음).
 - 독립성: 판 고정을 확인하며 `git log -1 d0b7c308` 의 **커밋 제목 한 줄**은 봤다(«중반 막힘 둘(울타리+허공 손가락 · 손 안 닿는 시루)»). 본문(`master-playtest-20261025.md`)은 ⑦까지 다 쓴 뒤에 읽었다.
 - 소스는 **고장을 본 뒤에** 까닭을 밝히려고만 읽었다(⑤ 표의 «까닭» 칸). 플레이 중에는 안 읽었다.
-- 사진: `C:/Users/pc/AppData/Local/Temp/byeot-critic-claude/shots/` (아래 `s0052` 처럼 이름만 적는다 · `.jpg`). 누름 기록: 같은 폴더 위 `play.log`(UTC — 한국 시각은 +9).
+- 사진: 아래 `s0052` 처럼 이름만 적는다(`.jpg`). 원본 123장을 두었던 임시 폴더(`%TEMP%/byeot-critic-claude/`, `play.log` 포함)는 2026-11-01 무렵 쓸려 없어졌다. 플레이 중 직접 열어 본 68장을 대화 기록에서 되살려 `docs/handoff/img/playtest-critic-claude-20261025/` 에 두었고, 사진으로 엮은 판은 `playtest-critic-claude-20261025.html` 이다. `s0010` · `s0041` · `s0060` · `s0066` · `s0068` · `s0075` · `s0077` 은 글로만 읽어 되살리지 못했다.
 
 ## 숫자
 
