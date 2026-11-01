@@ -58,11 +58,14 @@ ok(afterDeal.pots === 0, '판 — 모그루가 팔렸다', String(afterDeal.pots
 ok(afterDeal.talking && afterDeal.seen && /무늬가 남은 게 없어/.test(afterDeal.l), '㉮ 거래 뒤 판이 닫히고 몬이 «이제 무늬가 남은 게 없어»가 보인다', JSON.stringify(afterDeal));
 await dlgOnly();
 /* ③ 이사 */
+const hintOn = (goId) => J(`(()=>{ const h=document.getElementById('hint'); const on=!!(h && h.classList.contains('on')); const t=document.querySelector('.hintTarget'); const g=document.getElementById(${JSON.stringify(goId)}); return { on, say: on ? (h.textContent||'').replace(/\s+/g,' ').slice(0,50) : '', onGo: !!(on && t && g && (t===g || g.contains(t))) }; })()`);
+let moveHint = null;
 await J(`(()=>{ const ts=window.__S().tutorial; ts.cashWon = ts.rules.moveOutCostWon + 302780; window.__redraw(); return 1; })()`);
 for (let i = 0; i < 6; i++) {
   const mv = await J(`(()=>({ moved: !!window.__S().tutorial.movedOut, panel: document.getElementById('movePanel').classList.contains('on') }))()`);
   if (mv.moved) break;
-  if (mv.panel) await page.eval(`(()=>{ document.getElementById('moveGo').click(); return 1; })()`, false);
+  if (mv.panel) { await sleep(700); moveHint = await hintOn('moveGo'); moveHint.go = await J(`(document.getElementById('moveGo')||{}).textContent || ''`);
+                  await page.eval(`(()=>{ document.getElementById('moveGo').click(); return 1; })()`, false); }
   else await page.eval(`(()=>{ window.__byeotSheet.tab('room'); document.getElementById('moveOut').click(); return 1; })()`, false);
   await sleep(1200); await dlgOnly();
 }
@@ -107,6 +110,8 @@ const qv = async () => J(`(async()=>{ const q = await import('/src/game/quest.js
 const q1 = await qv();
 console.log('  원룸 할 일', JSON.stringify(q1), '· 배너', JSON.stringify(banners.slice(-6)));
 ok(q1.room === 'oneroom', '판 — 원룸', String(q1.room));
+/* ★ 총괄 11-01 MAJOR — 원천 0 이사 창([그래도 간다]) 위에서 손가락이 그 단추를 짚지 않는다 */
+ok(!!moveHint && !moveHint.탈 && /그래도 간다/.test(moveHint.go) && !moveHint.onGo, '㉳ 원천 0 이사 창 — 손가락이 [그래도 간다]를 안 짚는다', JSON.stringify(moveHint));
 ok(['oneroom_root_bright', 'oneroom_settle_cutting', 'oneroom_recut', 'oneroom_sell'].every(id => q1.closed.includes(id)), '㉯ 무늬 줄 넷이 닫혔다', JSON.stringify(q1.closed));
 ok(banners.some(b => /무늬를 늘리는 할 일이 닫혔습니다/.test(b)), '㉯ 닫힘 배너가 섰다', JSON.stringify(banners.slice(-6)));
 ok(q1.open.includes('oneroom_seed_restart') && q1.open.includes('oneroom_home_fund') && !q1.open.includes('oneroom_root_bright'), '㉰ 씨앗 줄 · 내 집 자금이 열리고 닫힌 줄은 안 열린다', JSON.stringify(q1.open));

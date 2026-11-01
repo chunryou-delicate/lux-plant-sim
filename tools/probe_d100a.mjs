@@ -44,12 +44,16 @@ await page.eval(`(()=>{ window.__byeotSheet.open('shop'); return 1; })()`, false
 const before = await J(`(()=>{ const b=document.getElementById('sellPlant'); return { t: (b.textContent||''), dis: b.disabled, pots: (window.__S().pots||[]).length }; })()`);
 const btnWon = +((before.t.match(/\(([\d,]+)원\)/) || [])[1] || '').replace(/,/g, '');
 console.log('  내놓기 단추', JSON.stringify(before));
+const hintOn = (goId) => J(`(()=>{ const h=document.getElementById('hint'); const on=!!(h && h.classList.contains('on')); const t=document.querySelector('.hintTarget'); const g=document.getElementById(${JSON.stringify(goId)}); return { on, say: on ? (h.textContent||'').replace(/\s+/g,' ').slice(0,50) : '', onGo: !!(on && t && g && (t===g || g.contains(t))) }; })()`);
 const t1 = await tapSel('#sellPlant'); await sleep(900);
 const s1 = await seen();
+const h1 = await hintOn('varieAskGo');
 console.log('  첫 탭 뒤', JSON.stringify({ tap: t1, ...s1 }));
 if (OUT) await page.shot(`${OUT}/390_d100_list1.png`);
 ok(s1.askOn && s1.askSeen, '㉮ 첫 탭에 «보이는» 확인 창이 선다(대사가 판 뒤에 숨지 않는다)', JSON.stringify({ askOn: s1.askOn, askSeen: s1.askSeen, talking: s1.talking, talkSeen: s1.talkSeen, sell: s1.sell }));
 ok(s1.lines.some(l => /무늬 원천 0/.test(l)), '㉮ 창에 «무늬 원천 0» 줄(이사 창과 같은 말)', JSON.stringify(s1.lines));
+/* ★ 총괄 11-01 MAJOR — 경고 창 위에서 손가락이 [그래도 내놓는다]를 짚지 않는다(창 글과 반대 말) */
+ok(s1.askOn && !h1.탈 && !h1.onGo, '㉲ 원천 0 경고 창 — 손가락이 [그래도 내놓는다]를 안 짚는다', JSON.stringify(h1));
 if (s1.askOn) { await tapSel('#varieAskGo'); await sleep(1200); }
 else { await dlgOnly(); await tapSel('#sellPlant'); await sleep(1200); await dlgOnly(); }   /* 작업 전 판 — 비판 판처럼 한 번 더 */
 let L = await listing();
@@ -68,12 +72,14 @@ console.log('  연락 뒤', JSON.stringify(await listing()));
 await page.eval(`(()=>{ window.__byeotSheet.open('shop'); return 1; })()`, false); await sleep(1200);
 const t2 = await tapSel('#marketList [data-deal]'); await sleep(900);
 const s2 = await seen();
+const h2 = await hintOn('varieAskGo');
 const sold0 = await J(`(()=>(window.__S().pots||[]).length)()`);
 console.log('  [거래하기] 탭 뒤', JSON.stringify({ tap: t2, ...s2, pots: sold0 }));
 if (OUT) await page.shot(`${OUT}/390_d100_deal1.png`);
 ok(!!t2 && t2.hit, '판 — [거래하기]가 보이고 눌렸다', JSON.stringify(t2));
 ok(s2.askOn && s2.askSeen && sold0 >= 1, '㉰ [거래하기] 첫 탭에 확인 창 · 아직 안 팔림(#3)', JSON.stringify({ askOn: s2.askOn, askSeen: s2.askSeen, pots: sold0 }));
 ok(s2.lines.some(l => /무늬 원천 0/.test(l)), '㉰ 창에 «무늬 원천 0» 줄', JSON.stringify(s2.lines));
+ok(s2.askOn && !h2.탈 && !h2.onGo, '㉲ 원천 0 경고 창 — 손가락이 [그래도 판다]를 안 짚는다', JSON.stringify(h2));
 if (s2.askOn) { await tapSel('#varieAskGo'); await sleep(1500); }
 await dlgOnly(); await sleep(800);
 await page.eval(`(()=>{ window.__byeotSheet.open('shop'); return 1; })()`, false); await sleep(1000);

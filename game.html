@@ -1590,9 +1590,14 @@
     width:auto;min-width:0;max-width:58vw;padding:0 14px;height:50px;border-radius:25px;
     font-size:13px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.5);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ★ 2026-11-01 총괄 D100 #17 — 체력이 바닥이면 흐리게(누르면 안내가 나온다 · disabled 는 안 씀 — 말풍선 click 을 삼킨다) */
+  #waterCrop.tired, #harvestCrop.tired, #resow.tired{ opacity:.55; filter:saturate(.6) }
   #waterCrop  { bottom:12px }
   #harvestCrop{ bottom:12px }
   #waterPot   { bottom:70px }
+  /* ★ 2026-11-01 비판 넷째 판 b072 — 몬스테라에 지금 물을 줄 수 있으면 그 단추가 엄지 자리 · 시루 단추가 한 칸 위(§drawPotWater potFirst) */
+  #stage.potFirst #waterPot{ bottom:12px }
+  #stage.potFirst #waterCrop, #stage.potFirst #harvestCrop{ bottom:70px }
   #resow      { bottom:128px }
   #sellSurplusBtn{ bottom:186px;background:linear-gradient(180deg,#ffe3a8,#e9c27a);color:#3a2708;border:0 }   /* ★ D99 ⑨ */
   #stage.talking #sellSurplusBtn{opacity:0;pointer-events:none;transition:opacity .15s}
@@ -4691,6 +4696,7 @@ function hintAt(el, say) {
 function placePointHint(cx, cy, say, r = 48) {
   const h = $('hint');
   h.querySelector('.say').textContent = say;
+  h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리 폭을 되돌린다 */
   h.classList.remove('side', 'toRight');
   h.querySelector('.hand').textContent = '👇';
   h.style.left = cx + 'px';
@@ -4744,6 +4750,7 @@ function placeHintAt(el, say) {
   dimAt(r.left + r.width / 2, r.top + r.height / 2, Math.max(r.width, r.height) / 2 + 16);
   const hand = h.querySelector('.hand');
   h.querySelector('.say').textContent = say;
+  h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리(§sideNarrow)의 폭을 되돌린다 */
   h.classList.remove('side', 'toRight', 'below', 'row');
   hand.style.left = '0px';        /* ★ 지난 번에 민 것을 되돌린다 — 안 되돌리면 쌓인다 */
   hand.textContent = '👇';
@@ -4913,6 +4920,20 @@ function hintAvoidChip(h, hand, r) {
            ⇒ 처음 자리(위) · 아래 · 아래 한 줄 · 왼쪽 · 오른쪽을 다 재 — 비킬 글과 겹친 넓이 + 짚는 그것과 겹친 넓이×3 + 화면 밖 — 가장 작은 것.
            ⚠ 자리만 고른다 — 말 · 짚는 것은 그대로 */
       const area = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      /* ★ 2026-11-01 비판 넷째 판 b106 — «말을 좁힌 옆자리»: 확인 바는 좁아(390 폭에서 단추 오른쪽 116px) 옆에 말풍선이 안 들어가 위(제목 «N번 칸»을 손이 덮음)가 뽑혔다.
+           ⇒ 남은 폭에 맞춰 말풍선 글을 접어(최대폭) 옆에 세운다 · 64px 아래면 안 쓴다(글이 한 자씩 꺾인다) — 큰 수를 돌려 안 뽑히게 */
+      const say = h.querySelector('.say');
+      /* 짚는 것이 확인 바 안인가 — 이 함수는 상자 자리(r)만 받으므로 자리로 가른다(§sibs 와 같은 꼴) */
+      const pcBox = (() => { const pc = $('placeConfirm'); return pc && pc.offsetParent !== null ? pc.getBoundingClientRect() : null; })();
+      const inConfirm = !!(pcBox && r.left >= pcBox.left - 1 && r.right <= pcBox.right + 1 && r.top >= pcBox.top - 1 && r.bottom <= pcBox.bottom + 1);
+      const sideNarrow = (right) => {
+        h.classList.remove('below', 'row'); h.classList.add('side');
+        const room = right ? innerWidth - 8 - (r.right + 8) : r.left - 16;
+        const mx = Math.floor(room - (hand.getBoundingClientRect().width || 30) - 6);
+        if (!say || mx < 64) { if (say) say.style.maxWidth = ''; const q = sideAt(right); return { left: q.left, right: q.right + 9999, top: q.top, bottom: q.bottom, width: q.width, height: q.height }; }
+        say.style.maxWidth = mx + 'px';
+        return sideAt(right);
+      };
       const score = (q) => obs.reduce((a, o) => a + area(q, o), 0) + 3 * area(q, r)
         + 1000 * (Math.max(0, 8 - q.left) + Math.max(0, q.right - (innerWidth - 8)) + Math.max(0, 4 - q.top) + Math.max(0, q.bottom - (innerHeight - 8)));
       const poses = [
@@ -4928,8 +4949,12 @@ function hintAvoidChip(h, hand, r) {
                 h.style.left = Math.min(innerWidth - 8 - hb2.width / 2, Math.max(hb2.width / 2 + 8, want2 + hb2.width / 2 - hw / 2)) + 'px';
                 h.style.top = (r.bottom + 2) + 'px'; return h.getBoundingClientRect(); },
         () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(false); },
-        () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(true); }
+        () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(true); },
+        /* ★ 2026-11-01 비판 넷째 판 b106 — 확인 바 안 단추면 «말을 좁힌 옆자리»도 잰다(아래 §sideNarrow) */
+        ...(inConfirm ? [() => sideNarrow(true), () => sideNarrow(false)] : [])
       ];
+      /* 앞 다섯 자리는 좁힌 폭을 안 쓴다 — 고를 때마다 되돌린다 */
+      for (let i = 0; i < 5; i++) { const f = poses[i]; poses[i] = () => { if (say) say.style.maxWidth = ''; return f(); }; }
       let best = 0, bestS = Infinity;
       poses.forEach((f, i) => { const sc = score(f()); if (sc < bestS - 0.5) { bestS = sc; best = i; } });
       poses[best]();
@@ -6500,6 +6525,9 @@ function updateHint() {
     const pop = document.querySelector('.pop.on');
     /* ★ 2026-10-31 D96 — 반지하 사건 카드는 «고르기»다 — 손가락이 한쪽 단추를 짚으면 고르기가 아니게 된다(plan §2 «카드 동안 손가락은 물러선다» · core 사진 390_ev_card) */
     if (pop && pop.id === 'evPanel') return hintAt(null, null);
+    /* ★★ 2026-11-01 총괄 MAJOR — «되돌릴 수 없는 것을 잃는다»고 경고하는 고르기 창(무늬 원천 0 내놓기 · 거래 · 이사)에서는 손가락이 물러선다.
+         ⛔ [그래도 내놓는다/판다/간다](.go)를 짚고 «여기를 눌러 보세요» — 창 글과 반대 말(96f1fe9c 사진) · 표는 경고 줄을 넣는 자리가 단다(data-warn) */
+    if (pop && pop.dataset && pop.dataset.warn === '1') return hintAt(null, null);
     if (pop) {
       const live = (el) => el && !el.disabled && onScreen(el);
       /* ★ 2026-10-24 다듬기 6-3(core 가름) — 글 속 글자 단추(.linkBtn · 할 일 머리 줄 [진로 바꾸기])는 «창의 일하는 단추»가 아니다.
@@ -6735,10 +6763,13 @@ function updateHint() {
   const careActing = !!($('marks') && $('marks').querySelector('.mark.acting'));
   /* ★ 2026-10-31 비판 셋째 판 MAJOR #5 ① — 두 바퀴 뒤 · 세팅 끝 전에도 «심기»(씨앗이 온 날 · 새 시루)는 짚는다. 거두기 · 물 손가락은 뗀 채(박사님 08-17) */
   const sowNow = !pointStill && markLive('심');
-  if (!careActing && (pointStill || sowNow) && $('marks')) {
+  /* ★★ 2026-11-01 총괄 D100 #8 ㉠ — **심기의 짝(물)도 짚는다.** 작물 needsWater 는 «심고 아직 한 번도 물을 안 받은 판»뿐이다(물을 받으면 바퀴가 시작).
+       ⛔ 비판 다섯째 판 Day 11: 손가락대로 «씨앗 심기» → 손가락이 곧장 «가방에 몬스테라»로 넘어가 💧 누름이 울타리에 막혔다 */
+  const sowWaterNow = !pointStill && markLive('물');
+  if (!careActing && (pointStill || sowNow || sowWaterNow) && $('marks')) {
     for (const el of $('marks').querySelectorAll('.mark')) {
       const ko = (el.getAttribute('aria-label') || el.textContent || '').replace(/^[^가-힣]+/, '');
-      if (!pointStill && !/심/.test(ko)) continue;   /* ★ MAJOR #5 ① */
+      if (!pointStill && !/심/.test(ko) && !(sowWaterNow && /물/.test(ko) && !/몬스테라/.test(ko))) continue;   /* ★ MAJOR #5 ① · D100 #8 ㉠ */
       if (!markLive(ko)) continue;
       if (!onScreen(el)) continue;
       /* ★ 시트가 말풍선을 가리면 «닫는 길»을 짚는다(폰 실측 d13~16: 손가락 없음) */
@@ -6762,7 +6793,7 @@ function updateHint() {
   /* ★ D93 ⑤ — 아래 [거두기] · [물]도 «지금 되는가»(§markLive · 체력 바닥이면 안 됨)를 같이 본다 */
   if (!careActing && pointStill && onScreen(btnHarvest) && !btnHarvest.disabled && !sheetCovers(btnHarvest) && markLive('거두'))
     return hintAt(btnHarvest, '거둘 때가 됐습니다');
-  if (!careActing && pointStill && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater) && markLive('물'))
+  if (!careActing && (pointStill || sowWaterNow) && onScreen(btnWater) && !btnWater.disabled && !sheetCovers(btnWater) && markLive('물'))   /* ★ D100 #8 ㉠ */
     return hintAt(btnWater, '물을 주면 자라기 시작합니다');
   /* ★ D93 ② — [다시 심기] 알약도 돌봄이다(그 종류 씨앗이 있을 때만 — 주문 지름길(dataset.buy)이면 «사기»라 아래 갈래 몫) */
   const btnResow = $('resow');
@@ -7167,9 +7198,11 @@ function updateHint() {
   /* ★ 2026-08-14 — 이제 **[방] 단추가 아래 띠에 있다**(기획 §C). 예전에는 [가방]을 가리키며
      「[방] 탭에서 봅니다」라고 말했다 — 가리키는 곳과 가라는 곳이 달랐다.
      ⇒ 가리킬 것을 그 단추로 옮긴다. 없으면(넓은 화면) 예전대로 [가방]으로 떨어진다. */
-  if (fp.completed && ts && ts.enabled && !sheetOpen && onScreen($('navRoom')))
+  /* ★★ 2026-11-01 총괄 D100 #8 ㉡ — [방]을 한 번 연 뒤엔 안 선다(ts.roomTabSeen · §markRoomTabSeen).
+       ⛔ 비판 다섯째 판 Day 36~95: [방]을 열어 본 뒤에도 거의 날마다 떠 다른 데(등 · 할 일 · 이사 단추)를 누를 때마다 울타리에 두 번씩 막혔다 */
+  if (fp.completed && ts && ts.enabled && !ts.roomTabSeen && !sheetOpen && onScreen($('navRoom')))
     return hintAt($('navRoom'), '여기서 살림을 봅니다');
-  if (fp.completed && ts && ts.enabled && !sheetOpen && onScreen($('openBag')))
+  if (fp.completed && ts && ts.enabled && !ts.roomTabSeen && !sheetOpen && onScreen($('openBag')))
     return hintAt($('openBag'), '[방] 탭에서 살림을 봅니다');
   /* ⑤ 그 밖에는 하루를 진행한다.
      ★ 2026-08-09 — 예전에는 여기서 [빨리감기]를 가리켰다("며칠 감아 보세요").
@@ -8248,7 +8281,8 @@ const reallyRepot = guard((id) => {
 /* ★ 2026-10-10 [plan] fdd7bb53 ㉠ — **반지하에서 마지막 무늬 삽수를 내놓으려 할 때** 몬이 한 줄(sell_keep_one · 막지 않음 · 그 손에서 한 번).
      때(셋 다): 반지하 · 지금 것이 무늬 삽수 · 이것을 내놓으면 «안 죽고 안 올린» 무늬 삽수가 0.
        ⚠ 10-10 plan a0e86638 — «무늬를 판 적 있음» 조건은 걷었다(이사 둘째 축은 «무늬 잎을 낸 적 ∨ 판 적» · 팔 까닭이 아니다).
-     D22(sell_last_varie)와 같은 손이면 D22 만 말한다(plan · scriptsForEvents 가 거른다) */
+     ⚠ 2026-11-01 D100 — 예전 «D22(sell_last_varie)와 같은 손이면 D22 만 말한다(scriptsForEvents 가 거른다)»는 낡았다:
+       sell_last_varie 는 더 안 내고(모그루 내놓기 확인 창 글이 같은 말) · 거르개도 걷혔다([plan] da12fae6) */
 function sellKeepOneHit(c) {
   try {
     const ts = S.tutorial;
@@ -8749,6 +8783,9 @@ function harvestedCropHTML() {
 /* 시트를 그 탭으로 연다 — `openSheet` 는 **인라인 스크립트 안**에 있어 이 모듈에서 안 보인다.
    창구(`window.__byeotSheet`)가 그 일을 하라고 있는 것이다. 던지면 조용히 지나간다. */
 function sheetTo(tab) { try { window.__byeotSheet.open(tab); } catch (e) { console.warn('[시트]', e && e.message); } }
+/* ★ 2026-11-01 총괄 D100 #8 ㉡ — [방](아래 띠 · 시트 탭)을 사람이 한 번 열면 «여기서 살림을 봅니다» 손가락을 거둔다(세이브 tutorial.roomTabSeen) */
+function markRoomTabSeen() { try { const ts = S && S.tutorial; if (ts && !ts.roomTabSeen) { ts.roomTabSeen = true; } } catch (e) { console.warn('[D100 #8]', e && e.message); } }
+for (const id of ['navRoom', 'tabRoom']) { const el = document.getElementById(id); if (el) el.addEventListener('click', () => markRoomTabSeen()); }
 const CUT_ART = Object.freeze({
   jar:  './assets/pots/thumbs/pot_glassjar.png',
   soil: './assets/pots/thumbs/pot_nursery_black.png'
@@ -10532,6 +10569,22 @@ function batchReach(kind, n) {
   if (!st || st.left == null || !(st.cost > 0)) return { n, m: n, cost: (st && st.cost) || 0 };
   return { n, m: Math.max(0, Math.min(n, Math.floor(st.left / st.cost))), cost: st.cost };
 }
+/* ★★ 2026-11-01 총괄 D100 #7 — 다시 심기 묶음은 «심기 + 물» 짝이 닿는 만큼(심은 판은 물을 받아야 자란다 · 비판 다섯째 판 Day 23 «심고 물 못 줌»).
+     반환 { n, m, cost(심기 하나) · keep(물 줄 몫) · one(짝은 안 닿고 하나는 심을 수 있음) } · 단추 글(§drawSow)과 손(§reallySow)이 같은 셈 */
+function sowPairReach(n) {
+  let s = null, w = null; try { s = staminaCanAct(S, 'sow'); w = staminaCanAct(S, 'water'); } catch { s = null; }
+  if (!s || s.left == null || !(s.cost > 0)) return { n, m: n, cost: (s && s.cost) || 0, keep: 0, one: false };
+  const wc = (w && w.cost > 0) ? w.cost : 0;
+  const m = Math.max(0, Math.min(n, Math.floor(s.left / (s.cost + wc))));
+  return { n, m, cost: s.cost, keep: m * wc, one: m === 0 && s.left >= s.cost };
+}
+function sowPairLabel(base, b) {
+  if (!b || b.n <= 1) return base;
+  if (b.one) return `${base} (1개 · 물은 내일)`;
+  if (b.m <= 0) return base;
+  const keep = b.keep > 0 ? ` — 물 줄 체력 ${b.keep} 남김` : '';
+  return b.m >= b.n ? `${base} (${b.n}개 · 체력 ${b.n * b.cost}${keep})` : `${base} (${b.n}개 중 ${b.m}개 · 체력 ${b.m * b.cost}${keep})`;
+}
 /* 단추 글 — 하나면 예전 그대로 · 여럿이면 «(N개 · 체력 N)» · 모자라면 «(N개 중 M개 · 체력 M)»(총괄 D95 ① 꼴 · plan 이 «왜 M개인지» 읽히게 고침)
    ⚠ 체력 0 이면 예전 글 — 거두기 · 물은 staminaBlockNote 가 먼저 말하고, 누르면 §guard 가 체력 안내를 낸다 */
 function batchLabel(base, b) {
@@ -10581,6 +10634,7 @@ function drawHarvest() {
   /* ★ D95 ① — 묶음(§batchLabel): 그 종류 익은 것 전부를 체력 닿는 만큼 · 수는 손(§reallyHarvest)이 도는 목록(§ripeBatch) 그대로 */
   if (st && st.ready) b.textContent = noteH ? `🥣 ${noteH}`
     : batchLabel(`🥣 ${ko} 거두기`, batchReach('harvest', nx ? ripeBatch().length : nk));
+  b.classList.toggle('tired', !!noteH);   /* ★ D100 #17 — 체력 바닥이면 흐림(글은 그대로 «오늘 손이 …») */
   twoLine(b);
 }
 /* ★ D95 ① — 바닥 단추 글의 괄호 꼬리를 둘째 줄로(CSS §btnTail) · textContent 는 예전과 같은 한 줄 글(검사 · 손가락이 그대로 읽는다) */
@@ -10690,9 +10744,12 @@ function drawSow() {
     ? (coming ? `🌱 ${seedKo}이 오는 중입니다` : `🌱 ${seedKo}이 없습니다`)
     /* ★ 2026-08-09 — 이것도 **한 번에 하나**다(거두기와 같은 이유 · 체력은 시루마다 1) */
     /* ★ D95 ① — 묶음(§batchLabel): 빈 용기를 씨앗 · 체력 닿는 만큼(§reallySow 와 같은 수) · 씨앗이 작은 쪽이면 «빈 시루 6개 중 4개 · 씨앗 4봉지»(plan) */
-    : (need > 1 && seeds < need && seeds <= batchReach('sow', need).m)
+    /* ★ D100 #17 — 체력이 바닥이면 거두기 · 물과 같은 글(누르면 §guard 가 안내) · 흐림은 아래 .tired */
+    : staminaBlockNote('sow') ? `🌱 ${staminaBlockNote('sow')}`
+    : (need > 1 && seeds < need && seeds <= sowPairReach(need).m)
       ? `🌱 ${kindKo} 다시 심기 (빈 ${boxKo} ${need}개 중 ${seeds}개 · 씨앗 ${seeds}봉지)`
-      : batchLabel(`🌱 ${kindKo} 다시 심기`, batchReach('sow', need));
+      : sowPairLabel(`🌱 ${kindKo} 다시 심기`, sowPairReach(need));   /* ★ D100 #7 — «물 줄 체력 M 남김» */
+  btn.classList.toggle('tired', !!(seeds >= 1 && !buyIt && staminaBlockNote('sow')));   /* ★ D100 #17 */
   twoLine(btn);   /* ★ D95 ① */
   btn.title = seeds < 1 ? `${seedKo}을 먼저 주문하세요` : '';
 }
@@ -11842,6 +11899,7 @@ function drawWater() {
      ⇒ **하나씩**이라고 적는다. 시루를 골라 주고 싶으면 방의 말풍선이나 [식물]의 줄에서 한다. */
   /* ★★★ 체력이 모자라면 **왜 안 되는지**를 글자로 말한다 (2026-08-09 · §staminaBlockNote) */
   const noteW = staminaBlockNote('water');
+  b.classList.toggle('tired', !!noteW);   /* ★ D100 #17 — 체력 바닥이면 흐림 */
   let hvW = null; try { hvW = cropHarvestStatus(S); } catch { hvW = null; }   /* ★ D93 ㉢ — 거둔 빈 용기 · 익은 것(종류 합) */
   b.textContent = noteW ? `💧 ${noteW}`
     : st.needsWater
@@ -11981,6 +12039,7 @@ function potWaterNow(pot) {
 function drawPotWater() {
   const b = $('waterPot');
   if (!b) return;
+  { const sg = $('stage'); if (sg) sg.classList.remove('potFirst'); }   /* ★ 11-01 b072 — 아래에서 다시 정한다(일찍 돌아가는 길은 떼인 채) */
   /* ★★ 2026-08-17 — **마른 그루가 있으면 그 그루를 가리킨다.** 그전에는 늘 `pot0` 라,
      창턱 그루가 촉촉하면 「아직 촉촉합니다」라고 적힌 채 **다른 그루가 말라 멈춰** 있었다.
      ⚠ 손이 하나뿐인 단추이므로 **제일 오래 멈춘 그루**를 고른다(§driestPot). */
@@ -12007,6 +12066,10 @@ function drawPotWater() {
   /* ★★ 2026-10-31 총괄 D95 ① — **둘 이상이면 말풍선이 있어도 뜬다.** 말풍선은 한 그루 · 이 단추는 묶음이라 이제 «같은 일»이 아니다
        (2026-08-06 «같은 일을 두 곳에서 말하지 않는다»의 까닭이 풀렸다). 하나뿐이면 예전대로 말풍선에 맡긴다 */
   b.style.display = (markSays(/몬스테라.*물|물.*몬스테라/) && wl.length < 2) ? 'none' : '';
+  /* ★ 2026-11-01 비판 넷째 판 b072 — 지금 줄 수 있고 이 단추가 떠 있으면 몬스테라 물이 **엄지 자리**(맨 아래)다 · 시루 단추는 그 위로(§#stage.potFirst).
+       ⛔ 엄지 자리는 늘 시루 단추라, 아래부터 누르면 체력이 시루에 먼저 다 갔고 손가락이 짚은 몬스테라 물은 «손이 다 떨어졌습니다» 뒤에 남았다(Day 150~152 사흘 놓침).
+       ⚠ 자리만 바꾼다 — 체력 · 묶음 셈은 그대로. 촉촉한 날(done)은 예전 자리 */
+  { const sg = $('stage'); if (sg) sg.classList.toggle('potFirst', !!st.canWater && b.style.display !== 'none'); }
   /* ★ 마르기 **하루 전 경고는 안 한다**(박사님 확정) — 알림 따라가기가 되기 때문이다.
      대신 며칠 남았는지를 **늘 적어 둔다.** 재촉이 아니라 읽을 수 있는 상태다. */
   /* ★ D95 ① — 여럿이면 묶음 글(§batchLabel) · 하나면 예전 그대로 */
@@ -12667,11 +12730,16 @@ function placeSiruBadges() {
   const groups = [...box.querySelectorAll('.sgroup')];
   let gi = 0;
   const placed = [];
-  const put = (el, x, y0) => {
+  const bw = box.clientWidth || innerWidth;
+  const put = (el, x0, y0) => {
+    el.style.display = '';
+    /* ★ 2026-11-01 비판 넷째 판 b113 — 표지는 가운데 기준이라 가장자리 묶음은 폭 반이 화면 밖으로 나갔다(«· 재배판 3 · 🌱 자라는 중» 왼쪽 밖).
+         ⇒ 폭을 재서 가로를 안으로 당긴다(양쪽 4px) · 겹침(위로 22px)은 당긴 자리로 잰다 */
+    const hw = (el.offsetWidth || 0) / 2;
+    const x = hw > 0 ? Math.min(Math.max(x0, hw + 4), Math.max(hw + 4, bw - hw - 4)) : x0;
     let y = y0;
     for (const q of placed) if (Math.abs(q.x - x) < 44 && Math.abs(q.y - y) < 20) y = q.y - 22;   /* 겹치면 뒤엣것을 위로 22px */
     placed.push({ x, y });
-    el.style.display = '';
     el.style.left = x + 'px'; el.style.top = y + 'px';
   };
   for (const c of clusters) {
@@ -17642,7 +17710,10 @@ const placeConfirm = {
     if (lampAsk.uid) {
       if (who) who.textContent = `여기에 ${josa(lampAsk.ko, '을', '를')} 달까요?`;
       const w0 = $('placeConfirmWarn'); if (w0) { w0.textContent = ''; w0.style.display = 'none'; }
-      const f0 = $('placeConfirmFit'); if (f0) { f0.textContent = ''; f0.style.display = 'none'; }   /* ★ D95 ③ 등 자리는 정해져 있다 */
+      /* ★ 2026-11-01 총괄 D100 #6 ㉠ — 등 자리는 정해져 있지만(박사님 G-16) «어디가 얼마나 밝아지나»는 말한다(§lampGainLine · 못 재면 줄 없음) */
+      const f0 = $('placeConfirmFit');
+      if (f0) { let gl = null; try { gl = lampGainLine(); } catch (e) { console.warn('[D100 #6 등 밝기]', e && e.message); gl = null; }
+                f0.textContent = gl || ''; f0.style.display = gl ? '' : 'none'; f0.classList.remove('mid', 'bad'); }
       this.moveHelps = false;
       return;
     }
@@ -18624,6 +18695,42 @@ function growBandAt(ref, variegated) {
     if (!b || !b.band) return null;
     return { dli, band: b.band, dark: NO_GROW_BANDS.has(b.band) };
   } catch { return null; }
+}
+/* ★★ 2026-11-01 총괄 D100 #6 ㉠ — 그 자리의 DLI 를 «등 n 개»로(growBandAt 과 같은 자 · 등 수만 바꿈) · 못 재면 null */
+function dliAtLamps(ref, lampCount) {
+  try {
+    const sky = io.light.skyFor(S.day, S.sim);
+    const o = { ...lightOptsOf(S, sky), lampCount, litHours: (S.lamps && S.lamps.litHours) || 12 };
+    const rolls = (() => { try { return !!modeOf(S).rollWeather; } catch { return false; } })();
+    if (rolls && typeof io.light.dliAt === 'function') {
+      const sl = (io.light.room.slots || []).find(x => x && x.slotId === ref);
+      if (sl) {
+        const d = io.light.dliAt({ x: sl.x, y: sl.y, z: sl.z }, { weather: 'clear', season: sky.season, lampCount, litHours: o.litHours, occIdx: sl.occIdx });
+        if (d && Number.isFinite(d.dli_daylight) && Number.isFinite(d.dli_lamp)) return d.dli_daylight * weatherE(sky.season) + d.dli_lamp;
+      }
+    }
+    const v = io.light.dliOfSlot(ref, o);
+    return (typeof v === 'number' && isFinite(v)) ? v : null;
+  } catch (e) { console.warn('[D100 #6 dli]', e && e.message); return null; }
+}
+/* 등을 하나 더 켰을 때 가장 많이 밝아지는 이름 자리 한 줄 — 0.05 아래로만 오르면(새로 밝아지는 데가 없으면) 그렇다고 말한다 */
+const LAMP_GAIN_KO = Object.freeze({
+  line: '등 밑 가장 밝아지는 자리 — {slot} 밝기 {d0} → {d1}',
+  none: '이 등으로 새로 밝아지는 자리가 거의 없습니다'
+});
+function lampGainLine() {
+  const n = (S.lamps && Number.isInteger(S.lamps.count)) ? S.lamps.count : 0;
+  let best = null;
+  for (const s of (io.light.room.slots || [])) {
+    if (!s || !s.slotId) continue;
+    const d0 = dliAtLamps(s.slotId, n), d1 = dliAtLamps(s.slotId, n + 1);
+    if (d0 == null || d1 == null) continue;
+    const g = d1 - d0;
+    if (!best || g > best.g) best = { s, d0, d1, g };
+  }
+  if (!best) return null;
+  if (!(best.g > 0.05)) return LAMP_GAIN_KO.none;
+  return LAMP_GAIN_KO.line.replace('{slot}', slotLabel(best.s.slotId)).replace('{d0}', best.d0.toFixed(1)).replace('{d1}', best.d1.toFixed(1));
 }
 /* 놓인 그것({obj, kind, variegated})이 어두운 자리면 한 줄 — 아니면 null */
 function darkPlaceWarn(g) {
@@ -20611,7 +20718,10 @@ const reallySow = guard((potId, kind = 'beansprout') => {
   const seedsOf = () => { try { return seedId ? (shopStatus(S).stock[seedId] || 0) : null; } catch { return null; } };
   const seeds0 = seedsOf();
   /* 씨앗이 있는 만큼만 차례에 세운다(모자란 시루를 불러 «씨앗이 없습니다»로 멈추지 않게) · 씨앗 0 이면 하나를 불러 코어가 까닭을 말한다 */
-  const order = (first ? [first, ...rows.filter(x => x !== first)] : rows).slice(0, seeds0 == null ? undefined : Math.max(1, seeds0));
+  /* ★ D100 #7 — 물 줄 체력을 남긴다(§sowPairReach · 단추 글과 같은 수) · 짝이 하나도 안 닿으면 하나 */
+  const pr = sowPairReach(rows.length);
+  const handN = pr.m > 0 ? pr.m : 1;
+  const order = (first ? [first, ...rows.filter(x => x !== first)] : rows).slice(0, Math.min(handN, seeds0 == null ? Infinity : Math.max(1, seeds0)));
   const rs = runBatch('sow', order.length ? order : [null], it => resowCrop(S, { kind, slots: io.light.room.slots, size: io.light.room.size,
                                                                        ...(it ? { potIds: [it.id] } : {}) }));
   const r0 = rs[0] || {};
@@ -20997,12 +21107,13 @@ function showVarieAsk(o) {
   $('varieAskGo').textContent = o.goKo;
   $('varieAskCancel').textContent = SELL_ASK_KO.cancel;
   varieAskGo = o.onGo;
+  $('varieAsk').dataset.warn = o.warn ? '1' : '';   /* ★ 총괄 11-01 — 원천 0 경고 창이면 손가락이 물러선다(§updateHint .pop) */
   $('varieAsk').classList.add('on'); $('varieAsk').setAttribute('aria-hidden', 'false');
 }
-function closeVarieAsk() { varieAskGo = null; $('varieAsk').classList.remove('on'); $('varieAsk').setAttribute('aria-hidden', 'true'); }
+function closeVarieAsk() { varieAskGo = null; $('varieAsk').dataset.warn = ''; $('varieAsk').classList.remove('on'); $('varieAsk').setAttribute('aria-hidden', 'true'); }
 $('varieAskGo').onclick = () => { const f = varieAskGo; closeVarieAsk(); if (f) f(); };
 $('varieAskCancel').onclick = () => { closeVarieAsk(); };
-/* [상점] 단추 · 식물 상세 카드가 같이 부른다 — ★ D100 §2: [내놓기]는 늘 창(무엇을 · 얼마에 · 어떻게 팔리나) · 판 뒤 원천 0 이면 원천 줄 셋 + 몬이(창 안) + [그래도 내놓는다]
+/* [상점] 단추 · 식물 상세 카드가 같이 부른다 — ★ D100 §2: [내놓기]는 늘 창(무엇을 · 얼마에 · 어떻게 팔리나) · 판 뒤 원천 0 이면 원천 줄 셋 + [그래도 내놓는다](몬이 줄은 뺐다 · [plan] 11-01)
    ⚠ 그루가 없으면 예전 되묻기 길(listPot 이 «올릴 그루가 없습니다»로 던져 말한다) */
 function sellPlantTap(ev) {
   const p0 = pot0(S);
@@ -21013,11 +21124,11 @@ function sellPlantTap(ev) {
   const cutOpen = varieCutOpenNow() > 0;
   const title = Number.isFinite(won) ? SELL_ASK_KO.list.replace('{ko}', '몬스테라').replace('{won}', Math.round(won).toLocaleString('ko-KR'))
                                      : SELL_ASK_KO.list.replace(' · {won}원', '').replace('{ko}', '몬스테라');
-  showVarieAsk({ title, lines: [SELL_ASK_KO.listHow, ...(gone0 ? sellSourceLines(s, cutOpen) : [])],
+  showVarieAsk({ title, lines: [SELL_ASK_KO.listHow, ...(gone0 ? sellSourceLines(s, cutOpen) : [])], warn: gone0,
                  goKo: gone0 ? SELL_ASK_KO.goListAnyway : SELL_ASK_KO.goList, onGo: () => listPotNow() });
 }
 $('sellPlant').onclick = (ev) => sellPlantTap(ev);
-/* [거래하기] — 그루 매물이고 팔면 원천이 0 이 되는 때만 확인 창(비판 #3 «되돌릴 수 없는 [거래하기]에 확인 창 없음») · 아니면 예전대로 바로 */
+/* [거래하기] — 늘 확인 창(비판 #3 «되돌릴 수 없는 [거래하기]에 확인 창 없음») · 판 뒤 원천 0 이면 원천 줄 셋 + [그래도 판다] */
 function dealTap(listingId) {
   /* ★ D100 §2 — [거래하기]는 늘 창(되돌릴 수 없는 일 · 그루든 삽수든) · 판 뒤 원천 0 이면 원천 줄 셋 + [그래도 판다] · 팔고 나면 sold_last_varie(§doDeal) */
   let l = null; try { l = listingOf(S, listingId); } catch { l = null; }
@@ -21026,7 +21137,7 @@ function dealTap(listingId) {
   const gone0 = !!(s && s.now.n > 0 && s.after.n === 0);
   const cutOpen = gone0 ? varieCutOpenNow() > 0 : false;
   showVarieAsk({ title: SELL_ASK_KO.deal.replace('{ko}', l.ko || '').replace('{won}', Math.round(l.won || 0).toLocaleString('ko-KR')),
-                 lines: gone0 ? sellSourceLines(s, cutOpen) : [],
+                 lines: gone0 ? sellSourceLines(s, cutOpen) : [], warn: gone0,
                  goKo: gone0 ? SELL_ASK_KO.goDealAnyway : SELL_ASK_KO.goDeal, onGo: () => doDeal(listingId) });
 }
 
@@ -21258,6 +21369,7 @@ function openMoveAsk() {
   const box = $('moveAsk'); box.innerHTML = '';
   for (const t of lines) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); }
   $('moveGo').textContent = v.n === 0 ? MOVE_ASK_KO.goAnyway : MOVE_ASK_KO.go;
+  $('movePanel').dataset.warn = v.n === 0 ? '1' : '';   /* ★ 총괄 11-01 — 원천 0 이면 [그래도 간다]를 손가락이 안 짚는다(경고 창 · §updateHint .pop) */
   /* 몬이 한 줄 — 원천 0 일 때만 · 대사가 «먼저», 창은 대사가 끝난 뒤(창이 대사를 덮었다 · 엔딩 카드 §openHomeCardWhenQuiet 와 같은 길) */
   /* ★ 2026-10-10 D31([plan] 대사 moveLowCash · core 이음) — 이사비를 내면 원룸 첫 달 월세가 모자랄 때 · 무늬 갈래 «뒤»에 선다 · 막지 않음 · 수는 안 말함 */
   const rent1 = Number.isFinite(ts.rules.oneroomRentWon) ? ts.rules.oneroomRentWon : ts.rules.rentWon;
@@ -21287,7 +21399,7 @@ function openMoveAskWhenQuiet() {
   showMovePanel();
   return true;
 }
-function closeMoveAsk() { $('movePanel').classList.remove('on'); $('movePanel').setAttribute('aria-hidden', 'true'); }
+function closeMoveAsk() { $('movePanel').dataset.warn = ''; $('movePanel').classList.remove('on'); $('movePanel').setAttribute('aria-hidden', 'true'); }
 /* ⚠ 창이 열린 채 [원룸으로 이사]를 한 번 더 누르면 이사한다 — 이 저장소의 «두 번 누르면 실행»(confirmOnce) 결과 같다.
      사람에게는 창이 단추를 덮어 바뀌는 것이 없고, 두 번 누르던 자(night_play tryMoveOut)는 그대로 걷는다 */
 /* ★★ 2026-10-31 비판 셋째 판 B1 BLOCKER(총괄 D97) — **이사는 확인 창의 [이사한다 / 그래도 간다]로만 된다.**

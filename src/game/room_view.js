@@ -4373,7 +4373,7 @@ export async function createRoomView(canvas, opts = {}) {
     if (!hits.length) return null;
     let o = hits[0].object;
     while (o && !o.userData.plantSlotId) o = o.parent;
-    return o ? { type: 'plant', slotId: o.userData.plantSlotId } : null;
+    return o ? { type: 'plant', slotId: o.userData.plantSlotId, dist: hits[0].distance } : null;   /* ★ D100 #6 — 등과 견줄 거리 */
   }
 
   /* 빈 슬롯은 점이라 광선으로는 손가락에 안 잡힌다 — 화면 거리로 가장 가까운 것.
@@ -4439,9 +4439,35 @@ export async function createRoomView(canvas, opts = {}) {
       }
       let o = h.object;
       while (o && !(o.userData && o.userData.uid)) o = o.parent;
-      if (o && lampRig(o.userData.uid)) return { type: 'lamp', uid: o.userData.uid };
+      if (o && lampRig(o.userData.uid)) return { type: 'lamp', uid: o.userData.uid, dist: h.distance };   /* ★ D100 #6 — 화분과 견줄 거리 */
     }
     return null;
+  }
+  /* ★★ 2026-11-01 총괄 D100 #6 ㉡ — 식물등 몸통의 «화면 상자»(+LAMP_PICK_PAD_PX) 안을 누르면 등. 광선이 아무것에도 안 맞을 때만 쓴다(§resolveTap).
+       ⛔ 벽부형 막대(0.7×0.05m · 창 위 2.2m)는 폰 화면에서 몇 px 높이라 가운데 한 점만 맞았다(probe_d100_6 1/5) — «눌러도 아무 반응 없음» */
+  const LAMP_PICK_PAD_PX = 10;
+  function pickLampNear(cx, cy) {
+    const rigs = (built && built.lightRigs) || [];
+    if (!rigs.length || !built.furniture) return null;
+    const rect = canvas.getBoundingClientRect();
+    let best = null;
+    for (const r of rigs) {
+      if (!r.grow) continue;
+      const g = lampNode(r.uid); if (!g || !g.visible) continue;
+      const bb = new THREE.Box3().setFromObject(g); if (bb.isEmpty()) continue;
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+        const v = new THREE.Vector3(x, y, z).project(ctx.cam);
+        if (v.z > 1) continue;
+        const px = rect.left + (v.x * 0.5 + 0.5) * rect.width, py = rect.top + (-v.y * 0.5 + 0.5) * rect.height;   /* resolveTap 과 같은 화면(client) 좌표 */
+        x0 = Math.min(x0, px); y0 = Math.min(y0, py); x1 = Math.max(x1, px); y1 = Math.max(y1, py);
+      }
+      if (!(x1 > x0)) continue;
+      if (cx < x0 - LAMP_PICK_PAD_PX || cx > x1 + LAMP_PICK_PAD_PX || cy < y0 - LAMP_PICK_PAD_PX || cy > y1 + LAMP_PICK_PAD_PX) continue;
+      const d = Math.hypot(cx - (x0 + x1) / 2, cy - (y0 + y1) / 2);
+      if (!best || d < best.d) best = { d, uid: r.uid };
+    }
+    return best ? { type: 'lamp', uid: best.uid } : null;
   }
   const LAMP_GHOST_PICK_R = 0.06;      /* 유령의 누르는 자리 반지름[m] — [house] ㉢ 「갓 가운데 지름 약 0.12m」 */
 
@@ -4868,12 +4894,16 @@ export async function createRoomView(canvas, opts = {}) {
       if (!yield_) return { type: 'character', id: c1 };
     } else if (c1) return { type: 'character', id: c1 };
     const p = pickPlantRay(cx, cy);
-    if (p) return p;
+    /* ★★ 2026-11-01 총괄 D100 #6 ㉡ — 화분과 등이 둘 다 광선에 맞으면 카메라에 «먼저» 맞은 쪽(등 머리 · 갓이 화분 위에 있을 때 등이 앞이다) ·
+         ⛔ 예전엔 화분이 맞기만 하면 화분 — 거치형 · 집게형을 눌러도 «화분 고름»(probe_d100_6 0/5) */
+    if (p) { const lp0 = pickLampRay(cx, cy); return (lp0 && Number.isFinite(lp0.dist) && Number.isFinite(p.dist) && lp0.dist < p.dist) ? lp0 : p; }
     /* ★ 등 (2026-08-08) — 화분 **뒤**, 퍼지 판정 **앞**이다.
        화분보다 뒤: 잎이 등 밑까지 자라면 물 주려는 손이 등에 먹힌다.
        퍼지보다 앞: 정확히 짚은 것이 대충 가까운 것을 이긴다(이 목록의 원칙 그대로). */
     const lp = pickLampRay(cx, cy);      /* 천장등 «유령»은 가운데만 받는다(§pickLampRay · [house] ㉢) */
     if (lp) return lp;
+    /* ★ D100 #6 ㉡ — 광선이 등에 안 맞았어도 식물등 몸통 화면 상자(+10px) 안이면 등(가는 벽부형 막대) · 가구 광선보다 앞 */
+    { const ln = (() => { try { return furnHitAt(cx, cy) ? null : pickLampNear(cx, cy); } catch (e) { return null; } })(); if (ln) return ln; }
     /* ★ 2026-10-08 ([House] 걸어서 잼 · 총괄) — **가구를 «정확히» 짚었으면 캐릭터 퍼지(36px)가 이기지 않는다.**
          ⛔ 났던 일: 캐릭터가 처음 서는 문 앞(−1.56, 1.54) 옆 구석의 쓰레기봉투는 18점을 눌러 18번 다 캐릭터가 골라졌다(가구 0) ·
            난방기 3/18 — 박사님이 고르신 «쓰레기봉투 0원 치우기»를 탭으로 아예 못 골랐다. 이 목록의 원칙(정확한 것이 대충 가까운 것을 이긴다)과 어긋났다.
