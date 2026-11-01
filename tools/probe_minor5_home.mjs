@@ -55,13 +55,25 @@ const d1 = await nextDay();
 await page.eval(`(()=>{ window.__byeotSheet.open('quest'); return 1; })()`, false); await sleep(900);
 const ask = await J(`(()=>{ const b=document.querySelector('[data-act="homeAsk"]'); return { has: !!b, off: b ? b.disabled : null }; })()`);
 await page.eval(`(()=>{ const b=document.querySelector('[data-act="homeAsk"]'); if (b) b.click(); return 1; })()`, false); await sleep(900);
-await page.eval(`(()=>{ const b=document.getElementById('homeGo'); if (b) b.click(); return 1; })()`, false); await sleep(1500);
+/* ★ 11-01 총괄 ㉡ · [plan] — 되묻기 창 줄(첫 줄 «계약금 …» 그대로 · 둘째 줄 «계약하면 남는 돈 {left}원») · 계약 직후 지갑 */
+const askLines = await J(`(()=>({ on: document.getElementById('homePanel').classList.contains('on'), lines: [...document.querySelectorAll('#homeAsk > div')].map(d=>d.textContent), text: document.getElementById('homeAsk').textContent || '', cash: window.__S().tutorial.cashWon }))()`);
+if (OUT) await page.shot(`${OUT}/390_home_ask.png`);
+await page.eval(`(()=>{ const b=document.getElementById('homeGo'); if (b) b.click(); return 1; })()`, false);
+const cashAfterGo = await J(`window.__S().tutorial.cashWon`);
+await sleep(1500);
 await dlgOnly(); await sleep(800);
 await page.eval(`(()=>{ const b=document.getElementById('homeNext'); if (b && b.offsetParent) b.click(); return 1; })()`, false); await sleep(1500);
 await dlgOnly(); await sleep(600);
 const done = await J(`(()=>{ const S=window.__S(); let m=null; try { m=JSON.parse(localStorage.getItem('byeot.month')); } catch (e) { m={탈:e.message}; } return { day:S.day, owned: !!S.tutorial.homeOwned, due: S.tutorial.rent.nextDueDay, home: m && m.cur && m.cur.run ? (m.cur.run.home || 0) : null }; })()`);
 console.log('  집 계약 뒤', JSON.stringify({ d1, ask, done }));
 ok(ask.has && !ask.off && done.home > 0 && !done.탈, '판 — [내 집 마련] → [계약한다] · 그 달 장부에 집값', JSON.stringify({ ask, done }));
+{ const won = (s) => s ? +String(s).replace(/[^\d]/g, '') : NaN;
+  const L = (askLines && askLines.lines) || [];
+  const left = L[1] && /^계약하면 남는 돈 [\d,]+원$/.test(L[1]) ? won(L[1]) : NaN;
+  console.log('  되묻기 창', JSON.stringify({ askLines, cashAfterGo, left, home: done.home }));
+  ok(!askLines.탈 && askLines.on && L.length === 2 && L[0] === `계약금 ${done.home.toLocaleString('ko-KR')}원을 냅니다. 되돌릴 수 없습니다.`, '㉳ 되묻기 창 첫 줄 «계약금 {집값}원을 냅니다. 되돌릴 수 없습니다.» 그대로 · 줄 둘', JSON.stringify(askLines));
+  ok(Number.isFinite(left) && left === askLines.cash - done.home && left >= 0, '㉳ 둘째 줄 «계약하면 남는 돈 {지갑 − 집값}원»', JSON.stringify({ line: L[1], cash: askLines.cash, home: done.home }));
+  ok(!(cashAfterGo && cashAfterGo.탈) && cashAfterGo === left, '㉳ 계약 직후 지갑 = 그 «남는 돈»', JSON.stringify({ cashAfterGo, left })); }
 await page.eval(`(()=>{ const b=document.querySelector('#jobCards [data-job="care"]'); if (b) b.click(); return 1; })()`, false); await sleep(1500);
 await dlgOnly();
 const months = [];

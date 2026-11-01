@@ -1101,6 +1101,8 @@ const ONEROOM_QUESTS = Object.freeze([
       const seeds = num(s && s.monsteraSeeds), bagPots = num(s && s.emptyPotItems), placed = num(s && s.emptyPotsPlaced);
       if (placed > 0 && seeds > 0) return '빈 화분의 🌱 을 눌러 씨앗을 심으세요';
       if (bagPots > 0) return '빈 화분을 방에 놓으세요';
+      /* ★ 2026-11-01 [plan] — 놓은 빈 화분 · 씨앗 0 · 주문해 오는 중이면 «사세요»는 거짓(두 번 사게 함) · 배너(game.html §emptyPotSubKo)와 같은 말 */
+      if (seeds === 0 && placed > 0 && num(s && s.monsteraSeedsComing) > 0) return '몬스테라 씨앗이 오면 🌱 을 눌러 심으세요';
       if (seeds === 0 && placed === 0) return '상점에서 몬스테라 씨앗과 화분을 사세요';
       if (seeds === 0) return '상점에서 몬스테라 씨앗을 사세요';
       return '상점에서 화분을 사세요';

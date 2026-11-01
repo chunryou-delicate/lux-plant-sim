@@ -6415,6 +6415,23 @@ function updateHint() {
   };
   /* ★ 2026-11-01 core — 상점 줄을 짚기 전에: 시트가 정말 올라와 있고(§sheetShown) 그 줄이 화면 밖이면 굴려 보이게 한다(가방 칸 §cutCell0 과 같은 손).
        ⛔ humanQ g Day 29: [상점]을 누르니 무순 줄이 목록 아래(화면 밖)라 손가락이 꺼졌다(상점이 열려 있으면 hintAt(null)) — 무엇을 살지 모른 채 남음 */
+  /* ★ 2026-11-01 core(총괄 사진 390_d100b_empty · 원룸 빈 화분) — 놓은 빈 화분의 «🌱 씨앗 심기» 말풍선(§emptyPotMarks · data-pot)이 «지금 되는가».
+       씨앗이 있고 · 체력이 남고(§markLive 와 같은 문) · 그 화분이 아직 빈 화분이다. ⚠ 말풍선 글이 작물 «씨앗 심기»와 같아
+       예전엔 §markLive 가 작물 줄(needsSow)로 판정했다 — 빈 화분 🌱 은 작물이 심을 때가 아니면 손가락이 한 번도 안 짚었다 */
+  const potSowLive = (el) => {
+    try {
+      if (!el || !el.dataset || !el.dataset.pot) return false;
+      const sv = staminaView(S); if (sv && sv.empty) return false;
+      if (!((stockOf(S, 'monstera_seed') || 0) >= 1)) return false;
+      return (S.emptyPots || []).some(e => e && e.id === el.dataset.pot);
+    } catch (e) { console.warn('[빈 화분 손가락]', e && e.message); return false; }
+  };
+  /* 그 가운데 화면에서 정말 잡히고(§seenAt) 시트에 안 가린 첫 말풍선 */
+  const potSowMark = () => {
+    const box = $('marks'); if (!box) return null;
+    for (const el of box.querySelectorAll('.mark[data-pot]')) if (potSowLive(el) && seenAt(el) && !sheetCovers(el)) return el;
+    return null;
+  };
   const seeShopRow = (el) => { try { if (el && sheetShown() && el.offsetParent && !seenAt(el)) el.scrollIntoView({ block: 'center' }); } catch (e) { void e; } return el; };
   const crop = fp.beansprout, plant = fp.monstera;
   /* ★★★★ 2026-08-30 — **캐릭 이동을 «손가락»이 가르친다** (박사님 「캐릭이동 강제 가이드」 ·
@@ -6668,6 +6685,11 @@ function updateHint() {
     if (oneroomFurnSeen === null) oneroomFurnSeen = furnDone;
     if (S.home && S.home.room === 'oneroom' && oneroomFurnSeen === 0 && furnDone >= 1 && !oneroomShadeSaid) { oneroomShadeSaid = true; banner('가구가 빛을 가립니다', '가려진 어두운 칸은 콩나물 자리입니다 · 🔆 빛 분포에서 보입니다'); }   /* ★ D99 §5-3 — 책상을 놓아도 «선반»이라 했다 */
     if (plantsLeft > 0) {
+      /* ★ 2026-11-01 총괄(사진 390_d100b_empty · Day 136) — **놓은 빈 화분의 🌱 이 먼저다**(씨앗이 있을 때 · §potSowMark).
+           ⛔ 배너는 «화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요»인데 이 갈래는 가방 속 이삿짐 채소를 짚어 손가락이 [가방]에 있었다
+             (손가락 글 «들고 온 채소를 놓으세요»는 배너에 가려 접힘 §hintCoachMute → «가방에서 씨앗을»처럼 읽힘).
+           🌱 은 한 번 누르면 끝 — 심으러 가는 동안(.acting)은 손가락을 쉬고, 심고 나면 이 갈래가 그대로 잇는다 */
+      { const ps = potSowMark(); if (ps) return ps.classList.contains('acting') ? hintAt(null) : hintAt(ps, '씨앗 심기'); }
       /* ★ 2026-10-09 D43(총괄) — **들고 온 삽수가 먼저다.** 이사가 물건 자리를 비우고(oneroom §clearPlacements) 삽수는 가방에 남는데,
            가방 속 삽수는 하루가 안 간다(D29) — 가구보다 앞에 짚는다. 말은 [plan] 몫(지금은 뜻만) */
       if (cutN > 0) {
@@ -6791,7 +6813,7 @@ function updateHint() {
        «손가락 없음»은 예전 자리(사는 갈래 뒤 · [다음 날] 앞 — 아래 §careActing)에서 그대로 한다 */
   const careActing = !!($('marks') && $('marks').querySelector('.mark.acting'));
   /* ★ 2026-10-31 비판 셋째 판 MAJOR #5 ① — 두 바퀴 뒤 · 세팅 끝 전에도 «심기»(씨앗이 온 날 · 새 시루)는 짚는다. 거두기 · 물 손가락은 뗀 채(박사님 08-17) */
-  const sowNow = !pointStill && markLive('심');
+  const sowNow = !pointStill && (markLive('심') || !!potSowMark());   /* ★ 11-01 빈 화분 🌱 도 «심기» */
   /* ★★ 2026-11-01 총괄 D100 #8 ㉠ — **심기의 짝(물)도 짚는다.** 작물 needsWater 는 «심고 아직 한 번도 물을 안 받은 판»뿐이다(물을 받으면 바퀴가 시작).
        ⛔ 비판 다섯째 판 Day 11: 손가락대로 «씨앗 심기» → 손가락이 곧장 «가방에 몬스테라»로 넘어가 💧 누름이 울타리에 막혔다 */
   const sowWaterNow = !pointStill && markLive('물');
@@ -6799,7 +6821,7 @@ function updateHint() {
     for (const el of $('marks').querySelectorAll('.mark')) {
       const ko = (el.getAttribute('aria-label') || el.textContent || '').replace(/^[^가-힣]+/, '');
       if (!pointStill && !/심/.test(ko) && !(sowWaterNow && /물/.test(ko) && !/몬스테라/.test(ko))) continue;   /* ★ MAJOR #5 ① · D100 #8 ㉠ */
-      if (!markLive(ko)) continue;
+      if (el.dataset && el.dataset.pot ? !potSowLive(el) : !markLive(ko)) continue;   /* ★ 11-01 빈 화분 🌱 은 그 화분 · 몬스테라 씨앗으로 판정 */
       /* ★ 2026-11-01 총괄 사진(08782dbb Day 91) — 그 점에서 정말 잡히는 말풍선만(바닥 왼쪽 단추 뒤에 가린 🥣 를 짚어 손가락이 «남는 채소 팔기»를 짚는 것처럼 읽혔다) ·
            다 가렸으면 아래 바닥 단추로 떨어진다 */
       if (!onScreen(el) || !seenAt(el)) continue;
@@ -11024,6 +11046,8 @@ function questSnapshotNow(turn) {
                                  return varieSourcesNow().n; } catch { return null; } })(),
     monsteraPots: Array.isArray(S.pots) ? S.pots.length : null,
     monsteraSeeds: (() => { try { return stockOf(S, 'monstera_seed') || 0; } catch { return null; } })(),
+    /* ★ 2026-11-01 [plan] — 주문해 오는 중인 몬스테라 씨앗(oneroom_seed_restart todo «오면 🌱» · 배너 §emptyPotSubKo 와 같은 자) · 하네스 칸은 없음(num → 0 → 옛 글) */
+    monsteraSeedsComing: (() => { try { return monsteraSeedsComingNow(); } catch { return null; } })(),
     emptyPotItems: (() => { try { return Object.values(POT_KINDS).reduce((a, k) => a + ((k && k.itemId) ? (stockOf(S, k.itemId) || 0) : 0), 0); } catch { return null; } })(),
     emptyPotsPlaced: Array.isArray(S.emptyPots) ? S.emptyPots.length : 0,
     /* ★★ 2026-10-08 — **원룸 줄의 칸**([plan] f39fbddb · quest.js oneroom_*). null = 「모른다」(그 줄은 안 열린다 · 안전 폴백) */
@@ -11348,10 +11372,19 @@ function homeGoalHtml(v) {
          '<br>' + btn;
 }
 /* 되묻기(②-B) — 이사 때와 같은 결 · 「되돌릴 수 없다」를 말한다 */
+/* ★ 2026-11-01 총괄 ㉡ · [plan] 47821be3 뒤 글 — 둘째 줄 «계약하면 남는 돈»(이사 창 MOVE_ASK_KO.left 와 같은 손 · 꼬리 없음 · 값 · 문턱 그대로).
+     창은 v.ok(지갑 ≥ 집값)일 때만 열리므로 남는 돈 ≥ 0 · finishEnding 이 지갑에서 집값을 바로 뺀다 ⇒ 계약 직후 지갑 = 이 값 */
+const HOME_ASK_KO = Object.freeze({
+  cost: '계약금 {target}원을 냅니다. 되돌릴 수 없습니다.',
+  left: '계약하면 남는 돈 {left}원'
+});
 function openHomeAsk() {
   const v = homeGoalOf();
   if (!v || !v.ok) return;
-  $('homeAsk').textContent = `계약금 ${Math.round(v.targetWon).toLocaleString('ko-KR')}원을 냅니다. 되돌릴 수 없습니다.`;
+  const lines = [HOME_ASK_KO.cost.replace('{target}', wonKo(v.targetWon))];
+  if (Number.isFinite(v.cashWon) && Number.isFinite(v.targetWon)) lines.push(HOME_ASK_KO.left.replace('{left}', wonKo(v.cashWon - v.targetWon)));
+  const box = $('homeAsk'); box.innerHTML = '';
+  for (const t of lines) { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); }
   $('homePanel').classList.add('on'); $('homePanel').setAttribute('aria-hidden', 'false');
 }
 function closeHomeAsk() { $('homePanel').classList.remove('on'); $('homePanel').setAttribute('aria-hidden', 'true'); }
@@ -12250,6 +12283,23 @@ function markList() {
 }
 /* ★★ 2026-11-01 총괄 D100 ③ · [plan] §4-2 — 방에 놓인 빈 화분마다 «🌱 씨앗 심기» 말풍선(가방에 몬스테라 씨앗이 있을 때만) → [식물] 판 줄 단추와 같은 함수(§sowEmptyPot).
      ⛔ 비판 다섯째 판 #21: 원룸 빈 모종포트에 씨앗 심는 길을 못 찾았다 — [식물] 판 줄 단추뿐이었다 */
+/* ★ 2026-11-01 총괄 사진(390_minor5_banner · 원룸 Day 135 · 씨앗 0) · [plan] 11-01 글 — 빈 화분 배너 둘째 줄.
+     ⛔ 씨앗이 0 이어도 늘 «화분까지 걸어가 🌱 을 눌러 …»였는데 🌱 말풍선은 씨앗이 있을 때만 선다(§emptyPotMarks) — 없는 단추를 누르라 했다.
+     오는 중 = 상점 주문에 몬스테라 씨앗(작물 다시 심기 알약 «오는 중»과 같은 자) · 없으면 할 일 oneroom_seed_restart todo 와 같은 말. 어두운 자리 ⚠ 줄이 먼저인 것은 그대로 */
+const EMPTY_POT_SUB_KO = Object.freeze({
+  sow:    '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요',
+  coming: '몬스테라 씨앗이 오면 🌱 을 눌러 심으세요',
+  buy:    '상점에서 몬스테라 씨앗을 사세요'
+});
+function monsteraSeedsComingNow() {
+  return ((shopStatus(S) || {}).orders || []).reduce((n, o) => n + ((o && o.itemId === 'monstera_seed') ? (Number(o.qty) || 0) : 0), 0);
+}
+function emptyPotSubKo() {
+  let seeds = 0; try { seeds = stockOf(S, 'monstera_seed') || 0; } catch { seeds = 0; }
+  if (seeds > 0) return EMPTY_POT_SUB_KO.sow;
+  let coming = 0; try { coming = monsteraSeedsComingNow(); } catch (e) { console.warn('[빈 화분 배너]', e && e.message); coming = 0; }
+  return coming > 0 ? EMPTY_POT_SUB_KO.coming : EMPTY_POT_SUB_KO.buy;
+}
 function emptyPotMarks() {
   const out = [];
   let seeds = 0; try { seeds = stockOf(S, 'monstera_seed') || 0; } catch { seeds = 0; }
@@ -12257,7 +12307,7 @@ function emptyPotMarks() {
   const rvKeyOf = (() => { try { const m = new Map(); for (const p of (roomView && roomView.plants ? roomView.plants() : [])) if (p && p.potId) m.set(p.potId, p.key); return id => m.get(id) || null; } catch { return () => null; } })();
   for (const ep of (S.emptyPots || [])) {
     if (!ep || !ep.at) continue;
-    out.push({ key: rvKeyOf(ep.id) || `free:${ep.id}`, ko: '🌱 씨앗 심기', tone: 'crop', act: 'sow', go: () => sowEmptyPot(ep.id) });   /* ★ #11 act */
+    out.push({ key: rvKeyOf(ep.id) || `free:${ep.id}`, ko: '🌱 씨앗 심기', tone: 'crop', act: 'sow', pot: ep.id, go: () => sowEmptyPot(ep.id) });   /* ★ #11 act · ★ 11-01 pot(§potSowMark) */
   }
   return out;
 }
@@ -12683,7 +12733,7 @@ function drawMarks() {
   const want = markList();
   box.classList.toggle('busy', stageBusy());
   /* 내용이 같으면 다시 만들지 않는다 — 매 턴 새로 만들면 뛰는 애니메이션이 끊긴다 */
-  const sig = want.map(m => m.key + '|' + m.ko).join(',');
+  const sig = want.map(m => m.key + '|' + m.ko + (m.pot ? '|p' : '')).join(',');
   if (box.dataset.sig !== sig) {
     box.dataset.sig = sig;
     box.innerHTML = '';
@@ -12691,6 +12741,7 @@ function drawMarks() {
       const el = document.createElement('button');
       el.className = 'mark' + (m.tone ? ' ' + m.tone : '');
       el.dataset.key = m.key;
+      if (m.pot) el.dataset.pot = m.pot;   /* ★ 2026-11-01 — 빈 화분 🌱 (§updateHint potSowMark · 글이 작물 «씨앗 심기»와 같아 이것으로 가른다) */
       /* ★ 게이지 + 글. 글을 `textContent` 로 넣으면 게이지가 지워지므로 칸을 나눠 둔다.
          게이지는 `.acting` 이 붙을 때만 보인다(§말풍선 진행). */
       const g = document.createElement('i'); g.className = 'mg';
@@ -17182,7 +17233,7 @@ function commitPlaceInner(what, hit, opt = {}) {
       placeEmptyPot(S, atOf(hit), { ...placeOpt(), potItemId: potItemOf(what) });
       /* ★ 2026-10-08 A·B — 어두운 자리면 심기 안내 대신 빛 한 줄(심어도 안 자란다) */
       const darkE = darkPlaceWarn((() => { const e = (S.emptyPots || []).slice(-1)[0]; return e ? { obj: e, kind: 'empty', variegated: false } : null; })());
-      banner('🪴 빈 화분을 놓았습니다', darkE ? `⚠ ${darkE}` : '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요');
+      banner('🪴 빈 화분을 놓았습니다', darkE ? `⚠ ${darkE}` : emptyPotSubKo());
       unlockAfterFix();
       sfx.thud();
     } catch (e) { return placeFailed(e); }
@@ -17947,7 +17998,7 @@ function startPhonePlacePot(what) {
   }
   try { window.__byeotSheet.close(); } catch { }
   { const darkE = darkPlaceWarn((() => { const e = (S.emptyPots || []).slice(-1)[0]; return e ? { obj: e, kind: 'empty', variegated: false } : null; })());   /* ★ 2026-10-08 A·B */
-    banner('🪴 빈 화분을 놓았습니다', darkE ? `⚠ ${darkE}` : '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요'); }
+    banner('🪴 빈 화분을 놓았습니다', darkE ? `⚠ ${darkE}` : emptyPotSubKo()); }
   draw();
   return { ok: true };
 }
