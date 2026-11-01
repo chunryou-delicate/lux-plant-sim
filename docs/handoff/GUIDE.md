@@ -37,6 +37,7 @@
 | 반지하 사건 카드 | `src/game/events_banjiha.js` · 글은 `plan-events-banjiha-d96.md` |
 | 원룸 · 이사 · 내 집 마련 · 엔딩 | `src/game/oneroom.js` · `ending.js` · `data/balance/homes.json` · 되묻기 창은 `game.html` (`contract.js` 는 집 계약이 아니라 빛 계약 검증이다) |
 | 손가락 · 배너 · 말풍선(화면) | `game.html`(hintAt · markLive 근처) |
+| 글 쓰기 · 대 보기(몬이 대사 · 배너 · 할 일 글) | 몬이 대본 `src/game/dialogue.js`(EVENT_SCRIPT · scriptOf) · 할 일 글 `quest.js` 의 todo · 화면 글 `game.html` 의 `*_KO` 상수 · plan 이 넘긴 글 `plan-to-core-*.md` 가장 새 것. 몬이는 수를 말하지 않는다 · 거짓 줄을 안 쓴다 · 새 줄마다 «참인 조건»을 단다 |
 | 하네스 숫자(날 돌려 셈) | `tools/probe_branches.mjs` — ⚠ `tools/_out/branches.json` 을 덮는다 |
 
 ## 4. 규칙 — 어기면 사고가 났던 것만
