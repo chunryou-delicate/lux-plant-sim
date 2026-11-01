@@ -57,6 +57,7 @@
 
 ■ 안전 · 저장소 규칙(여러 창이 한 작업 트리를 씁니다)
 - 게임 소스·데이터·남의 파일을 고치지 않습니다. 저장소 안에는 보고서 파일 하나만 씁니다.
+- 도구의 출력(로그 · .out · 사진)은 늘 당신 임시 폴더 아래 절대 경로로 씁니다. 상대 경로를 쓰지 않습니다(셸 작업 폴더가 저장소일 수 있음). 끝내기 전에 `git -C C:/Users/pc/Desktop/빛식물/lux-plant-sim status --short --ignored -- .claude docs/handoff` 로 보고서 말고 새 파일(?? · !!)이 없는지 봅니다. 생겼으면 지우지 말고 총괄에게 알립니다.
 - git pull · stash · checkout · reset · add . · commit · push 금지(커밋은 총괄이 합니다).
 - 헤드리스 크롬은 하나만. 켜기 전에 빈 메모리 4GB 이상인지 봅니다(PowerShell: (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory/1MB). 모자라면 기다립니다.
 - 크롬을 끌 때는 CDP Browser.close 로 닫습니다(세이브가 남게 · 강제 종료 대신).
