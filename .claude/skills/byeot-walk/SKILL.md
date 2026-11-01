@@ -64,6 +64,7 @@ bash tools/master/walk_then_shots.sh <R>
 | 날 | 실패 | 까닭 | 고친 줄 | 확인 |
 |---|---|---|---|---|
 | 11-01 | 걸음 중 `pin_*/assets` 연결이 사라짐 | Temp 쓸림(저장소 센스 의심) | 시험 앞 manifest.json 읽힘 확인 · 없으면 연결 다시 | ✓ |
-| 11-01 | 도구(serve_rev.py)가 Temp 와 함께 사라짐 | Temp 쓸림 | keep 폴더 → 11-02 저장소 `tools/master/` 로 | 확인 전 |
-| 11-02 | probe_houseC_furnlight exit 2 | 묶음이 OUTDIR 을 안 넘김 | 묶음 전체에 `OUTDIR=$M/shots_$R/$t` | 확인 전(OUTDIR 준 따로 돌림은 PASS · 고친 walkfinal 은 다음 걸음에서) |
+| 11-01 | 도구(serve_rev.py)가 Temp 와 함께 사라짐 | Temp 쓸림 | keep 폴더 → 11-02 저장소 `tools/master/` 로 | ✓ (11-02 5f3fbe01 걸음이 `tools/master/` 로 끝까지 돎 · exit=0) |
+| 11-02 | probe_houseC_furnlight exit 2 | 묶음이 OUTDIR 을 안 넘김 | 묶음 전체에 `OUTDIR=$M/shots_$R/$t` | ✓ (5f3fbe01 걸음 묶음에서 PASS · 사진 넷) |
 | 11-02 | 긴 걸음 넷이 로그 멈춘 채 1500초 | 혼자 돌리니 넷 다 PASS(106~272초) → 판 탓(23:3x~01:00 · 원인 미상) | `rerun_stalled.sh`: 5분 멈춤 감시 + 그 node 의 크롬만 CDP close | ✓ 스크립트(02:18 다섯 PASS) · 멈춤 감시 자체는 아직 안 걸려 봄 |
+| 11-02 | 걸음 끝 «chrome 9xxx 남음: 2» | 남은 크롬은 core 회귀(byeot-core/fm14 의 node 자식)였음 · 이 창 것 아님 | 남음 줄이 뜨면 부모 node 의 명령 줄로 누구 것인지 먼저 가린다(남의 것은 안 건드림) | ✓ (05:58 부모 = core probe_m4_cam) |
