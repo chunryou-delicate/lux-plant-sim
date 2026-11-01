@@ -33,7 +33,7 @@ const reload = async () => {
   await page.eval(`(()=>{ try{ if(window.__save) window.__save(); }catch(e){} })()`, false); await sleep(1500);
   await page.goto(`${BASE}/game.html`); await page.waitFor('!!window.__rv', 600000, 500); await sleep(4500); await skip(); };
 /* [옮기기] 확정과 같은 길 — 고르고 · 끌기 끝(up). 후보 자리를 차례로(놓을 수 없으면 다음) */
-const moveVia = (uid, cands) => J(`(async()=>{ const fp=window.__furn; const f=(window.__rv.furniture()||[]).find(x=>x.uid===${JSON.stringify(uid)});
+const moveVia = (uid, cands, clampOk = false) => J(`(async()=>{ const fp=window.__furn; const f=(window.__rv.furniture()||[]).find(x=>x.uid===${JSON.stringify(uid)});
   if (!f) return { 탈:'가구 없음' };
   const tries=[];
   for (const [x,z] of ${JSON.stringify(cands)}) {
@@ -42,7 +42,8 @@ const moveVia = (uid, cands) => J(`(async()=>{ const fp=window.__furn; const f=(
     fp.mode='move'; fp.ghost={ x, z, rot: f.rot||0 };
     await fp.up();
     const now=(window.__rv.furniture()||[]).find(q=>q.uid===${JSON.stringify(uid)});
-    const moved = now && Math.abs(now.x-x)<0.2 && Math.abs(now.z-z)<0.2;
+    /* ★ 11-01 core — 벽 쪽 목표는 게임이 벽에 물려 세운다(원룸 창 앞 −2.33 → −1.95) · clampOk 면 x 0.2m · z 0.5m 안을 옮긴 것으로 */
+    const moved = now && Math.abs(now.x-x)<0.2 && (Math.abs(now.z-z)<0.2 || (${clampOk ? 'true' : 'false'} && Math.abs(now.z-z)<0.5 && Math.abs(now.z-z)>0));
     const el=document.getElementById('furnLight');
     tries.push({ x, z, moved, at: now ? [+now.x.toFixed(2), +now.z.toFixed(2)] : null });
     if (moved) { await new Promise(r=>setTimeout(r,600));
@@ -101,7 +102,7 @@ try {
   if (placed && placed.ok) {
     const W = await J(`(()=>{ const r=window.__io.light.room; const f=(window.__rv.furniture()||[]).find(x=>x.uid===${JSON.stringify(placed.uid)}); return { d: r.size.d, fd: (f && f.size && f.size.d) || 0.28 }; })()`);
     const zWin = -W.d / 2 + W.fd / 2 + 0.03;
-    const o1 = await moveVia(placed.uid, [[0.5, zWin], [0.2, zWin], [1.1, zWin], [0.5, zWin + 0.1]]);
+    const o1 = await moveVia(placed.uid, [[0.5, zWin], [0.2, zWin], [1.1, zWin], [0.5, zWin + 0.1]], true);   /* ★ 창 쪽 벽에 물려 서도 받는다 */
     console.log('③ 창 앞 —', JSON.stringify(o1));
     await page.shot(`${OUTDIR}/3_oneroom_window.png`);
     ok(o1.shown && o1.verdict && o1.text.startsWith(KO[o1.verdict.key]), `줄이 뜨고 글이 엔진 갈래 그대로(${o1.verdict && o1.verdict.key} «${o1.text}»)`);
