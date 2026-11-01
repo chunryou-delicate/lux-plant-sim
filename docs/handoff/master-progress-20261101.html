@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 진행 보고</title>
+<meta name="description" content="총괄 → 박사님 · 2026-11-01 진행 보고 — 비판 다섯째 판 BLOCK 뒤 고친 것 · 사진 · 다음 · 박사님이 정하실 것">
+<style>
+:root{
+  --bg:#f6f1e7; --panel:#fffaf0; --ink:#2a2118; --muted:#6f6253; --line:#e3d7c3;
+  --accent:#c9782a; --ok:#2f7d4a; --ok-bg:#e2f2e6; --warn:#9a6a00; --warn-bg:#fbefcf;
+  --bad:#b23a2c; --bad-bg:#f8e0dc; --q:#2f5f9a; --q-bg:#e0eaf7;
+  --shadow:0 1px 2px rgba(60,40,10,.08),0 4px 14px rgba(60,40,10,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16120e; --panel:#211b15; --ink:#efe6d8; --muted:#b0a28f; --line:#3a3026;
+    --accent:#e09243; --ok:#7fd39a; --ok-bg:#1d3324; --warn:#f0c35a; --warn-bg:#3a2f12;
+    --bad:#ff8a7a; --bad-bg:#3c1d18; --q:#8db8f0; --q-bg:#1b2a3e; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16120e; --panel:#211b15; --ink:#efe6d8; --muted:#b0a28f; --line:#3a3026;
+  --accent:#e09243; --ok:#7fd39a; --ok-bg:#1d3324; --warn:#f0c35a; --warn-bg:#3a2f12;
+  --bad:#ff8a7a; --bad-bg:#3c1d18; --q:#8db8f0; --q-bg:#1b2a3e; --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;word-break:keep-all;overflow-wrap:anywhere}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.55rem;margin:.2em 0 .1em}
+h2{font-size:1.18rem;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+h3{font-size:1.02rem;margin:1.2em 0 .4em}
+.sub{color:var(--muted);font-size:.92rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);margin:12px 0}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:1px}
+.ok{background:var(--ok-bg);color:var(--ok)} .warn{background:var(--warn-bg);color:var(--warn)}
+.bad{background:var(--bad-bg);color:var(--bad)} .q{background:var(--q-bg);color:var(--q)}
+ul{padding-left:1.2em;margin:.4em 0} li{margin:.25em 0}
+code{font-size:.86em;background:var(--line);padding:0 4px;border-radius:4px}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin:12px 0}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+figure img{display:block;width:100%;height:auto;cursor:zoom-in}
+figcaption{padding:8px 10px;font-size:.88rem;color:var(--muted)}
+figcaption b{color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.tw{overflow-x:auto}
+a{color:var(--accent)}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:12px;z-index:9}
+#zoom img{max-width:100%;max-height:100%}
+</style>
+</head>
+<body>
+<main>
+<h1>볕 진행 보고</h1>
+<div class="sub">총괄 → 박사님 · 2026-11-01 (23:3x 적음) · 값(밸런스)은 안 바꿈(D95) · 게임 <a href="https://chunryou-delicate.github.io/lux-plant-sim/game.html">game.html</a></div>
+
+<h2>한눈에</h2>
+<div class="card">
+<ul>
+<li><span class="tag bad">BLOCK</span><b>비판 다섯째 판</b>(Day 0 → 96 이사 → 110)이 막혔다. 상점 권유대로 모그루를 팔면 원룸 할 일 줄이 영영 멈췄다. 같이 MAJOR 7 · MINOR 11 이 나왔다.</li>
+<li><span class="tag ok">고침</span>그 BLOCKER 와 MAJOR · MINOR 대부분이 오늘 들어갔다.
+  <ul>
+  <li>core: 96f1fe9c · 3dec77b9 · 08782dbb · f39306c2 · faec7731 · adc6e5e9(자만)</li>
+  <li>plan: da12fae6</li>
+  </ul></li>
+<li><span class="tag ok">걸음</span>총괄이 08782dbb 판을 Day 0 부터 다시 걸었다.
+  <ul>
+  <li>손가락만 따라가는 판(force5)은 끊김 0 · Day 17 에 한 바퀴가 돌았다. node 검사 22개도 다 통과했다.</li>
+  <li>빨강은 자(검사 도구)의 누르는 때 문제였다. 따로 다시 돌려 초록을 봤고, 남은 하나는 core 가 faec7731 에서 자를 고쳤다.</li>
+  </ul></li>
+<li><span class="tag warn">지금</span>최신 판(adc6e5e9)을 끝 걸음으로 다시 재는 중이다(약 2시간). 초록이면 <b>비판 여섯째 판</b>을 띄운다. 처음부터 하는 판과, 모그루를 파는 갈래를 함께 본다.</li>
+<li><span class="tag q">여쭐 것</span>아침에 드린 물음 10개(<a href="master-to-doctor-20261101.md">master-to-doctor-20261101.md</a>)는 아직 답을 기다린다. 그중 1 · 2 · 3 이 급하다(맨 아래).</li>
+</ul>
+<p class="sub">⚠ 총괄 창이 14시 무렵부터 23시까지 꺼져 있었다. 그동안 core · plan 은 파일 인계(core-to-master.md · plan-to-master.md)로 일을 이어 갔다. 이 보고는 그 파일을 다 읽고 쓴 것이다.</p>
+</div>
+
+<h2>고친 것 — 사진으로</h2>
+<div class="shots">
+<figure><img src="img/master-progress-20261101/p1_sell_confirm.jpg" alt="모그루 팔기 확인 창" loading="lazy">
+<figcaption><b>① 모그루 팔기 앞 확인 창</b> · 팔면 무늬 원천이 0 이 되고 원룸에서 늘릴 게 없다고 미리 말한다. 마디를 잘라 삽수로 파는 다른 길도 같이 보인다. 손가락은 이 창에서 물러나 «팔라»고 부추기지 않는다(총괄이 잡은 MAJOR).</figcaption></figure>
+<figure><img src="img/master-progress-20261101/p2_oneroom_seed.jpg" alt="원룸 씨앗부터 다시" loading="lazy">
+<figcaption><b>② 원룸에서 무늬 원천 0 일 때</b> · 무늬 할 일 넷을 «닫힘»으로 넘겨 사슬이 안 멎는다. 대신 «씨앗부터 다시 키운다» 줄이 열린다(빈 화분 → 🌱).</figcaption></figure>
+<figure><img src="img/master-progress-20261101/p3_water_first.jpg" alt="물 먼저 손가락" loading="lazy">
+<figcaption><b>③ 심은 뒤 손가락은 물 먼저</b>(#8) · «물을 주면 자라기 시작합니다». 다시 심기 묶음은 물 줄 체력을 남긴다(#7). 체력 0 이면 단추가 흐려진다(#17).</figcaption></figure>
+<figure><img src="img/master-progress-20261101/p4_light_legend.jpg" alt="빛 분포 범례" loading="lazy">
+<figcaption><b>④ 빛 분포 범례</b>(#12) · 반지하는 «철 따라 안 바뀜 · 등 n개»가 한 줄에 든다. 이사 첫날 범례 철은 [방] 판 철(겨울)과 같다.</figcaption></figure>
+<figure><img src="img/master-progress-20261101/p6_stamina0_before.jpg" alt="체력 0 말풍선 과밀 — 고치기 전" loading="lazy">
+<figcaption><b>⑤ 고치기 전 — 체력 0 인데 💧 · 🌱 가득</b>(비판 다섯째 판 Day 30). core 는 «말풍선 과밀»을 재현하지 못했다. 총괄이 사진을 보고 «체력 0 판»이라는 조건을 찾았다. 이제 체력이 막은 행동 말풍선은 그날 안 세우고 묶음 이름표만 선다(faec7731 · #11).</figcaption></figure>
+<figure><img src="img/master-progress-20261101/p5_hidden_finger_before.jpg" alt="가린 말풍선을 짚는 손가락 — 고치기 전" loading="lazy">
+<figcaption><b>⑥ 고치기 전 — 손가락이 가린 그루를 짚음</b>(총괄 08782dbb 사진 · Day 91) · 짚는 그루가 «남는 채소 팔기» 단추 뒤에 있어서 팔기를 가리키는 듯 읽혔다. 이제 손가락은 정말 누를 수 있는 말풍선만 짚는다(faec7731).</figcaption></figure>
+</div>
+
+<h2>고친 것 — 목록</h2>
+<div class="card tw">
+<table>
+<tr><th>무엇</th><th>어떻게(값 안 바꿈)</th><th>판</th></tr>
+<tr><td><span class="tag bad">BLOCKER</span>모그루 팔면 원룸 사슬 멈춤</td><td>
+<ul>
+<li>[내놓기] · [거래하기]를 누르면 확인 창이 선다.</li>
+<li>무늬 원천이 0 이면 몬이가 «오늘이어도 되고»를 하지 않는다.</li>
+<li>원룸에서 원천이 0 이면 무늬 할 일을 닫고 «씨앗부터 다시 키운다» 줄을 연다.</li>
+</ul></td><td>96f1fe9c · da12fae6</td></tr>
+<tr><td>#2 내놓기 단추 값 ≠ 실제 값</td><td>단추 값을 실제로 올라가는 값에 맞춤(같은 계산 하나)</td><td>96f1fe9c</td></tr>
+<tr><td>#5 가방 칸이 작물과 반대 자리를 고름</td><td>작물에 맞는 빛 띠 안에서만 고름 · 없으면 «맞는 자리가 없습니다»</td><td>96f1fe9c</td></tr>
+<tr><td>#6 식물등 자동 자리 · 눌러도 메뉴 없음</td><td>자리는 그대로 두고 밝기를 보인다(3.7 → 6.0) · 등을 누르면 켜고 끄기 · 확인 바가 메뉴에 안 가림</td><td>3dec77b9 · f39306c2</td></tr>
+<tr><td>#7 · #8 · #17 다시 심기 · 손가락 · 체력 0</td><td>물 줄 체력 남김 · 물 먼저 · 체력 0 흐림</td><td>3dec77b9</td></tr>
+<tr><td><span class="tag warn">총괄 MAJOR</span>경고 창에서 손가락이 [그래도 판다]를 짚음</td><td>경고 창 표지 → 손가락 물러남. 자가 오류를 «통과»로 읽던 거짓 초록도 잡아, 이제 오류는 빨강이다.</td><td>3dec77b9</td></tr>
+<tr><td>#9 아침 연락 배너가 대사 중 6초 만에 사라짐</td><td>대사 동안 안 걷고, 대사 닫힌 뒤 4초 더 둔다</td><td>f39306c2</td></tr>
+<tr><td>#10 상점 손가락 말풍선이 [주문]을 덮음</td><td>말풍선 자리 셈 고침 · 살 줄이 화면 밖이면 굴려서 보인 뒤 짚음</td><td>f39306c2</td></tr>
+<tr><td>#11 체력 0 말풍선 과밀</td><td>못 하는 행동 말풍선은 그날 안 세움 · 묶음 이름표 · 마른 경고는 흐리게</td><td>faec7731</td></tr>
+<tr><td>#12 · #13 · #16 · #18</td><td>
+<ul>
+<li>#12 범례의 철이 맞게 나온다.</li>
+<li>#13 가계부 «들어온 돈»에 반찬가게 200,000원이 잡힌다.</li>
+<li>#16 물 날수가 단추 · 목록 · 자세히 셋 다 같다.</li>
+<li>#18 물을 주면 «💧 물을 줬습니다»가 뜬다.</li>
+</ul></td><td>08782dbb</td></tr>
+<tr><td>#14 · #15</td><td>
+<ul>
+<li>#14 상점이 이끈 주문 뒤에도 상점이 열려 있다.</li>
+<li>#15 바닥 단추 글이 안 잘린다 · [다음 날] 꼬리는 겹치면 숨긴다.</li>
+</ul></td><td>f39306c2</td></tr>
+<tr><td>내 집 산 뒤 가계부</td><td>옛 월세 날에 30일마다 계속 닫는다. 첫 달 «내 집 마련 5,000,000원», 다음 달부터 «월세 없음(내 집)»으로 보인다(총괄 가름).</td><td>f39306c2</td></tr>
+<tr><td>진로 수입이 가계부에 안 잡힘</td><td>«진로 수입» 줄 · «장부에 안 잡힌 것» 0</td><td>f39306c2</td></tr>
+<tr><td>옛 거짓 글 둘(plan)</td><td>
+<ul>
+<li>굶음 카드가 그날 사는 방 이름으로 말한다.</li>
+<li>«첫 달이라» 대신 «지난달 장부가 없어»를 쓴다.</li>
+</ul></td><td>faec7731</td></tr>
+<tr><td>낡은 자 둘(엔딩 길 · 원룸 가구 빛)</td><td>빨강 19줄을 다 갈랐다. 모두 자 쪽이었고 게임 쪽은 0 이다. 엔딩 길 자를 회귀 목록에 넣었다.</td><td>faec7731 · adc6e5e9</td></tr>
+</table>
+</div>
+
+<h2>총괄이 오늘 정한 것(D95 안 · 값 아님)</h2>
+<div class="card"><ul>
+<li><b>모그루 팔기 앞 몬이 한마디(D22)</b>: 몬이 대사 대신 확인 창 글로 옮겼다. 뜻은 같다(«되돌릴 수 없는 것은 판 앞에 말로 막는다»).</li>
+<li><b>#6 등 자리</b>: 자리는 그대로 두고, 밝기를 보이고, 눌러서 켜고 끄게 했다.</li>
+<li><b>#9 배너</b>: 조건 셋을 붙였다 — 쌓이지 않게 · 묵은 것은 버리게 · 손가락 끊김이 늘지 않게. core 가 더 가벼운 길(대사 동안 안 걷기)로 셋을 다 지켰다.</li>
+<li><b>내 집 산 뒤 가계부</b>: 30일마다 계속 닫는다.</li>
+<li><b>집 계약 창 «남는 돈» 한 줄</b>(plan 판단 요청)
+  <ul>
+  <li>«계약하면 남는 돈 ○○원» 한 줄을 넣는다(㉡). 이사 창에 이미 있는 규칙과 같다.</li>
+  <li>«살림비보다 적으면 경고»(㉢)는 문턱 값이 들어 박사님 몫으로 남긴다(아래).</li>
+  </ul></li>
+</ul></div>
+
+<h2>다음</h2>
+<div class="card"><ol>
+<li>최신 판 adc6e5e9 끝 걸음(23:3x 시작) → 사진을 직접 본다.</li>
+<li>초록이면 <b>비판 여섯째 판</b>을 띄운다.
+  <ul>
+  <li>A: Day 0 부터 사람처럼 한다.</li>
+  <li>S: 처음 모그루를 팔 때 갈라서 팔기 → 이사 → 원룸 14일.</li>
+  <li>다섯째 판의 BLOCKER · MAJOR 가 사라졌는지 사람 눈으로 잰다.</li>
+  </ul></li>
+<li>남은 작은 것: 원룸 빈 화분 배너는 «화분까지 걸어가 🌱 을 누르라»는데, 손가락은 [가방]을 짚는다(②번 사진). 말이 엇갈리는지 core 에 확인을 맡긴다.</li>
+</ol></div>
+
+<h2>박사님이 정하실 것</h2>
+<div class="card">
+<p><span class="tag q">급함</span>아침 물음(<a href="master-to-doctor-20261101.md">master-to-doctor-20261101.md</a>) 중 셋:</p>
+<ol>
+<li><b>모그루를 통째로 팔면 무늬 길이 닫힌다</b> — 의도인가?
+  <ul>
+  <li>(가) 막지 않고 미리 알림 + 원룸 다른 길: 지금 넣은 것이고 총괄 추천이다.</li>
+  <li>(나) 마지막 무늬 그루는 못 팔게 막는다.</li>
+  <li>(다) 원룸에서 무늬 삽수를 사거나 맞바꾸는 길을 연다.</li>
+  </ul></li>
+<li><b>반지하 석 달이 길다</b> — 채소 벌이가 월세와 비슷하고, 첫 무늬 잎이 늦다. 박사님이 폰으로 처음부터 해 보신 느낌을 먼저 듣고 싶다.</li>
+<li><b>임시 파일 지우기</b> — 총괄이 크롬 시험 프로필 133개를 여쭙지 않고 지웠다(잘못). 그 뒤 지우기는 모두 멈춰 있다. 지금 C: 빈 공간은 50GB 다.</li>
+</ol>
+<p><span class="tag q">새로</span>내 집 산 달 지갑이 바닥에 가까울 수 있다. 손을 안 쓴 하네스 판에서 5,063,924원이 32,700원으로 줄었고, 15일 뒤 굶었다. 이 판만으로 실제 판의 문제라고 단정하지는 않는다.</p>
+<ul>
+<li>«남는 돈» 한 줄은 넣는다.</li>
+<li>남는 돈이 모자랄 때 경고를 띄울지, 띄운다면 기준을 얼마로 할지는 값이라 박사님이 정하실 몫이다.</li>
+</ul>
+</div>
+
+<p class="sub">자세한 기록: <a href="master-campaign-20261007.md">master-campaign-20261007.md</a> · core 인계 <a href="core-to-master.md">core-to-master.md</a> · plan 인계 <a href="plan-to-master.md">plan-to-master.md</a> · 비판 다섯째 판 <a href="playtest-critic5-20261101.md">playtest-critic5-20261101.md</a></p>
+</main>
+<div id="zoom" role="dialog" aria-label="크게 보기"><img alt=""></div>
+<script>
+const z=document.getElementById('zoom'), zi=z.querySelector('img');
+document.querySelectorAll('figure img').forEach(i=>i.addEventListener('click',()=>{zi.src=i.src;zi.alt=i.alt;z.style.display='flex';}));
+z.addEventListener('click',()=>{z.style.display='none';zi.src='';});
+</script>
+</body>
+</html>
