@@ -120,6 +120,12 @@ if (!ONLY || ONLY === 'A') {
   const rows = (month && month.rows) || '';
   console.log('  가계부', JSON.stringify(rows.replace(/\s+/g, ' ').slice(0, 600)));
   if (OUT) await page.shot(`${OUT}/390_minor5_month.png`);
+  /* ★ 11-01 총괄 사진(08782dbb · 이 자리 Day 91) — 손가락이 짚은 🥣 말풍선이 «남는 채소 팔기» 단추 뒤에 가렸다 · 짚는 것은 그 점에서 정말 잡혀야 한다 */
+  await sleep(1200);
+  const h91 = await J(`(()=>{ const t=document.querySelector('.hintTarget'); if (!t) return { none: true }; const q=t.getBoundingClientRect(); const e=document.elementFromPoint(q.left+q.width/2, q.top+q.height/2);
+    return { t: (t.getAttribute('aria-label')||t.textContent||t.id||'').trim().slice(0,24), seen: !!(e && (e===t || t.contains(e))), at: e ? (e.id || String(e.className).slice(0,24)) : null }; })()`);
+  console.log('  Day 91 손가락', JSON.stringify(h91));
+  ok(!h91.탈 && (h91.none || h91.seen), '㉳-91 손가락이 짚는 것은 그 점에서 정말 잡힌다(바닥 단추 뒤 말풍선을 안 짚음)', JSON.stringify(h91));
   const gapM = rows.match(/장부에 안 잡힌 것\s*([−-]?[\d,]+)/);
   const gapWon = gapM ? +gapM[1].replace(/[−,-]/g, '') : 0;
   ok(!!month && /반찬가게에 판 것/.test(rows) && /^\s*200,000/.test(rows.split('반찬가게에 판 것')[1] || ''), '㉮ #13 가계부 «들어온 돈»에 «반찬가게에 판 것 200,000원»', rows.replace(/\s+/g, ' ').slice(0, 300));

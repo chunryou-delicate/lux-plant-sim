@@ -73,13 +73,19 @@ console.log('  둘째 달', JSON.stringify(m2 && { ...m2, rows: m2.rows.replace(
 const gapOf = (m) => { const g = m && m.rows.match(/장부에 안 잡힌 것\s*[−-]?([\d,]+)/); return g ? won(g[1]) : 0; };
 ok(!!m1 && /내 집 마련\s*[\d,]+/.test(m1.rows) && won((m1.rows.match(/내 집 마련\s*([\d,]+)/) || [])[1]) === done.home, '㉮ 집 산 달 «나간 돈 · 내 집 마련 {집값}원»', JSON.stringify(m1 && { day: m1.day, title: m1.title }));
 ok(!!m1 && gapOf(m1) < done.home, '㉮ «장부에 안 잡힌 것»이 집값만큼 안 뜬다', String(gapOf(m1)));
-ok(!!m1 && /내 집 마련을 빼면|견주지 않습니다|첫 달/.test(m1.sum), '㉮ 견줌이 집값을 뺀 순이익(«내 집 마련을 빼면 …»)', m1 && m1.sum);
+ok(!!m1 && /내 집 마련을 빼면|견주지 않습니다|견줄 것이 없습니다/.test(m1.sum), '㉮ 견줌이 집값을 뺀 순이익(«내 집 마련을 빼면 …») 또는 견줄 것 없음', m1 && m1.sum);
+/* ★ 11-01 [plan] — 둘째 달 넘어서 지난달 값이 없을 때 «첫 달이라»는 제목(«16번째 달»)과 부딪혔다 */
+ok(!!m1 && !(/(\d+)번째 달/.test(m1.title) && /첫 달이라/.test(m1.sum)), '㉮ «N번째 달»에 «첫 달이라»가 안 붙는다', JSON.stringify({ title: m1 && m1.title, sum: m1 && m1.sum }));
 ok(!!m1 && /내 집을 마련한 달입니다 — 이제 월세가 나가지 않습니다\./.test(m1.note), '㉮ 밑 글 «내 집을 마련한 달입니다 — …»', m1 && m1.note);
 const n1 = m1 ? +((m1.title.match(/(\d+)번째/) || [])[1] || 0) : 0, n2 = m2 ? +((m2.title.match(/(\d+)번째/) || [])[1] || 0) : 0;
 ok(!!m2 && /월세\s*없습니다 \(내 집\)/.test(m2.rows), '㉯ 그 뒤 달 «월세 | 없습니다 (내 집)»', JSON.stringify(m2 && { day: m2.day, rows: m2.rows.replace(/\s+/g, ' ').slice(0, 120) }));
 ok(!!m2 && /가계부는 \d+일마다 나옵니다/.test(m2.sub), '㉯ 부제 «가계부는 30일마다 나옵니다»', m2 && m2.sub);
 ok(!!m1 && !!m2 && n1 > 0 && n2 === n1 + 1, '㉯ 제목 수 이어 셈(앞 달 + 1)', JSON.stringify({ t1: m1 && m1.title, t2: m2 && m2.title }));
 if (process.env.HOME_DBG) console.log('  기록', JSON.stringify(await J(`(()=>{ const S=window.__S(); return { earnedBy: S.shop.earnedBy, log: (S.log||[]).map(x=>typeof x==='string'?x:(x&&(x.text||x.ko||x.msg))||'').filter(t=>/원/.test(t)).slice(-40) }; })()`)));
+/* ★ 11-01 [plan] — 굶음 카드가 서면 그날 사는 방(내 집)으로 말한다(예전엔 늘 «반지하에서») */
+const go = await J(`(()=>{ const g=document.getElementById('gameOver'); return g && g.classList.contains('on') ? ((document.getElementById('gameOverWhy')||{}).textContent || '') : null; })()`);
+console.log('  굶음 카드', JSON.stringify(go));
+ok(go === null || (!go.탈 && /내 집에서 \d+일을 굶었습니다/.test(go)), '㉯ 굶음 카드가 서면 «내 집에서 N일을 굶었습니다»', JSON.stringify(go));
 const rep2 = await J(`(()=>{ try { const m=JSON.parse(localStorage.getItem('byeot.month')); const L=(m && m.log) || []; return L[L.length - 1] || null; } catch (e) { return { 탈: e.message }; } })()`);
 console.log('  둘째 달 장부', JSON.stringify(rep2 && { job: rep2.job, furn: rep2.furn, gap: rep2.gap, rent: rep2.rent, home: rep2.home, count: rep2.count }));
 if (process.env.HOME_DBG) { console.log('  둘째 달 장부 전체', JSON.stringify(rep2)); console.log('  둘째 달 줄', JSON.stringify(m2 && m2.rows)); }

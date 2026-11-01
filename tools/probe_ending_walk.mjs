@@ -48,8 +48,10 @@ const mk = (page) => {
       S.firstPlay.monstera.arrived = true;
       const ts=S.tutorial; ts.cashWon = Math.max(ts.cashWon, (ts.rules.moveOutCostWon||2000000) + 100000);
       ts.varieSale = { ...(ts.varieSale||{}), count: Math.max(1, (ts.varieSale&&ts.varieSale.count)||0) };
-      /* 2026-10-08 D27 — [원룸으로 이사]가 되묻기 창을 연다 · 창이 열린 채 한 번 더 누르면 이사(«두 번 누르면 실행») */
-      window.__redraw(); const b=document.getElementById('moveOut'); if (b) { b.disabled=false; b.click(); b.click(); }
+      /* 2026-10-08 D27 — [원룸으로 이사]가 되묻기 창을 연다.
+         ★ 11-01 core(총괄 «열여섯 줄 가름») — 예전 «창이 열린 채 한 번 더 누르면 이사»는 B1(probe_b1_move ㉮ «거듭 눌러도 확인 창 없이 이사하지 않는다»)부터 없다 —
+           이사는 창의 [이사한다](#moveGo)로만 · 그래서 이 지름길이 반지하에 남아 뒤 줄이 줄줄이 빨갰다(낡은 자) */
+      window.__redraw(); const b=document.getElementById('moveOut'); if (b) { b.disabled=false; b.click(); const g=document.getElementById('moveGo'); if (g) g.click(); }
       return { room:S.home.room, movedOut: ts.movedOut, cash: ts.cashWon }; })()`);
     await sleep(2500); await clearDlg();
     return r;

@@ -25,6 +25,9 @@ await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e;
 const m = (type, x, y, buttons) => page.send('Input.dispatchMouseEvent', { type, x: Math.round(x), y: Math.round(y), button: 'left', buttons, clickCount: 1 });
 const tapAt = async (x, y) => { await m('mouseMoved', x, y, 0); await m('mousePressed', x, y, 1); await sleep(60); await m('mouseReleased', x, y, 0); };
 /* 단 등만 — 방 자료의 식물등 셋(벽부형 → 집게형 → 거치형 · §bagLamp 차례) 가운데 단 수(tutorial.lamp.placed)만큼 · 안 단 등은 방에 없다(그 자리를 누르면 그 밑 것이 골라지는 것이 맞다) */
+/* ★ 11-01 총괄 — 카메라가 멎을 때까지(__rv.camBusy 거짓 두 번 · 최대 12초) */
+const camStill = async () => { let ok2 = 0; for (let i = 0; i < 60 && ok2 < 2; i++) { const b = await J(`(()=>{ try { return !!window.__rv.camBusy(); } catch (e) { return false; } })()`); ok2 = b === false ? ok2 + 1 : 0; await sleep(200); } };
+await camStill();
 const rigs = await J(`(()=>{ const rv=window.__rv; const c=document.getElementById('roomCanvas').getBoundingClientRect(); const n=((window.__S().tutorial||{}).lamp||{}).placed||0; return (rv.lightRigs()||[]).filter(r=>r.grow).slice(0, n).map(r=>{ const s=rv.worldToScreen(r.pos.x, r.pos.y, r.pos.z); return { uid: r.uid, pos: r.pos, sx: s ? c.left + s.x : null, sy: s ? c.top + s.y : null }; }); })()`);
 console.log('  등', JSON.stringify(rigs));
 ok(rigs.length > 0, '판 — 단 식물등이 있다', JSON.stringify(rigs.map(r => r.uid)));
@@ -43,8 +46,11 @@ const results = [];
 for (const r of rigs) {
   if (r.sx == null) continue;
   for (const [dx, dy] of [[0, 0], [-12, 0], [12, 0], [0, -6], [0, 6]]) {
-    await clear();
-    await tapAt(r.sx + dx, r.sy + dy); await sleep(900);
+    await clear(); await camStill();
+    /* 좌표는 누르기 직전에 다시 잰다(카메라가 움직였으면 옛 좌표가 허공) */
+    const p2 = await J(`(()=>{ const rv=window.__rv; const c=document.getElementById('roomCanvas').getBoundingClientRect(); const s=rv.worldToScreen(${r.pos.x}, ${r.pos.y}, ${r.pos.z}); return s ? { x: c.left + s.x, y: c.top + s.y } : null; })()`);
+    const bx = (p2 && !p2.탈) ? p2.x : r.sx, by = (p2 && !p2.탈) ? p2.y : r.sy;
+    await tapAt(bx + dx, by + dy); await sleep(900);
     const w = await what();
     results.push({ uid: r.uid, dx, dy, ...w });
   }

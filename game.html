@@ -1593,6 +1593,8 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* ★ 2026-11-01 총괄 D100 #17 — 체력이 바닥이면 흐리게(누르면 안내가 나온다 · disabled 는 안 씀 — 말풍선 click 을 삼킨다) */
   #waterCrop.tired, #harvestCrop.tired, #resow.tired{ opacity:.55; filter:saturate(.6) }
+  /* ★ 2026-11-01 #11 — 체력이 막은 마른 몬스테라 말풍선도 같은 흐림(알림은 남기되 «지금 누르라»로 안 보이게) */
+  #marks .mark.tired{ opacity:.55; filter:saturate(.6) }
   #waterCrop  { bottom:12px }
   #harvestCrop{ bottom:12px }
   #waterPot   { bottom:70px }
@@ -3746,8 +3748,11 @@ function checkStarved(t) {
     const el = $('gameOver');
     if (!el || el.classList.contains('on')) return;
     const why = $('gameOverWhy');
+    /* ★ 2026-11-01 [plan] — «반지하에서»를 박아 두어 원룸 · 내 집에서 굶어도 반지하라 했다 ⇒ 그날 사는 방(§drawTutorial roomKo 와 같은 자) */
+    const ts0 = S.tutorial || {};
+    const roomKo = (ts0.homeOwned || (S.home && S.home.room === 'tworoom')) ? '내 집' : ts0.movedOut ? '원룸' : '반지하';
     if (why) why.textContent =
-      `살림 ${(S.tutorial && S.tutorial.day) || 0}일차 · 반지하에서 ${(hit && hit.days) || 10}일을 굶었습니다.`;
+      `살림 ${(S.tutorial && S.tutorial.day) || 0}일차 · ${roomKo}에서 ${(hit && hit.days) || 10}일을 굶었습니다.`;
     el.classList.add('on');
     el.setAttribute('aria-hidden', 'false');
     try { window.__byeotSheet.close(); } catch { }
@@ -6795,7 +6800,9 @@ function updateHint() {
       const ko = (el.getAttribute('aria-label') || el.textContent || '').replace(/^[^가-힣]+/, '');
       if (!pointStill && !/심/.test(ko) && !(sowWaterNow && /물/.test(ko) && !/몬스테라/.test(ko))) continue;   /* ★ MAJOR #5 ① · D100 #8 ㉠ */
       if (!markLive(ko)) continue;
-      if (!onScreen(el)) continue;
+      /* ★ 2026-11-01 총괄 사진(08782dbb Day 91) — 그 점에서 정말 잡히는 말풍선만(바닥 왼쪽 단추 뒤에 가린 🥣 를 짚어 손가락이 «남는 채소 팔기»를 짚는 것처럼 읽혔다) ·
+           다 가렸으면 아래 바닥 단추로 떨어진다 */
+      if (!onScreen(el) || !seenAt(el)) continue;
       /* ★ 시트가 말풍선을 가리면 «닫는 길»을 짚는다(폰 실측 d13~16: 손가락 없음) */
       if (sheetCovers(el)) { const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR); continue; }
       return hintAt(el, /거두/.test(ko) ? '거둘 때가 됐습니다'
@@ -7905,7 +7912,8 @@ function drawMonthPanel() {
     `이번 달 ${up ? '+' : '−'}${won(Math.abs(r.net))} — 지갑이 ` +
     `${won(r.cashFrom)}에서 ${won(r.cashTo)}으로 ${up ? '늘었습니다' : '줄었습니다'}.` +
     (r.prevNet == null
-      ? ' (첫 달이라 견줄 것이 없습니다)'
+      /* ★ 2026-11-01 [plan] — 제목이 «16번째 달»인데 «첫 달이라»가 부딪혔다 · 둘째 달 넘어서 지난달 값이 없으면 «지난달 장부가 없어» */
+      ? (r.count > 1 ? ' (지난달 장부가 없어 견줄 것이 없습니다)' : ' (첫 달이라 견줄 것이 없습니다)')
       /* M5 — 지난달이 한 달(월세 주기)의 절반도 안 되면 견주지 않는다. 후보: 하루 평균으로 견주기 / 빼기 ⇒ 빼기 —
            첫 달 1일엔 첫 월세가 몰려 하루 평균도 거짓 견줌이 된다 */
       : (Number.isFinite(r.prevDays) && r.period && r.prevDays < r.period / 2)
@@ -12230,10 +12238,13 @@ function markList() {
      콩나물의 물·수확은 하루 늦어도 그날이 뒤로 밀릴 뿐 없어지지 않는다.
      ⚠ 「마를 때가 됐다」(canWater)로는 안 띄운다. 그건 아직 잃는 것이 없는 상태라
        띄우면 매 주기 사흘씩 말풍선이 서서 급한 것을 가린다(위 ⚠ 와 같은 함정). */
-  const dry = potMarks();
+  /* ★ 2026-11-01 비판 다섯째 판 #11(총괄 · 두 사진 다 체력 0) — 체력이 막은 손의 말풍선은 «하라는 듯» 서지 않게:
+       마른 몬스테라 경고는 흐리게 남기고(하루를 잃는 날이라 알림은 남긴다) · 작물 · 빈 화분 말풍선은 오늘 안 세운다(상태 표지가 대신) · 내일 차면 그대로 */
+  const tiredOf = (act) => { try { return !!staminaBlockNote(act); } catch (e) { return false; } };
+  const dry = potMarks().map(m => tiredOf('water') ? { ...m, tone: ((m.tone || '') + ' tired').trim() } : m);
   if (dry.length) return dry;
   /* ★ 2026-11-01 총괄 D100 · [plan] §4-2 · 비판 #21 — 빈 화분 🌱(씨앗 심기)도 작물 말풍선과 같은 층(사람은 방에서 찾는다) */
-  const crop = [...cropMarks(), ...emptyPotMarks()];
+  const crop = [...cropMarks(), ...emptyPotMarks()].filter(m => !(m.act && tiredOf(m.act)));   /* ★ #11 */
   if (crop.length) return crop;
   return cutMarks(false);
 }
@@ -12246,7 +12257,7 @@ function emptyPotMarks() {
   const rvKeyOf = (() => { try { const m = new Map(); for (const p of (roomView && roomView.plants ? roomView.plants() : [])) if (p && p.potId) m.set(p.potId, p.key); return id => m.get(id) || null; } catch { return () => null; } })();
   for (const ep of (S.emptyPots || [])) {
     if (!ep || !ep.at) continue;
-    out.push({ key: rvKeyOf(ep.id) || `free:${ep.id}`, ko: '🌱 씨앗 심기', tone: 'crop', go: () => sowEmptyPot(ep.id) });
+    out.push({ key: rvKeyOf(ep.id) || `free:${ep.id}`, ko: '🌱 씨앗 심기', tone: 'crop', act: 'sow', go: () => sowEmptyPot(ep.id) });   /* ★ #11 act */
   }
   return out;
 }
@@ -12458,12 +12469,12 @@ function cropMarks() {
     const key = rvKeyOf(row.id) || row.slotId || (row.at ? `free:${row.id}` : null);   /* ⚠ siruActKey 와 같은 식(11-01 · 두 곳이 갈리면 게이지가 말풍선을 못 찾는다) */
     if (!key) continue;                 // 방이 모르는 이름으로는 말풍선을 못 띄운다(§cropKey)
     if (row.ready) {
-      out.push({ key, ko: '🥣 거두기', tone: 'crop', go: () => siruAct(row.id, 'harvest', row.kind) });
+      out.push({ key, ko: '🥣 거두기', tone: 'crop', act: 'harvest', go: () => siruAct(row.id, 'harvest', row.kind) });
       continue;
     }
     if (row.harvested) {
       if (seedsOf(row.kind) > 0)
-        out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop', go: () => siruAct(row.id, 'sow', row.kind) });
+        out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop', act: 'sow', go: () => siruAct(row.id, 'sow', row.kind) });
       else if (comingOf(row.kind) > 0) { /* 오는 중 — 누를 것이 없다(§comingOf) */ }
       else
         /* 씨앗이 없으면 갈 곳은 [상점]이다 — 주문 목록이 거기 있다 */
@@ -12474,14 +12485,14 @@ function cropMarks() {
        아무 일도 안 난다(§siruRowHTML 이 줄 문구에서 이미 같은 차례를 지킨다). */
     if (row.needsSow) {
       if (seedsOf(row.kind) > 0)
-        out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop', go: () => siruAct(row.id, 'plant', row.kind) });
+        out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop', act: 'sow', go: () => siruAct(row.id, 'plant', row.kind) });
       else if (comingOf(row.kind) > 0) { /* 오는 중 — 누를 것이 없다(§comingOf) */ }
       else
         out.push({ key, ko: '🌱 씨앗이 없습니다', tone: 'warn', go: toShop });
       continue;
     }
     if (row.needsWater)
-      out.push({ key, ko: '💧 물 주기', tone: '', go: () => siruAct(row.id, 'water', row.kind) });
+      out.push({ key, ko: '💧 물 주기', tone: '', act: 'water', go: () => siruAct(row.id, 'water', row.kind) });
   }
   return out;
 }
