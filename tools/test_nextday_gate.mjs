@@ -186,9 +186,11 @@ console.log('\n══ G. 다시 심기 실패는 [다음 날]을 안 막는다 �
 /* 아직 아무것도 안 거둔 판에서 [다시 심기]를 부른다 — `resowCrop` 이 안내를 던진다 */
 /* ⚠ [다시 심기]는 캐릭터가 **걸어간 뒤에** 규칙을 부른다(doAct) — 그래서 실패도 늦게 온다.
    짧게 기다리면 아직 아무 일도 안 난 판을 재게 된다(실제로 한 번 그랬다). */
+/* ★ 2026-11-02 총괄 C8 — 바닥 심기 단추가 새 빈 시루(한 번도 안 심음)도 심게 됐다. 이 판의 시루는 놓기만 하고 안 심은 시루라 콩나물 갈래로 누르면 «성공»한다.
+     ⇒ 이 걸음의 뜻(«심을 것이 없을 때 누른 실패가 하루를 안 막는다»)대로, 심을 것이 없는 종류(무순 · 아직 판 없음)로 누른다 */
 const resow = await page.eval(`(()=>{ const b=document.getElementById('resow');
-  if(!b) return 'no-button'; b.style.display=''; b.disabled=false; b.click(); return 'clicked'; })()`);
-await until(errSays('/수확하지 않았습니다/'), 30000); await clear();
+  if(!b) return 'no-button'; b.style.display=''; b.disabled=false; delete b.dataset.buy; b.dataset.kind='musun'; b.click(); return 'clicked'; })()`);
+await until(errSays('/수확하지 않았습니다|다시 심을 것이 없습니다/'), 30000); await clear();
 e = await errSnap();
 ok('G-1 다시 심기가 실패해 안내가 뜬다',
    resow === 'clicked' && /수확하지 않았습니다|다시 심/.test(e.text), `${resow} · ${e.text}`);

@@ -19,6 +19,7 @@
      「검사가 낡아서」 나는 실패가 된다(START-HERE §2).
 ============================================================ */
 import assert from 'node:assert';
+import { CUT_DOOR_KO as PROP_CUT_DOOR_KO, CUT_DOOR_VARIE_MATURED as PROP_CUT_DOOR_N } from '../src/game/propagation.js';   /* ★ 11-02 C4 — 문 조각 한 글 */
 import { QUESTS, QUEST_IDS, questOf, questTodo, questView, stepQuests,
          doneIdsOf, emptySnapshot,
          /* ★ 2026-08-16 — 초반 사슬(§초반 사슬). 줄 수를 이 파일에 안 박는다 */
@@ -28,7 +29,7 @@ import { QUESTS, QUEST_IDS, questOf, questTodo, questView, stepQuests,
          /* ★ 2026-10-10 [plan] — 물린 줄(이름만 남김). 대사 지도에 남은 옛 열쇠를 «물린 줄»로 가른다 */
          RETIRED_QUESTS,
          /* ★ 2026-10-24 [plan] D72 D 나머지 — 진로마다 줄 · 쉬는 중 글 */
-         JOB_QUEST_IDS, JOB_REST_TODO } from '../src/game/quest.js';
+         JOB_QUEST_IDS, JOB_REST_TODO, CUT_DOOR_KO_Q, QUEST_WAIT_DO as QUEST_WAIT_DO_T } from '../src/game/quest.js';
 import { QUEST_OPEN_SCRIPT, QUEST_DONE_SCRIPT, SCRIPTS, REPEATABLE,
          createStoryteller } from '../src/game/dialogue.js';
 import { STAMINA_RULES, createStaminaState, grantStaminaQuest, staminaView } from '../src/game/stamina.js';
@@ -811,7 +812,10 @@ check('D90 ③ 자르기까지 — 셈 n/2 · 처음 열 때만 «아직» · �
   const q = questOf('wait_varie');
   assert.ok(q && q.room === 'banjiha', 'wait_varie 가 없거나 반지하 줄이 아닙니다');
   const t1 = questTodo(q, MS(57, { motherVarieMatured: 1 }));
-  assert.equal(t1, `자르기까지 — 다 자란 무늬 잎 1/${q.need.varieMatured}`);
+  /* ★ 2026-11-02 총괄 C4 · [plan] P1 §1-1 — 문 한 조각 «자르기 — 다 자란 무늬 잎 2장 · 지금 1/2»(propagation CUT_DOOR_KO 와 같은 글) */
+  assert.equal(t1, `자르기 — 다 자란 무늬 잎 ${q.need.varieMatured}장 · 지금 1/${q.need.varieMatured}`);
+  assert.equal(CUT_DOOR_KO_Q, PROP_CUT_DOOR_KO, `quest.js 문 조각이 propagation 과 다릅니다: ${CUT_DOOR_KO_Q} ≠ ${PROP_CUT_DOOR_KO}`);
+  assert.equal(q.need.varieMatured, PROP_CUT_DOOR_N, 'wait_varie 수가 propagation CUT_DOOR_VARIE_MATURED 와 다릅니다');
   assert.ok(t1.length <= 28, `할 일 글이 깁니다: ${t1}`);
   /* 잎 셋을 끝낸 판 */
   const b = newBoard(); b.stamina.questsTaken = ['leaf_two', 'leaf_three'];
@@ -835,7 +839,21 @@ check('D90 ③ 자르기까지 — 셈 n/2 · 처음 열 때만 «아직» · �
   /* 기다림 글에 셈 */
   const b3 = newBoard(); b3.stamina.questsTaken = [...others]; stepQuests(b3, MS(57, { motherVarieMatured: 1 }));
   const w = questView(b3, MS(57, { motherVarieMatured: 1 }), { isWaiting: id => id === 'wait_varie' }).all.find(a => a.id === 'wait_varie');
-  assert.equal(w.waiting, true); assert.equal(w.waitWhat, '무늬 잎이 다 자라기를 · 1/2');
+  assert.equal(w.waiting, true); assert.equal(w.waitWhat, '다 자란 무늬 잎 2장 · 지금 1/2');   /* ★ 11-02 P1 — 칩 «기다리는 중 — 다 자란 무늬 잎 2장 · 지금 1/2» */
+});
+
+/* ★ 2026-11-02 총괄 C9 · [plan] 171798ae §15 — order_seed 기다림은 진행 줄(거둔 횟수 n/3 — …) · 익은 시루면 «익은 시루부터 거두세요» 그대로 · 끝 규칙 그대로 */
+check('C9 «씨앗을 주문한다» — 오는 중 · 익는 중은 «거둔 횟수 n/3 — …» · 익은 시루는 표 글 · 끝은 세 바퀴', () => {
+  const q = questOf('order_seed');
+  const b = newBoard(); b.stamina.questsTaken = ['place_siru', 'water_siru', 'first_harvest'];
+  const view = (key, total) => questView(b, MS(6, { cropHarvestTotal: total }), { waitReason: id => id === 'order_seed' ? key : null }).all.find(a => a.id === 'order_seed');
+  const g = view('cropGrowing', 1), c = view('seedComing', 1), r = view('cropReady', 2), over = view('cropGrowing', 5);
+  assert.equal(g.waiting, true); assert.equal(g.waitDo, '거둔 횟수 1/3 — 시루가 익는 중');
+  assert.equal(c.waitDo, '거둔 횟수 1/3 — 씨앗이 오는 중');
+  assert.equal(r.waitDo, QUEST_WAIT_DO_T.cropReady, '익은 시루면 표 글 그대로');
+  assert.equal(over.waitDo, '거둔 횟수 3/3 — 시루가 익는 중', 'n 은 need 를 안 넘는다');
+  assert.equal(q.need.cycles, 3); assert.equal(!!q.done(MS(6, { cropHarvestTotal: 2 }), { q }), false); assert.equal(!!q.done(MS(6, { cropHarvestTotal: 3 }), { q }), true);
+  assert.ok(g.waitDo.length <= 28, `칩 글이 깁니다: ${g.waitDo}`);
 });
 
 /* ★ 2026-10-30 [plan] 총괄 D90 ④ · D91 — 남는 건 판다 → 열여섯까지 늘린다: 칸 모르면 안 열림 · 넘친 날에 열림 · 한 번 팔면 끝 ·

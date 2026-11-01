@@ -575,6 +575,11 @@ export function createGrowthAdapter(iframe) {
     /* ★ 2026-10-24 D82 ③ — 지금 꽂힌 그루의 «새 잎 무늬율»(plant_grow §calcVarieProb(lightCtx()) — 빛 이력 · 안정 · D40 성숙 전 ×2 · 정본 growth).
          takeCutting 이 모주 값으로 적는다(화분 variegated 는 광량 문턱 스위치라 «무늬 잎이 있나»가 아니다). 못 읽으면 null */
     varieChanceNow() { const f = fn('calcVarieProb'), lc = fn('lightCtx'); if (!f) return null; const v = f(lc ? lc() : undefined); return Number.isFinite(v) ? v : null; },
+    /* ★ 2026-11-02 총괄 C4 · [plan] P1 §1-2 — 다 자람 굴림의 «다음 기회»(plant_grow §matGaugeOf · §matGaugeStep · §calcMatureProb(lightCtx())) · 읽기만 · 못 읽으면 null.
+         ⚠ 지금 꽂힌 그루 것이다(반지하 모주) · 값을 안 바꾼다 */
+    matGaugeOf(leafBirth) { const f = fn('matGaugeOf'); return f ? f(leafBirth) : null; },
+    matGaugeStepNow() { const f = fn('matGaugeStep'); if (!f) return null; const v = f(); return Number.isFinite(v) ? v : null; },
+    matureProbNow() { const f = fn('calcMatureProb'), lc = fn('lightCtx'); if (!f) return null; const v = f(lc ? lc() : undefined); return Number.isFinite(v) ? v : null; },
     reset()  { const f = fn('resetDailyLight'); return f ? f() : null; },
 
     /* ★ 2026-09-07 ([growth] 청 385f2d4 · [leaf] 물음) — 「이 잎이 «어느 그림»을 쓰나」를 밖에서 «수로» 읽는다.

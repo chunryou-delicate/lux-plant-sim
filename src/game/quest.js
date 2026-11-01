@@ -280,6 +280,9 @@ function snapOf(s) { return { ...emptySnapshot(), ...(s && typeof s === 'object'
 
 const arr = v => (Array.isArray(v) ? v : []);
 const num = v => (Number.isFinite(v) ? v : 0);
+/* ★ 2026-11-02 총괄 C4 · [plan] 507ba40d P1 §1-1 — 자르기 문 조각(propagation §CUT_DOOR_KO 와 같은 글 · 이 파일은 가져오기가 없어 제 줄에 둔다 · test_quest 가 둘이 같은지 본다) */
+export const CUT_DOOR_KO_Q = '다 자란 무늬 잎 {need}장 · 지금 {n}/{need}';
+const cutDoorKoQ = (n, need) => CUT_DOOR_KO_Q.replace(/\{need\}/g, String(need)).replace('{n}', String(Math.min(num(n), need)));
 /* ★ 「참」은 **`true` 하나뿐**이다 — `null`(모른다)·`undefined`(칸이 없다)를 참으로 안 읽는다.
    ⚠ `!!v` 를 쓰면 안 되는 자리다. 셋을 가르는 것이 §초반 사슬 의 안전 폴백을 성립시킨다. */
 const yes = v => v === true;
@@ -464,6 +467,11 @@ const FIRST_PLAY_CHAIN = Object.freeze([
       : '상점에서 콩 씨앗을 주문하세요',
     /* ★ 2026-09-02 — 앞 줄 `resow_siru`(「한 시루를 2바퀴째」)를 «없앴다»(박사님 「1바퀴 더 돌리는 퀘는 없애」).
        첫 수확 «바로 뒤»가 씨앗 주문이다 — 사슬은 안 끊긴다(plan-quest-reframe ⓑ). */
+    /* ★ 2026-11-02 총괄 C9(비판 6판 #12 · d06_006 · d11_010) · [plan] 171798ae §15 — 주문 · 도착 · 심기를 다 했는데 «기다리는 중 — 시루가 익기를»이라 «했는데 멎은 줄»로 읽혔다.
+         ⇒ 씨앗이 오는 중 · 시루가 익는 중이면 정본 수(cropHarvestTotal · 끝 규칙과 같은 수) 그대로 진행 줄 · 익은 시루가 있으면 null(«익은 시루부터 거두세요» 그대로) */
+    waitDoOf: (q, s, key) => (key === 'seedComing' || key === 'cropGrowing')
+      ? `거둔 횟수 ${Math.min(num(s && s.cropHarvestTotal), q.need.cycles)}/${q.need.cycles} — ${key === 'seedComing' ? '씨앗이 오는 중' : '시루가 익는 중'}`
+      : null,
     after: 'first_harvest',
     opens: (s, ctx) => !!(ctx && ctx.doneIds.includes('first_harvest')),
     done:  (s, ctx) => num(s.cropHarvestTotal) >= ctx.q.need.cycles
@@ -916,7 +924,8 @@ const SLOW_QUESTS = Object.freeze([
     id: 'leaf_two',
     ko: '잎 두 장',
     speaks: true,
-    reward: '자를 수 있게 됩니다',
+    /* ★ 2026-11-02 총괄 C4 · [plan] P1 §1-4 — «자를 수 있게»는 거짓(자르기 = 다 자란 무늬 잎 2장 · wait_varie) · 둘째 잎이 첫 무늬 자리(leaf_three «무늬가 날 자리가 늘어납니다»와 짝) */
+    reward: '무늬가 날 자리가 생깁니다',
     teaches: ['잎은 유효 생장일로 난다'],
     why: '잎은 날짜가 아니라 빛이 쌓인 만큼 납니다. 어두운 자리에서는 날짜만 갑니다.',
     need: Object.freeze({ leaves: 2 }),
@@ -963,9 +972,10 @@ const CUT_WAIT_QUESTS = Object.freeze([
     teaches: ['무늬 잎이 다 자라야 자른다'],
     why: '무늬 잎이 다 자라야 하나를 잘라도 그루에 하나가 남습니다.',
     need: Object.freeze({ varieMatured: 2 }),
-    todo: (q, s) => `자르기까지 — 다 자란 무늬 잎 ${Math.min(num(s && s.motherVarieMatured), q.need.varieMatured)}/${q.need.varieMatured}`,
+    /* ★ 2026-11-02 총괄 C4 · [plan] P1 §1-1 — 문 한 조각 «다 자란 무늬 잎 {need}장 · 지금 {n}/{need}»(propagation CUT_DOOR_KO 와 같은 글 · test_quest 가 견줌) */
+    todo: (q, s) => `자르기 — ${cutDoorKoQ(num(s && s.motherVarieMatured), q.need.varieMatured)}`,
     /* ★ 기다림 글(칩 «기다리는 중 — …»)에도 셈을 싣는다(§questView waitWhatOf) */
-    waitWhatOf: (q, s) => `무늬 잎이 다 자라기를 · ${Math.min(num(s && s.motherVarieMatured), q.need.varieMatured)}/${q.need.varieMatured}`,
+    waitWhatOf: (q, s) => cutDoorKoQ(num(s && s.motherVarieMatured), q.need.varieMatured),
     after: 'leaf_three',
     /* ⚠ stepQuests 는 «여는 조건이 참인 줄»만 끝났는지 본다 — 그래서 «< 2»는 처음 열 때만 걸고, 한 번 연 줄은 계속 연 채로 본다
          (안 그러면 둘이 되는 날 여는 조건이 거짓이 되어 영영 안 끝난다 · test_quest ⑵ 에서 잡힘) */
@@ -1118,7 +1128,10 @@ const ONEROOM_QUESTS = Object.freeze([
     ko: '내 집 자금을 모은다',
     reward: '내 집으로 갑니다',
     teaches: ['무늬를 늘려 팔면 집이 된다'],
-    why: '무늬 삽수와 그루를 내놓아 팔면 그 돈이 내 집 자금이 됩니다.',
+    /* ★ 2026-11-02 총괄 · [plan] 507ba40d P2 — 무늬 원천 0 으로 간 판(s.varieSourceN === 0)은 그 판에서 하는 돈 길(남는 채소 · 씨앗에서 키운 그루 내놓기) · 모르면(null) · 원천이 남은 판은 지금 글 */
+    why: (q, s) => (s && s.varieSourceN === 0)
+      ? '남는 채소를 팔고, 씨앗에서 키운 그루를 내놓아 팔면 그 돈이 내 집 자금이 됩니다.'
+      : '무늬 삽수와 그루를 내놓아 팔면 그 돈이 내 집 자금이 됩니다.',
     /* ★ 수는 박지 않는다 — 목표 금액은 ending.js ENDING_RULES.targetWon(정본 · 아직 null · D9 로 잰다) */
     /* ★★ 2026-10-09 [plan] D51(총괄 · 값 0) — 칩 글이 «날마다» 바뀐다: 남은 돈 · 목표를 한 줄에. ¼·½·¾·거의 네 마디는 말머리만 바뀐다(보상 없음).
        까닭: D50 뒤 원룸 칩의 3분의 2를 이 줄이 쥐었고 글은 «내 집 자금 5,000,000원을 모으세요» 한 줄로 몇 달 그대로였다.
@@ -1762,7 +1775,7 @@ export function questView(S, snapshot, opt = {}) {
     let isOpen = false;
     if (!isDone && roomOk) { try { isOpen = !!q.opens(s, { ...ctx, q }); } catch { isOpen = false; } }
     if (isOpen) open.push(q.id);
-    all.push({ id: q.id, ko: q.ko, todo: questTodo(q, s), why: q.why, teaches: q.teaches,
+    all.push({ id: q.id, ko: q.ko, todo: questTodo(q, s), why: (typeof q.why === 'function' ? q.why(q, s) : q.why), teaches: q.teaches,   /* ★ 11-02 P2 — why 가 판에 따라 갈리는 줄(oneroom_home_fund) */
                /* ★ 2026-08-23 — **목표 수를 그대로 실어 준다.** 보기에는 `todo` 문장만 있어서
                   밖에서 「몇 개까지 늘리라는 것인가」를 알려면 **문장을 파싱**해야 했다.
                   숫자를 글에서 캐내는 것은 문구가 바뀌는 날 조용히 깨진다(§2.8 의 뒷면이다).
@@ -1780,6 +1793,8 @@ export function questView(S, snapshot, opt = {}) {
     /* ★ 2026-10-30 D90 ③ — 줄이 셈을 가진 기다림 글을 내면 그것(wait_varie «무늬 잎이 다 자라기를 · n/2») · 던지면 표 글 그대로 */
     if (w && typeof q.waitWhatOf === 'function') { try { const t = q.waitWhatOf(q, s); if (t) it.waitWhat = String(t); } catch { } }
     it.waitDo = w ? (QUEST_WAIT_DO[w] || null) : null;
+    /* ★ 2026-11-02 총괄 C9 · [plan] 171798ae §15 — 줄이 «기다리는 중 —» 대신 낼 글(waitDoOf(q, s, 열쇠) · null 이면 표 글 QUEST_WAIT_DO 그대로) */
+    if (w && typeof q.waitDoOf === 'function') { try { const t = q.waitDoOf(q, s, w); if (t) it.waitDo = String(t); } catch { } }
     /* ★ 2026-10-24 [plan] D72 D 나머지 — 쉬는 줄 · 건너뛴 줄(잠긴 줄에만 · 열린 줄·끝낸 줄은 그대로) */
     const qJob = !isDone && !isOpen ? jobOfQuest(q.id) : null;
     it.resting = !!qJob && typeof s.job === 'string' && qJob !== s.job && openedOnAll[q.id] != null;

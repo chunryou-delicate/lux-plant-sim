@@ -3126,7 +3126,11 @@
   function questChipShouldShow() {
     const has = !!(document.getElementById('questChipText') || {}).textContent;
     if (!has) return false;
-    const vis = (e) => !!e && e.offsetParent !== null;
+    /* ★ 2026-11-02 — 닫힌 시트는 transform 으로 내려가 있을 뿐이라 offsetParent 가 남는다 ⇒ 할 일 탭을 연 채 시트를 닫으면 .qtodo 가 «보이는» 것으로 읽혀
+         칩이 꺼진 채였다([plan] 0400a798 대 봄 · 총괄 사진 390_c6a_c3_clear) · 시트 안 것은 시트가 정말 올라와 있을 때만(§sheetShown 과 같은 자) */
+    /* «올라와 있나» = 열림 표(폰) 또는 늘 펴진 넓은 판(transform none) — 닫히는 중(표는 빠졌고 아직 내려가는 중)은 내려간 것으로 본다(닫는 손이 그 자리에서 칩을 다시 켠다) */
+    const sheetUp = () => { const sh = document.getElementById('sheet'); if (!sh) return true; return sh.classList.contains('open') || getComputedStyle(sh).transform === 'none'; };
+    const vis = (e) => !!e && e.offsetParent !== null && (!document.getElementById('sheet') || !document.getElementById('sheet').contains(e) || sheetUp());
     /* 이미 말하고 있는 자리가 있나 — 식물 탭의 `#sheetQuest` · 할 일 탭의 `.qtodo`(class 다) */
     if (vis(document.getElementById('sheetQuest'))) return false;
     if ([...document.querySelectorAll('.qtodo')].some(vis)) return false;
@@ -3399,7 +3403,7 @@ import { takeCutting, repotCutting, cuttableNow, cutBudgetOf, cutBlockedReason,
          /* ★ 2026-10-08 — 자리 잡은 삽수에서 다시 자른다(§drawCuttings «가진 삽수» · 총괄 14:25 ①) */
          cuttableNodesOfCutting,
          /* ★ 2026-10-30 총괄 D90 — 자르기 문 셈(growth 88af8c92) · 화면 · 하네스 · 검사가 같은 함수 */
-         varieMaturedLeavesOf, CUT_DOOR_VARIE_MATURED,
+         varieMaturedLeavesOf, CUT_DOOR_VARIE_MATURED, cutDoorKo,
          CONTAINERS, METHODS } from './src/game/propagation.js';
 import { CUTTING_LEAF_DAYS } from './src/game/propagation.js';   /* ★ 2026-10-09 D46 — 다음 잎까지 온 몫(nextLeaf01) */
 import { isFreeSlotId, atFromSlot } from './src/game/place.js';
@@ -5377,7 +5381,7 @@ const detail = {
     return {
       art: './assets/ui/item_monstera.png', title: '중고 거래',
       sub: gate.open ? (n ? `올린 것 ${n}건${on ? ` · 연락 ${on}건` : ''}` : '열려 있음')
-                     : `잎 ${MARKET_MIN_LEAVES}장이면 열림`,
+                     : `내놓기 — 잎 ${MARKET_MIN_LEAVES}장부터`,   /* ★ 11-02 [plan] P1 §1-3 — 내놓기 문은 «잎»(자르기 문 «다 자란 무늬 잎»과 다른 낱말) */
       body: r2('올린 것', `${n}건`) + (on ? r2('연락 온 것', `${on}건`) : '')
         + `<p><b>몬스테라는 상점이 안 산다.</b> 그루도 삽수도 <b>중고 거래</b>에 내놓고 `
         + `사려는 사람의 연락을 기다린다. 채소는 그대로 상점에 판다 — 먹는 것이라 그렇다.</p>`
@@ -5782,6 +5786,7 @@ function releaseGL() {
    ⚠ 후보는 `fillSlots` 가 쓰는 **같은 판정**(치수가 확인된 자리 · 화분이 올라가는 자리)이다.
      두 곳이 다른 목록을 내면 「목록엔 있는데 안 놓인다」가 난다. */
 let slotPickPot = null;
+const SLOT_WORD_NOTE_KO = '밝기는 이 철 여러 날 평균입니다';
 function askMovePot(pot) {
   const p = pot || pot0(S);
   if (!p) return;
@@ -5812,12 +5817,17 @@ function askMovePot(pot) {
   $('slotSub').textContent = rows.length
     ? '누르면 그 자리로 옮깁니다 · 끌어서 놓아도 됩니다'
     : '지금 올릴 수 있는 자리가 없습니다 — 가구를 놓거나 자리를 비워 주세요';
+  /* ★ 11-02 [plan] §4 고침 ③ — 날씨가 굴러가는 방(원룸)에서 낱말이 서면 둘째 줄로 자를 밝힌다(빛 분포는 오늘 날씨 그대로라 문턱 둘레 칸은 «밝음/그늘»이 갈릴 수 있다) */
+  try { if (rows.length && showDli() && modeOf(S).rollWeather) { const sub = $('slotSub'); sub.appendChild(document.createElement('br')); sub.appendChild(document.createTextNode(SLOT_WORD_NOTE_KO)); } }
+  catch (e) { console.warn('[자리 밝기 줄]', e && e.message); }
   list.innerHTML = rows.map(x => {
     const here = p.slotId === x.slotId;
     /* ★ 2026-11-02 총괄 C3①(비판 6판 #7 · S97_where) — 자리마다 밝기 낱말(빛 분포 칸과 같은 함수 · 같은 문턱 §lightWordOf · [plan] 11-02 «같은 칸이 두 화면에서 다른 낱말로 안 나오게»).
          ⚠ 첫 플레이 동안은 안 적는다(위 머리말 «무엇이 밝은지는 방을 보고 배운다» · §showDli 와 같은 문) */
-    let w = null; if (showDli()) { try { w = lightWordOf(x.dli); } catch (e) { console.warn('[자리 밝기]', e && e.message); w = null; } }
-    return `<button class="ghost slotrow" data-slot="${esc(x.slotId)}" data-dli="${Number.isFinite(x.dli) ? x.dli.toFixed(3) : ''}"${here ? ' disabled' : ''}>` +
+    /* ★ 11-02 [plan] §4 고침 — 낱말 · data-dli(손가락이 고르는 값)는 growBandAt(그 칸 · 그 화분 무늬).dli — 어두운 화분 할 일 · 경고와 같은 자(내일 날씨 빛이 아니다) · 못 재면 낱말 없음 */
+    let w = null, gd = null;
+    if (showDli()) { try { const gb = growBandAt(x.slotId, !!p.variegated); gd = gb && Number.isFinite(gb.dli) ? gb.dli : null; w = gd == null ? null : lightWordOf(gd); } catch (e) { console.warn('[자리 밝기]', e && e.message); w = null; gd = null; } }
+    return `<button class="ghost slotrow" data-slot="${esc(x.slotId)}" data-dli="${gd != null ? gd.toFixed(3) : ''}"${here ? ' disabled' : ''}>` +
            `<b>${esc(slotLabel(x.slotId))}</b>` +
            `<small>${here ? '지금 여기 있습니다' + (w ? ` · ${esc(w)}` : '') : (dev ? `DLI ${x.dli.toFixed(2)}` : esc(w || ''))}</small></button>`;
   }).join('');
@@ -7868,6 +7878,9 @@ function monthCloseNow(m) {
   const plant = (now.hasBy && s.hasBy)
     ? (now.earnPot - s.earnPot) + (now.earnCut - s.earnCut) + dBy('earnSpecies')   /* ★ ③-4 새 두 종도 «식물 판 것»([plan]) */
     : (now.shopEarned - s.shopEarned) - veg;
+  /* ★ 2026-11-02 총괄 · [plan] 507ba40d P7 — 몬스테라 그루를 통째 판 돈(earnPot · 그루마다 한 번)은 이사비 · 내 집 · 긴급자금과 같은 «한 번 돈» — 견줌에서 뺀다.
+       ⛔ 6판 S 넷째 달 «이사비를 빼면 지난달보다 2,006,250원 나아졌습니다»(그 달 그루 1,960,000원 덕) · 삽수 · 새 종은 되풀이 장사라 안 넣는다 · 옛 판(earnedBy 없음)은 0 */
+  const potSale = (now.hasBy && s.hasBy) ? Math.max(0, Math.round(now.earnPot - s.earnPot)) : 0;
   const job  = (now.hasBy && s.hasBy) ? dBy('earnOrder') : 0;   /* ★ ③-4 «진로 수입»(옛 판 뺄셈 길은 위 plant 에 이미 들었다) */
   const furn = (now.hasBy && s.hasBy) ? dBy('earnFurn') : 0;    /* ★ ③-4 «가구 판 것» */
   const bought = now.shopSpent - s.shopSpent;
@@ -7895,7 +7908,7 @@ function monthCloseNow(m) {
     /* ★ 대차가 안 맞는 몫 — 식물등 사기·이사비가 어느 장부에도 안 적힌다(§④) */
     gap: net - (inSum - outSum),
     job, furn,   /* ★ ③-4 */
-    move, relief, gift, neighbor, home, lumpNet: relief - move - home, netAdj: net - (relief - move - home),   /* ★ D99 §5-4 — 견줌은 덩이를 뺀 순이익(netAdj) */
+    move, relief, gift, neighbor, home, potSale, lumpNet: relief + potSale - move - home, netAdj: net - (relief + potSale - move - home),   /* ★ D99 §5-4 — 견줌은 덩이를 뺀 순이익(netAdj) · ★ P7 그루 판 돈 */
     prevNet: (typeof m.cur.prevNet === 'number') ? m.cur.prevNet : null,
     /* ★ 2026-10-08 (총괄 중반 M5) — 지난달이 «며칠짜리»였나. 첫 달은 Day 1 하루뿐(첫 월세가 몰림)인데 30일 달과 견줘 「281,667원 나빠졌습니다」라 했다 */
     prevDays: (() => { const pv = m.log.length ? m.log[m.log.length - 1] : null; return pv && Number.isFinite(pv.days) ? pv.days : null; })()
@@ -7905,7 +7918,7 @@ function monthCloseNow(m) {
   m.log.push(rep);
   while (m.log.length > MONTH_KEEP) m.log.shift();
   monthSave(m);
-  monthStart(net - (relief - move - home), m);   /* 다음 달을 연다 · ★ D99 §5-4 다음 달이 견줄 값도 덩이를 뺀 순이익 */
+  monthStart(net - (relief + potSale - move - home), m);   /* ★ P7 — 다음 달이 견줄 값도 같은 netAdj */   /* 다음 달을 연다 · ★ D99 §5-4 다음 달이 견줄 값도 덩이를 뺀 순이익 */
   monthAt = monthLogList().length - 1;    /* 갓 마감한 것을 본다 */
   monthReport = rep;
   monthPending = true;          /* 대사가 끝나면 뜬다(§openMonthWhenQuiet) */
@@ -7999,7 +8012,7 @@ function drawMonthPanel() {
       ? ` (지난달은 ${r.prevDays}일뿐이라 견주지 않습니다)`
       /* ★ D99 §5-4 — 덩이(이사비 · 긴급지원)가 있던 달은 그것을 뺀 순이익으로 견준다 */
       : (Number.isFinite(r.lumpNet) && r.lumpNet !== 0)
-      ? (() => { const parts = [(r.move || 0) > 0 ? '이사비' : null, (r.home || 0) > 0 ? '내 집 마련' : null, (r.relief || 0) > 0 ? '긴급자금' : null].filter(Boolean).join(' · ');
+      ? (() => { const parts = [(r.move || 0) > 0 ? '이사비' : null, (r.potSale || 0) > 0 ? '그루 판 돈' : null, (r.home || 0) > 0 ? '내 집 마련' : null, (r.relief || 0) > 0 ? '긴급자금' : null].filter(Boolean).join(' · ');   /* ★ P7 */
                  const lk = josa(parts, '을', '를'); const d = r.netAdj - r.prevNet;
                  return d > 0 ? ` ${lk} 빼면 지난달보다 ${won(d)} 나아졌습니다.` : d < 0 ? ` ${lk} 빼면 지난달보다 ${won(-d)} 나빠졌습니다.` : ` ${lk} 빼면 지난달과 같습니다.`; })()
       : ` 지난달은 ${r.prevNet >= 0 ? '+' : '−'}${won(Math.abs(r.prevNet))}이었으니 ` +
@@ -9785,7 +9798,7 @@ function drawShop() {
     ? (lastSrc
         ? '지금 내놓으면 이사 자금이 찹니다 — 다만 통째로 팔면 무늬 원천 0, 원룸에서 늘릴 게 없습니다. ' +
           (varieCutOpenNow() > 0 ? '무늬 마디를 잘라 삽수로 팔면 그루가 남습니다'
-                                 : `다 자란 무늬 잎이 둘이 되면 마디를 잘라 삽수로 팔 수 있습니다 (지금 ${mNow}/2)`)
+                                 : `다 자란 무늬 잎이 ${CUT_DOOR_VARIE_MATURED}장이 되면 마디를 잘라 삽수로 팔 수 있습니다 (지금 ${mNow}/${CUT_DOOR_VARIE_MATURED})`)   /* ★ 11-02 P1 — 수를 정본에서 */
         : '지금 내놓으면 이사 자금이 찹니다 — 연락이 온 뒤 거래해야 돈이 들어옵니다')
     : `${vl} — ${nS == null || nS > ls.leaves
         ? `이사 자금이 ${shortH.toLocaleString()}원 모자랍니다. 더 키우거나 무늬 삽수가 둘이면 하나를 내놓으세요`   /* ★ D99 §1-2 · §6 */
@@ -10116,7 +10129,7 @@ function drawMonCard() {
 const VARIE_VALUE_KO = Object.freeze({
   card: '✂ 무늬 삽수 한 그루 {won}원부터 · {state}',
   open: '지금 자를 수 있습니다 — 아래 삽수 칸',
-  wait: '무늬 잎이 다 자라면 자를 수 있습니다',
+  wait: '무늬 잎이 다 자라면 자를 수 있습니다',   /* 문 수를 못 읽을 때만(옛 엔진) — 읽히면 «자르기 — {CUT_DOOR_KO}» + 짧은 꼬리(§varieCutStateKo) */
   cutSub: '자르고 → 뿌리내고 → 팔아요. 무늬 삽수는 한 그루 {won}원부터입니다.',
   bannerTitle: '💰 무늬 삽수는 한 그루 {won}원부터',
   bannerSub: '지금 시세입니다(콩나물 {kg}kg 값) — 무늬 잎이 다 자라면 잘라 물에 꽂고, 뿌리가 나면 팝니다',
@@ -10128,6 +10141,10 @@ function varieFromWon() {
 /* 무늬 마디 상태 — 오늘 자를 수 있나(§varieCutOpenNow 와 같은 자) · 막혔으면 그 마디의 cutBlockedReason 글 그대로 · 아니면 기다림 */
 function varieCutStateKo() {
   if (varieCutOpenNow() > 0) return VARIE_VALUE_KO.open;
+  /* ★ 2026-11-02 총괄 C4 · [plan] P1 §1-1 · §1-2 — 문이 닫혀 있으면 문 한 조각 + 짧은 꼬리(확대와 같은 셈) */
+  try { const n = varieMaturedLeavesNow();
+        if (Number.isInteger(n) && n < CUT_DOOR_VARIE_MATURED && !(S.tutorial && S.tutorial.movedOut)) return `자르기 — ${cutDoorKo(n)}${cutWaitTail(true) || ''}`; }
+  catch (e) { console.warn('[C4 카드]', e && e.message); }
   try {
     const p = pot0(S); const nodes = p ? io.growth.cuttableNodes() : null;
     if (p && Array.isArray(nodes)) {
@@ -10222,12 +10239,60 @@ function drawGrowGauge() {
        ③ 후보 leafM ≥ stageMid    «· 무늬 잎이 다 자라기를 기다립니다»(굴리는 중 — 언제를 약속 안 함 · 칩 «기다리는 중 — 무늬 잎이 다 자라기를»과 같은 말)
      정본 plant_grow §stepMaturation: leafM ≥ stageMid(0.66)부터 성숙 게이지가 차고 차면 굴린다 · 3% 는 중간잎으로 굳어(locked) 안 센다.
      ⚠ 반지하 모주만(삽수에서 다시 자르기는 이 문을 안 탄다 · 이사 뒤엔 안 적음) · 문이 열렸으면(n ≥ 2) · 잎 줄·stageMid 를 못 읽으면 머리만 */
+/* ★ 2026-11-02 총괄 C4 · [plan] 507ba40d P1 §1-2 — 남은 양 꼬리(확대 · [식물] 카드가 같은 셈 · short = 카드의 짧은 꼬리).
+     ② 시간 자람 «자라는 무늬 잎 p%»(그대로) · ③ 굴림 «다음 기회 약 d일 뒤 · 한 번에 q%»(d ≤ 1 «다음 기회 내일») · 하루 증가 0 «이 자리는 빛이 모자라 다 자라지 않습니다».
+     d = ⌈(1 − gauge) ÷ 하루 증가⌉(오늘 dli7 그대로면 · 실패하면 게이지 0.5 로 돌아가 같은 셈) · q = round(한 번 확률 × 100) — 정본 plant_grow(§matGaugeOf · §matGaugeStep · §calcMatureProb).
+     대상: ③ 잎이 있으면 d 가 가장 작은 잎 · 없으면 ② 에서 leafM 가장 큰 잎. ⛔ 6판 A Day 61 «81%» → Day 100 «다 자라기를 기다립니다»(퍼센트가 사라짐 · C4 진단) */
+const CUT_WAIT_KO = Object.freeze({
+  none: ' · 새 무늬 잎을 기다립니다',
+  growing: ' · 자라는 무늬 잎 {p}%',
+  chance: ' · 다음 기회 약 {d}일 뒤 · 한 번에 {q}%',
+  chanceTomorrow: ' · 다음 기회 내일 · 한 번에 {q}%',
+  chanceShort: ' · 다음 기회 약 {d}일 뒤',
+  chanceShortTomorrow: ' · 다음 기회 내일',
+  noLight: ' · 이 자리는 빛이 모자라 다 자라지 않습니다',
+  rolling: ' · 무늬 잎이 다 자라기를 기다립니다'   /* 굴림 값을 못 읽을 때(옛 엔진) — 예전 글 */
+});
+function cutWaitTail(short) {
+  let rows = null, on = null, mid = null;
+  try { rows = io.growth.leafState(); } catch { rows = null; }
+  try { on = io.growth.leafOnPlant ? io.growth.leafOnPlant() : null; } catch { on = null; }
+  try { const ps = io.growth.leafStageParams ? io.growth.leafStageParams() : null; mid = ps && Number.isFinite(ps.stageMid) && ps.stageMid > 0 ? ps.stageMid : null; } catch { mid = null; }
+  if (!Array.isArray(rows) || !Array.isArray(on)) return null;
+  const mOf = new Map(on.filter(r => r && r.onPlant === true && Number.isFinite(r.leafM)).map(r => [r.leafBirth, r.leafM]));
+  const cand = rows.filter(r => r && r.varie && !r.matured && !r.dropped && r.locked !== true && mOf.has(r.leafBirth));
+  if (!cand.length) return short ? '' : CUT_WAIT_KO.none;
+  if (mid == null) return '';
+  const rolling = cand.filter(r => mOf.get(r.leafBirth) >= mid);
+  if (rolling.length) {
+    let step = null, q = null;
+    try { step = io.growth.matGaugeStepNow ? io.growth.matGaugeStepNow() : null; } catch { step = null; }
+    try { q = io.growth.matureProbNow ? io.growth.matureProbNow() : null; } catch { q = null; }
+    if (step === 0) return CUT_WAIT_KO.noLight;
+    let d = null;
+    if (Number.isFinite(step) && step > 0) for (const r of rolling) {
+      let g = null; try { g = io.growth.matGaugeOf ? io.growth.matGaugeOf(r.leafBirth) : null; } catch { g = null; }
+      if (!g || g.locked || !Number.isFinite(g.gauge)) continue;
+      const di = Math.max(1, Math.ceil((1 - g.gauge) / step - 1e-9));
+      if (d == null || di < d) d = di;
+    }
+    if (d == null || !Number.isFinite(q)) return short ? '' : CUT_WAIT_KO.rolling;
+    const qq = String(Math.round(q * 100));
+    if (short) return d <= 1 ? CUT_WAIT_KO.chanceShortTomorrow : CUT_WAIT_KO.chanceShort.replace('{d}', String(d));
+    return (d <= 1 ? CUT_WAIT_KO.chanceTomorrow : CUT_WAIT_KO.chance.replace('{d}', String(d))).replace('{q}', qq);
+  }
+  let best = null;
+  for (const r of cand) { const m = mOf.get(r.leafBirth); if (best == null || m > best) best = m; }
+  return CUT_WAIT_KO.growing.replace('{p}', String(Math.min(99, Math.floor(best / mid * 100))));
+}
+window.__byeotCutWait = () => ({ line: cutWaitLine(), card: (() => { try { return varieCutStateKo(); } catch (e) { return { 탈: e && e.message }; } })() });   /* 재는 손잡이 */
 function cutWaitLine() {
   if (S.home && S.home.room !== 'banjiha') return '';
   if (S.tutorial && S.tutorial.movedOut) return '';
   const n = varieMaturedLeavesNow();
   if (!Number.isInteger(n) || n >= CUT_DOOR_VARIE_MATURED) return '';
-  const head = `자르기까지 — 다 자란 무늬 잎 ${n}/${CUT_DOOR_VARIE_MATURED}`;
+  const head = `자르기 — ${cutDoorKo(n)}`;   /* ★ 11-02 C4 · P1 — 문 한 조각 */
+  { const t = cutWaitTail(false); if (t != null) return head + t; }
   let rows = null, on = null, mid = null;
   try { rows = io.growth.leafState(); } catch { rows = null; }
   try { on = io.growth.leafOnPlant ? io.growth.leafOnPlant() : null; } catch { on = null; }
@@ -10757,6 +10822,26 @@ function sowPairReach(n) {
   const m = Math.max(0, Math.min(n, Math.floor(s.left / (s.cost + wc))));
   return { n, m, cost: s.cost, keep: m * wc, one: m === 0 && s.left >= s.cost };
 }
+/* ★ 2026-11-02 총괄 C8(비판 6판 #11 · d22_002) · [plan] e28ad6e1 §14 — 새 빈 시루(needsSow · 첫 심기 state.sowCrop — 체력 안 듦)와 거둔 시루(resowCrop — 체력 'sow')를 한 묶음으로.
+     차례: 새 빈 시루 먼저(체력 0 · 물 몫만 남김) → 거둔 시루(심기 + 물). «물 줄 체력 남김» 규칙 그대로(§sowPairReach 와 같은 셈 · 단추 글과 손이 같은 셈).
+     반환 { n, m, spend(심기에 실제로 나갈 체력 합) · keep(물 줄 몫) · one } */
+function sowMixReach(newN, harvN) {
+  const n = newN + harvN;
+  let s = null, w = null; try { s = staminaCanAct(S, 'sow'); w = staminaCanAct(S, 'water'); } catch { s = null; }
+  if (!s || s.left == null) return { n, m: n, spend: harvN * ((s && s.cost) || 0), keep: 0, one: false };
+  const c = s.cost > 0 ? s.cost : 0, wc = (w && w.cost > 0) ? w.cost : 0;
+  let left = s.left, m = 0, spend = 0;
+  for (let i = 0; i < n; i++) { const cost = (i < newN ? 0 : c) + wc; if (cost > left) break; left -= cost; spend += (i < newN ? 0 : c); m++; }
+  return { n, m, spend, keep: m * wc, one: m === 0 && (newN > 0 || s.left >= c) };
+}
+function sowMixLabel(base, b) {
+  if (!b || b.n <= 1) return base;
+  if (b.one) return `${base} (1개 · 물은 내일)`;
+  if (b.m <= 0) return base;
+  const keep = b.keep > 0 ? ` — 물 줄 체력 ${b.keep} 남김` : '';
+  const sp = b.spend > 0 ? ` · 체력 ${b.spend}` : '';   /* [plan] §14 — 실제로 나갈 체력의 합 · 0 이면 뺀다 */
+  return b.m >= b.n ? `${base} (${b.n}개${sp}${keep})` : `${base} (${b.n}개 중 ${b.m}개${sp}${keep})`;
+}
 function sowPairLabel(base, b) {
   if (!b || b.n <= 1) return base;
   if (b.one) return `${base} (1개 · 물은 내일)`;
@@ -10859,10 +10944,16 @@ function drawSow() {
        ⛔ D90 뒤로 콩나물만 세어 무순 판은 바닥에 다시 심기 길이 없었다(비판 둘째 판 M2 · Day 37 «전부 자라는 중» · 이틀 놂).
        ⇒ 거둔 것이 있는 종류 가운데 «씨앗이 있는» 종류를 먼저(지금 할 수 있는 일) · 없으면 거둔 것이 있는 첫 종류(주문 지름길 · 오는 중).
        ★ 고른 종류를 알약에 적어(dataset.kind) 누르는 손(§resowTarget · §reallySow)이 그 종류 시루만 고른다 — 끝없는 오류(D90 버그 2)가 안 되살아나게 */
-  const kindsNeed = (hv && Array.isArray(hv.byKind) ? hv.byKind : []).filter(x => x && (x.harvestedCount || 0) > 0).map(x => {
-    let k = null; try { k = cropKindOf(x.kind); } catch { k = null; }
-    const seedId = (k && k.seedItemId) || (x.kind === 'musun' ? 'radish_seed' : 'bean_seed');
-    return { kind: x.kind, ko: (k && k.ko) || x.kind, need: x.harvestedCount || 0, seedId, seeds: st ? (st.stock[seedId] || 0) : 0 };
+  /* ★ 2026-11-02 총괄 C8 — 새 빈 시루(놓였고 한 번도 안 심음 · needsSow)도 센다(작물마다 단추 하나 · 그 안에서 새 시루 먼저 — [plan] e28ad6e1 §14) */
+  let rowsAll = []; try { rowsAll = cropPotList(S.firstPlay, S.day) || []; } catch { rowsAll = []; }
+  const harvOf = kind => { const x = (hv && Array.isArray(hv.byKind) ? hv.byKind : []).find(y => y && y.kind === kind); return (x && x.harvestedCount) || 0; };
+  const newOf = kind => rowsAll.filter(r => r && r.kind === kind && r.placed && r.needsSow && !r.harvested).length;
+  const kindOrder = [...new Set([...(hv && Array.isArray(hv.byKind) ? hv.byKind : []).map(x => x && x.kind), ...rowsAll.map(r => r && r.kind)].filter(Boolean))];
+  const kindsNeed = kindOrder.filter(kind => harvOf(kind) + newOf(kind) > 0).map(kind => {
+    let k = null; try { k = cropKindOf(kind); } catch { k = null; }
+    const seedId = (k && k.seedItemId) || (kind === 'musun' ? 'radish_seed' : 'bean_seed');
+    const newN = newOf(kind), harvN = harvOf(kind);
+    return { kind, ko: (k && k.ko) || kind, need: newN + harvN, newN, harvN, seedId, seeds: st ? (st.stock[seedId] || 0) : 0 };
   });
   const pick = kindsNeed.find(x => x.seeds >= 1) || kindsNeed[0] || null;
   const need = pick ? pick.need : 0;
@@ -10870,6 +10961,8 @@ function drawSow() {
   const seedId = pick ? pick.seedId : 'bean_seed';
   const SEED_KO = { bean_seed: '콩 씨앗', radish_seed: '무 씨앗' }, BOX_KO = { beansprout: '시루', musun: '재배판' };
   const seedKo = SEED_KO[seedId] || '씨앗', kindKo = pick ? pick.ko : '콩나물', boxKo = (pick && BOX_KO[pick.kind]) || '시루';
+  /* ★ C8 · [plan] §14 — 새 빈 시루가 하나라도 들면 «🌱 {seedKo} 심기»(«콩 씨앗 심기» · 말풍선 «🌱 씨앗 심기»와 같은 동사) · 거둔 것만이면 «🌱 {kindKo} 다시 심기» 그대로 */
+  const sowHead = (pick && pick.newN > 0) ? `🌱 ${seedKo} 심기` : `🌱 ${kindKo} 다시 심기`;
   if (pick) btn.dataset.kind = pick.kind; else delete btn.dataset.kind;
   /* ★★ **산 시루는 이 버튼이 안 세운다** (박사님 2026-08-08: "시루를 샀는데 자동 배치가
        되는데 이상하게 배치되고. 애초에 인벤에서 끌어서 배치하도록 해").
@@ -10935,9 +11028,9 @@ function drawSow() {
     /* ★ D95 ① — 묶음(§batchLabel): 빈 용기를 씨앗 · 체력 닿는 만큼(§reallySow 와 같은 수) · 씨앗이 작은 쪽이면 «빈 시루 6개 중 4개 · 씨앗 4봉지»(plan) */
     /* ★ D100 #17 — 체력이 바닥이면 거두기 · 물과 같은 글(누르면 §guard 가 안내) · 흐림은 아래 .tired */
     : staminaBlockNote('sow') ? staminaZeroBtnText('🌱')   /* ★ #15 */
-    : (need > 1 && seeds < need && seeds <= sowPairReach(need).m)
-      ? `🌱 ${kindKo} 다시 심기 (빈 ${boxKo} ${need}개 중 ${seeds}개 · 씨앗 ${seeds}봉지)`
-      : sowPairLabel(`🌱 ${kindKo} 다시 심기`, sowPairReach(need));   /* ★ D100 #7 — «물 줄 체력 M 남김» */
+    : (need > 1 && seeds < need && seeds <= sowMixReach(pick.newN, pick.harvN).m)
+      ? `${sowHead} (빈 ${boxKo} ${need}개 중 ${seeds}개 · 씨앗 ${seeds}봉지)`
+      : sowMixLabel(sowHead, sowMixReach(pick.newN, pick.harvN));   /* ★ D100 #7 — «물 줄 체력 M 남김» · ★ C8 — 새 시루 섞임(§sowMixReach) */
   btn.classList.toggle('tired', !!(seeds >= 1 && !buyIt && staminaBlockNote('sow')));   /* ★ D100 #17 */
   twoLine(btn);   /* ★ D95 ① */
   btn.title = seeds < 1 ? `${seedKo}을 먼저 주문하세요` : '';
@@ -14519,7 +14612,7 @@ function showFirstPlayEvents(turn) {
           cut.why = ok[0] ? cutBlockedReason(S, nodes, ok[0].nodeId, { potId: pot0(S).id, varieMaturedLeaves: varieMaturedLeavesNow() }) : '자를 수 있는 마디 없음'; }
     catch (e) { cut.why = (e && e.message) || '알 수 없음'; }
     (window.__stageLog ||= []).push({ day: S.day, kind: 'cutGate', ...cut });
-    if (halfNow) events.unshift({ title: '✂ 이제 자를 수 있습니다', sub: '무늬 잎 둘이 다 자랐습니다 — 방의 ✂ 삽수 자르기를 누르세요' });
+    if (halfNow) events.unshift({ title: '✂ 이제 자를 수 있습니다', sub: `다 자란 무늬 잎이 ${CUT_DOOR_VARIE_MATURED}장이 됐습니다 — 방의 ✂ 삽수 자르기를 누르세요` });   /* ★ 11-02 P1 */
   }
   if (events.length && leafBanners.length) events.unshift(...leafBanners);   /* ✨ 무늬 배너를 사건 배너가 덮지 않게 */
   if (events.length) sfx.chime();     /* ★ 배송 도착·수확·몬스테라 도착·새순 — 사건이 있을 때만 */
@@ -14537,6 +14630,9 @@ function showFirstPlayEvents(turn) {
   /* ★ 2026-10-31 총괄 D96 — 반지하 사건: 카드는 조용한 때(§evCardWhenQuiet) · 뒷일(김치 · 반찬 택배)은 배너(plan 글이 있을 때) */
   try { noteBjEvents(turn); } catch (e) { console.warn('[반지하 사건]', e && e.message); }
   try { noteMoveSurvives(turn); } catch (e) { console.warn('[이사 버팀]', e && e.message); }   /* ★ D97 §1-1 */
+  /* ★ 2026-11-02 총괄 · [plan] 507ba40d P2 — 잡담(집 자금 NoVarie 세 벌)이 보는 무늬 원천을 이사 창 «무늬 원천 n»과 같은 자(§varieSourcesNow)로 싣는다.
+       ⛔ 잡담 칸은 nudge_wait §varieSourceCount(등급 장부 · 삽수 무늬 잎까지)라 이사 창과 다른 수를 셀 수 있었다(한 낱말 두 자) · 못 세면 안 싣는다(대사 쪽 옛 셈) */
+  try { const v = varieSourcesNow(); if (v && Number.isInteger(v.n)) turn.varieSourceN = v.n; } catch (e) { console.warn('[P2 원천]', e && e.message); }
   const ids = story.turn(turn, S);
   if (ids.includes('nudgeSiruPush')) bjDeferPending('nudge');   /* ★ D98 ㉮ — 시루 재촉이 선 날 카드는 내일 */
   if (ids.length) dlgOpen(ids);
@@ -19017,14 +19113,28 @@ const POT_DARK_KO = Object.freeze({
 });
 window.__byeotPotDark = () => { const r = potDarkNow(); return r ? { kind: r.kind, ko: r.ko, pot: r.pot && r.pot.id, slotId: r.slotId || null } : null; };   /* 재는 손잡이 */
 window.__byeotDarkWarn = (potId) => { const p = (S.pots || []).find(x => x && x.id === potId); return p ? darkPlaceWarn({ obj: p, kind: 'pot', variegated: !!p.variegated }) : null; };   /* 재는 손잡이 */
+/* ★ 11-02 [plan] §4 고침 — 빈 · 화분이 올라가는 · 닿는 칸(§brightFreeSlot 과 같은 거르기) 가운데 growBandAt 이 dark 아닌 가장 밝은 칸 · 없으면 null */
+function brightFreeGrowSlot(variegated, potD = ARRIVAL_POT_D) {
+  try {
+    const rep = io.light.daily(S.day + 1, S).report;
+    const roomSlot = new Map((io.light.room.slots || []).map(s => [s.slotId, s]));
+    const taken = takenSlotIds();
+    let best = null;
+    for (const s of rep.slots) {
+      if (taken.has(s.slotId) || !slotFitsDiameter(roomSlot.get(s.slotId) || s, potD) || !slotReachable(s.slotId)) continue;
+      const b = growBandAt(s.slotId, variegated); if (!b || b.dark) continue;
+      if (!best || b.dli > best.dli) best = { slotId: s.slotId, dli: b.dli };
+    }
+    return best ? best.slotId : null;
+  } catch (e) { console.warn('[밝은 빈 칸]', e && e.message); return null; }
+}
 function potDarkNow() {
   try {
     if (!(S.home && S.home.room === 'oneroom')) return null;
     const pot = (S.pots || []).find(p => { if (!p || (!p.slotId && !p.at)) return false; const b = growBandAt(p.at ? p : p.slotId, !!p.variegated); return !!(b && b.dark); });
     if (!pot) return null;
-    const bf = brightFreeSlot();
-    const bfb = bf ? growBandAt(bf, !!pot.variegated) : null;
-    if (bf && bfb && !bfb.dark) return { kind: 'go', pot, ko: POT_DARK_KO.go };
+    /* ★ 11-02 [plan] §4 고침 ② — «밝은 빈 칸» = 빈 칸 가운데 growBandAt 띠가 dark 아닌 칸이 하나라도(내일 빛 맨 위 한 칸만 보던 것 · 자리 목록 낱말과 같은 자) */
+    if (brightFreeGrowSlot(!!pot.variegated)) return { kind: 'go', pot, ko: POT_DARK_KO.go };
     const best = guideBrightSlot(null);
     const bb = best ? growBandAt(best, !!pot.variegated) : null;
     if (!best || !bb) return null;
@@ -21083,9 +21193,13 @@ const reallyWaterPots = guard((pots) => {
 
 /* ★ 2026-10-30 총괄 D90 버그 2 — 어느 거둔 «콩나물» 시루를 심나 · 손이 닿는 것부터(방 뷰 reach — runAct 가 실제로 걷는 길).
      ⛔ 걸음 열쇠가 늘 «첫 시루»(cropKey)였다 — 그 시루가 손 안 닿는 자리면 심을 시루와 상관없이 «가지는 못했습니다»가 났다 */
+function sowRowsOf(kind) {   /* ★ C8 — 새 빈 시루 먼저 · 그다음 거둔 시루(§sowMixReach 차례와 같음) */
+  let all = []; try { all = cropPotList(S.firstPlay, S.day) || []; } catch { all = []; }
+  return [...all.filter(x => x && x.kind === kind && x.placed && x.needsSow && !x.harvested), ...all.filter(x => x && x.harvested && x.kind === kind)];
+}
 function resowTarget(kind = 'beansprout') {   /* ★ D93 ㉠ — 알약이 고른 종류(§drawSow dataset.kind) */
   let rows = [];
-  try { rows = (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.harvested && x.kind === kind); } catch { rows = []; }
+  try { rows = sowRowsOf(kind); } catch { rows = []; }
   const keyOf = x => x.slotId || (x.at ? `free:${x.id}` : null);
   const reach = x => { const k = keyOf(x); if (!k || !roomView || typeof roomView.reach !== 'function') return true;
                        try { const r = roomView.reach(k); return !r || r.ok !== false; } catch { return true; } };
@@ -21109,25 +21223,32 @@ const reallySow = guard((potId, kind = 'beansprout') => {
   /* ★★ 2026-08-09 — 거두기와 **같은 이유로** 한 시루만 심는다(체력은 시루마다 1) */
   /* ★★ 2026-10-31 총괄 D95 ① — **묶음**: 그 종류 빈 용기를 씨앗 · 체력 닿는 만큼 차례로(§runBatch · 걸어가는 그것(potId)부터 · 코어는 한 시루씩 — 씨앗 · 체력은 낱개와 같다) */
   let rows = [];
-  try { rows = (cropPotList(S.firstPlay, S.day) || []).filter(x => x && x.harvested && x.kind === kind); } catch { rows = []; }   /* ★ 10-30 그 종류만(위 §resowTarget · D93 무순도) */
+  try { rows = sowRowsOf(kind); } catch { rows = []; }   /* ★ 10-30 그 종류만(위 §resowTarget · D93 무순도) · ★ C8 새 빈 시루 먼저 */
+  const newN = rows.filter(x => x.needsSow && !x.harvested).length;
   const first = (potId && rows.find(x => x.id === potId)) || null;
   let seedId = null; try { seedId = cropKindOf(kind).seedItemId; } catch { seedId = null; }
   const seedsOf = () => { try { return seedId ? (shopStatus(S).stock[seedId] || 0) : null; } catch { return null; } };
   const seeds0 = seedsOf();
   /* 씨앗이 있는 만큼만 차례에 세운다(모자란 시루를 불러 «씨앗이 없습니다»로 멈추지 않게) · 씨앗 0 이면 하나를 불러 코어가 까닭을 말한다 */
   /* ★ D100 #7 — 물 줄 체력을 남긴다(§sowPairReach · 단추 글과 같은 수) · 짝이 하나도 안 닿으면 하나 */
-  const pr = sowPairReach(rows.length);
+  const pr = sowMixReach(newN, rows.length - newN);   /* ★ C8 — 단추 글과 같은 셈 */
   const handN = pr.m > 0 ? pr.m : 1;
   const order = (first ? [first, ...rows.filter(x => x !== first)] : rows).slice(0, Math.min(handN, seeds0 == null ? Infinity : Math.max(1, seeds0)));
-  const rs = runBatch('sow', order.length ? order : [null], it => resowCrop(S, { kind, slots: io.light.room.slots, size: io.light.room.size,
-                                                                       ...(it ? { potIds: [it.id] } : {}) }));
+  /* ★ C8 — 새 빈 시루는 첫 심기(state.sowCrop · 말풍선 «🌱 씨앗 심기»와 같은 손) · 거둔 시루는 다시 심기(resowCrop) */
+  const rs = runBatch('sow', order.length ? order : [null], it => (it && it.needsSow && !it.harvested)
+    ? { ...sowCrop(S, it.id, { kind }), resown: 1, first: true }
+    : resowCrop(S, { kind, slots: io.light.room.slots, size: io.light.room.size, ...(it ? { potIds: [it.id] } : {}) }));
   const r0 = rs[0] || {};
   const sownN = rs.reduce((a, r) => a + (r.resown || 0), 0);
+  const firstN = rs.filter(r => r && r.first).length;
   /* ★ plan D95 ㉢ — 덜 심었으면 꼬리 한 마디(씨앗 탓 · 손 탓) · 다 심었으면 없음 */
   const leftN = Math.max(0, rows.length - sownN);
   const tailS = !leftN ? '' : (seedsOf() === 0 ? ` · 씨앗이 모자라 ${leftN}개는 비어 있습니다` : ` · 손이 떨어져 ${leftN}개는 내일 심습니다`);
-  banner(`${r0.kindKo || '콩나물'}을 다시 심었습니다`, `${kind === 'musun' ? '재배판' : '시루'} ${sownN}개 · ` +
-                                                    `씨앗 ${rs.reduce((a, r) => a + (r.seedsUsed || 0), 0)}봉지` + tailS);
+  const seedKoN = (() => { try { return ({ bean_seed: '콩 씨앗', radish_seed: '무 씨앗' })[seedId] || '씨앗'; } catch { return '씨앗'; } })();
+  banner(firstN > 0 ? `${josa(seedKoN, '을', '를')} 심었습니다` : `${r0.kindKo || '콩나물'}을 다시 심었습니다`,   /* ★ C8 — 첫 심기가 들면 말풍선 길과 같은 동사 */
+         `${kind === 'musun' ? '재배판' : '시루'} ${sownN}개 · ` +
+         `씨앗 ${rs.reduce((a, r) => a + (r.seedsUsed || 0), 0)}봉지` + tailS);
+  if (firstN > 0) { try { syncRoom(); checkQuests(lastTurn); } catch (e) { console.warn('[C8 첫 심기]', e && e.message); } }   /* §siruPlant 와 같이 — 심은 그 순간 할 일 줄 */
   draw();
 });
 
@@ -21475,7 +21596,7 @@ const SELL_ASK_KO = Object.freeze({
   none:     '무늬 삽수나 무늬 그루 없이 이사하면, 원룸에서 늘릴 게 없습니다.',   // 반지하(이사 전)
   noneHere: '무늬 삽수나 무늬 그루가 없으면, 이 방에서 늘릴 게 없습니다.',     // 원룸(이사 뒤)
   cutOpen:  '무늬 마디를 잘라 삽수로 팔면 그루가 남습니다.',
-  cutWait:  '다 자란 무늬 잎이 둘이 되면 마디를 잘라 삽수로 팔 수 있습니다 (지금 {m}/2).',
+  cutWait:  '다 자란 무늬 잎이 {need}장이 되면 마디를 잘라 삽수로 팔 수 있습니다 (지금 {m}/{need}).',   /* ★ 11-02 P1 — {need} = CUT_DOOR_VARIE_MATURED */
   goList: '내놓는다', goListAnyway: '그래도 내놓는다',
   goDeal: '판다',     goDealAnyway: '그래도 판다',
   cancel: '아직'
@@ -21485,7 +21606,7 @@ function sellSourceLines(s, cutOpen) {
   let m = 0; try { m = varieMaturedLeavesNow() || 0; } catch { m = 0; }
   return [SELL_ASK_KO.source.replace('{n}', s.after.n).replace('{a}', s.after.a).replace('{b}', s.after.b),
           (S.tutorial && S.tutorial.movedOut) ? SELL_ASK_KO.noneHere : SELL_ASK_KO.none,
-          cutOpen ? SELL_ASK_KO.cutOpen : SELL_ASK_KO.cutWait.replace('{m}', m)];
+          cutOpen ? SELL_ASK_KO.cutOpen : SELL_ASK_KO.cutWait.replace('{m}', m).replace(/\{need\}/g, String(CUT_DOOR_VARIE_MATURED))];
 }
 /* 매물이 빠지면 원천이 몇이 되나 — 그루 매물은 §varieSourcesAfterPotGone · 삽수 매물은 그 삽수가 무늬 삽수(안 죽음)면 b 에서 하나 */
 function varieSourcesAfterListingGone(l) {

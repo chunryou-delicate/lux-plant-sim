@@ -49,7 +49,7 @@ try {
   const jar = (row.단추 || []).find(b => b.cut === setup.삽수 && b.cont === 'jar');
   ok(!!jar, '«✂ 이 삽수에서» 줄의 [병에] 단추가 섰다');
   ok(jar && !jar.off, `[병에]가 열렸다${jar && jar.off ? ' — 막은 말: ' + jar.tip : ''}`);
-  ok(!(row.단추 || []).some(b => /아직 이릅니다/.test(b.tip || '')), '자르기 문(무늬 다 자란 잎)은 삽수에 안 걸린다');
+  ok(!(row.단추 || []).some(b => /아직 이릅니다|자르기 — 다 자란 무늬 잎/.test(b.tip || '')), '자르기 문(무늬 다 자란 잎)은 삽수에 안 걸린다');   /* ★ 11-02 C4 — 문 글이 «자르기 — {CUT_DOOR_KO}»로 바뀜 */
   await page.shot(`${OUTDIR}/cutlist_before.png`);
   if (jar && !jar.off) {
     const n0 = await J(`window.__S().cuttings.length`);

@@ -869,6 +869,13 @@ export function cutEndsMother(S, nodes, nodeId, opt = {}) {
    ★ 모주 자르기에만 건다 — 삽수에서 다시 자르기는 이 문을 안 탄다(§cutBlockedReason 주석 그대로).
    ★ 모르면 안 막는다 — 셀 수 없으면(null) «열렸다»(이 저장소의 규약 · cuttableNodes 와 같은 결). */
 export const CUT_DOOR_VARIE_MATURED = 2;
+/* ★ 2026-11-02 총괄 C4 · [plan] 507ba40d P1 §1-1 — 자르기 문을 말하는 조각 하나(확대 · 막힘 사유 · 카드 · 할 일 · 칩 · 상점과 확인 창이 같은 글 · 같은 n).
+     {need} = CUT_DOOR_VARIE_MATURED · {n} = 다 자란 무늬 잎 수(§varieMaturedLeavesOf) · ⚠ quest.js(순수 · 가져오기 없음)는 같은 글을 제 줄에 두고 test_quest 가 이것과 같은지 본다 */
+export const CUT_DOOR_KO = '다 자란 무늬 잎 {need}장 · 지금 {n}/{need}';
+export function cutDoorKo(n) {
+  const k = Number.isInteger(n) ? Math.min(n, CUT_DOOR_VARIE_MATURED) : 0;
+  return CUT_DOOR_KO.replace(/\{need\}/g, String(CUT_DOOR_VARIE_MATURED)).replace('{n}', String(k));
+}
 /* growth leafState() 의 줄에서 «무늬이면서 다 자란(갈라진) · 안 떨어진» 잎을 센다. 못 읽으면 null(0 으로 안 메꾼다) */
 export function varieMaturedLeavesOf(leafStateRows) {
   if (!Array.isArray(leafStateRows)) return null;
@@ -932,7 +939,8 @@ export function cutBlockedReason(S, nodes, nodeId, opt = {}) {
          *"뜻은 같은데 «누가 주인인가»가 다릅니다. 회색은 «누르기 전»이니 «가르침» 쪽이라야 합니다."*
        ⚠ 그리고 **수를 안 쓴다** — 「세 번째」는 프롤로그에서만 맞다(원룸은 등급이 굴림이라 다르다).
          몇 장인지는 `game.html §drawCuttings` 의 마디 목록이 바로 위에서 말한다. */
-    return '아직 이릅니다 — 무늬 잎이 다 자라야 자를 수 있습니다';
+    /* ★ 2026-11-02 총괄 C4 · [plan] P1 §1-1 — 문 말 한 조각(«자르기 — 다 자란 무늬 잎 2장 · 지금 n/2») · 수는 화면 여섯 자리와 같은 자 */
+    return `자르기 — ${cutDoorKo(opt.varieMaturedLeaves)}`;
 
   const b = cutBudgetOf(S, nodes, opt);
   if (b.cutNodeIds.includes(nodeId))

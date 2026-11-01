@@ -354,8 +354,11 @@ if (d0) {
   const d1 = await markBox();
   await mouse('mouseReleased', d0.x, d0.y, 0);
   drift = d1 ? +Math.hypot(d1.x - d0.x, d1.y - d0.y).toFixed(1) : null;
+  /* ★ 2026-11-02 — 사람이 이미 그 시루 곁에 서 있으면 누르는 순간 «손이 닿음»(onArrive · v2 카메라가 살짝 밀었다 돌려놓음)이 바로 서서
+       말풍선이 카메라를 따라 1~2px 움직인다(둘째 묶음 C8 — 바닥 묶음 단추로 새 시루를 심으며 사람이 곁으로 걸어가 있게 됨 · 1.0 · 1.1 · 1.5px).
+       이 걸음이 지키는 것은 «누르는 효과가 말풍선을 61.6px 밀어내던 병»이다 ⇒ 2px 까지는 카메라 몫으로 본다 */
   ok('D-1 ★누르는 0.14초 동안 말풍선이 **안 움직인다** (예전엔 61.6px)',
-     drift != null && drift <= 1, `${drift}px · ${d1 && d1.tf}`);
+     drift != null && drift <= 2, `${drift}px · ${d1 && d1.tf}${d1 && d1.ko ? ' · ' + d1.ko : ''}`);
 }
 try { await page.waitFor(`window.__S().firstPlay.beansprout.pots.some(p=>p.startedOnDay!=null)`, 12000, 200); } catch { }
 ok('W-3 말풍선을 누르면 물이 **실제로 들어간다**', await watered(), JSON.stringify(await waterSnap()));

@@ -165,6 +165,8 @@ ok(!h3.탈 && h3.on && h3.tid === 'moveOut' && h3.say === '누르면 이사를 �
 const wA = JSON.parse(saveA);
 wA.state.tutorial.lamp.placed = 0; wA.state.lamps.count = 0;
 wA.state.stamina.questsTaken = (wA.state.stamina.questsTaken || []).filter(x => x !== 'buy_lamp');
+/* 한 번뿐인 대사 기록도 Day 50 꼴로(그 판은 questDoneBuyLamp 를 이미 본 세이브라 대화 상자가 막는다 — [plan] 0400a798 대 봄 2) */
+if (wA.state.talk) { for (const k of ['seen', 'recent']) if (Array.isArray(wA.state.talk[k])) wA.state.talk[k] = wA.state.talk[k].filter(x => x !== 'questDoneBuyLamp'); }
 await boot(JSON.stringify(wA));
 await dlgOnly(); await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false); await camStill(); await sleep(1500);
 const l0 = await J(`(()=>{ const S=window.__S(); return { owned: S.tutorial.lamp.owned, placed: S.tutorial.lamp.placed, count: S.lamps.count }; })()`);
@@ -177,7 +179,8 @@ await tapSel('#__lampbag__'); await sleep(1800);
 const pok = await tapSel('#placeOk'); await sleep(2500);
 const l1 = await J(`(()=>{ const S=window.__S(); return { placed: S.tutorial.lamp.placed, count: S.lamps.count, heat: !!(window.__rv.lightHeatmap()||{}).on }; })()`);
 const leg1 = await J(`(()=>{ const t=[...document.querySelectorAll('.byeot-lightgrid div')].map(e=>e.textContent||'').find(s=>/등 \\d+개/.test(s)&&s.length<200); return t ? (t.match(/등 \\d+개/)||[''])[0] : null; })()`);
-const lines5 = []; for (let i = 0; i < 60; i++) { const t = await J(`(()=>({ on: document.getElementById('stage').classList.contains('talking'), l: (document.getElementById('dlgText')||{}).textContent || '' }))()`); if (!t.on) break; if (t.l && lines5[lines5.length - 1] !== t.l) lines5.push(t.l); await page.eval(`(()=>{ const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(280); }
+const lines5 = []; for (let w = 0; w < 10; w++) { const t0 = await J(`document.getElementById('stage').classList.contains('talking')`); if (t0 === true) break; await sleep(400); }
+for (let i = 0; i < 60; i++) { const t = await J(`(()=>({ on: document.getElementById('stage').classList.contains('talking'), l: (document.getElementById('dlgText')||{}).textContent || '' }))()`); if (!t.on) break; if (t.l && lines5[lines5.length - 1] !== t.l) lines5.push(t.l); await page.eval(`(()=>{ const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(280); }
 await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false); await sleep(1500);
 const chipL1 = await chipNow();
 const done5 = await J(`(window.__S().stamina.questsTaken||[]).includes('buy_lamp')`);
@@ -188,6 +191,7 @@ ok(!leg0.탈 && leg0.on && leg0.legend === '등 0개', '판 ㉲ — 빛 분포 �
 ok(!l1.탈 && l1.placed === 1 && l1.heat, '판 ㉲ — 등을 달았다(빛 분포 켠 채)', JSON.stringify(l1));
 ok(leg1 === '등 1개', '㉲ C5 단 그 자리에서 범례가 «등 1개»', String(leg1));
 ok(done5 === true && !/식물등을 달아/.test(chipL1.body || ''), '㉲ C5 단 그 자리에서 할 일 buy_lamp 가 끝난다(칩이 «식물등을 달아…» 아님)', JSON.stringify({ done5, chipL1, chipL0 }));
+ok(lines5[0] === '등을 달았다. 손바닥만 하네.', '㉲ P5 단 그 자리에서 몬이 questDoneBuyLamp «등을 달았다. 손바닥만 하네.»', JSON.stringify(lines5));
 /* C6 */
 const offPt = await tapSel('#lightHeatOff'); await sleep(1500);
 const c6a = await J(`(()=>{ const b=document.getElementById('lightHeatOff'); const q=b.getBoundingClientRect(); return { heat: !!(window.__rv.lightHeatmap()||{}).on, shown: b.style.display !== 'none' && q.width > 0, t: (b.textContent||'').trim(), x: Math.round(q.left+q.width/2), y: Math.round(q.top+q.height/2) }; })()`);
@@ -235,7 +239,9 @@ const warnY = await J(`(()=>{ const S=window.__S(); const p=(S.pots||[])[0]; ret
 await page.eval(`(()=>{ window.__byeotSheet.open('quest'); return 1; })()`, false); await sleep(1200);
 const boardY = await J(`(document.getElementById('questSubTab')||{}).textContent || ''`);
 await page.eval(`(()=>{ window.__byeotSheet.close(); return 1; })()`, false); await sleep(1200);
+let chipY2 = null; for (let i = 0; i < 6; i++) { chipY2 = await chipNow(); if (chipY2 && chipY2.on) break; await sleep(400); }
 if (OUT) await page.shot(`${OUT}/390_c6a_c3_clear.png`);
+ok(!chipY2.탈 && chipY2.on && chipY2.body === chipY.body, '㉳-2 할 일 탭을 연 채 시트를 닫으면 칩이 돌아온다([plan] 0400a798 대 봄 3 · 총괄 사진 c3_clear)', JSON.stringify(chipY2));
 console.log('  ㉳-2 ㉯', JSON.stringify({ pdY, chipY, warnY, boardY }));
 ok(!pdY.탈 && pdY && pdY.kind === 'clear', '판 ㉳-2 — 화분 어둠 · 밝은 칸은 다 참(작물)', JSON.stringify(pdY));
 ok(!chipY.탈 && /^(무순 판|시루) 하나를 옮겨 밝은 칸을 비우세요$/.test(chipY.body), '㉳-2 C3③ ㉯ 칩 «{무순 판|시루} 하나를 옮겨 밝은 칸을 비우세요»', JSON.stringify(chipY));

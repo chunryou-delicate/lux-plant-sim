@@ -2362,9 +2362,9 @@ export function marketGate(S, opt = {}) {
     open, openedOnDay: shop.marketOpenedOnDay, need, leaves,
     reason: open ? null
       : (leaves == null
-          ? `아직 내놓을 수 없습니다 — 몬스테라 잎이 ${need}장이 되면 열립니다`
-          : `아직 내놓을 수 없습니다 — 잎 ${leaves}/${need}장 ` +
-            `(잎이 ${need}장이 되면 무늬가 나고, 그때부터 내놓을 수 있습니다)`)
+          /* ★ 2026-11-02 총괄 C4 · [plan] P1 §1-3 — «무늬가 나고»는 걷음(무늬는 둘째 잎부터 · 6판 d61 잎 2 · 무늬 1 에 이 글) · 내놓기 문은 «잎» */
+          ? `아직 내놓을 수 없습니다 — 내놓기는 몬스테라 잎 ${need}장부터`
+          : `아직 내놓을 수 없습니다 — 내놓기는 잎 ${need}장부터 · 지금 잎 ${leaves}장`)
   };
 }
 

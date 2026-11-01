@@ -4481,7 +4481,8 @@ export function chatterContext(turn = {}, S = null) {
                phaseId: pick('phaseId'), phaseDays: pick('phaseDays'), varieMatured: pick('varieMatured') };
     })(),
     /* ★ 2026-10-08 [plan] 갈래 지도 7 — 무늬 원천 수([core] varieSourceCount · 틀려도 «더» 셈) · 안 죽은 무늬 삽수 수. S 가 없으면 null */
-    varieSources: (() => { try { return S ? varieSourceCount(S) : null; } catch { return null; } })(),
+    /* ★ 2026-11-02 [core] P2 — 화면이 싣는 이사 창과 같은 자(turn.varieSourceN · game.html §varieSourcesNow)가 먼저 · 없으면(헤드리스) 옛 셈 */
+    varieSources: Number.isInteger(turn && turn.varieSourceN) ? turn.varieSourceN : (() => { try { return S ? varieSourceCount(S) : null; } catch { return null; } })(),
     varieCuttings: (() => { try { return S && Array.isArray(S.cuttings)
       ? S.cuttings.filter(c => c && c.status !== 'dead' && c.varieFromCut).length : null; } catch { return null; } })(),
     /* ★ 2026-10-09 [plan] D29 — 가방에 든 안 죽은 삽수 수([core] turn.bagCuttings). 모르면 null */
