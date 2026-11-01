@@ -70,7 +70,7 @@ const mk = (page) => {
   const mv = await moveIn();
   const g = await goal();
   ok(mv.movedOut === true, '이사했다(지름길)', mv);
-  ok(!g.btn && !(g.shown && /내 집/.test(g.text || '')), '목표가 없으면 내 집 줄·단추가 안 뜬다', g);
+  ok(!g.탈 && !g.btn && !(g.shown && /내 집/.test(g.text || '')), '목표가 없으면 내 집 줄·단추가 안 뜬다', g);
   await page.close();
 }
 /* ⓪ 깃발 없음 — 정본 금액(D9) */

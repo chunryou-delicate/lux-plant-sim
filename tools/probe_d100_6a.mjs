@@ -37,6 +37,10 @@ console.log('  등 칸', cell, '확인 바', JSON.stringify(cf));
 if (OUT) await page.shot(`${OUT}/390_d100_6a.png`);
 ok(!!cell && cf && cf.on && /달까요/.test(cf.who), '판 — 가방 등 칸을 누르니 «… 달까요?» 확인 바', JSON.stringify({ cell, cf }));
 ok(!!cf && (/등 밑 가장 밝아지는 자리 — .+ 밝기 [\d.]+ → [\d.]+/.test(cf.fit) || /새로 밝아지는 자리가 거의 없습니다/.test(cf.fit)), '㉮ #6 확인 바가 «어디가 얼마나 밝아지나»를 말한다', JSON.stringify(cf));
+/* ★ 11-01 총괄 사진 MINOR ② — 확인 바 머리 «여기에 …»의 첫 글자 자리에서 잡히는 것이 확인 바(세로 메뉴 밑에 깔리지 않음) */
+const who = await J(`(()=>{ const w=document.getElementById('placeConfirmWho'); if (!w) return null; const rg=document.createRange(); rg.selectNodeContents(w); const q=[...rg.getClientRects()][0]; if (!q) return null;
+  const e=document.elementFromPoint(q.left + 4, q.top + q.height / 2); return { x: Math.round(q.left), y: Math.round(q.top), at: e ? (e.closest('#placeConfirm') ? 'placeConfirm' : (e.closest('#navbar') ? 'navbar' : (e.id || e.className || e.tagName))) : null }; })()`);
+ok(!!who && !who.탈 && who.at === 'placeConfirm', '㉯ 확인 바 머리 첫 글자가 보인다(세로 메뉴에 안 가림)', JSON.stringify(who));
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
 console.log(bad ? `probe_d100_6a: 빨강 ${bad}` : 'probe_d100_6a: 다 통과');
 await page.close(); process.exit(bad ? 1 : 0);

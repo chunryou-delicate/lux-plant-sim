@@ -82,7 +82,7 @@ for (let i = 0; i < 40; i++) {
 const s1 = await bagState();
 console.log('  이삿짐', JSON.stringify({ placed, left: { B: s1.boxB, M: s1.boxM }, stuck }));
 if (OUT) await page.shot(`${OUT}/390_b2_boxes.png`);
-ok(!s1.boxB && !s1.boxM, '㉯ 들고 온 가구만으로 이삿짐 시루 · 재배판이 다 풀린다', JSON.stringify({ placed, left: { B: s1.boxB, M: s1.boxM }, stuck }));
+ok(!s1.탈 && !s1.boxB && !s1.boxM, '㉯ 들고 온 가구만으로 이삿짐 시루 · 재배판이 다 풀린다', JSON.stringify({ placed, left: { B: s1.boxB, M: s1.boxM }, stuck }));
 /* 그루 · 삽수(가방 [data-potbag] · 삽수 칸) — 사람처럼 칸을 누르고 [확인] */
 let grown = 0; const growLog = [];
 /* 사람 손 — 칸 한가운데를 마우스로 누르고 뗀다(CDP Input · 포인터 길 그대로) */

@@ -69,12 +69,18 @@ await sleep(800); await dlgOnly();
 const r1 = await rows();
 console.log('  다시 심은 뒤', JSON.stringify(r1));
 ok(r1.needsWater > 0 && r1.needsWater <= r1.left, '㉯ #7 심은 시루에 물 줄 손이 남는다(물 기다리는 판 ≤ 남은 손)', JSON.stringify(r1));
+const closeCard = async () => { for (let k = 0; k < 3; k++) {
+  const on = await J(`(()=>{ const p=document.getElementById('evPanel'); if (!p || !p.classList.contains('on')) return false; const a=document.getElementById('evA'), b=document.getElementById('evB');
+    const go = (a && !a.disabled) ? a : (b && getComputedStyle(b).display !== 'none' ? b : a); if (go) go.click(); return true; })()`);
+  if (on !== true) return; await sleep(900); await dlgOnly(); } };
+await closeCard();
 if (OUT) await page.shot(`${OUT}/390_d100_7.png`);
 /* ㉰ 손 0 */
 await J(`(()=>{ const S=window.__S(); S.stamina.left = 0; window.__redraw(); return 1; })()`); await sleep(800);
 const lab0 = await J(`(()=>{ const b=document.getElementById('resow'); return b ? { t: (b.textContent||'').replace(/\\s+/g,' '), shown: b.style.display !== 'none' && !!b.offsetParent, tired: b.classList.contains('tired'), op: getComputedStyle(b).opacity } : null; })()`);
 console.log('  다시 심기 단추(손 0)', JSON.stringify(lab0));
 ok(!!lab0 && /손이 다 떨어졌/.test(lab0.t) && lab0.tired && +lab0.op < 0.9, '㉰ #17 손 0 이면 «오늘 손이 …» + 흐림', JSON.stringify(lab0));
+await closeCard();
 if (OUT) await page.shot(`${OUT}/390_d100_17.png`);
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
 console.log(bad ? `probe_d100_78: 빨강 ${bad}` : 'probe_d100_78: 다 통과');

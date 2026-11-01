@@ -55,7 +55,7 @@ await page.eval(`(()=>{ document.getElementById('pickClose').click(); return 1; 
 let c4 = null;
 for (let i = 0; i < 12; i++) { await sleep(500); c4 = await cam(); if (!c4.focused) break; }
 if (OUT) await page.shot(`${OUT}/390_m4_closed.png`);
-ok(!c4.focused && !c4.menu, '㉮ 메뉴를 닫으면 카메라가 방 전체로 돌아온다', JSON.stringify(c4));
+ok(!c4.탈 && !c4.focused && !c4.menu, '㉮ 메뉴를 닫으면 카메라가 방 전체로 돌아온다', JSON.stringify(c4));
 /* ㉯ 다시 당기고 메뉴를 연 채 [다음 날] */
 await page.eval(`(()=>{ window.__focusSpear(); return 1; })()`, false);
 await sleep(1800);
@@ -68,7 +68,7 @@ await sleep(3000); await dlgOnly();
 let c5 = null;
 for (let i = 0; i < 12; i++) { await sleep(500); c5 = await cam(); if (!c5.focused) break; }
 console.log('  다음 날 뒤', JSON.stringify(c5));
-ok(!c5.focused, '㉯ 메뉴를 연 채 하루를 넘겨도 방 전체로 돌아온다', JSON.stringify(c5));
+ok(!c5.탈 && !c5.focused, '㉯ 메뉴를 연 채 하루를 넘겨도 방 전체로 돌아온다', JSON.stringify(c5));
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
 console.log(bad ? `probe_m4_cam: 빨강 ${bad}` : 'probe_m4_cam: 다 통과');
 await page.close(); process.exit(bad ? 1 : 0);

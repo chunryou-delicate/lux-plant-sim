@@ -74,7 +74,7 @@ try {
   ok(b2.shown && b2.verdict && b2.text === KO[b2.verdict.key], `창 밑에서도 엔진 갈래 그대로(${b2.verdict && b2.verdict.key} «${b2.text}»)`);
   /* ② [취소] → 걷힘 */
   const u = await J(`(async()=>{ await window.__furn.undoMove(); const el=document.getElementById('furnLight'); return { shown: !!(el && el.style.display!=='none') }; })()`);
-  ok(!u.shown, '[취소]를 누르면 줄이 걷힌다');
+  ok(!u.탈 && !u.shown, '[취소]를 누르면 줄이 걷힌다');
   await page.eval(`(()=>{ window.__furn.clear(); })()`, false);
   const bed = await moveVia('banjiha-bed', [[-1.9, -0.6], [-1.9, -0.4], [-1.8, -0.9]]);
   console.log('② 침대 —', JSON.stringify({ shown: bed.shown, text: bed.text, tries: bed.tries }));
@@ -112,7 +112,7 @@ try {
     console.log('③ 안쪽 —', JSON.stringify(o2));
     await page.shot(`${OUTDIR}/4_oneroom_inner.png`);
     ok(o2.shown && o2.verdict && o2.text.startsWith(KO[o2.verdict.key]) && ['C', 'D'].includes(o2.verdict.key), `안쪽 바닥은 등이 있어야/안 자람(${o2.verdict && o2.verdict.key} «${o2.text}»)`);
-    ok(!o2.good, '안 자라는 갈래는 초록이 아니다');
+    ok(!o2.탈 && !o2.good, '안 자라는 갈래는 초록이 아니다');
   }
 } catch (e) { console.log('  FAIL 탈 —', e && e.message); bad++; }
 finally { await page.close(); }

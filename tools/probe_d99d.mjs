@@ -51,7 +51,7 @@ const lowLines = lines.filter(l => /이사비 내면 첫 월세 날까지 모자
 const sAfter = await st();
 console.log('  대사', JSON.stringify(lines), '이사함', sAfter.moved);
 ok(lowLines.length <= 1, '㉯ «이사비 내면 첫 월세 날까지 모자라»가 두 벌 연달아 서지 않는다', JSON.stringify(lowLines));
-ok(!sAfter.moved, '이사하지 않았다([아직]만 눌렀다)', String(sAfter.moved));
+ok(!sAfter.탈 && !sAfter.moved, '이사하지 않았다([아직]만 눌렀다)', String(sAfter.moved));
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
 console.log(bad ? `probe_d99d: 빨강 ${bad}` : 'probe_d99d: 다 통과');
 await page.close(); process.exit(bad ? 1 : 0);

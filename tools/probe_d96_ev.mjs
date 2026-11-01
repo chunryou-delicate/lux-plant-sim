@@ -52,7 +52,7 @@ async function run(q) {
   const K = st.ev && st.ev.shown;
   ok(st.on && !!K && !!CARDS[K], '㉮ [다음 날] 뒤 조용한 때 사건 카드가 뜬다', JSON.stringify({ day: st.day, shown: K }));
   ok(!!K && st.text === CARDS[K].text && st.a === CARDS[K].a && (CARDS[K].b ? st.b === CARDS[K].b && st.bShown : !st.bShown), '㉮ 글 · 단추(검사 글)', JSON.stringify({ text: st.text, a: st.a, b: st.b }));
-  ok(!st.hintOn, '㉯ 카드 동안 손가락이 물러선다(고르기 단추 어느 쪽도 안 짚는다)', JSON.stringify({ hint: st.hintOn, target: st.hintTarget }));
+  ok(!st.탈 && !st.hintOn, '㉯ 카드 동안 손가락이 물러선다(고르기 단추 어느 쪽도 안 짚는다)', JSON.stringify({ hint: st.hintOn, target: st.hintTarget }));
   ok(st.nextCovered, '㉯ 카드가 [다음 날]을 덮는다(덮개 위 창)', String(st.nextCovered));
   await page.eval(`(()=>{ document.getElementById('evA').click(); return 1; })()`, false);
   await sleep(2500);
@@ -71,7 +71,7 @@ async function run(q) {
 {
   const { page, st } = await run('?ev=0');
   console.log('  ?ev=0', JSON.stringify({ day: st.day, on: st.on, ev: st.ev && { pending: st.ev.pending, shown: st.ev.shown, seen: st.ev.state && st.ev.state.seen } }));
-  ok(!st.on && !(st.ev && st.ev.state && st.ev.state.seen && Object.keys(st.ev.state.seen).length), '㉱ ?ev=0 이면 카드 0 · 본 것 0', JSON.stringify(st.ev && st.ev.state && st.ev.state.seen));
+  ok(!st.탈 && !st.on && !(st.ev && st.ev.state && st.ev.state.seen && Object.keys(st.ev.state.seen).length), '㉱ ?ev=0 이면 카드 0 · 본 것 0', JSON.stringify(st.ev && st.ev.state && st.ev.state.seen));
   await page.close();
 }
 ok(exc.length === 0, '㉲ 처리 안 된 예외 0', exc.slice(0, 3).join(' / '));

@@ -43,9 +43,15 @@ if (OUT) await page.shot(`${OUT}/390_d99_lampfinger.png`);
 /* ㉰ 손질 — cut_02 를 가방으로 → 가방 칸 누르기 */
 const moved = await J(`(()=>{ const S=window.__S(); const c=(S.cuttings||[]).find(x=>x && x.id==='cut_02' && x.status==='rooting'); if (!c) return null; delete c.at; c.slotId = null; window.__redraw(); return c.id; })()`);
 await sleep(1200);
-await J(`(()=>{ window.__byeotSheet.open('bag'); const el=document.querySelector('#bagGrid [data-place="cutting:cut_02"]'); if (el) el.scrollIntoView({ block: 'center' }); return 1; })()`);
-await sleep(700);
-const tap = await J(`(()=>{ const el=document.querySelector('#bagGrid [data-place="cutting:cut_02"] img') || document.querySelector('#bagGrid [data-place="cutting:cut_02"]'); if (!el) return null; const r=el.getBoundingClientRect(); return { x: r.left + r.width/2, y: r.top + r.height/2, h: innerHeight }; })()`);
+await J(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`);
+/* ★ 11-01 총괄 — 시트가 펴지는 중에 굴리면 칸이 화면 밖(y 1101 > 844)에서 눌렸다 · 화면 안 + 멈춤(두 번 잰 y 가 같음)일 때까지 굴림 다시 */
+const cellAt = (scroll) => J(`(()=>{ const box=document.querySelector('#bagGrid [data-place="cutting:cut_02"]'); if (!box) return null; if (${scroll ? 'true' : 'false'}) box.scrollIntoView({ block: 'center' });
+  const el=box.querySelector('img') || box; const r=el.getBoundingClientRect(); return { x: r.left + r.width/2, y: r.top + r.height/2, h: innerHeight }; })()`);
+let tap = null;
+for (let k = 0; k < 15 && !tap; k++) {
+  const a = await cellAt(true); await sleep(300); const b = await cellAt(false);
+  if (a && b && !b.탈 && b.y > 10 && b.y < b.h - 10 && Math.abs(a.y - b.y) < 2) tap = b;
+}
 console.log('  칸 자리', JSON.stringify(tap));
 let bn = '';
 if (tap) {

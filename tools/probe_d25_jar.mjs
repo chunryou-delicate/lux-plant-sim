@@ -40,7 +40,7 @@ const a = await shopJar();
 const free0 = await J(`window.__cutFree()`);
 const snap = await J(`window.__questSnap()`);
 console.log('■ 갓 도착 — 상점 품목', JSON.stringify(a.items), '· 자를 마디', free0);
-ok(!a.jar && free0 === 0, '① 자를 마디 0 · 상점에 수경병이 없다', { jar: a.jar, free: free0 });
+ok(!a.탈 && !a.jar && free0 === 0, '① 자를 마디 0 · 상점에 수경병이 없다', { jar: a.jar, free: free0 });
 ok('motherVarieMatured' in snap && (snap.motherVarieMatured === 0 || snap.motherVarieMatured === null),
    '② 퀘스트 스냅샷에 motherVarieMatured(자르기 문과 같은 수)', snap.motherVarieMatured);
 ok(a.items.length > 0, '① 상점 목록은 그려졌다(빈 목록으로 «없다»를 재지 않는다)', a.items.length);

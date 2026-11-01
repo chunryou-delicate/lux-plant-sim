@@ -53,7 +53,7 @@ await press(); await sleep(300); await press(); await sleep(1200);
 const s2 = await state();
 console.log('  두 번 누름', JSON.stringify({ first: { talking: s1.talking, panel: s1.panel, dlg: s1.dlg.slice(0, 40) }, after: { moved: s2.moved, cash: s2.cash, panel: s2.panel, talking: s2.talking } }));
 if (OUT) await page.shot(`${OUT}/390_b1_double.png`);
-ok(!s2.moved, '㉮ [원룸으로 이사]를 거듭 눌러도 확인 창 없이 이사하지 않는다', JSON.stringify({ moved: s2.moved, cash: s2.cash }));
+ok(!s2.탈 && !s2.moved, '㉮ [원룸으로 이사]를 거듭 눌러도 확인 창 없이 이사하지 않는다', JSON.stringify({ moved: s2.moved, cash: s2.cash }));
 await dlgOnly(); await sleep(800);
 const s3 = await state();
 ok(s3.panel && !s3.moved, '㉮ 확인 창이 보인다', JSON.stringify({ panel: s3.panel, moved: s3.moved }));
@@ -64,7 +64,7 @@ if (OUT) await page.shot(`${OUT}/390_b1_panel.png`);
 /* ㉰ [아직] → 그대로 · 다시 → [그래도/이사한다] */
 await page.eval(`(()=>{ document.getElementById('moveCancel').click(); return 1; })()`, false); await sleep(600);
 const s4 = await state();
-ok(!s4.moved && !s4.panel, '㉰ [아직] → 반지하 그대로 · 창 닫힘', JSON.stringify({ moved: s4.moved, panel: s4.panel }));
+ok(!s4.탈 && !s4.moved && !s4.panel, '㉰ [아직] → 반지하 그대로 · 창 닫힘', JSON.stringify({ moved: s4.moved, panel: s4.panel }));
 await press(); await sleep(400); await dlgOnly(); await sleep(800);
 const s5 = await state();
 await page.eval(`(()=>{ document.getElementById('moveGo').click(); return 1; })()`, false); await sleep(2500); await dlgOnly();
