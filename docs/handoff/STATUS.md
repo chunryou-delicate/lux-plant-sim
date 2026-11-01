@@ -488,10 +488,11 @@ test_sill_winter_margin.mjs   창턱 겨울 여유. ★ 이걸 붉히는 것은 
 3. 나머지 5방 slotId 고정 시점 — 세이브 붙기 전이 싸다
 
 ## core
-갱신: 2026-11-01 (0aea097a) — 요즘 core 보고는 `core-to-master.md`(총괄이 꺼져 있을 때) · `core-to-plan.md` · `core-to-growth.md` 에 있다. 아래 08-04 덩이는 옛 기록
+갱신: 2026-11-02 (a40b1f2c) — 요즘 core 보고는 총괄에게 직접(창이 꺼져 있으면 `core-to-master.md` 맨 위) · 고치기 한 바퀴는 `.claude/skills/byeot-fix-cycle`. 아래 08-04 덩이는 옛 기록
 
+완료(11-02): 8d443621 원룸 빈 화분 — 배너 셋(씨앗 있음 · 오는 중 · 없음) · 할 일 «오면 🌱» · 손가락이 빈 화분 🌱 을 짐 풀기보다 먼저 + 집 되묻기 창 «계약하면 남는 돈» · 5f3fbe01 씨앗 0 배너 «짐을 푼 뒤, …»(짐 풀기 손가락과 한 함수 unpackFingerLive) · a40b1f2c 고치기 스킬 core 손 세 줄 — 자 tools/probe_minor5_pot(새)
 완료(11-01): 08782dbb probe_cutting_ui 판 나눔(하네스 cutDoorDay · dumpDoor) + MINOR #12 #13 #16 #18 · f39306c2 MINOR #9 #10 #14 #15 + ③ 내 집 뒤 가계부 · 진로 수입 + try 훑기 · faec7731 #11 체력 0 말풍선 · 가린 말풍선 안 짚음 · plan 옛 거짓 줄 둘 · 자 시간 셋 · ending_walk 낡은 자 16 · adc6e5e9 houseC 낡은 자 3
-대기: 총괄 다음 차례 · plan-to-master 47821be3(집 되묻기 창 «계약하면 남는 돈») 총괄 결정
+대기: 총괄 다음 차례(비판 6번째 판 8d443621 가름)
 
 갱신(옛): 2026-08-04 (커밋 전 · 물주기 `39278d3` 다음)
 
