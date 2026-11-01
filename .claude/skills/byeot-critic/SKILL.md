@@ -16,7 +16,7 @@ description: 볕 «비판 플레이어» 판 띄우기 — 고정 커밋으로 �
 
 1. 고정 복사본: `pin_<R>` 이 없으면 `tools/master/walkfinal.sh` 앞 여섯 줄과 같이 만든다(git archive + assets junction · manifest.json 읽힘 확인).
 2. 지시서: `brief_TEMPLATE.txt` 를 복사해 채운다.
-   - `{N}` 판 번호 · `{REV}` 해시 · `{DATE}` 오늘(YYYYMMDD · `date` 로) · `{PREV_REPORT}` 지난 보고 파일 이름.
+   - `{N}` 판 번호 · `{REV}` 해시 · `{DATE}` 오늘(YYYYMMDD · `date` 로) · `{PREV_REPORT}` 지난 보고 파일 이름 · `{PREV_N}` 지난 판 번호(그 판 비판 플레이어의 tools 를 복사해 쓰게).
    - «특히 볼 것»은 판마다 고쳐 쓴다: 지난 보고 MAJOR 와 그 뒤 고친 것을 **물음으로** 적는다(«~가 보이나» · 답을 쓰지 않는다).
    - 지시서는 Temp/byeot-master 와 `C:/Users/pc/byeot-master-keep/` 둘에 둔다.
 3. 포트 9331(서버) · 9431(크롬)이 비었나 · 빈 메모리 4GB 이상 · 이 창이 띄운 다른 헤드리스 크롬이 없나(창마다 하나 — 비판 판이 도는 동안 끝 걸음을 돌리지 않는다).
