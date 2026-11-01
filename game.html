@@ -6661,15 +6661,11 @@ function updateHint() {
      ⚠ 첫 플레이 손가락은 fp.completed·movedOut 이면 안 선다(§fpLive) — 이 사슬이 그 자리를 잇는다. */
   /* ★★ 2026-10-31 비판 셋째 판 B2 ③ — 이삿짐을 놓으려다 «자리가 없다»를 들은 판은, 가구 판이 바뀔 때까지 이 원룸 짐 풀기 갈래를 통째로 건너뛴다 —
        ⛔ 손가락이 30일 내내 [가방]만 짚어 거두기 · 심기 · 자르기를 한 번도 안 짚었다(비판 B · Day 135~165). 아래 갈래(돌봄 먼저 · D93 ②)로 간다 */
-  if (ts && ts.movedOut && !unpackStuckNow() && !unpackPassedBoxesOnly()) {
+  if (unpackChainOn()) {   /* ★ 11-01 — 문 · 셈은 한 곳(§unpackChainOn · §unpackCountsNow — 빈 화분 배너 §emptyPotSubKo 와 같은 자) */
     const home = S.home || {};
     /* ★ 2026-10-10 [plan] — 받은 물건(가게 첫날 주문판 · state §giveFurniture)은 사람이 고른 가구가 아니다 — «놓은 가구» 셈에서 뺀다 */
     const furnBag = (home.furnitureBag || []).length, furnDone = (home.furnitureAdded || []).filter(f => f && !GIVEN_FURNITURE.includes(f.preset)).length;
-    let cutN = 0; try { cutN = bagCuttings().length; } catch { cutN = 0; }
-    let potN = 0; try { potN = bagPots().length; } catch { potN = 0; }
-    let siruN = 0, trayN = 0; try { siruN = spareSiru(); trayN = spareContainerOf('musun'); } catch { }
-    const boxN = boxedCountOf('beansprout') + boxedCountOf('musun');   /* ★ D92 — 이삿짐(빈 용기 수엔 안 든다 · §spareContainerOf) */
-    const plantsLeft = potN + cutN + siruN + trayN + boxN;
+    const { cutN, potN, siruN, trayN, boxN, plantsLeft } = unpackCountsNow();
     const bagDoor = () => {
       for (const id of ['tabBag', 'openBag']) {
         const el = $(id);
@@ -12289,7 +12285,9 @@ function markList() {
 const EMPTY_POT_SUB_KO = Object.freeze({
   sow:    '화분까지 걸어가 🌱 을 눌러 몬스테라 씨앗을 심으세요',
   coming: '몬스테라 씨앗이 오면 🌱 을 눌러 심으세요',
-  buy:    '상점에서 몬스테라 씨앗을 사세요'
+  buy:    '상점에서 몬스테라 씨앗을 사세요',
+  /* ★ 11-01 총괄 가름 · [plan] — 짐 풀기 손가락이 살아 있으면(§unpackFingerLive) 그 차례를 말한다(손가락 [가방]과 한 화면에서 다른 일을 안 시킴) */
+  buyAfterUnpack: '짐을 푼 뒤, 상점에서 몬스테라 씨앗을 사세요'
 });
 function monsteraSeedsComingNow() {
   return ((shopStatus(S) || {}).orders || []).reduce((n, o) => n + ((o && o.itemId === 'monstera_seed') ? (Number(o.qty) || 0) : 0), 0);
@@ -12298,7 +12296,8 @@ function emptyPotSubKo() {
   let seeds = 0; try { seeds = stockOf(S, 'monstera_seed') || 0; } catch { seeds = 0; }
   if (seeds > 0) return EMPTY_POT_SUB_KO.sow;
   let coming = 0; try { coming = monsteraSeedsComingNow(); } catch (e) { console.warn('[빈 화분 배너]', e && e.message); coming = 0; }
-  return coming > 0 ? EMPTY_POT_SUB_KO.coming : EMPTY_POT_SUB_KO.buy;
+  if (coming > 0) return EMPTY_POT_SUB_KO.coming;
+  return unpackFingerLive() ? EMPTY_POT_SUB_KO.buyAfterUnpack : EMPTY_POT_SUB_KO.buy;
 }
 function emptyPotMarks() {
   const out = [];
@@ -18249,6 +18248,25 @@ function noteUnpackNoSpot() {
 }
 /* ★ 2026-10-31 MINOR ②(총괄 ae32f79c shop45 Day 151 · 152 · 445) — 짐 풀기 할 일(oneroom_unpack)이 넘어갔고(B2 사흘) 가방에 남은 것이 이삿짐 채소뿐이면
      손가락을 원룸 짐 풀기 갈래에 묶지 않는다 — Day 445 까지 [가방]을 짚었다. 가방 채소는 상태 줄(statusBagCrops)이 말한다(B2 와 같은 결 · 아래 돌봄 갈래로) */
+/* ★ 2026-11-01 총괄 · [plan] — **원룸 짐 풀기 셈 한 곳.** 손가락(§updateHint 짐 풀기 갈래)과 빈 화분 배너(§emptyPotSubKo «짐을 푼 뒤»)가 같이 부른다.
+     plantsLeft = 가방 그루 + 가방 삽수 + 빈 시루 + 빈 재배판 + 이삿짐 채소(가구는 안 셈 — 다 안 놓아도 갈래 끝) */
+function unpackCountsNow() {
+  let cutN = 0; try { cutN = bagCuttings().length; } catch { cutN = 0; }
+  let potN = 0; try { potN = bagPots().length; } catch { potN = 0; }
+  let siruN = 0, trayN = 0; try { siruN = spareSiru(); trayN = spareContainerOf('musun'); } catch { }
+  const boxN = boxedCountOf('beansprout') + boxedCountOf('musun');   /* ★ D92 — 이삿짐(빈 용기 수엔 안 든다 · §spareContainerOf) */
+  return { cutN, potN, siruN, trayN, boxN, plantsLeft: potN + cutN + siruN + trayN + boxN };
+}
+/* 짐 풀기 갈래가 서는가(이사 뒤 · 자리 없음[B2 ③] 아님 · 이삿짐 채소만 남아 넘어간 판[MINOR ②] 아님) */
+function unpackChainOn() {
+  const ts = S.tutorial;
+  return !!(ts && ts.movedOut && !unpackStuckNow() && !unpackPassedBoxesOnly());
+}
+/* 그 갈래에서 손가락이 짐을 짚는가(놓을 것이 남음) — 배너 «짐을 푼 뒤»의 문 */
+function unpackFingerLive() {
+  try { return unpackChainOn() && unpackCountsNow().plantsLeft > 0; }
+  catch (e) { console.warn('[짐 풀기 셈]', e && e.message); return false; }
+}
 function unpackPassedBoxesOnly() {
   try {
     if (!((S.stamina && S.stamina.questsTaken) || []).includes('oneroom_unpack')) return false;

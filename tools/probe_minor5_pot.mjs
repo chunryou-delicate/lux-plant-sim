@@ -6,6 +6,10 @@
    ㉰ 다음 날 🌱 말풍선 · 할 일 «빈 화분의 🌱 을 눌러 씨앗을 심으세요» · 손가락이 🌱(가방 속 이삿짐 채소보다 먼저 · 예전엔 [가방])
    ㉱ 🌱 탭 → 심어짐 · 손가락은 다시 짐 풀기
    ㉲ 씨앗이 오는 중에 가방 화분 놓기 — 배너 «몬스테라 씨앗이 오면 🌱 을 눌러 심으세요»
+   ㉮′ (총괄 가름 · [plan]) 짐이 남은 채 씨앗 0 · 안 옴 → 배너 «짐을 푼 뒤, 상점에서 몬스테라 씨앗을 사세요» · 손가락은 짐 풀기([가방]) — 한 화면에서 다른 일을 안 시킴
+   ㉳ 짐 풀기 손가락이 꺼진 판에서 씨앗 0 · 안 옴 → 배너 «상점에서 몬스테라 씨앗을 사세요» 그대로 · 손가락도 짐 풀기 아님
+      판: 새 탭에 ㉮ 직전 세이브(Day 136 · 가방 화분 1 · 씨앗 0)를 띄우고 이삿짐 채소만 남아 oneroom_unpack 이 넘어갈 때까지 [다음 날] → 가방 화분 놓기(밝은 창턱)
+      ⚠ 한 판에서 하지 않는 까닭: 밝은 자리는 창턱 둘(㉮ · ㉲)뿐 — 셋째 화분은 어두운 자리라 «⚠ 어둡습니다» 줄이 먼저 선다(의도)
    예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
@@ -14,7 +18,7 @@ const SAVE = process.env.SAVE || 'C:/Users/pc/AppData/Local/Temp/byeot-master/d_
 if (OUT) fs.mkdirSync(OUT, { recursive: true });
 let bad = 0; const ok = (c, m, d = '') => { console.log(`${c ? '  OK' : 'FAIL'}  ${m}${d ? '  → ' + d : ''}`); if (!c) bad++; };
 const exc = [];
-const page = await launch({ width: 390, height: 844, dpr: 2 });
+let page = await launch({ width: 390, height: 844, dpr: 2 });   /* ★ let — ㉳ 새 탭 */
 page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
 await page.send('Runtime.enable');
 await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
@@ -119,6 +123,8 @@ ok(['oneroom_root_bright', 'oneroom_settle_cutting', 'oneroom_recut', 'oneroom_s
 ok(banners.some(b => /무늬를 늘리는 할 일이 닫혔습니다/.test(b)), '㉯ 닫힘 배너가 섰다', JSON.stringify(banners.slice(-6)));
 ok(q1.open.includes('oneroom_seed_restart') && q1.open.includes('oneroom_home_fund') && !q1.open.includes('oneroom_root_bright'), '㉰ 씨앗 줄 · 내 집 자금이 열리고 닫힌 줄은 안 열린다', JSON.stringify(q1.open));
 /* ══ 여기부터 이 자의 몫 — 빈 화분 배너 · 할 일 · 손가락이 같은 말을 하나 ══ */
+await sleep(1200);
+const SNAP = await J(`localStorage.getItem('byeot/save/1')`);   /* ★ ㉳ 새 탭에 띄울 ㉮ 직전 세이브(그릴 때마다 저장 · §saveSoon) */
 const S0 = await J(`(()=>{ const S=window.__S(); return { day: S.day, seed: (S.shop.stock.monstera_seed||0), pot: (S.shop.stock.pot||0), coming: (S.shop.orders||[]).filter(o=>o.itemId==='monstera_seed').length, empty: (S.emptyPots||[]).length, pots: (S.pots||[]).length }; })()`);
 console.log('  판', JSON.stringify(S0));
 ok(!S0.탈 && S0.seed === 0 && S0.pot >= 1 && S0.coming === 0 && S0.empty === 0 && S0.pots === 0, '판 — 원룸 · 몬스테라 씨앗 0 · 오는 중 0 · 가방 화분 ≥ 1 · 화분 0', JSON.stringify(S0));
@@ -170,6 +176,9 @@ ok(!!pA.cell && !pA.cell.탈 && pA.seen.length > 0, '판 — 가방 화분 칸�
 ok(pA.seen.some(b => /상점에서 몬스테라 씨앗을 사세요/.test(b)) && !pA.seen.some(b => /🌱 을 눌러 몬스테라 씨앗을 심으세요/.test(b)), '㉮ 씨앗 0 · 안 옴 — 배너가 «상점에서 몬스테라 씨앗을 사세요»(🌱 을 누르라 하지 않음)', JSON.stringify(pA.seen));
 ok(!tA.탈 && tA.open && tA.todo === '상점에서 몬스테라 씨앗을 사세요', '㉮ 할 일도 «상점에서 몬스테라 씨앗을 사세요»', JSON.stringify(tA));
 ok(Array.isArray(mA) && mA.length === 0 && !fA.탈 && !fA.pot, '㉮ 🌱 말풍선이 없고 손가락도 빈 화분을 안 짚는다', JSON.stringify({ mA, fA }));
+/* ★ 총괄 가름 · [plan] — 짐 풀기 손가락이 살아 있으면 배너가 그 차례를 말한다 */
+ok(pA.seen.some(b => /빈 화분을 놓았습니다 짐을 푼 뒤, 상점에서 몬스테라 씨앗을 사세요/.test(b)) && !fA.탈 && fA.on && /openBag|tabBag|box:/.test(String(fA.id)),
+   '㉮′ 짐이 남은 채 씨앗 0 — 배너 «짐을 푼 뒤, 상점에서 몬스테라 씨앗을 사세요» · 손가락은 짐 풀기([가방])', JSON.stringify({ seen: pA.seen, fA }));
 
 /* ㉯ 흔한 차례 ② — 씨앗 주문(상점 줄 → [주문]) → 할 일 «몬스테라 씨앗이 오면 🌱 을 눌러 심으세요» */
 const oB = await orderSeed();
@@ -218,6 +227,37 @@ console.log('  ㉲ 드문 차례', JSON.stringify({ tp: tp && tp.hit, potOrd, dE
 if (OUT) await page.shot(`${OUT}/390_pot_e_coming.png`);
 ok(!oE.탈 && oE.coming >= 1 && !!pE.cell && !pE.cell.탈, '판 — 씨앗이 오는 중 · 가방 화분을 놓았다', JSON.stringify({ potOrd, oE, cell: pE.cell }));
 ok(pE.seen.some(b => /몬스테라 씨앗이 오면 🌱 을 눌러 심으세요/.test(b)), '㉲ 씨앗이 오는 중 — 배너 «몬스테라 씨앗이 오면 🌱 을 눌러 심으세요»', JSON.stringify(pE.seen));
+
+
+/* ㉳ 새 탭 — ㉮ 직전 세이브 → 짐 풀기가 꺼질 때까지 [다음 날] → 가방 화분 놓기(씨앗 0 · 안 옴) → «상점에서 …» 그대로
+     (같은 탭 두 번 부팅은 멎는다 — probe_minor5 와 같은 손 · 꺼진 까닭은 그 판 그대로 적는다) */
+ok(typeof SNAP === 'string' && SNAP.length > 1000, '판 — ㉮ 직전 세이브를 떴다', String(SNAP && SNAP.length));
+await page.close();
+page = await launch({ width: 390, height: 844, dpr: 2 });
+page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
+await page.send('Runtime.enable');
+await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+await page.goto(`${BASE}/data/balance/homes.json`);
+await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(SNAP)}); localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
+await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted === true', 300000, 500); await page.waitFor('!!window.__rv', 240000, 500); await sleep(4000);
+await dlgOnly();
+const bagState = () => J(`(()=>{ const S=window.__S(); window.__byeotSheet.open('bag'); const g=document.getElementById('bagGrid');
+  const r = { day: S.day, seed: S.shop.stock.monstera_seed||0, coming: (S.shop.orders||[]).filter(o=>o.itemId==='monstera_seed').length, pot: S.shop.stock.pot||0,
+    boxes: g.querySelectorAll('[data-place^="box:"]').length, plants: g.querySelectorAll('[data-potbag], [id="cropThumb"], [id="musunThumb"]').length,
+    unpackTaken: ((S.stamina && S.stamina.questsTaken) || []).includes('oneroom_unpack'), pots: (S.pots||[]).length, empty: (S.emptyPots||[]).length };
+  window.__byeotSheet.close(); return r; })()`);
+let sF = await bagState(); const sF0 = sF;
+for (let k = 0; k < 8 && !(sF && !sF.탈 && sF.unpackTaken); k++) { await nextDayGo(); await sleep(800); sF = await bagState(); }
+await sleep(1000);
+const pF = await placeBagPot();
+const fF = await fingerNow();
+const whyOff = sF.boxes > 0 && sF.plants === 0 && sF.unpackTaken ? '이삿짐 채소만 남아 넘어감(unpackPassedBoxesOnly)' : (sF.boxes === 0 && sF.plants === 0 ? '다 놓음(plantsLeft 0)' : '그 밖');
+console.log('  ㉳ 꺼진 판', JSON.stringify({ sF0, sF, whyOff, pF, fF }));
+if (OUT) await page.shot(`${OUT}/390_pot_f_off.png`);
+ok(!sF.탈 && sF0.day === S0.day && sF.seed === 0 && sF.coming === 0 && sF.pots === 0 && sF.empty === 0 && !!pF.cell && !pF.cell.탈 && whyOff !== '그 밖',
+   `판 — 새 탭 Day ${sF0.day} 세이브 → Day ${sF.day} 짐 풀기 손가락이 꺼진 판(${whyOff}) · 씨앗 0 · 안 옴 · 가방 화분을 놓았다`, JSON.stringify({ sF0, sF, cell: pF.cell }));
+ok(pF.seen.some(b => /빈 화분을 놓았습니다 상점에서 몬스테라 씨앗을 사세요/.test(b)) && !pF.seen.some(b => /짐을 푼 뒤|어둡습니다/.test(b)), '㉳ 짐 풀기가 꺼진 판 — 배너 «상점에서 몬스테라 씨앗을 사세요» 그대로(«짐을 푼 뒤» 없음 · 밝은 자리)', JSON.stringify(pF.seen));
+ok(!fF.탈 && !/들고 온|가방을 열어|놓으세요/.test(String(fF.say || '')), '㉳ 손가락도 짐 풀기를 안 짚는다', JSON.stringify(fF));
 
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
 console.log(bad ? `probe_minor5_pot: 빨강 ${bad}` : 'probe_minor5_pot: 다 통과');
