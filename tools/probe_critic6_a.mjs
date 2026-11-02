@@ -172,6 +172,10 @@ await dlgOnly(); await page.eval(`(()=>{ try { window.__byeotSheet.close(); } ca
 const l0 = await J(`(()=>{ const S=window.__S(); return { owned: S.tutorial.lamp.owned, placed: S.tutorial.lamp.placed, count: S.lamps.count }; })()`);
 const chipL0 = await chipNow();
 await page.eval(`(()=>{ window.__byeotSheet.open('plants'); return 1; })()`, false); await sleep(1200);
+/* ★ 11-03 core(regs13 ㉲ 빨강 — [식물] 시트를 연 뒤 1.2초에 #lightHeat 를 눌렀는데 빛 분포가 안 켜짐 · 시트가 올라오는 움직임이 헤드리스 프레임 멈춤에 걸려 누름이 빗나간 꼴 · 총괄 가름)
+     ⇒ 누르기 전에 움직임을 끝 상태로(getAnimations().finish()) · 10×10 찍기로 프레임 한 장 */
+await page.eval(`(()=>{ for (const a of document.getAnimations()) { try { a.finish(); } catch (e) { void e; } } return 1; })()`, false);
+await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 10, clip: { x: 0, y: 0, width: 10, height: 10, scale: 1 } }); await sleep(300);
 await tapSel('#lightHeat'); await sleep(2500); await dlgOnly();
 const leg0 = await J(`(()=>{ const t=[...document.querySelectorAll('.byeot-lightgrid div')].map(e=>e.textContent||'').find(s=>/등\\s\\d+개/.test(s)&&s.length<200); return { on: !!(window.__rv.lightHeatmap()||{}).on, legend: t ? (t.match(/등\\s\\d+개/)||[''])[0].replace(/\\s/g,' ') : null }; })()`);   /* ★ 11-02 «등»·«n개» 사이 안 꺾는 빈칸([plan] §18 덤 ①) */
 await page.eval(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`, false); await sleep(1200);

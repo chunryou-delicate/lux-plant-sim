@@ -82,9 +82,18 @@ for (const w of WIDTHS) {
     await dlgOnly();
     /* 사람처럼 — 손가락이 짚은 [상점]을 누른다(짚은 것이 없으면 상점을 연다) · 시트가 다 펴질 때까지 기다린 뒤 다시 묻는다 */
     await page.eval(`(()=>{ const t=document.querySelector('.hintTarget'); if (t && /상점/.test(t.textContent||'')) t.click(); else window.__byeotSheet.open('shop'); return 1; })()`, false); await sleep(2500);
-    await page.eval(`(()=>{ try { window.__byeotHint(); } catch (e) { void e; } return 1; })()`, false); await sleep(1200);
-    let m = await measure(J);
-    if (!m.탈 && !m.on) { await sleep(1500); m = await measure(J); }
+    /* ★ 11-03 core(regs13 · 번갈아 c6ad_alt — HEAD 판 · 고친 판 둘 다 ㉠ 한 너비만 손가락 on:false · 빨강 너비가 회차마다 바뀜(390 · 430) = 헤드리스 프레임 멈춤 흔들림 · 총괄 가름)
+         ⇒ 시트를 연 뒤 움직임을 끝 상태로(getAnimations().finish()) · 10×10 찍기로 프레임 한 장 · 손가락 on 은 최대 네 번(0.6초 간격 · 잴 때마다 프레임 한 장) 다시 잰다 · 끝내 off 면 빨강 그대로 · tries 적음 */
+    await page.eval(`(()=>{ for (const a of document.getAnimations()) { try { a.finish(); } catch (e) { void e; } } return 1; })()`, false);
+    let m = null, tries = 0;
+    for (; tries < 4; tries++) {
+      await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 10, clip: { x: 0, y: 0, width: 10, height: 10, scale: 1 } });
+      await page.eval(`(()=>{ try { window.__byeotHint(); } catch (e) { void e; } return 1; })()`, false); await sleep(tries ? 600 : 1200);
+      m = await measure(J); if (m.탈 || m.on) break;
+      if (tries === 0 && OUT) await page.shot(`${OUT}/${w}_c6d_${C.key}_first_off.png`);   /* 총괄 11-03 — 첫 잼에 꺼져 있던 순간(덤프 실은 뒤 첫 상점 · 손가락이 늦게 뜨나 8C 후보) */
+    }
+    if (m && !m.탈) m.tries = tries;
+    console.log(`  ${w} ${C.key} 손가락 다시 잼 tries=${tries}${m && m.on ? '' : ' · 끝내 off'}`);
     console.log(`${w} ${C.ko}`, JSON.stringify(m));
     if (OUT) await page.shot(`${OUT}/${w}_c6d_${C.key}.png`);
     const pre = `${w} ${C.ko}`;

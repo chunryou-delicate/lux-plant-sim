@@ -43,6 +43,13 @@ const H = `(async()=>{ try { window.__byeotHint(); } catch (e) { void e; } await
   return { chip: (document.getElementById('questChipText')||{}).textContent || '', on: h.classList.contains('on'), tid: t ? (t.id || (t.dataset && t.dataset.act) || null) : null, say: (sayEl||{}).textContent,
     sayR: rr(sayEl.getBoundingClientRect()), texts, panel: document.getElementById('homePanel').classList.contains('on') }; })()`;
 const ovr = (a, b) => !!a && !!b && a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+/* ★ 11-03 core(regs13 ㉯-b 빨강 — sheet 닫힘(open 없음)인데 위 끝 264 · 내려가는 움직임이 헤드리스 프레임 멈춤에 걸림 · 8C2 자리는 이 판에서 안 건드림)
+     ⇒ [계약한다] 뒤 시트 위 끝이 내려갈 때까지 최대 4초 동안 0.3초마다 10×10 찍기로 프레임을 밀며 다시 잰다(critic6_e ㉮ 와 같은 손) · 끝내 안 내려가면 빨강 그대로 · tries 적음 */
+const AFTER_GO = `(()=>({ sheet: document.getElementById('sheet').classList.contains('open'), sheetTop: Math.round(document.getElementById('sheet').getBoundingClientRect().top), scene: document.getElementById('homeScene').classList.contains('on'), talking: document.getElementById('stage').classList.contains('talking') }))()`;
+const afterGo = async () => { let q = null, tries = 0; const t0 = Date.now();
+  for (; tries < 14; tries++) { q = await J(AFTER_GO); if (!q || q.탈 || q.sheet || q.sheetTop >= 800 || Date.now() - t0 > 4000) break;
+    await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 10, clip: { x: 0, y: 0, width: 10, height: 10, scale: 1 } }); await sleep(300); }
+  if (q && !q.탈) q.tries = tries; return q; };
 /* ㉲(총괄 11-03 · 회귀 빨강 critic6_e ㉮ · hint_chip #8 대조에서 나옴) — 칩을 말풍선 자리로 옮겨 «덮인 칩»을 가른다(칩 · 덮개는 끝에 되돌린다)
      (가) 칩이 할 일 창(.pop.on) 밑이면 안 센다 — 말풍선이 그 자리에 그대로 있어도 된다(8C3 · 깔린 칩에 막혀 말풍선이 첫 줄 이름을 덮었다)
      (나) 칩이 창이 아닌 다른 판(배너 #event 꼴) 밑이면 전처럼 센다 — 말풍선이 비킨다 · fm47(c2211624+p31 «그 점에서 칩이 잡힐 때만»)에서 빨강 */
@@ -87,7 +94,7 @@ const c = await J(`(()=>({ panel: document.getElementById('homePanel').classList
 ok(!c.탈 && c.panel && !c.quest, '㉮ [내 집 마련하기]를 누르면 계약 창(할 일 창은 닫힘)', JSON.stringify(c));
 /* ═══ ㉯ 8C2 ═══ */
 await J(`(()=>{ document.getElementById('homeGo').click(); return 1; })()`); await sleep(900);
-const d = await J(`(()=>({ sheet: document.getElementById('sheet').classList.contains('open'), sheetTop: Math.round(document.getElementById('sheet').getBoundingClientRect().top), scene: document.getElementById('homeScene').classList.contains('on'), talking: document.getElementById('stage').classList.contains('talking') }))()`);
+const d = await afterGo();
 console.log('  ㉯ [계약한다] 뒤', JSON.stringify(c), JSON.stringify(d));
 if (OUT) await page.shot(`${OUT}/390_c8b_scene.png`);
 ok(!d.탈 && !d.sheet && d.sheetTop >= 800 && d.scene && d.talking, '㉯ [계약한다] 뒤 — 시트가 닫히고 엔딩 그림 · 대사가 섬(시트 밖을 안 눌러도)', JSON.stringify({ before: c, after: d }));
@@ -102,7 +109,7 @@ await boot(stage(0));
 await J(`(()=>{ window.__byeotSheet.open('quest'); return 1; })()`); await sleep(1500);
 const sb = await J(`(()=>{ const x=[...document.querySelectorAll('#pageQuest [data-act="homeAsk"]')].find(e=>!e.disabled && e.offsetParent); if (x) x.click(); return { 누름: !!x, sheet: document.getElementById('sheet').classList.contains('open') }; })()`); await sleep(1200);
 await J(`(()=>{ document.getElementById('homeGo').click(); return 1; })()`); await sleep(900);
-const g = await J(`(()=>({ sheet: document.getElementById('sheet').classList.contains('open'), sheetTop: Math.round(document.getElementById('sheet').getBoundingClientRect().top), scene: document.getElementById('homeScene').classList.contains('on'), talking: document.getElementById('stage').classList.contains('talking') }))()`);
+const g = await afterGo();
 console.log('  ㉯-b 시트 탭 길', JSON.stringify({ sb, g }));
 if (OUT) await page.shot(`${OUT}/390_c8b_scene_sheet.png`);
 ok(!g.탈 && sb.누름 && sb.sheet && !g.sheet && g.sheetTop >= 800 && g.scene && g.talking, '㉯-b 시트 [할 일] 탭에서 계약 → [계약한다] 뒤 시트가 닫히고 엔딩 그림 · 대사(비판 A_011~013 길)', JSON.stringify({ sb, g }));
