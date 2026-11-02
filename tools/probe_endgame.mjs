@@ -74,7 +74,8 @@ if (process.argv.includes('--table')) {
     const mix = n >= 3 ? fmt(Math.max(...cs.filter(c => c.slice(1).every(x => x > 0)).map(potOf))) : '—';
     console.log(`   ${n} | ${pad(cs.length, 6)} | ${pad(fmt(Math.min(...pots)), 9)} ~ ${pad(fmt(Math.max(...pots)), 11)} | ${pad(only('plain'), 15)} | ${pad(only('sanban'), 22)} | ${pad(only('halfmoon'), 24)} | ${pad(mix, 10)}`);
   }
-  console.log('   ⚠ 그루는 ×' + S.potMult + ' 라 늘 «잎마다 삽수» 합보다 비싸다 — 대신 그루를 팔면 무늬 원천이 사라진다(D22 · sellLastVarie).');
+  /* ★ 2026-11-02 [core] 총괄 F1 — 괄호 글을 지금 게임 글로(D100 이 D22 sellLastVarie 몬이 줄을 걷고 확인 창 글 · 판 뒤 soldLastVarie 로 옮김) */
+  console.log('   ⚠ 그루는 ×' + S.potMult + ' 라 늘 «잎마다 삽수» 합보다 비싸다 — 대신 그루를 팔면 무늬 원천이 0 이 된다(판 전: [내놓기] · [거래하기] 확인 창 «팔고 나면 무늬 원천 0 — …» · 판 뒤: 몬이 soldLastVarie «이제 무늬가 남은 게 없어.»).');
 
   /* ③ 밴드별 «잎 n장이 다 새로 난» 그루·삽수 기대값 — 잎마다 ① 의 분포로 굴린 정확한 기댓값(4^n 펼침) */
   console.log('\n③ 밴드별 기대값 — 잎 n장이 그 밴드에서 새로 났을 때 [셈 · 정확 기댓값]');
