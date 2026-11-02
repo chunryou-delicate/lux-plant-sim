@@ -1316,7 +1316,10 @@ export const SCRIPTS = {
     /* ★ 2026-10-31 [plan] D97 — 몬이 수(«하나») 뺌 */
     { who: 'moni',   face: 'teach',   text: '이제 남은 건 **내 집**이야.' },
     { who: 'jachwi', face: 'curious', text: '얼마나 모아야 돼?' },
-    { who: 'moni',   face: 'calm',    text: '숫자는 화면이 세. 나는 무늬만 볼게.' }
+    /* ★ 2026-11-02 [plan] 비판 7판 7P3(MINOR #14 · 6판 #6) — 무늬 원천 0 판(S Day 96 · 모그루를 판 뒤 원룸)에서 «나는 무늬만 볼게»가 섰다 — 볼 무늬가 없다.
+         후보 ㉠ «잎만»으로 한 벌(택함 · 무늬 판에서도 무늬 잎은 잎이라 참 · 새 갈래 · 사건 칸이 안 든다) · ㉡ 무늬 0 판만 다른 벌(quest_opened 에 varieSource 칸을 새로 실어야 함) · ㉢ 줄을 뺀다(«숫자는 화면이 세»만 남아 끝이 끊김).
+         참: 집 자금 줄은 원룸에서 열린다 · 원룸 판에는 늘 기르는 것(몬스테라 그루 · 씨앗 그루 · 콩나물 · 무순)이 있다. 수 없음 */
+    { who: 'moni',   face: 'calm',    text: '숫자는 화면이 세. 나는 잎만 볼게.' }
   ],
   questDoneOneroomHomeFund: [
     { who: 'jachwi', face: 'think',   text: '…다 모였다.' },
