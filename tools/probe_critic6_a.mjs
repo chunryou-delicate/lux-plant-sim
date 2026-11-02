@@ -173,12 +173,12 @@ const l0 = await J(`(()=>{ const S=window.__S(); return { owned: S.tutorial.lamp
 const chipL0 = await chipNow();
 await page.eval(`(()=>{ window.__byeotSheet.open('plants'); return 1; })()`, false); await sleep(1200);
 await tapSel('#lightHeat'); await sleep(2500); await dlgOnly();
-const leg0 = await J(`(()=>{ const t=[...document.querySelectorAll('.byeot-lightgrid div')].map(e=>e.textContent||'').find(s=>/등 \\d+개/.test(s)&&s.length<200); return { on: !!(window.__rv.lightHeatmap()||{}).on, legend: t ? (t.match(/등 \\d+개/)||[''])[0] : null }; })()`);
+const leg0 = await J(`(()=>{ const t=[...document.querySelectorAll('.byeot-lightgrid div')].map(e=>e.textContent||'').find(s=>/등\\s\\d+개/.test(s)&&s.length<200); return { on: !!(window.__rv.lightHeatmap()||{}).on, legend: t ? (t.match(/등\\s\\d+개/)||[''])[0].replace(/\\s/g,' ') : null }; })()`);   /* ★ 11-02 «등»·«n개» 사이 안 꺾는 빈칸([plan] §18 덤 ①) */
 await page.eval(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`, false); await sleep(1200);
 await tapSel('#__lampbag__'); await sleep(1800);
 const pok = await tapSel('#placeOk'); await sleep(2500);
 const l1 = await J(`(()=>{ const S=window.__S(); return { placed: S.tutorial.lamp.placed, count: S.lamps.count, heat: !!(window.__rv.lightHeatmap()||{}).on }; })()`);
-const leg1 = await J(`(()=>{ const t=[...document.querySelectorAll('.byeot-lightgrid div')].map(e=>e.textContent||'').find(s=>/등 \\d+개/.test(s)&&s.length<200); return t ? (t.match(/등 \\d+개/)||[''])[0] : null; })()`);
+const leg1 = await J(`(()=>{ const t=[...document.querySelectorAll('.byeot-lightgrid div')].map(e=>e.textContent||'').find(s=>/등\\s\\d+개/.test(s)&&s.length<200); return t ? (t.match(/등\\s\\d+개/)||[''])[0].replace(/\\s/g,' ') : null; })()`);
 const lines5 = []; for (let w = 0; w < 10; w++) { const t0 = await J(`document.getElementById('stage').classList.contains('talking')`); if (t0 === true) break; await sleep(400); }
 for (let i = 0; i < 60; i++) { const t = await J(`(()=>({ on: document.getElementById('stage').classList.contains('talking'), l: (document.getElementById('dlgText')||{}).textContent || '' }))()`); if (!t.on) break; if (t.l && lines5[lines5.length - 1] !== t.l) lines5.push(t.l); await page.eval(`(()=>{ const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(280); }
 await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false); await sleep(1500);

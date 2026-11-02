@@ -87,19 +87,19 @@ if (!ONLY || ONLY === 'A') {
   await page.eval(`(()=>{ const d=document.getElementById('dClose'); if (d) d.click(); return 1; })()`, false); await sleep(500);
   console.log('  자세히 물 줄', JSON.stringify(det));
   ok(typeof det === 'string' && /^물 준 지\s*\d+일 · (\d+일 뒤에 줄 수 있습니다|지금 줄 수 있습니다|말랐습니다)$/.test(det) && (!nBtn || !/일 뒤에/.test(det) || det.includes(`${nBtn[1]}일 뒤에`)), '㉱ #16 자세히 «물 준 지 d일 · N일 뒤에 줄 수 있습니다»(« / i» 없음 · 단추와 같은 N)', JSON.stringify(det));
-  /* ㉲ #12 반지하 범례 — «철 따라 안 바뀜 · 등 n개»(맑음 · 여름 없음) */
+  /* ㉲ #12 반지하 범례 — «철 따라 안 바뀜 · 등 n개»(맑음 · 여름 없음) · ★ 11-02 «등»과 «n개» 사이는 안 꺾는 빈칸([plan] §18 덤 ①) — 찾기는 \s(둘 다) */
   await page.eval(`(()=>{ window.__byeotSheet.open('plants'); const b=document.getElementById('lightHeat'); if (b) b.click(); return 1; })()`, false);
   await sleep(1500);
   await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false);
   await sleep(1500);
   /* 범례 상자 = 줄바꿈(<br>)을 제 자식으로 가진 가장 안쪽 div · 첫 줄(첫 <br> 앞)이 몇 줄로 접히나(plan: 폭 276px 안 · 한 줄) */
-  const capB = await J(`(()=>{ const ds=[...document.querySelectorAll('div')].filter(x=>x.querySelector(':scope > br') && /^빛\\s*·/.test((x.innerText||'').trim()) && /등 \\d+개/.test(x.innerText||'')); const d=ds.pop(); if (!d) return null;
+  const capB = await J(`(()=>{ const ds=[...document.querySelectorAll('div')].filter(x=>x.querySelector(':scope > br') && /^빛\\s*·/.test((x.innerText||'').trim()) && /등\\s\\d+개/.test(x.innerText||'')); const d=ds.pop(); if (!d) return null;
     const br=d.querySelector(':scope > br'); const rg=document.createRange(); rg.setStart(d,0); rg.setEndBefore(br);
     const tops=[...new Set([...rg.getClientRects()].filter(q=>q.width>0).map(q=>Math.round(q.top)))]; const bx=d.getBoundingClientRect();
     return { t: (d.innerText||'').replace(/\\s+/g,' '), first: (d.innerText||'').split('\\n')[0], lines: tops.length, firstW: Math.round(rg.getBoundingClientRect().width), boxW: Math.round(bx.width) }; })()`);
   console.log('  반지하 범례', JSON.stringify(capB));
   if (OUT) await page.shot(`${OUT}/390_minor5_bjlight.png`);
-  ok(!!capB && !capB.탈 && /철 따라 안 바뀜 · 등 \d+개/.test(capB.first) && !/여름|맑음/.test(capB.t), '㉲ #12 반지하 범례 첫 줄 «… · 철 따라 안 바뀜 · 등 n개»(맑음 · 여름 없음)', JSON.stringify(capB));
+  ok(!!capB && !capB.탈 && /철 따라 안 바뀜 · 등\s\d+개/.test(capB.first) && !/여름|맑음/.test(capB.t), '㉲ #12 반지하 범례 첫 줄 «… · 철 따라 안 바뀜 · 등 n개»(맑음 · 여름 없음)', JSON.stringify(capB));
   ok(!!capB && capB.lines === 1, '㉲ #12 반지하 범례 첫 줄이 한 줄에 든다(폰 390)', JSON.stringify(capB && { lines: capB.lines, firstW: capB.firstW, boxW: capB.boxW }));
   await page.eval(`(()=>{ const b=document.getElementById('lightHeat'); if (b && /끄기/.test(b.textContent)) b.click(); return 1; })()`, false); await sleep(800);
   /* ㉮ Day 90 — 익은 시루 하나 거두기(시루 줄 단추 · 손이 누르는 그 단추) */
@@ -159,7 +159,7 @@ if (!ONLY || ONLY === 'B') {
   await sleep(500);
   await page.eval(`(()=>{ window.__byeotSheet.open('plants'); const b=document.getElementById('lightHeat'); if (b) b.click(); return 1; })()`, false);
   await sleep(2500);
-  const cap = await J(`(()=>{ const d=[...document.querySelectorAll('div')].find(x=>/^빛\\s*·/.test((x.innerText||'').trim()) && /등 \\d+개/.test(x.innerText||'')); return d ? (d.innerText||'').replace(/\\s+/g,' ') : null; })()`);
+  const cap = await J(`(()=>{ const d=[...document.querySelectorAll('div')].find(x=>/^빛\\s*·/.test((x.innerText||'').trim()) && /등\\s\\d+개/.test(x.innerText||'')); return d ? (d.innerText||'').replace(/\\s+/g,' ') : null; })()`);
   console.log('  이사 첫날', JSON.stringify(room), '· 범례', JSON.stringify(cap));
   if (OUT) await page.shot(`${OUT}/390_minor5_light.png`);
   const SE = ['봄', '여름', '가을', '겨울'];

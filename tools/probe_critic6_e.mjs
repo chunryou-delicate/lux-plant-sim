@@ -3,7 +3,7 @@
    ㉮ P6 반찬가게(§16 ④ · 총괄 잣대 «묶음 단추 = 손으로 하나씩 한 것과 같은 결과» · 글은 [plan] §17 6efb5c8f 세 길 한 글) — «6판 Day 90 꼴» 손질:
         neighborOrderDay 없음 · 오늘 꾸러미는 어제로 · 체력 가득 · 콩나물 시루 셋 익힘 · 반찬가게 대사는 «본 대사»에서 뺌(6판 A 는 Day 90 에 들었다)
       하나씩(식물 판 줄 [거두기] 셋) · 묶음(바닥 [거두기] 한 번) — 가져간 꾸러미 · 남은 오늘 꾸러미 · 배너 · 대사 첫 줄(서는 때)을 적는다
-      단언: 둘의 끝 판이 같다(돈 +200,000 · 오늘 꾸러미 2 남음) · 배너 둘째 줄 «+200,000원 — 전에 거둔 채소는 그대로 있습니다»(전 꾸러미가 남음)
+      단언: 둘의 끝 판이 같다(돈 +200,000 · 오늘 꾸러미 2 남음) · 배너 둘째 줄 «+200,000원 · 오늘 거둔 1판» + «나머지는 그대로 있습니다»(전 꾸러미가 남음 · §17)
         ⛔ f373262a 는 꾸러미에 없는 g 칸으로 세어 늘 «+200,000원»만 섰다
       §17: 배너 «🧺 반찬가게에 채소를 팔았습니다» / «+200,000원 · 오늘 거둔 1판»<br>«나머지는 그대로 있습니다» · 대사 첫 줄 «아랫길 반찬가게 사장님이 우리 채소를 사 가셨다.» ·
         [방] 기록 «🧺 반찬가게에 채소를 팔았습니다 — 오늘 거둔 1판 · +200,000원» — 하나씩 · 묶음 같은 넷 · 보유 채소 0 판은 «나머지» 줄 없음 · 결산 길 손잡이 «가장 최근에 거둔 2판»
@@ -13,6 +13,7 @@
    ㉯ P8(§16 ① ②) — 이사 창(이사비 손질 · probe_critic6_c ㉱ 와 같은 손): 시루 하나를 [회수]한 꼴(slotId · at = null)에서도 «시루 n개» = 콩나물 줄 + 시루 재고
         ⛔ 예전 «시루 17개»(실제 16 · 회수한 것을 두 번) · «두고 가는 것 — 벽 · 창 · 천장에 붙은 가구 2개»
    ㉰ P10(§16 ③) — 빛 범례 넷째 줄 «어둠 0.3까지 · 밝음 2.7부터 · 아주 밝음 6부터» · 다섯째 줄 «칸의 수는 하루 빛 양(DLI)» · 두 줄 다 한 줄 상자(낱말 안 꺾임 0) — 360 · 390
+   ㉳ 판매 창 체크 글(총괄 사진 390_c6c_c12_popup) — «다음부터 묻지 않고 바로 팔기»가 390 · 430 에서 한 줄(전역 label>span 78px 기둥에서 꺾이던 것) · 360 은 적음
    ㉱ 사진 next_finger(§16 ⑤) — A100(체력 0) [다음 날] 말풍선 · 손이 빨간 체력 줄(#staText)과 바닥 왼쪽 단추 글을 안 덮고 손은 [다음 날]에 닿는다
    예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
@@ -67,8 +68,13 @@ const open = async (w) => {
     await page.eval(`(()=>{ try { window.__byeotSheet.open('plants'); } catch (e) { void e; } return 1; })()`, false); await sleep(1200);
     const hit = await J(`(()=>{ const b=document.querySelector('#siruList button[data-siru="${id}"][data-act="harvest"]'); if (!b) return false; b.click(); return true; })()`);
     const talk = await waitHarvested([id]); const sn = await snap(); const lines = await dlgLines();
+    await sleep(1500);   /* 대사 뒤 손가락이 다시 서기를(기둥 [식물] «한 번 더 누르면 닫힙니다») */
+    const hob = await J(`(()=>{ const h=document.getElementById('hint'), ev=document.getElementById('event'); if (!h.classList.contains('on') || !ev.classList.contains('on')) return { both: false };
+      const rg=document.createRange(); rg.selectNodeContents(h.querySelector('.hand')); const q=rg.getBoundingClientRect(), b=ev.getBoundingClientRect();
+      const a=Math.max(0,Math.min(q.right,b.right)-Math.max(q.left,b.left))*Math.max(0,Math.min(q.bottom,b.bottom)-Math.max(q.top,b.top));
+      return { both: true, a: Math.round(a), hand: [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)], ev: [Math.round(b.left),Math.round(b.top),Math.round(b.right),Math.round(b.bottom)], say: (h.querySelector('.say')||{}).textContent, cls: h.className }; })()`);
     const nbb = sn.banners.find(b => NB.test(b.all)) || {};
-    oneSteps.push({ id, hit, talk, nod: sn.nod, cash: sn.cash, todayLots: sn.todayLots, lots: sn.lots, nb: nbb.all || null, nbT: nbb.t || null, nbSub: nbb.sub || null, log: sn.log, 대사: lines[0] || null });
+    oneSteps.push({ id, hit, talk, nod: sn.nod, cash: sn.cash, todayLots: sn.todayLots, lots: sn.lots, nb: nbb.all || null, nbT: nbb.t || null, nbSub: nbb.sub || null, log: sn.log, 대사: lines[0] || null, hob });
     if (OUT && id === RIPE[0]) await page.shot(`${OUT}/390_c6e_p6_one.png`);
     await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false); await sleep(800);
   }
@@ -95,6 +101,7 @@ const open = async (w) => {
      '㉮ 하나씩 — 첫 [거두기]에 반찬가게가 그날 거둔 것(첫 그릇 몫)을 사 가고 대사가 그 자리에서 선다', JSON.stringify(oneSteps[0]));
   ok(!bat1.탈 && bt && bat1.nod === 100 && bat1.cash - bat0.cash === oneEnd.cash - one0.cash && bat1.todayLots === oneEnd.todayLots && bat1.lots === oneEnd.lots,
      '㉮ 묶음 [거두기] = 하나씩 셋의 끝 판(돈 · 남은 오늘 꾸러미 · 꾸러미 수 같음)', JSON.stringify({ 하나씩: { cash: oneEnd.cash - one0.cash, todayLots: oneEnd.todayLots, lots: oneEnd.lots }, 묶음: { cash: bat1.cash - bat0.cash, todayLots: bat1.todayLots, lots: bat1.lots } }));
+  ok(!!oneSteps[0] && !!oneSteps[0].hob && !oneSteps[0].hob.탈 && (oneSteps[0].hob.both === false || oneSteps[0].hob.a <= 4), '㉮ [식물] 창 판에서 거둔 뒤 손가락(손 👉)이 배너 위에 안 앉는다(plan §18 덤 ③ 사진 390_c6e_p6_one)', JSON.stringify(oneSteps[0] && oneSteps[0].hob));
   const T17 = '🧺 반찬가게에 채소를 팔았습니다', SUB17 = '+200,000원 · 오늘 거둔&nbsp;1판<br>나머지는 그대로 있습니다', LOG17 = '🧺 반찬가게에 채소를 팔았습니다 — 오늘 거둔 1판 · +200,000원';
   ok(!!firstNb && oneSteps[0].nbT === T17 && oneSteps[0].nbSub === SUB17 && batB.t === T17 && batB.sub === SUB17,
      '㉮ §17 배너 «🧺 반찬가게에 채소를 팔았습니다» / «+200,000원 · 오늘 거둔 1판» + «나머지는 그대로 있습니다»(전 꾸러미가 남은 판 · 하나씩 · 묶음)', JSON.stringify({ one: [oneSteps[0].nbT, oneSteps[0].nbSub], batch: [batB.t, batB.sub] }));
@@ -168,11 +175,16 @@ for (const w of [360, 390]) {
     const segs=[]; let cur=[]; for (const n of cap.childNodes) { if (n.nodeName==='BR') { segs.push(cur); cur=[]; } else cur.push(n); } segs.push(cur);
     const rowsOf=nodes=>{ const mids=[]; for (const n of nodes) { const rg=document.createRange(); rg.selectNodeContents(n); for (const q of rg.getClientRects()) if (q.width>0.5) mids.push(q.top+q.height/2); }
       mids.sort((a,b)=>a-b); let k=mids.length?1:0; for (let i=1;i<mids.length;i++) if (mids[i]-mids[i-1]>8) k++; return k; };   /* 줄 상자 = 가운데 높이가 8px 넘게 벌어진 무리 수(작은 글 · 큰 글 섞여도 한 줄) */
-    return { lines, rows: segs.map(rowsOf), wb: getComputedStyle(cap).wordBreak, w: Math.round(cap.getBoundingClientRect().width) }; })()`);
+    /* ★ [plan] §18 덤 ① — 첫 줄 «… 등 {n}개»의 «등»과 «개»가 같은 줄 상자인가 */
+    const lampSame=(()=>{ const tw=document.createTreeWalker(cap,NodeFilter.SHOW_TEXT); let n; while((n=tw.nextNode())) { const i=n.textContent.search(/등.[0-9]+개/); if (i<0) continue;
+        const j=n.textContent.indexOf('개',i); const r1=document.createRange(); r1.setStart(n,i); r1.setEnd(n,i+1); const r2=document.createRange(); r2.setStart(n,j); r2.setEnd(n,j+1);
+        const a=r1.getBoundingClientRect(), b=r2.getBoundingClientRect(); return Math.abs((a.top+a.height/2)-(b.top+b.height/2))<=8; } return null; })();
+    return { lines, rows: segs.map(rowsOf), wb: getComputedStyle(cap).wordBreak, w: Math.round(cap.getBoundingClientRect().width), lampSame }; })()`);
   console.log(`  ㉰ P10 ${w}`, JSON.stringify(lg));
   if (OUT) await page.shot(`${OUT}/${w}_c6e_legend.png`);
   const i4 = (lg.lines || []).findIndex(l => l === '어둠 0.3까지 · 밝음 2.7부터 · 아주 밝음 6부터');
   ok(!lg.탈 && !lg.없음 && i4 >= 0 && lg.lines[i4 + 1] === '칸의 수는 하루 빛 양(DLI)', `㉰ P10 ${w} 범례 넷째 줄 «어둠 0.3까지 · 밝음 2.7부터 · 아주 밝음 6부터» · 다섯째 줄 «칸의 수는 하루 빛 양(DLI)»`, JSON.stringify(lg.lines));
+  ok(!lg.탈 && lg.lampSame !== false, `㉰ ${w} 범례 첫 줄 «등 1개»가 안 갈린다([plan] §18 덤 ①)`, JSON.stringify({ lampSame: lg.lampSame, head: (lg.lines || [])[0] }));
   ok(!lg.탈 && Array.isArray(lg.rows) && lg.rows.length >= 5 && lg.rows[lg.rows.length - 2] === 1 && lg.rows[lg.rows.length - 1] === 1 && lg.wb === 'keep-all', `㉰ P10 ${w} 넷째 · 다섯째 줄이 한 줄 상자(안 꺾임) · word-break keep-all`, JSON.stringify({ rows: lg.rows, wb: lg.wb, w: lg.w }));
   try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
 }
@@ -211,6 +223,21 @@ for (const w of [360, 390, 430]) {
   ok(!sta.탈 && (sta.없음 || (sta.breaks || []).every(([a, b]) => /\s/.test(a) || /\s/.test(b) || /[·—,.]/.test(a))), `㉲ ${w} 바닥 체력 줄이 낱말 안에서 안 꺾인다(«최 / 대» 꼴 없음)`, JSON.stringify(sta));
   ok(rows.every(r => !r.탈 && !r.없음 && Array.isArray(r.hits) && r.hits.length === 0), `㉲ ${w} 배너 상자가 탭 기둥 · [?] · 보이는 할 일 칩과 안 겹친다`, JSON.stringify(rows.map(r => [r.key, r.hits, r.box])));
   ok(rows.every(r => !r.탈) && (rows.find(r => r.key === 'move') || {}).lines === 1, `㉲ ${w} 한 줄에 드는 «📦 원룸으로 이사했습니다»는 한 줄(제목 줄 수 ${rows.map(r => r.key + ' ' + r.lines).join(' · ')})`, JSON.stringify(rows.map(r => [r.key, r.lines, r.w])));
+  try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
+}
+/* ═══ ㉳ 판매 창 체크 글 — A100 · 보유 채소 꾸러미 세 벌(probe_critic6_c ㉲ 와 같은 손질) · 바닥 [🧺 남는 채소 N판 팔기] ═══ */
+for (const w of [360, 390, 430]) {
+  const { page, J, boot, dlgLines } = await open(w);
+  const wL = JSON.parse(saveA); { const f = wL.state.firstPlay.food; const lots = (f.pantryLots || []).slice(); f.pantryLots = [...lots, ...lots.map(l => ({ ...l })), ...lots.map(l => ({ ...l }))]; f.pantryWon = f.pantryLots.reduce((a, l) => a + (l.won || 0), 0); }
+  await boot(JSON.stringify(wL)); await dlgLines(); await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false); await sleep(1200);
+  await J(`(()=>{ const b=document.getElementById('sellSurplusBtn'); if (b && b.style.display !== 'none' && b.offsetParent) b.click(); return 1; })()`); await sleep(1500);
+  const nr = await J(`(()=>{ const row=document.getElementById('pantryNoAskRow'); if (!row || !row.offsetParent) return { 없음: true }; const sp=row.querySelector('span'), sm=row.querySelector('small');
+    const rowsOf=e=>{ const rg=document.createRange(); rg.selectNodeContents(e); const mids=[...rg.getClientRects()].filter(q=>q.width>0.5).map(q=>q.top+q.height/2).sort((a,b)=>a-b); let k=mids.length?1:0; for (let i=1;i<mids.length;i++) if (mids[i]-mids[i-1]>8) k++; return k; };
+    const q=sp.getBoundingClientRect(), qs=sm?sm.getBoundingClientRect():null;
+    return { span: (sp.textContent||'').trim(), spanRows: rowsOf(sp), spanW: Math.round(q.width), smallRows: sm ? rowsOf(sm) : null, smallBelow: qs ? qs.top >= q.bottom - 2 : null, smallFont: sm ? getComputedStyle(sm).fontSize : null }; })()`);
+  console.log(`  ㉳ 판매 창 체크 글 ${w}`, JSON.stringify(nr));
+  if (OUT) await page.shot(`${OUT}/${w}_c6e_noask.png`);
+  if (w !== 360) ok(!nr.탈 && !nr.없음 && nr.span === '다음부터 묻지 않고 바로 팔기' && nr.spanRows === 1 && nr.smallBelow === true, `㉳ ${w} 판매 창 체크 글 «다음부터 묻지 않고 바로 팔기»가 한 줄 · 밑줄은 그 아래 작은 글`, JSON.stringify(nr));
   try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
 }
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
