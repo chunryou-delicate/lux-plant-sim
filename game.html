@@ -7072,6 +7072,9 @@ function updateHint() {
            「심」 말풍선이 살아, 시트가 가리면 「할 일이 가려졌습니다」가 53번 떴다(0~60일). 씨앗이 없으면 아래 주문 지름길(D19)이 맡는다 */
       if (/심/.test(ko))   return cropRows.some(r => {
         if (!(r && (r.needsSow || r.needsResow))) return false;
+        /* ★ 11-02 7C4 꼬리 — 남은 체력이 물 줄 몫뿐이면(§drawSow 회색 · dataset.owed) 거둔 시루 다시 심기는 «지금 할 일»이 아니다 — 손가락은 물 쪽으로.
+             ⛔ 단추는 회색인데 손가락이 거둔 시루 말풍선 «씨앗 심기»를 짚어 그 몫을 심기에 쓰게 이끌었다(360 사진) · 새 빈 시루 첫 심기(체력 0)는 그대로 산다 */
+        if (r.needsResow && !r.needsSow && $('resow') && $('resow').dataset.owed) return false;
         try { const k = cropKindOf(r.kind); return !k || !k.seedItemId || stockOf(S, k.seedItemId) >= 1; } catch { return true; }
       });
     } catch { }
@@ -7154,7 +7157,7 @@ function updateHint() {
     return hintAt(btnWater, '물을 주면 자라기 시작합니다');
   /* ★ D93 ② — [다시 심기] 알약도 돌봄이다(그 종류 씨앗이 있을 때만 — 주문 지름길(dataset.buy)이면 «사기»라 아래 갈래 몫) */
   const btnResow = $('resow');
-  if (!careActing && (pointStill || sowNow) && btnResow && onScreen(btnResow) && !btnResow.disabled && !btnResow.dataset.buy && !sheetCovers(btnResow) && markLive('심'))
+  if (!careActing && (pointStill || sowNow) && btnResow && onScreen(btnResow) && !btnResow.disabled && !btnResow.dataset.buy && !btnResow.classList.contains('tired') && !sheetCovers(btnResow) && markLive('심'))
     return hintAt(btnResow, '여기를 눌러 보세요');
   /* ★★ 2026-10-31 비판 셋째 판 MAJOR #5 ② — 무순 판이 가방에 있고(몬이 nudgeMixBag) 무순 할 일(crop_mix · radish5)이 열렸는데 방에 놓인 판이 없으면 그 칸을 짚는다.
        ⛔ 사는 갈래(§musunNeed)는 판을 «가졌으면» 빠지고 놓는 갈래가 없어 손가락이 «시루는 내일 옵니다»로 [다음 날]을 짚었다(A Day 17) */
@@ -11126,15 +11129,32 @@ function sowPairReach(n) {
 /* ★ 2026-11-02 총괄 C8(비판 6판 #11 · d22_002) · [plan] e28ad6e1 §14 — 새 빈 시루(needsSow · 첫 심기 state.sowCrop — 체력 안 듦)와 거둔 시루(resowCrop — 체력 'sow')를 한 묶음으로.
      차례: 새 빈 시루 먼저(체력 0 · 물 몫만 남김) → 거둔 시루(심기 + 물). «물 줄 체력 남김» 규칙 그대로(§sowPairReach 와 같은 셈 · 단추 글과 손이 같은 셈).
      반환 { n, m, spend(심기에 실제로 나갈 체력 합) · keep(물 줄 몫) · one } */
+/* ★ 11-02 7C4([plan] §2) — 지금 물을 기다리는 작물 줄 수 W(바닥 [💧 물 주기]가 주는 목록 · 놓인 자리마다 cropWaterStatus byKind.waiting 합) */
+function waterOwedN() {
+  try { const st = cropWaterStatus(S); return ((st && st.byKind) || []).reduce((a, k) => a + ((k && k.needsWater) ? (k.waiting || 0) : 0), 0); }
+  catch (e) { console.warn('[7C4 물 몫]', e && e.message); return 0; }
+}
 function sowMixReach(newN, harvN) {
   const n = newN + harvN;
   let s = null, w = null; try { s = staminaCanAct(S, 'sow'); w = staminaCanAct(S, 'water'); } catch { s = null; }
-  if (!s || s.left == null) return { n, m: n, spend: harvN * ((s && s.cost) || 0), keep: 0, one: false };
+  if (!s || s.left == null) return { n, m: n, spend: harvN * ((s && s.cost) || 0), keep: 0, one: false, owed: 0, short: false };
   const c = s.cost > 0 ? s.cost : 0, wc = (w && w.cost > 0) ? w.cost : 0;
-  let left = s.left, m = 0, spend = 0;
+  /* ★ 11-02 7C4(총괄 가름 · 비판 7판 A Day 29 · d29_end) — 이미 심고 물을 기다리는 줄(W)의 물 몫을 «먼저» 뺀다.
+       ⛔ 예전엔 방금 심은 줄의 물 몫을 안 빼고 다시 세어 단추가 또 섰고, 한 번 더 누르면 그 몫까지 심기에 썼다 → 물 못 준 시루(Day 30) */
+  const owed = wc > 0 ? waterOwedN() : 0;
+  const left0 = s.left - owed * wc;
+  let left = left0, m = 0, spend = 0;
   for (let i = 0; i < n; i++) { const cost = (i < newN ? 0 : c) + wc; if (cost > left) break; left -= cost; spend += (i < newN ? 0 : c); m++; }
-  return { n, m, spend, keep: m * wc, one: m === 0 && (newN > 0 || s.left >= c) };
+  const one = m === 0 && (newN > 0 || left0 >= c);
+  /* short — 다음 하나를 심으면 이미 심은 줄의 물 몫을 쓴다(회색 · [plan] §2 «참인 조건») */
+  return { n, m, spend, keep: (owed + m) * wc, one, owed, short: owed >= 1 && m === 0 && !one };
 }
+/* ★ 11-02 7C4 — [plan] plan-to-core-critic7 §2 ㉠ 글(꼬리 약 152 css · 360 꼬리 폭 181 안) */
+const SOW_OWED_KO = Object.freeze({
+  tail: '남은 체력은 물 줄 몫 — 💧 먼저',
+  title: '물 줄 체력을 남겨 둡니다',
+  sub: '심은 {box}에 먼저 💧 물을 주세요 — 물을 받아야 자랍니다'
+});
 function sowMixLabel(base, b) {
   if (!b || b.n <= 1) return base;
   if (b.one) return `${base} (1개 · 물은 내일)`;
@@ -11252,6 +11272,7 @@ window.__byeotSeedTomorrow = (kind) => { try { return seedTomorrowOf(kind || 'be
 function drawSow() {
   const btn = $('resow');
   if (!btn) return;
+  delete btn.dataset.owed;   /* ★ 11-02 7C4 — 아래 일찍 돌아가는 갈래(🛒 · 할 일 없음)에 옛 표가 남지 않게 */
   let hv = null, st = null;
   try { hv = cropHarvestStatus(S); } catch { }
   try { st = shopStatus(S); } catch { }
@@ -11339,6 +11360,8 @@ function drawSow() {
        (2026-08-06 «같은 일을 두 곳에서 말하지 않는다»의 까닭이 풀렸다). 하나뿐이면 예전대로 말풍선에 맡긴다 */
   btn.style.display = (need > 0 && (!markSays(/심기/) || need >= 2)) ? '' : 'none';
   if (!need) return;
+  /* ★ 11-02 7C4 — 남은 체력이 이미 심은 줄의 물 몫뿐이면 회색 · 까닭(§sowMixReach short) · 누르면 배너(§resow onclick) · 체력 0 · 씨앗 없음 · 주문 지름길이 먼저 */
+  const sowShort = !!(pick && seeds >= 1 && !buyIt && !staminaBlockNote('sow') && sowMixReach(pick.newN, pick.harvN).short);
   /* 씨앗이 모자라도 **버튼은 보인다** — 안 보이면 왜 못 심는지 알 길이 없다.
      회색으로 두고 사유를 말한다. */
   btn.textContent = buyIt ? `🛒 ${seedKo} 주문 · ${Number(buyIt.buyWon || 0).toLocaleString('ko-KR')}원`
@@ -11348,10 +11371,13 @@ function drawSow() {
     /* ★ D95 ① — 묶음(§batchLabel): 빈 용기를 씨앗 · 체력 닿는 만큼(§reallySow 와 같은 수) · 씨앗이 작은 쪽이면 «빈 시루 6개 중 4개 · 씨앗 4봉지»(plan) */
     /* ★ D100 #17 — 체력이 바닥이면 거두기 · 물과 같은 글(누르면 §guard 가 안내) · 흐림은 아래 .tired */
     : staminaBlockNote('sow') ? staminaZeroBtnText('🌱')   /* ★ #15 */
+    : sowShort ? `${sowHead} (${SOW_OWED_KO.tail})`   /* ★ 11-02 7C4 — 남은 체력이 다 물 줄 몫 */
     : (need > 1 && seeds < need && seeds <= sowMixReach(pick.newN, pick.harvN).m)
       ? `${sowHead} (빈 ${boxKo} ${need}개 중 ${seeds}개 · 씨앗 ${seeds}봉지)`
       : sowMixLabel(sowHead, sowMixReach(pick.newN, pick.harvN));   /* ★ D100 #7 — «물 줄 체력 M 남김» · ★ C8 — 새 시루 섞임(§sowMixReach) */
-  btn.classList.toggle('tired', !!(seeds >= 1 && !buyIt && staminaBlockNote('sow')));   /* ★ D100 #17 */
+  btn.classList.toggle('tired', !!(seeds >= 1 && !buyIt && (staminaBlockNote('sow') || sowShort)));   /* ★ D100 #17 · ★ 7C4 물 몫 */
+  if (sowShort) btn.dataset.owed = (() => { try { const k = (cropWaterStatus(S).byKind || []).find(x => x && x.needsWater); return k ? k.kind : 'beansprout'; } catch { return 'beansprout'; } })();
+  else delete btn.dataset.owed;
   twoLine(btn);   /* ★ D95 ① */
   btn.title = seeds < 1 ? `${seedKo}을 먼저 주문하세요` : '';
 }
@@ -21576,6 +21602,9 @@ $('resow').onclick = guard(() => {
   /* D19 — 씨앗이 없으면 이 알약은 주문 지름길이다(§drawSow dataset.buy) */
   const it = $('resow').dataset.buy;
   if (it) { openBuyShortcut(it); return; }   /* ★ #14 */
+  /* ★ 11-02 7C4 — 남은 체력이 물 줄 몫뿐이면 심지 않는다([plan] §2 배너) · 체력 · 값은 그대로(심기 손만 멈춤) */
+  { const ow = $('resow').dataset.owed;
+    if (ow) { banner(SOW_OWED_KO.title, SOW_OWED_KO.sub.replace('{box}', ow === 'musun' ? '재배판' : '시루')); draw(); return; } }
   const kind = $('resow').dataset.kind || 'beansprout';   /* ★ D93 ㉠ */
   const one = resowTarget(kind);
   return doAct('sow', () => reallySow(one && one.id, kind), one && one.key ? { key: one.key } : {});

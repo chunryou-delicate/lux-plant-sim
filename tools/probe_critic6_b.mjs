@@ -5,7 +5,7 @@
    ㉮ C4 · P1 A100: 확대 줄 «자르기 — 다 자란 무늬 잎 2장 · 지금 0/2 · 다음 기회 약 d일 뒤 · 한 번에 q%»(d · q 는 plant_grow 정본 셈과 같음) ·
          [식물] 카드 «자르기 — … · 다음 기회 약 d일 뒤» · 칩 «기다리는 중 — 다 자란 무늬 잎 2장 · 지금 0/2» · 할 일 판 «자르기 — …» ·
          [다음 날] d 번 뒤 그 잎에 기회(굴림)가 실제로 왔다 · leaf_two 오른쪽 글 «무늬가 날 자리가 생깁니다» · 상점 내놓기 막힘 글(node · marketGate)
-   ㉯ C8 A100C(세이브 손질: 놓인 시루 셋을 «한 번도 안 심음»으로 · 나머지는 자라는 중 · 체력 18): 바닥 «🌱 콩 씨앗 심기 (3개 — 물 줄 체력 3 남김)» →
+   ㉯ C8 A100C(세이브 손질: 놓인 시루 셋을 «한 번도 안 심음»으로 · 나머지는 자라는 중 · 체력 18): 바닥 «🌱 콩 씨앗 심기 (3개 — 물 줄 체력 (3 + W) 남김)»(W = 이미 물 기다리는 줄 · 7C4) →
          누르면 셋이 심기고(첫 심기는 체력 안 듦) «콩 씨앗을 심었습니다»
    ㉰ P7 A100: 내놓기 → 연락(contactOnDay 손질 · probe_d100b 와 같은 손) → 거래 → [다음 날] 월세 날까지 → 가계부 견줌 «그루 판 돈을 빼면 …»
    ㉱ P2 S97: 할 일 판 «내 집 자금을 모은다» 줄 까닭이 무늬 원천 0 판 글(«남는 채소를 팔고, 씨앗에서 키운 그루를 …»)
@@ -115,7 +115,8 @@ const wC = JSON.parse(saveA); { const st = wC.state; const pots = st.firstPlay.b
 await boot(JSON.stringify(wC));
 await dlgOnly(); await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false); await sleep(2000);
 const c8a = await J(`(()=>{ const b=document.getElementById('resow'); const S=window.__S(); const pots=S.firstPlay.beansprout.pots;
-  return { shown: !!(b && b.style.display !== 'none' && b.offsetParent), t: b ? (b.textContent||'').replace(/\\s+/g,' ').trim() : null, left: S.stamina.left, unsown: pots.filter(p=>p.slotId && !p.sown && !p.harvested).length, seeds: (S.shop.stock||{}).bean_seed }; })()`);
+  return { shown: !!(b && b.style.display !== 'none' && b.offsetParent), t: b ? (b.textContent||'').replace(/\\s+/g,' ').trim() : null, left: S.stamina.left, unsown: pots.filter(p=>p.slotId && !p.sown && !p.harvested).length, seeds: (S.shop.stock||{}).bean_seed,
+    w: [pots, ...Object.values(S.firstPlay.crops||{}).map(v=>(v&&v.pots)||[])].flat().filter(p=>p && p.slotId && !p.harvested && p.sown !== false && p.startedOnDay == null).length }; })()`);   /* ★ 11-02 7C4 — 이미 물 기다리는 줄 W(놓였고 · 심었고 · 안 거둔 · 시작 전) */
 if (OUT) await page.shot(`${OUT}/390_c6b_c8_btn.png`);
 await tapSel('#resow');
 /* 사람이 걸어가 심는다(걷기 몇 초) — 다 심길 때까지 15초 */
@@ -125,7 +126,8 @@ const c8b = await J(`(()=>{ const S=window.__S(); const pots=S.firstPlay.beanspr
   return { left: S.stamina.left, unsown: pots.filter(p=>p.slotId && !p.sown && !p.harvested).length, banner: ev && ev.classList.contains('on') ? (ev.innerText||'').replace(/\\s+/g,' ').slice(0,80) : '' }; })()`);
 console.log('  ㉯ C8', JSON.stringify({ c8a, c8b }));
 ok(!c8a.탈 && c8a.unsown === 3, '판 ㉯ — 놓였고 한 번도 안 심은 시루 셋', JSON.stringify(c8a));
-ok(!c8a.탈 && c8a.shown && /^🌱 콩 씨앗 심기 ?\(3개 — 물 줄 체력 3 남김\)$/.test(c8a.t), '㉯ C8 바닥 «🌱 콩 씨앗 심기 (3개 — 물 줄 체력 3 남김)»(첫 심기는 체력 안 듦 · «체력 0» 뺌)', JSON.stringify(c8a));
+/* ★ 2026-11-02 core 7C4([plan] critic7 §2 · 총괄 가름) — 꼬리 «물 줄 체력 N 남김»의 N = 이미 물 기다리는 줄 W + 이번에 심을 3(옛 «3 남김»은 W 를 빼고 셌다) · W ≥ 1 판이라야 옛 글과 갈린다 */
+ok(!c8a.탈 && c8a.shown && c8a.w >= 1 && c8a.t === `🌱 콩 씨앗 심기 (3개 — 물 줄 체력 ${3 + c8a.w} 남김)`, `㉯ C8 바닥 «🌱 콩 씨앗 심기 (3개 — 물 줄 체력 ${3 + c8a.w} 남김)»(첫 심기는 체력 안 듦 · «체력 0» 뺌 · 물 기다림 W ${c8a.w} + 3)`, JSON.stringify(c8a));
 ok(!c8b.탈 && c8b.unsown === 0 && c8b.left === c8a.left, '㉯ C8 한 번 누르면 셋이 다 심긴다(체력 그대로)', JSON.stringify(c8b));
 ok(!c8b.탈 && /콩 씨앗을 심었습니다/.test(c8b.banner), '㉯ C8 배너 «콩 씨앗을 심었습니다»', c8b.banner);
 
