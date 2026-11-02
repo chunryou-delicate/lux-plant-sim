@@ -209,7 +209,8 @@ for (const w of [360, 390, 430]) {
       const area=(a,b)=>Math.max(0,Math.min(a.right,b.right)-Math.max(a.left,b.left))*Math.max(0,Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top));
       const box=ev.getBoundingClientRect(); const vis=e=>{ if(!e) return null; const cs=getComputedStyle(e); if (cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.05) return null; const q=e.getBoundingClientRect(); return q.width>1?q:null; };
       const hits=[['탭 기둥','navbar'],['[?]','guideOpen'],['할 일 칩','questChip']].map(([ko,id])=>{ const q=vis(document.getElementById(id)); return q && area(box,q)>4 ? ko : null; }).filter(Boolean);
-      return { lines, box: R(box), w: Math.round(box.width), hits }; })()`);
+      const cc=document.getElementById('questChip'), cs2=getComputedStyle(cc);   /* ★ 11-02 7C2 꼬리(총괄) — 배너 동안 칩이 정말 숨나(§bannerFit 이 칩을 안 세므로) */
+      return { lines, box: R(box), w: Math.round(box.width), hits, chip: { on: cc.classList.contains('on'), disp: cs2.display, vis: cs2.visibility, op: +cs2.opacity } }; })()`);
     rows.push({ key: b.key, ...m });
     if (OUT) await page.shot(`${OUT}/${w}_c6e_banner_${b.key}.png`);
   }
@@ -222,6 +223,8 @@ for (const w of [360, 390, 430]) {
     return { breaks, ws: getComputedStyle(e).wordBreak }; })()`);
   ok(!sta.탈 && (sta.없음 || (sta.breaks || []).every(([a, b]) => /\s/.test(a) || /\s/.test(b) || /[·—,.]/.test(a))), `㉲ ${w} 바닥 체력 줄이 낱말 안에서 안 꺾인다(«최 / 대» 꼴 없음)`, JSON.stringify(sta));
   ok(rows.every(r => !r.탈 && !r.없음 && Array.isArray(r.hits) && r.hits.length === 0), `㉲ ${w} 배너 상자가 탭 기둥 · [?] · 보이는 할 일 칩과 안 겹친다`, JSON.stringify(rows.map(r => [r.key, r.hits, r.box])));
+  /* ★ 11-02 7C2 꼬리(총괄) — §bannerFit 이 할 일 칩을 비킬 것에서 뺐다 ⇒ 배너가 선 뒤(0.9초 · 숨는 움직임 0.2초 뒤) 칩은 숨어 있어야 한다(display none 이거나 visibility hidden · opacity 0) */
+  ok(rows.every(r => !r.탈 && r.chip && (r.chip.disp === 'none' || (r.chip.vis === 'hidden' && r.chip.op === 0))) && rows.some(r => r.chip && r.chip.on), `㉲ ${w} 배너가 떠 있는 동안 할 일 칩은 숨어 있다(칩이 켜진 판 · ${rows.map(r => r.key + ' ' + (r.chip ? r.chip.vis + '/' + r.chip.op : '?')).join(' · ')})`, JSON.stringify(rows.map(r => [r.key, r.chip])));
   ok(rows.every(r => !r.탈) && (rows.find(r => r.key === 'move') || {}).lines === 1, `㉲ ${w} 한 줄에 드는 «📦 원룸으로 이사했습니다»는 한 줄(제목 줄 수 ${rows.map(r => r.key + ' ' + r.lines).join(' · ')})`, JSON.stringify(rows.map(r => [r.key, r.lines, r.w])));
   try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
 }

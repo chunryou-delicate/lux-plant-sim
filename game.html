@@ -22599,7 +22599,7 @@ function banners(events) {
      ⛔ `left:50%` 뒤 남은 폭(화면의 반)에 묶여 max-width 88% 까지 안 가 390 에서 194 css — 제목이 거의 다 두세 줄로 꺾였다
        («🧺 반찬가게가 오늘 / 거둔 채소를 사 / 갔습니다» · «🥣 콩나물 시루 / 3개를 거뒀습니다»)
      ⇒ 글 폭(max-content)을 «덮으면 안 되는 것» 사이 폭으로 묶고 그 가운데에 세운다:
-       왼쪽 탭 기둥(#navbar) · 오른쪽 위 [?](#guideOpen) · 할 일 칩(보일 때 — 배너 동안은 숨음) · 손가락 말풍선(#hint 글 · 손) · 넓은 화면 옆 시트
+       왼쪽 탭 기둥(#navbar) · 오른쪽 위 [?](#guideOpen) · [🔆 빛 분포 보기](보일 때) · 손가락 말풍선(#hint 글 · 손) · 넓은 화면 옆 시트 — 할 일 칩은 배너 동안 숨어 안 센다(7C2 꼬리)
        세로로 겹치는 것만 막는다(배너 높이는 폭 따라 달라 세 번까지 다시 잰다 · 나타나는 움직임 14px 넉넉히) · 상한은 무대의 88%(예전 CSS 그대로) */
 function bannerFit(el) {
   const st = $('stage'); if (!st || !el) return;
@@ -22612,7 +22612,10 @@ function bannerFit(el) {
        쪽지가 걷혀 [?] 가 돌아오면 넓게 선 배너 위 오른쪽 귀퉁이와 겹쳤다(css 8px) ⇒ 숨어 있으면 잠깐 켜서 자리만 잰다(그리기 전 · 깜빡임 없음) */
   const guideQ = (() => { const g = $('guideOpen'); if (!g) return null; const q0 = vis(g); if (q0) return q0;
     if (getComputedStyle(g).display !== 'none') return null; const was = g.style.display; g.style.display = 'block'; const q = g.getBoundingClientRect(); g.style.display = was; return q.width > 1 ? q : null; })();
-  const obs = [vis($('navbar')), guideQ, vis($('questChip')), hOn ? vis(h.querySelector('.say')) : null, handG, vis($('sheet'))].filter(Boolean);
+  /* ★ 11-02 7C2 꼬리(총괄 사진 c_fix5/390_c7c_trayplace) — 할 일 칩은 안 센다: 배너가 서면 늘 숨는다(CSS #stage:has(#event.on) #questChip).
+       ⛔ 숨는 움직임(.2s) 첫머리에 재면 칩이 «보이는» 것으로 잡혀 배너가 기둥과 칩 사이(390 · css 49~169)로 접혔다 — 제목 «여기에 / 둘까요?» · 본문 여섯 줄.
+       ⇒ 대신 칩 밑 [🔆 빛 분포 보기](#lightHeatOff · 배너보다 위 층)는 센다 — 보일 때 배너 아래 끝이 그 단추 윗머리에 걸렸다(638164fe 같은 장면) */
+  const obs = [vis($('navbar')), guideQ, vis($('lightHeatOff')), hOn ? vis(h.querySelector('.say')) : null, handG, vis($('sheet'))].filter(Boolean);
   const cap = sq.width * 0.88;
   let L = sq.left + 8, R = sq.right - 8;
   for (let k = 0; k < 3; k++) {

@@ -12,7 +12,8 @@
      ㉲ 360 — 그 줄 말풍선이 다른 줄 글을 안 덮는다 · 예외 0 · J 단언엔 !탈
      ㉳ 걸어서(390) — 그 줄 누름 → 화분이 그 칸 · 할 일 걷힘 → 손가락 가방 판 → 판 [확인] 뒤에도 그 칸은 화분 하나 · 할 일이 «비우세요»로 안 돌아감
      ㉴ 총괄(7C2 꼬리 · 430 · 390 · 360) — 긴 할 일 글에도 [식물] 손가락이 옆에 서고 손 · 말풍선이 다른 기둥 칸을 안 덮음 · 좁힌 칩이 [🔆 빛 분포 보기] · [?] · 배너와 겹침 0 · 두 줄 안 · 줄임표 0 ·
-        손가락이 다른 데로 가면 칩이 원래 폭 */
+        손가락이 다른 데로 가면 칩이 원래 폭
+     ㉵ 총괄(7C2 꼬리 · 390) — 확인 창 동안 «여기에 둘까요?» 배너 제목 한 줄 · 숨은 칩을 안 비킴 · 기둥 · [?] · 빛 분포 단추 · 손가락과 겹침 0 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
 const BASE = process.env.BYEOT_URL || 'http://127.0.0.1:9451', OUT = process.env.OUT || null;
@@ -86,6 +87,18 @@ for (const w of [430, 390, 360]) {
     const placed = await J(`(()=>{ const S=window.__S(); const t=Object.values(S.firstPlay.crops||{}).flatMap(v=>(v&&v.pots)||[]).find(p=>p.id==='crop_02_05'); return { slot: t ? t.slotId : null, confirming: document.getElementById('stage').classList.contains('confirming') }; })()`);
     console.log('  ㉰ 가방 무순 판 누름', JSON.stringify({ tap, placed }));
     if (OUT) await page.shot(`${OUT}/390_c7c_trayplace.png`);
+    /* ㉵ 총괄(7C2 꼬리 · c_fix5/390_c7c_trayplace) — 확인 창 동안 «여기에 둘까요?» 배너: 제목 한 줄 · 숨은 칩을 안 비킴(폭) · 보이는 것(기둥 · [?] · 빛 분포 단추 · 손가락)과 겹침 0 */
+    const bn = await J(`(()=>{ const rr=e=>{ if(!e) return null; const cs=getComputedStyle(e); if (cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.05) return null; const q=e.getBoundingClientRect(); if(!q.width) return null; return [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)]; };
+      const ev=document.getElementById('event'), b=ev.querySelector('b'), tn=b ? [...b.childNodes].find(n=>n.nodeType===3 && n.textContent.trim()) : null;
+      const tl = tn ? (()=>{ const rg=document.createRange(); rg.selectNodeContents(tn); return new Set([...rg.getClientRects()].filter(q=>q.width>0).map(q=>Math.round(q.top))).size; })() : null;
+      const handR = (()=>{ const h=document.getElementById('hint'); if (!h.classList.contains('on')) return null; const rg=document.createRange(); rg.selectNodeContents(h.querySelector('.hand')); const q=rg.getBoundingClientRect(); return q.width>1 ? [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)] : null; })();
+      const cb = document.getElementById('questChip').getBoundingClientRect();   /* 숨은 칩의 자리(배치는 남는다) — 배너가 이 왼쪽 끝에 묶이면 «숨은 것을 비킨» 것 */
+      return { on: ev.classList.contains('on'), title: tn ? tn.textContent.trim() : null, titleLines: tl, ev: rr(ev), chip: rr(document.getElementById('questChip')), chipBox: cb.width ? [Math.round(cb.left),Math.round(cb.top),Math.round(cb.right),Math.round(cb.bottom)] : null,
+        nav: rr(document.getElementById('navbar')), help: rr(document.getElementById('guideOpen')), heat: rr(document.getElementById('lightHeatOff')), say: rr(document.querySelector('#hint.on .say')), hand: handR }; })()`);
+    console.log('  ㉵ 확인 창 배너', JSON.stringify(bn));
+    const bw = bn.ev ? bn.ev[2] - bn.ev[0] : 0;
+    ok(!bn.탈 && bn.on && bn.title === '여기에 둘까요?' && bn.titleLines === 1 && !bn.chip && !!bn.chipBox && !!bn.ev && bn.ev[2] > bn.chipBox[0] + 8, '㉵ 확인 창 동안 배너 제목 «여기에 둘까요?» 한 줄 · 숨은 할 일 칩을 안 비킴(배너 오른쪽 끝이 숨은 칩 왼쪽 끝을 넘는다)', JSON.stringify({ title: bn.title, lines: bn.titleLines, ev: bn.ev, w: bw, chip: bn.chip, chipBox: bn.chipBox }));
+    ok(!bn.탈 && !!bn.ev && ![bn.nav, bn.help, bn.heat, bn.say, bn.hand].some(o => ovr(bn.ev, o)), '㉵ 배너가 기둥 · [?] · [🔆 빛 분포 보기] · 손가락과 겹침 0', JSON.stringify(bn));
     ok(!placed.탈 && !tap.없음 && !!placed.slot && placed.slot !== 'oneroom-sill:0', '㉰ 가방 무순 판을 누르면 그 밝은 빈 칸(창턱 1번)에 안 놓는다(자동 자리)', JSON.stringify({ tap, placed }));
     /* [취소]로 가방에 되돌림 */
     await J(`(()=>{ const b=document.getElementById('placeCancel'); if (b && b.offsetParent) b.click(); return 1; })()`); await sleep(1200);
