@@ -1339,7 +1339,7 @@
        ⚠ 끄면(§lightHeatOff · 다음 날) 그대로 돌아온다 */
   #stage.heatOn #marks,#stage.heatOn #siruBadges{display:none}
   /* ★ 같은 날 — 범례(render3d/light_grid_labels 머리글 · 방 밑 띠 «bottom:8px»)가 폰에서 [다음 날] · 아래 알약 밑에 깔렸다(core 자 probe_m6 사진).
-       ⇒ 방 위 «빛 분포 끄기» 칩(§#lightHeatOff top +112px) 바로 밑 오른쪽으로 — 끄는 손과 «무엇을 보고 있나»가 한 자리 · 왼쪽 탭 기둥은 비킨다 */
+       ⇒ 방 위 «빛 분포 끄기» 칩(§#lightHeatOff top +118px) 바로 밑 오른쪽으로 — 끄는 손과 «무엇을 보고 있나»가 한 자리 · 왼쪽 탭 기둥은 비킨다 */
   #stage .byeot-lightgrid > div:first-child{top:calc(var(--safe-t) + 152px)!important;bottom:auto!important;left:auto!important;right:8px!important;max-width:calc(100% - 84px)!important}
   #marks.busy .mark{display:none}   /* ★ 옮기는·끄는·대사 중엔 말풍선을 «감춘다» — 지우지 않는다(§drawMarks 2026-09-06) */
   #hintDim{position:fixed;inset:0;z-index:69;pointer-events:none;display:none;
@@ -1468,7 +1468,11 @@
     background:rgba(16,13,24,.82);border:1px solid rgba(255,180,84,.35);
     box-shadow:0 4px 14px rgba(0,0,0,.45);text-align:left;color:var(--ink)}
   #questChip.on{display:block}
-  #lightHeatOff{position:absolute;z-index:23;right:10px;top:calc(var(--safe-t) + 112px);padding:6px 10px;border-radius:12px;
+  /* ★ 11-02 7C2 꼬리 — 손가락이 기둥 단추를 옆에서 짚는데 칩 글이 길어 옆자리가 없으면(§hintAvoidChip navSide) 그동안만 칩을 좁혀 글을 두 줄로(줄 수 2 안 · 줄임표 없음).
+       ⛔ 할 일 «몬스테라 화분을 밝은 빈 칸으로 옮기세요»(22자)에 칩이 230px 가까이 넓어져 [식물] 손가락이 아래로 가 손이 [상점] · 말풍선이 [방]을 덮었다(c3_dark 꼴 되살아남) */
+  html:has(#hint.on.navSide) #questChip{max-width:156px}
+  /* ★ 11-02 7C2 꼬리(총괄 ㉴) — 칩 글이 두 줄이면 칩 아래 끝이 safe+114 라 이 단추(+112)를 2px 덮었다(360 · 긴 할 일 글 · 좁힌 칩 둘 다) ⇒ +118(4px 틈 · 아래 범례 +152 와 3px 틈) */
+  #lightHeatOff{position:absolute;z-index:23;right:10px;top:calc(var(--safe-t) + 118px);padding:6px 10px;border-radius:12px;
     background:rgba(16,13,24,.82);border:1px solid rgba(255,180,84,.35);color:var(--gold);font-size:12px;font-weight:700;
     box-shadow:0 4px 14px rgba(0,0,0,.45)}
   /* ★ 2026-10-24 (plan d_B_switched · core 걸음) — 배너(#event)는 6초에 꺼진 뒤 0.45초 동안 사라지는데, 칩은 감춤 규칙(§#stage:has(#event.on))이 풀리는 즉시 돌아와
@@ -4763,7 +4767,7 @@ function placePointHint(cx, cy, say, r = 48) {
   h.querySelector('.say').textContent = say;
   h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리 폭을 되돌린다 */
   h.querySelector('.say').style.whiteSpace = ''; h.querySelector('.say').style.width = ''; h.querySelector('.say').style.wordBreak = '';
-  h.classList.remove('side', 'toRight');
+  h.classList.remove('side', 'toRight', 'navSide');
   h.querySelector('.hand').textContent = '👇';
   h.style.left = cx + 'px';
   h.style.top = Math.max(4, cy - 86) + 'px';
@@ -4825,7 +4829,7 @@ function placeHintAt(el, say) {
   h.querySelector('.say').textContent = say;
   h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리(§sideNarrow)의 폭을 되돌린다 */
   h.querySelector('.say').style.whiteSpace = ''; h.querySelector('.say').style.width = ''; h.querySelector('.say').style.wordBreak = '';   /* ★ 11-02 넷째 묶음 — 위 자리에서 접은 말(§hintAvoidChip ⓪-b)을 되돌린다 */
-  h.classList.remove('side', 'toRight', 'below', 'row');
+  h.classList.remove('side', 'toRight', 'below', 'row', 'navSide');   /* ★ 7C2 꼬리 — 칩 좁힘 표(navSide)도 자리마다 새로 */
   hand.style.left = '0px';        /* ★ 지난 번에 민 것을 되돌린다 — 안 되돌리면 쌓인다 */
   hand.textContent = '👇';
   h.style.left = (r.left + r.width / 2) + 'px';
@@ -5021,18 +5025,27 @@ function hintAvoidChip(h, hand, r) {
        ⇒ 아래로 가기 전에 말을 칩 왼쪽까지로 접어(두 줄) 옆에 세워 본다(c2 [방] 손가락처럼 가로로) · 64px 아래면 안 한다 */
   if (h.classList.contains('side') && h.classList.contains('toRight')) {
     try {
-      const nb = $('navbar'), q = nb && nb.getBoundingClientRect(), chip = shown($('questChip')), say = h.querySelector('.say');
+      const nb = $('navbar'), q = nb && nb.getBoundingClientRect(), say = h.querySelector('.say');
+      let chip = shown($('questChip'));
       if (q && q.width && r.left >= q.left - 1 && r.right <= q.right + 1 && chip && say) {
-        const mx = Math.floor(chip.left - 6 - (r.right + 8) - (hand.getBoundingClientRect().width || 30) - 6);
+        const mxOf = c => Math.floor(c.left - 6 - (r.right + 8) - (hand.getBoundingClientRect().width || 30) - 6);
+        let mx = mxOf(chip);
+        /* ★ 11-02 7C2 꼬리 — 칩 글이 길어 옆자리가 모자라면 칩을 좁혀(두 줄 · CSS html:has(#hint.on.navSide)) 다시 잰다 · 비킬 것(obs)의 칩 네모도 새것으로 */
+        if (mx < 64) {
+          h.classList.add('navSide');
+          const c2 = shown($('questChip'));
+          if (c2) { for (let i = 0; i < obs.length; i++) { const o = obs[i]; if (Math.abs(o.left - chip.left) < 0.5 && Math.abs(o.top - chip.top) < 0.5 && Math.abs(o.right - chip.right) < 0.5) obs[i] = c2; } chip = c2; mx = mxOf(chip); }
+        }
         if (mx >= 64) {
-          say.style.maxWidth = mx + 'px';
+          say.style.maxWidth = mx + 'px'; say.style.wordBreak = 'keep-all';   /* ★ 11-02 7C2 꼬리 — 낱말 사이에서만 꺾음(⓪-b 와 같은 손 · «자리 / 를» 꼴 막음) */
           const hb2 = h.getBoundingClientRect();
           h.style.left = (r.right + 8) + 'px';
           h.style.top = Math.min(innerHeight - 8 - hb2.height / 2, Math.max(hb2.height / 2 + 8, r.top + r.height / 2)) + 'px';
           const hb3 = h.getBoundingClientRect();
           if (!hitAny(hb3) && !hit(hb3, r) && hb3.top >= 4 && hb3.bottom <= innerHeight - 8) return;
-          say.style.maxWidth = '';
+          say.style.maxWidth = ''; say.style.wordBreak = '';
         }
+        h.classList.remove('navSide');   /* ★ 7C2 꼬리 — 옆자리가 끝내 안 되면 칩은 그대로 */
       }
     } catch (e) { void e; }
   }
@@ -6781,6 +6794,15 @@ function updateHint() {
       /* ★ 2026-11-02 총괄 C3②(S97_where) — 자리 고르기 창의 «살아 있는 마지막 단추»가 [그만두기]라 손가락 «여기를 눌러 보세요»가 그것을 짚었다.
            ⇒ 이 창의 일은 줄(자리)을 고르는 것 — 첫 플레이를 마친 판이면 지금 자리보다 밝은 줄 가운데 가장 밝은 줄(목록 data-dli = 낱말과 같은 값) · 없으면 안 짚는다 */
       if (pop.id === 'slotPanel') {
+        /* ★ 11-02 7C2(비판 7판 S41 · S49_potmenu) — 원룸 할 일 'go'(§potDarkNow)의 그 화분을 옮기는 창이면 «밝은 빈 칸»(§brightFreeGrowSlot · 할 일 글과 같은 자) 줄을 짚는다.
+             ⛔ 예전엔 «지금보다 밝은 가장 밝은 줄»에 «여기를 눌러 보세요» — 할 일 글과 손가락이 다른 자로 골랐다 */
+        { const pd = potDarkNow();
+          if (pd && pd.kind === 'go' && slotPickPot && pd.pot && slotPickPot.id === pd.pot.id) {
+            const sid = brightFreeGrowSlot(!!pd.pot.variegated);
+            const row = sid ? [...pop.querySelectorAll('#slotList [data-slot]')].find(b => b.dataset.slot === sid && !b.disabled) : null;
+            if (row) { try { if (!seenAt(row)) row.scrollIntoView({ block: 'nearest' }); } catch (e) { void e; }
+              return hintAt(row, POT_DARK_KO.fingerRow); }
+          } }
         if (!showDli()) return hintAt(null, null);
         const dliOf = (b) => { const v = parseFloat(b && b.dataset ? b.dataset.dli : ''); return Number.isFinite(v) ? v : null; };
         const rows = [...pop.querySelectorAll('#slotList [data-slot]')];
@@ -6939,6 +6961,10 @@ function updateHint() {
       if (potN > 0 && onScreen(potCell) && !sheetCovers(potCell)) return hintAt(potCell, '몬스테라를 밝은 자리에 놓으세요');
       let cutCell = null; try { const c0 = bagCuttings()[0]; cutCell = c0 ? $(cutThumbId(c0.id)) : null; } catch { cutCell = null; }
       if (cutN > 0 && onScreen(cutCell) && !sheetCovers(cutCell)) return hintAt(cutCell, '삽수를 밝은 자리에 놓으세요');
+      /* ★ 11-02 7C2(총괄 가름 · 비판 7판 S41 · S43_trayplace · S45) — 밝은 칸이 비면 다음 걸음은 «몬스테라 화분을 밝은 빈 칸으로»다.
+           ⛔ 할 일 'clear' 를 따라 무순 판을 [가방으로] 빼면 이 갈래가 가방 판을 먼저 짚어(«시루를 놓으세요») 누르기 자동 자리가 그 판을 방금 비운 칸에 도로 놓았다(고리)
+           ⇒ 할 일 'go' 이면 [식물] › 그 그루 [📍 자리] › 그 칸 줄이 먼저 · 화분이 옮겨 가면 판은 다른 칸으로(§provisionalSpot 도 그 칸을 남긴다) */
+      if (potDarkFinger()) return;
       const siruCell = $('bagGrid') && $('bagGrid').querySelector('[id="cropThumb"], [id="musunThumb"]');
       /* ★ 2026-10-31 총괄 D92 — 이삿짐이 먼저다(돌던 것 · 가방에선 멈춤) — 말은 할 일 줄과 같은 말([plan] oneroom_unpack «들고 온 채소를 가구 위에 올리세요») */
       const boxCell = $('bagGrid') && $('bagGrid').querySelector('[data-boxpot]');
@@ -19277,7 +19303,11 @@ function provisionalSpot(what = 'beansprout') {
   try { list = cropCandidates(); } catch { }
   const kindId = what === 'musun' ? 'musun' : 'beansprout';
   const meals = s => { try { const q = cropQualityOf(kindId, s.dli); return (q && q.meals) || 0; } catch { return 0; } };
-  const free = list.filter(s => !taken.has(s.slotId));
+  /* ★ 11-02 7C2(총괄 가름 · 비판 7판 S43_trayplace) — 원룸 할 일 'go'(§potDarkNow — 어두운 몬스테라 · 밝은 빈 칸이 있다)면 작물은 그 칸(§brightFreeGrowSlot)을 안 고른다.
+       ⛔ 할 일 «무순 판 하나를 옮겨 밝은 칸을 비우세요»를 따라 판을 가방으로 빼고 가방 판을 누르면 이 자리가 그 칸을 도로 줬다(할 일이 다시 «비우세요» — 고리).
+       ⚠ 누르기 임시 자리만이다 — 짐 풀기 하네스(D91 원룸) · src 는 이 함수를 안 부른다(grep 11-02) · 끌어 놓기는 사람 손 그대로 */
+  const keepSlot = (what === 'beansprout' || what === 'musun') ? (() => { try { const pd = potDarkNow(); return pd && pd.kind === 'go' ? brightFreeGrowSlot(!!pd.pot.variegated) : null; } catch (e) { console.warn('[7C2 남길 칸]', e && e.message); return null; } })() : null;
+  const free = list.filter(s => !taken.has(s.slotId) && s.slotId !== keepSlot);
   const near = free.filter(s => slotReachable(s.slotId));
   const pool = (near.length ? near : free).slice().sort((a, b) => (meals(b) - meals(a)) || (a.dli - b.dli));
   /* ★★ 2026-10-31 비판 셋째 판 MAJOR #10 — 원룸: 이름 자리 최선이 그 작물 최고 띠가 아니면 가구 윗면도 재 보고 끼니가 더 많은 쪽(같으면 이름 자리) */
@@ -19422,7 +19452,8 @@ function slotHolderOf(slotId) {
      «밝은» = growBandAt 이 dark 가 아님(몬스테라 min 2.7 = 빛 분포 «밝음» 문턱 grow 와 같은 값) · 가장 밝은 칸을 그루 · 삽수가 차지했으면 줄 없음.
      ⚠ 빈 화분은 [📍 자리]가 없어(심으면 생긴다) 심은 그루만 본다 · 못 재면 null(지어내지 않는다) */
 const POT_DARK_KO = Object.freeze({
-  go: '화분을 밝은 자리로 옮기세요',
+  go: '몬스테라 화분을 밝은 빈 칸으로 옮기세요',   /* ★ 11-02 7C2([plan] §3 ㉠) — 앞 걸음 «… 밝은 칸을 비우세요»와 이어 읽힌다 · 'go' 조건만으로 늘 참 */
+  fingerRow: '여기가 밝은 빈 칸입니다',   /* ★ 11-02 7C2 — 자리 고르기 창 그 칸 줄(§brightFreeGrowSlot 칸일 때만) */
   clear: '{what} 하나를 옮겨 밝은 칸을 비우세요',
   lamp: '식물등을 달아 밝은 자리를 만드세요',
   fingerPlants: '여기서 화분 자리를 옮깁니다',

@@ -256,7 +256,8 @@ let hp = null; for (let i = 0; i < 10; i++) { hp = await hintNow(); if (hp && hp
 if (OUT) await page.shot(`${OUT}/390_c6a_c3_dark.png`);
 console.log('  ㉳-3 ㉮', JSON.stringify({ pdZ, chipZ, hp }));
 ok(!pdZ.탈 && pdZ && pdZ.kind === 'go', '판 ㉳-3 — 화분 어둠 · 밝은 빈 칸 있음', JSON.stringify(pdZ));
-ok(!chipZ.탈 && chipZ.body === '화분을 밝은 자리로 옮기세요', '㉳-3 C3③ ㉮ 칩 «화분을 밝은 자리로 옮기세요»', JSON.stringify(chipZ));
+/* ★ 2026-11-02 core 7C2 — 할 일 'go' 글 정본은 «몬스테라 화분을 밝은 빈 칸으로 옮기세요»([plan] plan-to-core-critic7 §3 ㉠) */
+ok(!chipZ.탈 && chipZ.body === '몬스테라 화분을 밝은 빈 칸으로 옮기세요', '㉳-3 C3③ ㉮ 칩 «몬스테라 화분을 밝은 빈 칸으로 옮기세요»(7C2 글)', JSON.stringify(chipZ));
 ok(!hp.탈 && hp.tid === 'navPlants' && hp.say === '여기서 화분 자리를 옮깁니다', '㉳-3 C3③ 손가락 [식물] «여기서 화분 자리를 옮깁니다»', JSON.stringify(hp));
 await tapSel('#navPlants'); await sleep(1600);
 let hq = null; for (let i = 0; i < 10; i++) { hq = await hintNow(); if (hq && /^where:/.test(hq.tid || '')) break; await sleep(400); }
@@ -267,11 +268,12 @@ const best1 = (w1.rows || []).filter(r => !r.here && Number.isFinite(r.dli)).sor
 if (OUT) await page.shot(`${OUT}/390_c6a_c3_where2.png`);
 console.log('  ㉳-3 목록', JSON.stringify({ rows: w1.rows, best1, hw1 }));
 ok(!hw1.탈 && hw1.on && best1 && hw1.tid === best1.s && hw1.tid !== 'slotCancel', '㉳-3 C3② 자리 창 손가락이 가장 밝은 줄([그만두기] 아님)', JSON.stringify({ hw1, best1 }));
+ok(!hw1.탈 && hw1.say === '여기가 밝은 빈 칸입니다', '㉳-3 7C2 그 줄 말풍선 «여기가 밝은 빈 칸입니다»', JSON.stringify(hw1));
 if (best1) { await tapSel(`#slotList [data-slot="${best1.s}"]`); await sleep(2000); await dlgOnly(); }
 await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false); await sleep(1500); await dlgOnly();
 const pd2 = await J(`window.__byeotPotDark()`); const chip4 = await chipNow();
 console.log('  ㉳-3 옮긴 뒤', JSON.stringify({ pd2, chip4 }));
-ok(pd2 === null && chip4.body !== '화분을 밝은 자리로 옮기세요', '㉳-3 C3③ 밝은 자리로 옮기면 그 할 일 줄이 걷힌다', JSON.stringify({ pd2, chip4 }));
+ok(pd2 === null && chip4.body !== '몬스테라 화분을 밝은 빈 칸으로 옮기세요' && chip4.body !== '화분을 밝은 자리로 옮기세요', '㉳-3 C3③ 밝은 자리로 옮기면 그 할 일 줄이 걷힌다', JSON.stringify({ pd2, chip4 }));
 
 try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
 ok(exc.length === 0, '처리 안 된 예외 0', JSON.stringify(exc.slice(0, 5)));
