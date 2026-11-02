@@ -851,6 +851,9 @@ check('C9 «씨앗을 주문한다» — 오는 중 · 익는 중은 «거둔 �
   assert.equal(g.waiting, true); assert.equal(g.waitDo, '거둔 횟수 1/3 — 시루가 익는 중');
   assert.equal(c.waitDo, '거둔 횟수 1/3 — 씨앗이 오는 중');
   assert.equal(r.waitDo, QUEST_WAIT_DO_T.cropReady, '익은 시루면 표 글 그대로');
+  /* ★ 11-02 [plan] 18405b99 — 진행 줄은 «기다림» 표(waitProgress · 머리에 «지금 할 것 —»을 안 붙인다) · 손(cropReady)은 표 없음 */
+  assert.equal(g.waitProgress, true, '진행 줄인데 waitProgress 가 없습니다'); assert.equal(c.waitProgress, true);
+  assert.ok(!r.waitProgress, '익은 시루(손)인데 waitProgress 가 섰습니다');
   assert.equal(over.waitDo, '거둔 횟수 3/3 — 시루가 익는 중', 'n 은 need 를 안 넘는다');
   assert.equal(q.need.cycles, 3); assert.equal(!!q.done(MS(6, { cropHarvestTotal: 2 }), { q }), false); assert.equal(!!q.done(MS(6, { cropHarvestTotal: 3 }), { q }), true);
   assert.ok(g.waitDo.length <= 28, `칩 글이 깁니다: ${g.waitDo}`);

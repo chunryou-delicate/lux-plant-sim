@@ -308,6 +308,14 @@ export function createLightGridLabels(o = {}) {
     return shown.length;
   }
 
+  /* ★ 2026-11-02 [plan] 507ba40d P10 — 넷째 줄: 낱말은 보통 글 · 수 {dark}/{grow}/{split} 와 «(DLI)»는 칸 수와 같은 작은 글(.num) · 옛 꼴(«문턱 {t}»)은 그대로 */
+  function threshLine(tpl, th) {
+    const T = tpl || '문턱 {t} — DLI(mol/m²·d)';
+    if (!/\{(dark|grow|split)\}/.test(T)) return `<small style="opacity:.8">${escapeHtml(T.replace('{t}', th))}</small>`;
+    const num = v => Number.isFinite(v) ? `<small class="num">${escapeHtml(String(+v))}</small>` : '';
+    return escapeHtml(T).replace('{dark}', num(bands.dark)).replace('{grow}', num(bands.grow)).replace('{split}', num(bands.split))
+      .replace('(DLI)', '<small class="num">(DLI)</small>');
+  }
   function setCaption() {
     if (!grid) { cap.textContent = ''; return; }
     const lo = format(grid.min), hi = format(grid.max);
@@ -326,7 +334,7 @@ export function createLightGridLabels(o = {}) {
         /* ★ D95 ⑤ 둘째 고침(plan 4746ef5d) — 덩이 둘마다 정해 꺾는다: 회색 둘(작물 자리) / 색 둘(몬스테라 자리) — 짝으로 읽히고 글꼴마다 꺾이는 데가 안 갈린다(범례 네 줄) */
         [sw(heatDarkHex(), k.dark, L.dark), sw(heatShadeHex(), k.shade, L.shade)].join(' · ') + '<br>' +
         [sw(heatColorHex(0), k.grow, L.grow), Number.isFinite(bands.split) ? sw(heatColorHex(1), k.split, L.split) : null].filter(Boolean).join(' · ') + '<br>' +
-        `<small style="opacity:.8">${escapeHtml((k.thresh || '문턱 {t} — DLI(mol/m²·d)').replace('{t}', th))}</small>`;
+        threshLine(k.thresh, th);
       return;
     }
     if (bands && Number.isFinite(bands.grow)) {

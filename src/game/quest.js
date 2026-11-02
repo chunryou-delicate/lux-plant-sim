@@ -1794,7 +1794,7 @@ export function questView(S, snapshot, opt = {}) {
     if (w && typeof q.waitWhatOf === 'function') { try { const t = q.waitWhatOf(q, s); if (t) it.waitWhat = String(t); } catch { } }
     it.waitDo = w ? (QUEST_WAIT_DO[w] || null) : null;
     /* ★ 2026-11-02 총괄 C9 · [plan] 171798ae §15 — 줄이 «기다리는 중 —» 대신 낼 글(waitDoOf(q, s, 열쇠) · null 이면 표 글 QUEST_WAIT_DO 그대로) */
-    if (w && typeof q.waitDoOf === 'function') { try { const t = q.waitDoOf(q, s, w); if (t) it.waitDo = String(t); } catch { } }
+    if (w && typeof q.waitDoOf === 'function') { try { const t = q.waitDoOf(q, s, w); if (t) { it.waitDo = String(t); it.waitProgress = true; } } catch { } }   /* ★ 11-02 [plan] 18405b99 — 진행 줄(손이 아님)은 표(waitProgress) */
     /* ★ 2026-10-24 [plan] D72 D 나머지 — 쉬는 줄 · 건너뛴 줄(잠긴 줄에만 · 열린 줄·끝낸 줄은 그대로) */
     const qJob = !isDone && !isOpen ? jobOfQuest(q.id) : null;
     it.resting = !!qJob && typeof s.job === 'string' && qJob !== s.job && openedOnAll[q.id] != null;
