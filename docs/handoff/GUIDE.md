@@ -11,6 +11,7 @@
 | 지금 어디까지 · 결정 표(D1~) · 밤낮 기록 | `docs/handoff/master-campaign-20261007.md` (§0-b · §3 · 기록) | 총괄 |
 | 박사님께 보인 진행 보고(사진 판) | `docs/handoff/master-progress-YYYYMMDD.html` 가장 새 것 | 총괄 |
 | 박사님 답을 기다리는 물음 | `docs/handoff/master-to-doctor-YYYYMMDD.md` 가장 새 것 | 총괄 |
+| 큰 줄기 계획(단계 · 갈림목) | `docs/handoff/master-roadmap-YYYYMMDD.html` 가장 새 것 | 총괄 |
 
 ## 2. 창(세션)과 인계 자리
 
