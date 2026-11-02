@@ -8,6 +8,7 @@
       §17: 배너 «🧺 반찬가게에 채소를 팔았습니다» / «+200,000원 · 오늘 거둔 1판»<br>«나머지는 그대로 있습니다» · 대사 첫 줄 «아랫길 반찬가게 사장님이 우리 채소를 사 가셨다.» ·
         [방] 기록 «🧺 반찬가게에 채소를 팔았습니다 — 오늘 거둔 1판 · +200,000원» — 하나씩 · 묶음 같은 넷 · 보유 채소 0 판은 «나머지» 줄 없음 · 결산 길 손잡이 «가장 최근에 거둔 2판»
    ㉲ 배너 상자 폭(총괄) — 360 · 390 · 430 에서 반찬가게 · 이사 · 체력 · 쌓인 둘: 탭 기둥 · [?] · 보이는 할 일 칩과 겹침 0 · 한 줄에 드는 «📦 원룸으로 이사했습니다»는 한 줄 · 제목 줄 수를 적음
+      ⚠ ㉲ 는 화면 움직임을 끝 상태로 보낸 «끝 값»을 잰다(11-03 · 헤드리스 그림 멈춤 탓) — 움직이는 도중 겹침은 사진(${w}_c6e_banner_*.png)으로 본다
         · 바닥 체력 줄(#staText)이 낱말 안에서 안 꺾임(총괄 사진 430 «최 / 대») · ㉮ 묶음 판의 쌓인 배너도 [?] · 탭 기둥과 안 겹침(총괄 사진 390_c6e_p6_batch)
         ⛔ `left:50%` 뒤 남은 폭(화면 반 · 390 에서 194 css)에 묶여 제목이 거의 다 두세 줄
    ㉯ P8(§16 ① ②) — 이사 창(이사비 손질 · probe_critic6_c ㉱ 와 같은 손): 시루 하나를 [회수]한 꼴(slotId · at = null)에서도 «시루 n개» = 콩나물 줄 + 시루 재고
@@ -202,6 +203,10 @@ for (const w of [360, 390, 430]) {
   for (const b of BN) {
     await page.eval(`(()=>{ const e=document.getElementById('event'); if (e && e.classList.contains('on')) e.click(); return 1; })()`, false); await sleep(700);
     await J(`window.__byeotBannerTest(${JSON.stringify(b.list || [{ title: b.title, sub: b.sub }])})`); await sleep(900);
+    /* ★ 11-03 core — 화면 움직임(배너가 내려옴 · 칩이 숨음 .2s)을 끝 상태로 보낸 뒤 잰다. 헤드리스는 다른 크롬과 겹치면 그림이 멈춰(1초에 8 프레임)
+         움직임이 첫 값(배너 위 끝 85 · 칩 opacity 0.98)에 남아 «겹침»으로 빨강을 냈다 — 같은 때 고치기 전 판(990b0bda)도 빨강 5(11-03 regs9 가름).
+         끝 상태로 보내도 칩이 정말 안 숨는 고장이면 그대로 빨강이다(규칙 #stage:has(#event.on) #questChip 이 안 맞으면 끝 값도 보임) */
+    await J(`(()=>{ for (const a of document.getAnimations()) { try { a.finish(); } catch (e) { void e; } } return 1; })()`);
     const m = await J(`(()=>{ const ev=document.getElementById('event'); const bb=ev.querySelector('b'); if (!bb) return { 없음: true };
       const R=q=>[Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)];
       const tn=bb.firstChild && bb.firstChild.nodeType===3 ? bb.firstChild : null; const rg=document.createRange(); if (tn) rg.selectNodeContents(tn);

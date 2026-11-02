@@ -1962,6 +1962,7 @@
   .sirubtns button.water{background:linear-gradient(180deg,#8fd8ea,#5fb9d4);color:#0d2a33}
   .sirubtns button.harvest{background:linear-gradient(180deg,#ffd98f,#f0b45c);color:#3a2708}
   .sirubtns button.sow{background:linear-gradient(180deg,#a8e6a3,#78c97a);color:#12331a}
+  .sirubtns button.sow.tired{opacity:.55;filter:saturate(.6)}   /* ★ 11-02 7C4 꼬리 — 물 줄 몫(바닥 회색 · 방 말풍선 흐림과 같은 결) */
   .sirubtns button.ghost{background:rgba(255,255,255,.08);color:rgba(255,255,255,.72);
     box-shadow:none;font-weight:600}
   #siruCount{font-weight:700;font-size:11.5px;color:var(--dim);letter-spacing:0}
@@ -7089,7 +7090,7 @@ function updateHint() {
         if (!(r && (r.needsSow || r.needsResow))) return false;
         /* ★ 11-02 7C4 꼬리 — 남은 체력이 물 줄 몫뿐이면(§drawSow 회색 · dataset.owed) 거둔 시루 다시 심기는 «지금 할 일»이 아니다 — 손가락은 물 쪽으로.
              ⛔ 단추는 회색인데 손가락이 거둔 시루 말풍선 «씨앗 심기»를 짚어 그 몫을 심기에 쓰게 이끌었다(360 사진) · 새 빈 시루 첫 심기(체력 0)는 그대로 산다 */
-        if (r.needsResow && !r.needsSow && $('resow') && $('resow').dataset.owed) return false;
+        if (r.needsResow && !r.needsSow && resowOwedNow()) return false;   /* ★ 7C4 꼬리 — 흐린 말풍선(§cropMarks)과 같은 자 */
         try { const k = cropKindOf(r.kind); return !k || !k.seedItemId || stockOf(S, k.seedItemId) >= 1; } catch { return true; }
       });
     } catch { }
@@ -7141,6 +7142,8 @@ function updateHint() {
       const ko = (el.getAttribute('aria-label') || el.textContent || '').replace(/^[^가-힣]+/, '');
       if (!pointStill && !/심/.test(ko) && !(sowWaterNow && /물/.test(ko) && !/몬스테라/.test(ko))) continue;   /* ★ MAJOR #5 ① · D100 #8 ㉠ */
       if (el.dataset && el.dataset.pot ? !potSowLive(el) : !markLive(ko)) continue;   /* ★ 11-01 빈 화분 🌱 은 그 화분 · 몬스테라 씨앗으로 판정 */
+      /* ★ 11-02 7C4 꼬리(총괄 · 섞인 판) — 흐린 심기 말풍선(거둔 시루 · 물 줄 몫 §cropMarks)은 짚지 않는다 — markLive 는 «심기»를 종류로만 봐서 새 시루가 살아 있으면 흐린 것도 통과했다 */
+      if (/심/.test(ko) && el.classList.contains('tired')) continue;
       /* ★ 2026-11-01 총괄 사진(08782dbb Day 91) — 그 점에서 정말 잡히는 말풍선만(바닥 왼쪽 단추 뒤에 가린 🥣 를 짚어 손가락이 «남는 채소 팔기»를 짚는 것처럼 읽혔다) ·
            다 가렸으면 아래 바닥 단추로 떨어진다 */
       /* ★ 11-02 덤 ③ ② — 시트가 이 표지를 가렸으면(그 점에서 시트가 잡혀 아래 seenAt 에서 빠진다) 창 안 같은 손 줄 단추가 보이면 그것부터 */
@@ -11170,6 +11173,10 @@ const SOW_OWED_KO = Object.freeze({
   title: '물 줄 체력을 남겨 둡니다',
   sub: '심은 {box}에 먼저 💧 물을 주세요 — 물을 받아야 자랍니다'
 });
+/* ★ 11-02 7C4 꼬리 — 거둔 시루 하나를 다시 심으면 물 기다리는 줄의 물 몫을 쓰나(체력이 막혔으면 아님 — 그건 체력 0 흐림이 맡는다) */
+function resowOwedNow() {
+  try { return !staminaBlockNote('sow') && !!sowMixReach(0, 1).short; } catch (e) { return false; }
+}
 function sowMixLabel(base, b) {
   if (!b || b.n <= 1) return base;
   if (b.one) return `${base} (1개 · 물은 내일)`;
@@ -13106,8 +13113,8 @@ function cropMarks() {
       continue;
     }
     if (row.harvested) {
-      if (seedsOf(row.kind) > 0)
-        out.push({ key, ko: '🌱 씨앗 심기', tone: 'crop', act: 'sow', go: () => siruAct(row.id, 'sow', row.kind) });
+      if (seedsOf(row.kind) > 0)   /* ★ 11-02 7C4 꼬리(총괄 가름 ㉡) — 다시 심기가 물 줄 몫에 닿았으면 흐리게(#marks .mark.tired) · 누르면 그대로 심김(사람의 고름) */
+        out.push({ key, ko: '🌱 씨앗 심기', tone: resowOwedNow() ? 'crop tired' : 'crop', act: 'sow', go: () => siruAct(row.id, 'sow', row.kind) });
       else if (comingOf(row.kind) > 0) { /* 오는 중 — 누를 것이 없다(§comingOf) */ }
       else
         /* 씨앗이 없으면 갈 곳은 [상점]이다 — 주문 목록이 거기 있다 */
@@ -13317,7 +13324,7 @@ function drawMarks() {
   const want = markList();
   box.classList.toggle('busy', stageBusy());
   /* 내용이 같으면 다시 만들지 않는다 — 매 턴 새로 만들면 뛰는 애니메이션이 끊긴다 */
-  const sig = want.map(m => m.key + '|' + m.ko + (m.pot ? '|p' : '')).join(',');
+  const sig = want.map(m => m.key + '|' + m.ko + (m.pot ? '|p' : '') + '|' + (m.tone || '')).join(',');   /* ★ 7C4 꼬리 — 옷(흐림)이 바뀌어도 다시 그린다 */
   if (box.dataset.sig !== sig) {
     box.dataset.sig = sig;
     box.innerHTML = '';
@@ -14151,7 +14158,7 @@ function siruRowHTML(row, frac) {
           coming = !!(shopStatus(S).orders || []).some(o => o && o.itemId === sid); } catch { }
     const nm = sit ? String(sit.ko).replace(/\s*\([^)]*\)\s*$/, '') : '씨앗';
     btn.push(seeds >= 1
-      ? `<button class="sow"${kd} data-act="sow">🌱 다시 심기</button>`
+      ? `<button class="sow${resowOwedNow() ? ' tired' : ''}"${kd} data-act="sow">🌱 다시 심기</button>`   /* ★ 7C4 꼬리 — 물 줄 몫이면 흐림(누르면 그대로) */
       : coming
       ? `<button class="sow"${kd} data-act="sow" disabled title="주문한 씨앗이 오는 중입니다">🌱 ${nm}이 오는 중</button>`
       : sit

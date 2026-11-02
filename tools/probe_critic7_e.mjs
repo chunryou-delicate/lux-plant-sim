@@ -10,6 +10,8 @@
      ㉯ 거둔 4 · W 2 · 체력 5: 단추 초록 «(4개 중 1개 · 체력 1 — 물 줄 체력 3 남김)»(남은 체력에서 W 를 먼저 뺀 셈 · 꼬리 N = W + m)
      ㉰ 새 빈 시루 2 · W 2 · 체력 2: 회색 아님 «🌱 콩 씨앗 심기 (1개 · 물은 내일)»
      ㉮-끝 회색 동안 다른 단추 안 감춤 · 물을 다 준 뒤(체력 0) «오늘 손이 다 떨어졌습니다» 단추 하나(§tiredOne) · 몬스테라 단추 그대로
+     ㉳ 총괄 가름 ㉡(7C4 꼬리) — 회색 동안 방 거둔 시루 «🌱 씨앗 심기» 말풍선 · [식물] 줄 [🌱 다시 심기] 흐림 · 누르면 그대로 심김(체력 −1) · 회색 아니면 흐림 없음
+        · 섞인 판(새 빈 시루 + 거둔 시루 · 체력 ≤ W): 바닥 초록 «(1개 · 물은 내일)» · 거둔 시루 말풍선만 흐림 · 새 시루 말풍선 밝음 · 손가락은 흐리지 않은 쪽
      ㉱ 360 · 390 — 회색 단추 꼬리 «…» 없음 · 회색 동안 손가락은 거둔 시루 «씨앗 심기» 말풍선 · 다시 심기가 아니라 물 쪽 · 예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
@@ -107,6 +109,42 @@ const press = async (J, id, before) => { await J(`(()=>{ document.getElementById
   const c = await J(BTN);
   console.log('  ㉰ 새 빈 2 · W 2 · 체력 2', JSON.stringify(c));
   ok(!c.탈 && c.shown && !c.tired && c.t === '🌱 콩 씨앗 심기 (1개 · 물은 내일)', '㉰ 새 빈 시루만 — 회색 아님 «🌱 콩 씨앗 심기 (1개 · 물은 내일)»', JSON.stringify({ t: c.t, tired: c.tired }));
+  try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
+}
+/* ═══ ㉳ 총괄 가름 ㉡(7C4 꼬리 · plan 대조 덤) — 회색 동안 방 거둔 시루 «🌱 씨앗 심기» 말풍선 · [식물] 줄 [🌱 다시 심기] 흐림 · 누르면 그대로 심김 · 회색 아니면 흐림 없음 ═══ */
+{
+  const { page, J, boot } = await open(390);
+  const SOWM = `(()=>{ const ms=[...document.querySelectorAll('#marks .mark')].filter(m=>((m.getAttribute('aria-label')||m.title||'')).includes('씨앗 심기'));
+    return { n: ms.length, tired: ms.filter(m=>m.classList.contains('tired')).length, op: ms[0] ? getComputedStyle(ms[0]).opacity : null }; })()`;
+  const ROWB = `(async()=>{ window.__byeotSheet.open('plants'); await new Promise(r=>setTimeout(r,1200)); const bs=[...document.querySelectorAll('#siruList button[data-act="sow"]')];
+    const out={ n: bs.length, tired: bs.filter(b=>b.classList.contains('tired')).length, op: bs[0] ? getComputedStyle(bs[0]).opacity : null }; try { window.__byeotSheet.close(); } catch (e) { void e; } await new Promise(r=>setTimeout(r,900)); return out; })()`;
+  await boot(stage({ harv: 3, idle: 3, left: 3 }));
+  const m1 = await J(SOWM), r1 = await J(ROWB);
+  console.log('  ㉳ 회색 동안', JSON.stringify({ m1, r1 }));
+  if (OUT) await page.shot(`${OUT}/390_c7e_dimmarks.png`);
+  ok(!m1.탈 && !r1.탈 && m1.n >= 1 && m1.tired === m1.n && r1.n >= 1 && r1.tired === r1.n, '㉳ 회색(물 줄 몫) 동안 거둔 시루 «🌱 씨앗 심기» 말풍선 · [식물] 줄 [🌱 다시 심기]가 다 흐림', JSON.stringify({ m1, r1 }));
+  const before = await J(`(()=>({ left: window.__S().stamina.left, harv: window.__S().firstPlay.beansprout.pots.filter(p=>p.slotId && p.harvested).length }))()`);
+  await J(`(()=>{ const m=[...document.querySelectorAll('#marks .mark')].find(m=>((m.getAttribute('aria-label')||m.title||'')).includes('씨앗 심기')); if (m) m.click(); return !!m; })()`);
+  let after = null; for (let i = 0; i < 60; i++) { await sleep(400); after = await J(`(()=>({ left: window.__S().stamina.left, harv: window.__S().firstPlay.beansprout.pots.filter(p=>p.slotId && p.harvested).length, acting: !!document.querySelector('#marks .mark.acting') }))()`); if (after.left !== before.left && !after.acting) break; }
+  console.log('  ㉳ 흐린 말풍선 누름', JSON.stringify({ before, after }));
+  ok(!after.탈 && after.left === before.left - 1 && after.harv === before.harv - 1, '㉳ 흐린 말풍선을 누르면 그대로 심김(체력 −1 · 거둔 것 −1 · 막지 않음)', JSON.stringify({ before, after }));
+  /* 섞인 판(총괄) — 새 빈 시루 2 · 거둔 2 · W 2 · 체력 2: 바닥 초록 «🌱 콩 씨앗 심기 (1개 · 물은 내일)» · 거둔 시루 말풍선만 흐림 · 새 시루 말풍선 밝음 · 손가락은 흐리지 않은 쪽(새 시루 말풍선 또는 바닥 초록) */
+  await boot(stage({ fresh: 2, harv: 2, idle: 2, left: 2 }));
+  const mx = await J(`(async()=>{ try { window.__byeotHint(); } catch (e) { void e; } await new Promise(r=>setTimeout(r,900));
+    const ms=[...document.querySelectorAll('#marks .mark')].filter(m=>((m.getAttribute('aria-label')||m.title||'')).includes('씨앗 심기'));
+    const b=document.getElementById('resow'), t=document.querySelector('.hintTarget'), S=window.__S(), rows=S.firstPlay.beansprout.pots.filter(p=>p.slotId);
+    return { marks: ms.length, tired: ms.filter(m=>m.classList.contains('tired')).length, bright: ms.filter(m=>!m.classList.contains('tired')).length,
+      harv: rows.filter(p=>p.harvested).length, fresh: rows.filter(p=>p.sown === false && !p.harvested).length,
+      btn: { t: (b.textContent||'').replace(/\s+/g,' ').trim(), tired: b.classList.contains('tired'), shown: b.style.display !== 'none' && !!b.offsetParent },
+      hint: { tid: t ? (t.id || (t.className||'').toString().slice(0,30)) : null, tTired: !!(t && t.classList.contains('tired')), say: (document.querySelector('#hint .say')||{}).textContent } }; })()`);
+  console.log('  ㉳ 섞인 판', JSON.stringify(mx));
+  if (OUT) await page.shot(`${OUT}/390_c7e_mixed.png`);
+  ok(!mx.탈 && mx.btn.shown && !mx.btn.tired && mx.btn.t === '🌱 콩 씨앗 심기 (1개 · 물은 내일)' && mx.tired === mx.harv && mx.harv >= 1 && mx.bright === mx.fresh && mx.fresh >= 1 && !mx.hint.tTired && (mx.hint.tid === 'resow' || /씨앗 심기|물을 주면/.test(mx.hint.say || '')),
+     '㉳ 섞인 판 — 바닥 초록(새 시루) · 거둔 시루 말풍선 흐림 · 새 시루 말풍선 밝음 · 손가락은 흐리지 않은 쪽(새 시루 심기 · 바닥 초록 · 또는 물 먼저)', JSON.stringify(mx));
+  await boot(stage({ harv: 4, left: 8 }));
+  const m2 = await J(SOWM), r2 = await J(ROWB);
+  console.log('  ㉳ 회색 아님', JSON.stringify({ m2, r2 }));
+  ok(!m2.탈 && !r2.탈 && m2.n >= 1 && m2.tired === 0 && r2.n >= 1 && r2.tired === 0, '㉳ 회색이 아니면(체력 넉넉) 말풍선 · 줄 단추 흐림 없음', JSON.stringify({ m2, r2 }));
   try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
 }
 for (const wd of [360, 390]) {
