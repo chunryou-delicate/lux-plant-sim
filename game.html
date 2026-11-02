@@ -2003,7 +2003,7 @@
       <!-- ★ 2026-10-10 [Char] ev_first_story_end(1024²) — #homeArt 처럼 그림 하나 · 없으면 숨김 -->
       <img id="chapterEndArt" src="./assets/illust/ev_first_story_end.png" alt="" onerror="this.style.display='none'">
       <h2 id="chapterEndTitle">여기까지 — 첫 이야기</h2>
-      <p id="chapterEndSub">다음 장(직업 고르기)은 준비 중입니다.</p>
+      <p id="chapterEndSub"></p>
       <p id="chapterEndAsk" style="display:none">처음부터 다시 할까요? 지금 판은 지워집니다.</p>
       <!-- ★ 2026-10-10 D59 — 진로 카드 셋(식물 가게 열림 · 돌봄 · 육종 준비 중) · 글은 plan-shop-spec §6 -->
       <div id="jobCards"></div>
@@ -6038,7 +6038,7 @@ function movePotTo(slotId) {
 function bindDetail() {
   /* ★ 할 일 쪽지를 누르면 [할 일] 탭 — 요약을 보고 그 자리에서 자세히 볼 수 있어야 한다 */
   { const c = $('questChip');
-    if (c) c.onclick = () => { try { window.__byeotSheet.open('quest'); } catch { } }; }
+    if (c) c.onclick = () => { try { if (endingLockedNow()) { window.__byeotSheet.close(); openChapterEnd(); return; } window.__byeotSheet.open('quest'); } catch { } }; }   /* ★ 8C1 — 잠긴 동안은 진로 화면 */
   /* ★ 게임오버에서 나가는 **유일한 문** — 저장을 지우고 0일부터 새로 연다.
      ⚠ `saveOff` 를 **먼저** 세운다. 안 그러면 나가면서 `pagehide` 가 방금 지운 자리에
        지금 상태를 다시 써 넣는다 — [저장 지우고 처음부터]가 이미 겪은 그 사고다. */
@@ -6859,6 +6859,13 @@ function updateHint() {
                    : lead >= 2 ? `개수를 정하고 [주문] — ${lead === 2 ? '이틀' : lead + '일'} 뒤에 옵니다` : null;
       return hintAt(go || null, go ? ((goesOn && wait) || buySay || '여기를 눌러 보세요') : null);
     }
+  }
+  /* ★ 11-03 8C1(총괄 가름) — 진로를 안 고른 채 방에 있으면 손가락은 [🏡 진로 고르기 ▸](§drawNext) 하나 · 진로 화면이 떠 있으면 쉰다 */
+  if (endingLockedNow()) {
+    if ($('chapterEnd') && $('chapterEnd').classList.contains('on')) return hintAt(null);
+    const nb = $('next'); if (nb && onScreen(nb) && !sheetCovers(nb)) return hintAt(nb, CHAPTER_KO.finger);
+    const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR);
+    return hintAt(null);
   }
   {
     const learnedWalk = (() => { try { return coachSeen().has('walk'); } catch { return true; } })();
@@ -12038,7 +12045,7 @@ function closeHomeScene() {
   document.documentElement.classList.remove('homescene');
   /* ★ 다음 장은 직업 고르기(ending.finishEnding → nextChapter 'job_select' · D17) — 그 화면은 아직 없다. 표지만 남긴다 */
   window.__byeotNextChapter = 'job_select';
-  pushLog(S, '🏡 다음 장 — 직업 고르기(준비 중)');
+  pushLog(S, '🏡 ' + JOB_KO.title);   /* ★ 11-03 8C1 — «직업 고르기(준비 중)»은 거짓(진로는 열렸다) · [plan] §1 */
   draw();
   flushHeldBanners();   /* 2026-10-23 — 장면 동안 미뤄 둔 배너 */
   openChapterEnd();   /* ★ 2026-10-08 D28 */
@@ -12048,7 +12055,11 @@ function closeHomeScene() {
    [방 둘러보기] 방을 보고 대사를 다시 볼 수 있다 · [다음 날]은 잠근다(누르면 «다음 장이 준비되면 이어집니다»)
    [처음부터 다시] 게임오버의 그 문과 같은 손(세이브 지움) · 한 번 되묻는다(plan 문안)
    ⛔ «끝»·«클리어»·점수 없음(본편이 이어진다). 다시 켜도 엔딩을 낸 판이면 이 덮개가 다시 선다. */
-const CHAPTER_KO = Object.freeze({ locked: '다음 장이 준비되면 이어집니다', again: '처음부터 다시', againArmed: '한 번 더 누르면 지웁니다' });
+/* ★ 11-03 8C1(총괄 가름 · 비판 8판 BLOCKER #1) — 진로 화면 [방 둘러보기] 뒤 [다음 날]이 «다음 장이 준비되면 이어집니다»만 말하고 돌아갈 단추가 없어 다시 켜야 나왔다(갇힘).
+     진로는 이미 열렸다 — «준비 중»은 거짓 ⇒ 잠긴 동안 [다음 날] 자리가 [🏡 진로 고르기 ▸](누르면 진로 화면) · 칩 · 손가락도 그 단추 · 글 [plan] critic8 §1 */
+const CHAPTER_KO = Object.freeze({ locked: '먼저 진로를 고르세요', lockedSub: '[🏡 진로 고르기]를 누르면 고르는 화면이 열립니다',
+  btn: '🏡 진로 고르기 ▸', finger: '둘러본 뒤 여기서 진로를 고릅니다', chip: '🏡 진로를 골라야 다음 날로 갑니다',
+  again: '처음부터 다시', againArmed: '한 번 더 누르면 지웁니다' });
 function endingDoneNow() {
   try { return !!(S.story && S.story.ending && Number.isInteger(S.story.ending.doneOnDay)); } catch { return false; }
 }
@@ -12429,7 +12440,7 @@ function openFinalCover() {
 }
 window.__byeotFinalCover = () => ({ due: SWITCH.finalCoverDue(S), on: document.documentElement.classList.contains('finalcover'), seenOn: (S.story && S.story.finalCoverOn) ?? null });   /* 재는 손잡이 */
 let chapterAgainArmed = false;
-if ($('chapterLook')) $('chapterLook').onclick = () => { closeChapterEnd(); try { draw(); } catch { } };
+if ($('chapterLook')) $('chapterLook').onclick = () => { closeChapterEnd(); try { window.__byeotSheet.close(); } catch (e) { void e; } try { draw(); } catch { } };   /* ★ 11-03 8C1 — 시트도 닫음(방을 본다) */
 if ($('chapterAgain')) $('chapterAgain').onclick = () => {
   /* 첫 누름 — 되묻기 한 줄을 세우고 단추가 «한 번 더»가 된다 · 둘째 누름 — 게임오버 [처음부터 다시]와 같은 손 */
   if (!chapterAgainArmed) { chapterAgainArmed = true; $('chapterEndAsk').style.display = ''; $('chapterAgain').textContent = CHAPTER_KO.againArmed; return; }
@@ -12699,6 +12710,8 @@ const NEXT_KO = '다음 날 ▸';
 function drawNext() {
   const b = $('next');
   if (!b) return;
+  /* ★ 11-03 8C1 — 진로를 안 고른 채 방에 있으면 이 자리가 [🏡 진로 고르기 ▸](누르면 진로 화면 · §next onclick) */
+  if (endingLockedNow()) { b.textContent = CHAPTER_KO.btn; b.removeAttribute('title'); b.classList.remove('dayzero'); return; }
   let rows = [];
   try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.placed); } catch { }
   const todo = rows.some(r => r.ready || r.needsWater || r.needsSow);
@@ -13845,7 +13858,8 @@ function drawJourney() {
     catch (e) { console.warn('[진로 머리 줄]', e && e.message); return null; } })();
   const potDark = movedOutNow ? potDarkNow() : null;   /* ★ C3③ — 원룸 화분이 어두운 자리(§potDarkNow) · 칩 · 이 줄 · 판 머리 · 손가락이 같은 자 */
   const moveLive = moveLiveNow() && (!questGoal || questWait);   /* ★ C2 — 이사 단추가 살고 할 일 칩이 없거나 «기다리는 중»이면 칩 · 이 줄이 이사 줄(§moveLineOver 와 같은 뜻) */
-  $('quest').textContent = justMoved
+  $('quest').textContent = endingLockedNow() ? CHAPTER_KO.chip   /* ★ 11-03 8C1 — 진로를 골라야 다음 날 */
+    : justMoved
     ? `${josaRo(slotLabel(plant.slotId))} 옮겼습니다. 빛 판정은 7일 평균이라 ` +
       `나흘쯤 지나야 새 자리 값이 됩니다 — 하루씩 넘겨 보세요.`
     : movedOutNow ? ((potDark && potDark.ko) || questGoal || livingGoal || jobLine || '')   /* ★ C3③ — 어두운 화분이 먼저 */
@@ -13917,7 +13931,8 @@ function drawJourney() {
       /* ★ 2026-10-31 총괄 D90 종합5(#9 · plan «칩은 한 줄의 ko + 그 줄의 todo») — 몸도 머리와 «같은 줄»에서.
            ⛔ 머리 «새 여덟까지 늘린다»(새 줄) · 몸 «무순을 길러…»(지금 줄) / 머리 «5/5 · 씨앗 주문» · 몸 «창턱 화분받침으로 옮겼습니다…»(옮긴 직후 알림 —
              그 말은 옮긴 순간 배너 · 식물 줄이 이미 한다). ⇒ 새 줄 머리면 몸은 그 줄 할 일 · 나머지는 할 일 줄(옮긴 직후 알림은 칩에 안 싣는다) */
-      const chipBody = (potDark && potDark.ko) ? potDark.ko   /* ★ C3③ */
+      const chipBody = endingLockedNow() ? CHAPTER_KO.chip   /* ★ 11-03 8C1 — 진로를 골라야 다음 날 */
+        : (potDark && potDark.ko) ? potDark.ko   /* ★ C3③ */
         : questFresh && questFresh.todo ? questFresh.todo
         : (!movedOutNow && moveLive) ? MOVE_ROUTE_KO.chip   /* ★ C2 — 새 줄(할 손이 있는 줄)은 그대로 앞 */
         : movedOutNow ? (questGoal || livingGoal || jobLine || '')
@@ -15556,7 +15571,7 @@ function closeMealPanel() {
   try { planMeal(S, null); } catch { }
   drawMealPanel();
 }
-$('mealGo').onclick     = guard(() => { if (endingLockedNow()) { banner(CHAPTER_KO.locked, ''); return; } goNextDay(); });   /* D28 · D59 진로를 고르면 풀림 */
+$('mealGo').onclick     = guard(() => { if (endingLockedNow()) { closeMealPanel(); banner(CHAPTER_KO.locked, CHAPTER_KO.lockedSub); return; } goNextDay(); });   /* D28 · D59 진로를 고르면 풀림 · ★ 8C1 글 */
 $('mealCancel').onclick = guard(() => closeMealPanel());
 
 $('next').onclick = guard((ev) => {
@@ -15569,8 +15584,8 @@ $('next').onclick = guard((ev) => {
        (덮개가 위를 덮고 있어 손가락으로는 덮개가 먼저 받는다. 이 갈래는 코드로
         부르는 길·키보드 길을 위한 것이다.) */
   if (dayAnimRunning) { skipDayAnim(); return; }
-  /* ★ 2026-10-08 D28 — 엔딩을 낸 판은 시간이 안 간다(다음 장 준비 중) */
-  if (endingLockedNow()) { banner(CHAPTER_KO.locked, ''); return; }
+  /* ★ 2026-10-08 D28 — 엔딩을 낸 판은 시간이 안 간다 · ★ 11-03 8C1 — 그 자리는 [🏡 진로 고르기](§drawNext) — 누르면 진로 화면을 다시 연다 */
+  if (endingLockedNow()) { openChapterEnd(); return; }
   if (S.firstPlay && S.firstPlay.enabled && !placedCropRows().length) {
     const e = new Error('가방의 시루를 먼저 방 안에 놓아 주세요');
     e.firstPlayInput = true;                 // 안내지 고장이 아니다 — 버튼을 잠그지 않는다

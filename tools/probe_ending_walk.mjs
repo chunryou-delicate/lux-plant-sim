@@ -166,7 +166,8 @@ const mk = (page) => {
   const dayLk = await J(`window.__S().day`);
   await J(`(()=>{ const b=document.getElementById('next'); b.disabled=false; b.click(); return 1; })()`); await sleep(1200);
   const lk = await J(`(()=>({ day: window.__S().day, on: window.__byeotChapterEnd().on, banner: (document.getElementById('event')||{}).textContent || '' }))()`);
-  ok(!lk.on && lk.day === dayLk && /다음 장이 준비되면 이어집니다/.test(lk.banner), '⑥ [방 둘러보기] → 덮개 닫힘 · [다음 날]은 잠김(날 그대로 · 배너)', lk);
+  /* ★ 2026-11-03 core 8C1(총괄 가름 · 비판 8판 BLOCKER #1) — 잠긴 동안 [다음 날] 자리는 [🏡 진로 고르기 ▸] · 누르면 진로 화면이 다시 선다(옛 배너 «다음 장이 준비되면 이어집니다»는 갇힘이라 걷음) */
+  ok(lk.on && lk.day === dayLk, '⑥ [방 둘러보기] → [🏡 진로 고르기 ▸]를 누르면 진로 화면이 다시 선다(날 그대로 · 8C1)', lk);
   await J(`(()=>{ try { window.__byeotSaveNow && window.__byeotSaveNow(); } catch(e){} return 1; })()`);
   await sleep(1500);
   await page.eval(`location.reload()`, false);
