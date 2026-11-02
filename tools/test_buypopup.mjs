@@ -23,6 +23,9 @@
         그 까닭을 적는다**
      G  ★ **배송 일수**를 적는다(품목마다 다르다) · **배너가 개수와 총액을 말한다**
      H  ★ **360·390·430 셋 다** 팝업 안 단추가 44px 아래로 안 내려간다
+   ★ 2026-11-02 다섯째 묶음 7C1(비판 7판 MAJOR #1 · 총괄 가름 · [plan] critic7 §1) — **씨앗**은 기본 개수가 «모자란 수»(0 이면 1 · 지난 주문 수 대신)이고
+     넷째 칸이 [전부](소지금 전부 — 덫) 대신 [모자란 만큼]이다 · 씨앗 아닌 품목은 넷째 칸이 없다.
+     ⇒ «직전 주문량 기억» · «소지금 최대에서 왜 더 못 올리나» 단언은 **시루**(씨앗 아님 · 기억 그대로)로 옮겼다. 씨앗은 새 뜻으로 단언한다(probe_critic7_a 가 깊게 잼)
 
    ⚠ **숫자를 이 파일에 안 박는다.** 값·개수·총액·배송일은 전부 `window.__S()` 와
      화면 글자에서 뽑아 서로 대조한다 — START-HERE §2.8 의 사고가 그 반대다.
@@ -146,7 +149,9 @@ console.log('\n== A. ★★ [주문]을 누르면 개수를 고르는 팝업이 
 
 /* ══ B·D. 디폴트 1 · 총액 · 코어 값과 대조 ═════════════════════════════ */
 console.log('\n== B·D. ★★★ 처음엔 1개 · 올리면 총액이 따라 온다 ==');
-let unitWon = null, leadDays = null;
+let unitWon = null, leadDays = null, siruUnit = null;
+/* ★ 7C1 — 씨앗 기본 개수 = 모자란 수(0 이면 1) · 게임이 낸 셈(§buySeedNeedOf)과 견준다 */
+const seedDefault = async () => { const n = await page.eval(`(()=>{ const x = window.__byeotBuyNeed ? window.__byeotBuyNeed('bean_seed') : null; return x ? x.need : null; })()`); return n > 0 ? n : 1; };
 {
   const p1 = await popRead();
   ok('★★★ **처음 시키는 품목은 디폴트가 1개**', countOf(p1) === 1, p1.count);
@@ -199,7 +204,8 @@ console.log('\n== B-2. ★★★ 디폴트는 「그 품목을 직전에 몇 개
 {
   await buy('bean_seed'); await sleep(400);
   const p = await popRead();
-  ok('★★★ **3개를 시킨 뒤 다시 열면 3개가 떠 있다**', countOf(p) === 3, p.count);
+  const sd = await seedDefault();
+  ok('★★★ 7C1 — 씨앗은 3개를 시킨 뒤에도 기본 개수가 «모자란 수»다(지난 주문 수 대신 · 0 이면 1)', countOf(p) === sd, `${p.count} / 모자란 수 기본 ${sd}`);
   await click('buyCancel'); await sleep(300);
 
   await buy('siru'); await sleep(400);
@@ -207,7 +213,7 @@ console.log('\n== B-2. ★★★ 디폴트는 「그 품목을 직전에 몇 개
   ok('★★★ ⚠ **품목마다 따로 기억한다** — 시루는 1개다 (씨앗 3개가 새어 오면 안 된다)',
      countOf(s) === 1, s.count);
   ok('  시루는 배송이 이틀이다 (씨앗과 다르다)', nums(s.sub)[1] !== leadDays, s.sub);
-  const sLead = nums(s.sub)[1];
+  const sLead = nums(s.sub)[1]; siruUnit = nums(s.sub)[0];
 
   /* 시루를 2개 시켜서 「둘이 서로 안 섞인다」를 실제로 못 박는다 */
   await click('buyPlus'); await sleep(250);
@@ -221,8 +227,8 @@ console.log('\n== B-2. ★★★ 디폴트는 「그 품목을 직전에 몇 개
   ok('★★ 시루를 다시 열면 **2개**다', countOf(await popRead()) === 2);
   await click('buyCancel'); await sleep(250);
   await buy('bean_seed'); await sleep(400);
-  ok('★★★ 그래도 씨앗은 여전히 **3개**다 (뒤에 시킨 것이 안 덮어쓴다)',
-     countOf(await popRead()) === 3);
+  ok('★★★ 시루 기억이 씨앗으로 안 샌다 — 씨앗은 여전히 «모자란 수» 기본(7C1)',
+     countOf(await popRead()) === await seedDefault());
 }
 
 /* ══ E. 닫는 길 셋 — 셋 다 돈이 안 나간다 ══════════════════════════════ */
@@ -258,18 +264,17 @@ console.log('\n== E. ★★ 닫는 길이 셋이고 셋 다 돈이 안 나간다
 }
 
 /* ══ B-3. [전부] — 살 수 있는 최대 ════════════════════════════════════ */
-console.log('\n== B-3. ★ [전부]는 「살 수 있는 최대」다 ==');
+console.log('\n== B-3. ★ 7C1 — 씨앗 넷째 칸은 [모자란 만큼] · 씨앗 아닌 품목은 넷째 칸 없음([전부] 덫 걷음) ==');
 {
   await buy('bean_seed'); await sleep(400);
-  const c = await core();
-  await click('buyAll'); await sleep(400);
+  const allT = await txt('#buyAll'), need = await page.eval(`(()=>{ const x=window.__byeotBuyNeed && window.__byeotBuyNeed('bean_seed'); return x ? x.need : null; })()`);
   const p = await popRead();
-  const maxQty = Math.floor(c.cash / unitWon);
-  ok('★ [전부]가 **소지금으로 살 수 있는 최대**로 간다', countOf(p) === maxQty,
-     `${p.count} / 소지금 ${c.cash} ÷ ${unitWon} = ${maxQty}`);
-  ok('  위끝에서는 [＋]와 [전부]가 회색이다', p.plusDis === true && p.allDis === true);
-  ok('★★ **왜 더 못 올리는지**를 그 자리에서 말한다 (§조용한 실패)',
-     /소지금으로는/.test(p.quote) && nums(p.quote).includes(maxQty), p.quote);
+  ok('★ 7C1 — 씨앗 넷째 칸이 «모자란 만큼»이다(소지금 [전부] 아님)', allT === '모자란 만큼', allT);
+  ok('  모자란 수가 0 이면 [모자란 만큼]은 회색 · 개수 줄이 «씨앗은 모자라지 않습니다»', need !== 0 || (p.allDis === true && /씨앗은 모자라지 않습니다/.test(await txt('#buyNeed'))), `need ${need} · ${await txt('#buyNeed')}`);
+  await click('buyCancel'); await sleep(300);
+  await buy('siru'); await sleep(400);
+  const shown = await page.eval(`(()=>{ const b=document.getElementById('buyAll'); return !!(b && b.style.display !== 'none' && b.offsetParent); })()`);
+  ok('★ 7C1 — 씨앗 아닌 품목(시루)은 넷째 칸이 없다', shown === false);
   await click('buyCancel'); await sleep(300);
 }
 
@@ -278,7 +283,7 @@ console.log('\n== B-3. ★ [전부]는 「살 수 있는 최대」다 ==');
      그래서 **자리를 안 먹는 길**을 골랐다. 이 절이 그것이 실제로 도는지를 잰다. */
 console.log('\n== J. ★ [＋]를 누른 채로 있으면 빨라진다 (±10 단추가 못 들어가서 고른 길) ==');
 {
-  await buy('bean_seed'); await sleep(400);
+  await buy('siru'); await sleep(400);   /* ★ 7C1 — 기억을 재는 절이라 시루(씨앗 아님 · 기억 그대로)로 */
   const before = countOf(await popRead());
   await page.eval(`(()=>{document.getElementById('buyPlus')
     .dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));})()`, false);
@@ -298,8 +303,8 @@ console.log('\n== J. ★ [＋]를 누른 채로 있으면 빨라진다 (±10 단
   ok('  그 다음 한 번 누르기는 정상으로 는다', countOf(await popRead()) === after + 1);
   await click('buyCancel'); await sleep(300);
   /* ⚠ 이 절이 기억을 더럽히지 않게 — 주문을 안 했으므로 기억은 그대로다(§B-2 가 뒤에 온다) */
-  await buy('bean_seed'); await sleep(400);
-  ok('  ⚠ 고르다 그만둔 값은 **기억에 안 남는다**', countOf(await popRead()) === 3,
+  await buy('siru'); await sleep(400);
+  ok('  ⚠ 고르다 그만둔 값은 **기억에 안 남는다**(시루 2)', countOf(await popRead()) === 2,
      (await popRead()).count);
   await click('buyCancel'); await sleep(250);
 }
@@ -311,7 +316,7 @@ console.log('\n== C. ★★ 새로고침해도 「직전 주문량」이 남는�
   await openTab('shop');
   await buy('bean_seed'); await sleep(500);
   const p = await popRead();
-  ok('★★ 씨앗은 여전히 3개다 (화면 변수였다면 1로 돌아간다)', countOf(p) === 3, p.count);
+  ok('★★ 7C1 — 새로고침 뒤에도 씨앗은 «모자란 수» 기본', countOf(p) === await seedDefault(), p.count);
   await click('buyCancel'); await sleep(250);
   await buy('siru'); await sleep(400);
   ok('★★ 시루는 여전히 2개다', countOf(await popRead()) === 2);
@@ -325,12 +330,12 @@ console.log('\n== C. ★★ 새로고침해도 「직전 주문량」이 남는�
 console.log('\n== F. ★★ 돈이 모자라면 **그 자리에서** 말한다 ==');
 {
   /* F-1. 기억한 3개는 못 사고 2개는 살 수 있는 돈 */
-  await page.eval(`(()=>{window.__S().tutorial.cashWon = ${unitWon * 2};})()`, false);
+  await page.eval(`(()=>{window.__S().tutorial.cashWon = ${siruUnit};})()`, false);   /* ★ 7C1 — 기억은 시루(2)로 잰다 · 1개 살 돈 */
   await redraw();
-  await buy('bean_seed'); await sleep(400);
+  await buy('siru'); await sleep(400);
   const p = await popRead();
   ok('★★ [주문] 단추가 **회색이 아니다** — 눌러야 까닭을 들을 수 있다', p.on);
-  ok('★★★ 기억한 3개가 **살 수 있는 데까지(2개) 내려서** 열린다', countOf(p) === 2, p.count);
+  ok('★★★ 기억한 시루 2개가 **살 수 있는 데까지(1개) 내려서** 열린다', countOf(p) === 1, p.count);
   ok('★★ 그리고 **왜 더 못 올리는지**를 적는다', /소지금으로는/.test(p.quote), p.quote);
   ok('  그 자리에서 시킬 수는 있다', p.goDis === false);
 

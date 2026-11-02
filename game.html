@@ -1793,6 +1793,7 @@
     border:1px solid rgba(255,255,255,.12)}
   .sparkleg{display:flex;gap:9px;flex-wrap:wrap;font-size:10px;margin-top:3px}
   /* ★ 이벤트 배너 — 갈라짐이 켜지는 순간. v0가 증명하려는 것이 이 한 줄이다 */
+  #buyAll{word-break:keep-all;line-height:1.15}   /* ★ 11-02 7C1 «모자란 만큼» — 좁은 칸(360 64px)에서 «모자란 / 만큼» 두 줄 */
   #event{position:absolute;left:50%;top:34px;transform:translate(-50%,-14px);z-index:9;
     opacity:0;transition:opacity .45s,transform .45s;pointer-events:none;max-width:88%;
     /* ★ 화면을 넘지 않는다 — 넘으면 그 상자가 무대를 덮어 아무것도 못 누른다(박사님 사진).
@@ -2461,6 +2462,7 @@
     <div class="ptitle" id="buyTitle">몇 개 주문할까요</div>
     <div class="psub" id="buySub"></div>
     <div id="buyHave" class="plots"></div>
+    <div id="buyNeed" class="plots" style="display:none"></div>   <!-- ★ 11-02 7C1 — «오늘 · 내일 심을 {box} {w}개 — …»(씨앗 품목만) -->
     <div class="prow">
       <button id="buyMinus" class="ghost" type="button">−</button>
       <button id="buyCount" class="ghost pcount" type="button" disabled>1개</button>
@@ -6789,6 +6791,7 @@ function updateHint() {
       /* ★ 2026-10-24 다듬기 6-3(core 가름) — 글 속 글자 단추(.linkBtn · 할 일 머리 줄 [진로 바꾸기])는 «창의 일하는 단추»가 아니다.
            9f7263d2 가 머리 줄에 [진로 바꾸기]를 넣자 «살아 있는 마지막 단추»가 그것이 되어 손가락이 진로 바꾸기를 짚었고,
            위가 막혀 왼쪽으로 선 말풍선 «여기를 눌러 보세요»가 칭호 칩 «동네 식물 가게 · 단골 30명»을 덮었다(총괄 다시 걸음 end30_quest) ⇒ 예전처럼 [✕] */
+      if (pop.id === 'buyPanel') { const bf = buyPanelFinger(); if (bf) return hintAt(bf.el, bf.say); }   /* ★ 11-02 7C1 */
       const go = [...pop.querySelectorAll('button.go')].find(live)
               || [...pop.querySelectorAll('button.primary')].find(live)
               || [...pop.querySelectorAll('button:not(.linkBtn)')].filter(live).pop();
@@ -7387,6 +7390,7 @@ function updateHint() {
        거기서 멈춘다 — 실측(probe_guide_walk)에서 5일차에 [주문]만 일곱 번 눌렀다.
        ⇒ 창이 떠 있으면 그 창의 [주문]을 가리킨다. 걸음은 **상점 → 주문 → 개수 확정** 셋이다. */
     const go = $('buyGo');
+    { const bf = buyPanelFinger(); if (bf) return hintAt(bf.el, bf.say); }   /* ★ 11-02 7C1 */
     if (go && onScreen(go) && !go.disabled)
       return hintAt(go, '개수를 정하고 [주문] — 내일 옵니다');
     const buyBtn = $('shopList') && $('shopList').querySelector(`[data-buy="${seedNeed}"]`);
@@ -7480,6 +7484,7 @@ function updateHint() {
   })();
   if (musunNeed && firstCycleDone) {
     const go = $('buyGo');
+    { const bf = buyPanelFinger(); if (bf) return hintAt(bf.el, bf.say); }   /* ★ 11-02 7C1 */
     if (go && onScreen(go) && !go.disabled)
       return hintAt(go, `개수를 정하고 [주문] — ${musunNeed.ko}`);
     const b = seeShopRow($('shopList') && $('shopList').querySelector(`[data-buy="${musunNeed.id}"]`));
@@ -10134,7 +10139,15 @@ function drawBuyPanel() {
   $('buyCount').textContent = `${buyQty}개`;
   $('buyMinus').disabled = buyQty <= 1;
   $('buyPlus').disabled = buyQty >= maxQty;
-  $('buyAll').disabled = maxQty < 1 || buyQty >= maxQty;
+  /* ★★ 2026-11-02 다섯째 7C1(비판 7판 MAJOR #1 · [plan] critic7 §1 · 총괄 ㉮) — [전부](소지금 전부 · A Day 13 «2324개 · 1,162,000원»)는 덫이었다.
+       씨앗은 넷째 칸이 «모자란 만큼»(오늘 · 내일 심을 수 − 가방 − 오는 중 · 0 이면 회색) · 씨앗 아닌 품목(시루 · 재배판 · 화분 · 가구 · 등)은 넷째 칸을 숨긴다 */
+  const sn = buySeedNeedOf(it.id, st);
+  $('buyAll').style.display = sn ? '' : 'none';
+  $('buyAll').textContent = BUY_NEED_KO.btn;
+  $('buyAll').disabled = !sn || maxQty < 1 || sn.need < 1 || buyQty === Math.min(sn.need, maxQty);
+  { const bn = $('buyNeed');
+    if (bn) { bn.style.display = sn ? '' : 'none';
+              bn.textContent = sn ? BUY_NEED_KO.line.replace('{box}', sn.box).replace('{w}', String(sn.w)) + (sn.need > 0 ? BUY_NEED_KO.short.replace('{need}', String(sn.need)) : BUY_NEED_KO.ok) : ''; } }
 
   /* ★★ 총액과 「언제 오나」와 「왜 더 못 올리나」가 한 자리에 있다 (§조용한 실패) */
   const q = $('buyQuote');
@@ -10164,6 +10177,16 @@ function drawBuyPanel() {
    **창이 뜨기 전 대상**(상점 줄의 [주문])에 그대로 붙어 있다. 실측에서 그 손가락을
    따라간 판이 [주문]만 일곱 번 누르고 5일차에 멈췄다 — 누를 때마다 같은 창이 다시 떴다. */
 function repickHint() { try { updateHint(); } catch { } }
+/* ★ 2026-11-02 다섯째 7C1([plan] critic7 §1) — 씨앗 주문 창 손가락: 모자라지 않으면 [그만두기] «닫아도 됩니다» · 개수가 모자란 수보다 많으면 [모자란 만큼] «모자란 만큼으로 맞춥니다» ·
+     그 밖(개수 ≤ 모자란 수)은 null — 예전처럼 [주문] «개수를 정하고 [주문] — …» · 씨앗 아닌 품목도 null */
+function buyPanelFinger() {
+  if (!buyOpen || !buyItemId) return null;
+  const sn = buySeedNeedOf(buyItemId); if (!sn) return null;
+  const vis = el => { if (!el || el.disabled || el.style.display === 'none') return false; const q = el.getBoundingClientRect(); return q.width > 0 && q.height > 0; };
+  if (sn.need < 1) return vis($('buyCancel')) ? { el: $('buyCancel'), say: BUY_NEED_KO.close } : null;
+  if (buyQty > sn.need && vis($('buyAll'))) return { el: $('buyAll'), say: BUY_NEED_KO.fit };
+  return null;
+}
 function openBuyPanel(itemId) {
   const it = buyItemOf(itemId);
   if (!it) return;
@@ -10174,6 +10197,8 @@ function openBuyPanel(itemId) {
   /* ★★ 디폴트는 **그 품목을 직전에 몇 개 시켰나**다(처음이면 1).
      `drawBuyPanel` 이 소지금으로 살 수 있는 데까지 내려 주고, 내렸으면 그 까닭도 적는다. */
   buyQty = lastOrderQtyOf(itemId);
+  /* ★ 2026-11-02 다섯째 7C1(총괄 «지난 주문 수 대신») — 씨앗이면 기본 개수 = 모자란 수 · 모자라지 않으면 1 */
+  { const sn = buySeedNeedOf(itemId); if (sn) buyQty = sn.need > 0 ? sn.need : 1; }
   drawBuyPanel();
   repickHint();
 }
@@ -10228,8 +10253,12 @@ $('buyPlus').onclick  = guard(() => { if (holdAte('buyPlus')) return; buyStep(1)
 holdRepeat('buyMinus', (d) => buyStep(-d));
 holdRepeat('buyPlus',  (d) => buyStep(d));
 $('buyAll').onclick   = guard(() => {
-  buyQty = Math.max(1, buyMaxQty(buyItemOf(buyItemId)));
+  /* ★ 11-02 7C1 — «모자란 만큼»: 살 수 있는 데까지(모자란 수가 소지금보다 크면 값 줄이 «소지금으로는 N개까지»를 말한다) */
+  const sn = buySeedNeedOf(buyItemId);
+  if (!sn || sn.need < 1) { drawBuyPanel(); return; }
+  buyQty = Math.max(1, Math.min(sn.need, buyMaxQty(buyItemOf(buyItemId))));
   drawBuyPanel();
+  repickHint();
 });
 $('buyCancel').onclick = guard(() => { closeBuyPanel(); });
 
@@ -11138,11 +11167,30 @@ function seedTomorrowOf(kind, rows0, st0) {
   let kk = null; try { kk = cropKindOf(kind); } catch { kk = null; }
   const sid = (kk && kk.seedItemId) || (kind === 'musun' ? 'radish_seed' : 'bean_seed');
   const mine = (rows0 || cropPotList(S.firstPlay, S.day) || []).filter(r => r && r.kind === kind && r.placed);
-  const want = mine.filter(r => r.harvested || r.ready || (r.growing && Number.isFinite(r.daysLeft) && r.daysLeft <= 1)).length;
+  /* ★ 2026-11-02 다섯째 7C1(총괄 ㉯ · [plan] critic7 §1) — 안 심은 줄(needsSow)도 센다: 오늘 심을 몫이다.
+       ⛔ 바닥 🛒 지름길(안 심은 새 시루 ∧ 씨앗 0)로 연 주문 창이 «씨앗은 모자라지 않습니다»가 될 판(want 0) · 이 셈 하나를 주문 창 · 바닥 🛒 미리 · «씨앗을 사러» 손가락이 같이 쓴다
+       ⚠ 네 갈래(안 심음 · 거둠 · 익음 · 내일 익음)는 서로 겹치지 않는 줄 상태라 한 줄을 두 번 세지 않는다 */
+  const want = mine.filter(r => r.needsSow || r.harvested || r.ready || (r.growing && Number.isFinite(r.daysLeft) && r.daysLeft <= 1)).length;
   const have = (st ? ((st.stock && st.stock[sid]) || 0) : 0)
              + (st ? (st.orders || []).filter(o => o && o.itemId === sid && o.daysLeft >= 0).reduce((a, o) => a + (o.qty || 1), 0) : 0);
   return { sid, rows: mine.length, want, have };
 }
+/* ★ 2026-11-02 다섯째 7C1 — 씨앗 품목이면 그 작물의 «오늘 · 내일 심을» 수(w) · 가진 것(have = 가방 + 오는 중) · 모자란 수(need) · 그릇 낱말 · 씨앗 아니면 null */
+const BUY_NEED_KO = Object.freeze({ btn: '모자란 만큼', line: '오늘 · 내일 심을 {box} {w}개 — ', short: '씨앗 {need}개가 모자랍니다', ok: '씨앗은 모자라지 않습니다',
+                                    fit: '모자란 만큼으로 맞춥니다', close: '닫아도 됩니다' });
+function buySeedNeedOf(itemId, st0) {
+  try {
+    for (const kind of ['beansprout', 'musun']) {
+      let k = null; try { k = cropKindOf(kind); } catch { k = null; }
+      const sid = (k && k.seedItemId) || (kind === 'musun' ? 'radish_seed' : 'bean_seed');
+      if (sid !== itemId) continue;
+      const t = seedTomorrowOf(kind, null, st0);
+      return { kind, box: kind === 'musun' ? '재배판' : '시루', w: t.want, have: t.have, need: Math.max(0, t.want - t.have) };
+    }
+  } catch (e) { void e; }
+  return null;
+}
+window.__byeotBuyNeed = (id) => { try { return buySeedNeedOf(id || 'bean_seed'); } catch (e) { return { 탈: e && e.message }; } };   /* 재는 손잡이 */
 window.__byeotSeedTomorrow = (kind) => { try { return seedTomorrowOf(kind || 'beansprout'); } catch (e) { return { 탈: e && e.message }; } };   /* 재는 손잡이 */
 function drawSow() {
   const btn = $('resow');
