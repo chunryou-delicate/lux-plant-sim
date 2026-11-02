@@ -1634,6 +1634,10 @@
   /* ★ 2026-10-31 총괄 D95 ① — 괄호 꼬리(«(12개 중 11개 · 체력 11)» · «(3일째 멈춰 있습니다)»)는 **둘째 줄에 작게**(§twoLine).
        ⛔ 한 줄이면 58vw(390 폭 226px)를 넘어 «…»로 잘렸다 — 묶음의 수 · 체력이 안 보였다(core 자 probe_d95_short · 거두기 261px · 심기 344px) */
   #waterCrop, #harvestCrop, #waterPot, #resow{line-height:1.2}
+  /* ★ 11-03 7C11 — 걷는 동안 누른 바닥 단추: 둘째 줄에 지금 하는 말(§actBtnSay · data-walk) · 흐림(막지 않음) · 괄호 꼬리는 그동안 숨김 */
+  #waterCrop[data-walk], #harvestCrop[data-walk], #waterPot[data-walk], #resow[data-walk]{opacity:.6}
+  #waterCrop[data-walk] .btnTail, #harvestCrop[data-walk] .btnTail, #waterPot[data-walk] .btnTail, #resow[data-walk] .btnTail{display:none}
+  #waterCrop[data-walk]::after, #harvestCrop[data-walk]::after, #waterPot[data-walk]::after, #resow[data-walk]::after{content:attr(data-walk);display:block;font-size:11px;font-weight:600;opacity:.9}
   #waterCrop .btnTail, #harvestCrop .btnTail, #waterPot .btnTail, #resow .btnTail{display:block;font-size:11px;font-weight:600;
     opacity:.86;overflow:hidden;text-overflow:ellipsis}
   /* 아이콘만 남은 말풍선 — 작고 동그랗다. 글자는 aria-label·title 에 그대로 있다(§drawMarks) */
@@ -1668,7 +1672,13 @@
   /* ★ 2026-11-01 비판 다섯째 판 #15 — 바닥 왼쪽 단추와 겹치면 꼬리만 숨긴다(§fitNextTail) */
   #next.tight .nx-sub{display:none}
   /* ★ 2026-10-31 D93 ④ m11 — 진행 띠(.gg-bar)도 비킨다 — 글줄만 비키고 띠는 [다음 날] 밑으로 들어가 «얼마나 남았나»의 오른쪽이 가려졌다(비판 둘째 판 s082_zoom) */
-  #stage.zoom #growGauge .gg-row,#stage.zoom #growGauge .gg-bar,#stage.zoom #growGauge .gg-why,#stage.zoom #growGauge .gg-cut{margin-right:max(0px, calc(var(--nextW, 0px) - 4px))}
+  /* ★ 11-03 7C10(총괄 가름 · 비판 7판 MINOR #16 d17_zoom) — 글줄 · 띠는 비켰어도 [다음 날]이 카드 오른쪽 귀퉁이를 덮고 서 있었다(카드 테두리 · 바탕이 단추 밑으로 들어감)
+       ⇒ 확대 중엔 [다음 날]을 카드 위 오른쪽으로 올린다([시야 돌아가기]와 같은 줄 · 카드 높이 --ggH) · 카드는 그 자리 그대로(밑의 plant_grow 단추를 덮음) · 글줄 · 띠는 다시 카드 폭 전부 */
+  #stage.zoom #next{bottom:calc(22px + var(--ggH, 72px))}
+  /* ⚠ 글줄이 카드 폭을 다 쓰면 한 줄로 줄어 카드가 낮아지고(68px) 밑의 plant_grow 보기 단추(앞 · 좌 · 우 · 위 css 658~690 · 자동회전 · 바닥격자 696~728)가 카드 위로 드러났다(x_7c10)
+       ⇒ 확대 카드는 그 두 줄을 늘 덮는 높이(아래 14px 에서 88px · 위 끝 642)부터 */
+  #stage.zoom #growGauge{box-sizing:border-box;min-height:88px}
+  #stage.zoom #growGauge .gg-row,#stage.zoom #growGauge .gg-bar,#stage.zoom #growGauge .gg-why,#stage.zoom #growGauge .gg-cut{margin-right:0}
   #stage.zoom #closeZoom{bottom:calc(22px + var(--ggH, 72px))}
   #growGauge .gg-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
   #growGauge b{font-size:13px;color:var(--ink);font-weight:700}
@@ -5021,6 +5031,26 @@ function hintAvoidChip(h, hand, r) {
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
+  /* ★ 11-03 7C8 총괄 가름(사진 390_c7g_deal) — 상점 중고 거래 연락 온 줄의 [거래하기]는 «손만»(7C6 확인 바와 같은 손).
+       ⛔ 왼쪽 그림 · 값, 오른쪽 [내리기], 위 · 아래 글이라 말풍선 자리가 없어 아래로 갔고, 말풍선 오른쪽 끝 밑의 손 👆 이 [내리기] 밑에 서서 [내리기]를 짚는 것으로 읽혔다(설명 줄도 덮음)
+       ⇒ 손끝이 [거래하기] 한가운데를 가리킨다 — 위에서 👇(줄 이름 글이 짧아 빈 자리) · 위가 막히면 아래에서 👆 · 묻는 말은 누르면 확인 창이 한다(§dealTap) */
+  const dealBtn = (() => { try { const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!(e && e.closest && e.closest('#marketList [data-deal]')); } catch (e) { return false; } })();
+  if (dealBtn) {
+    /* 손 가운데는 [거래하기] 폭 안에서 한가운데 → 오른쪽 · 왼쪽 1/4 로 옮겨 본다(360: 위 줄 글 끝이 한가운데 손에 10px 걸렸다) · 위 먼저 · 다 걸리면 위 한가운데 */
+    const at = (up, dx) => {
+      h.classList.remove('side', 'toRight', 'below', 'row', 'navSide'); h.classList.add('handOnly'); if (!up) h.classList.add('below');
+      hand.textContent = up ? '👇' : '👆'; hand.style.left = '0px';
+      const hb0 = h.getBoundingClientRect();
+      h.style.left = (r.left + r.width / 2 + dx) + 'px';
+      h.style.top = (up ? r.top - hb0.height - 2 : r.bottom + 2) + 'px';
+      return h.getBoundingClientRect();
+    };
+    const dxs = [0, r.width / 4, -r.width / 4];
+    let done = false;
+    for (const up of [true, false]) { for (const dx of dxs) { const q = at(up, dx); if (!hitAny(q) && q.top >= 4 && q.bottom <= innerHeight - 8) { done = true; break; } } if (done) break; }
+    if (!done) at(true, 0);
+    return;
+  }
   const cr = obs.find(o => hit(h.getBoundingClientRect(), o));
   if (!cr) return;
   /* ⓪ 옆에 선 말풍선(위가 막혀 옆에서 가리킨다 · 할 일 창 [✕])은 먼저 위아래로만 비킨다 — 손이 대상 높이 안에 남는 만큼만(6-3).
@@ -7505,6 +7535,14 @@ function updateHint() {
       return hintAt(el, HOME_READY_KO.door);
     }
   }
+  /* ★ 11-02 7C8(총괄 가름 · 비판 7판 MINOR #11) — 연락 온 매물이 있으면: 상점 탭이 열려 있으면 중고 거래 칸 맨 위 연락 온 줄의 [거래하기](§drawMarket 이 연락 온 줄을 위로) ·
+       아니면 기둥 [상점] · 글 [plan] §13 · [거래하기]는 늘 확인 창(§dealTap)이 먼저 선다 */
+  { let mc = 0; try { mc = ((marketStatus(S) || {}).contactedCount) || 0; } catch (e) { mc = 0; }
+    if (mc >= 1) {
+      const deal = seeShopRow($('marketList') && $('marketList').querySelector('[data-deal]'));
+      if (deal && !deal.disabled && seenAt(deal) && !sheetCovers(deal)) return hintAt(deal, DEAL_KO.deal);
+      const door = shopDoor(); if (door) return hintAt(door, DEAL_KO.door);
+    } }
   /* ══ ★★★ 2026-08-17 — **시루를 하나 더 사는 길** (박사님: *"시루 추가로 1개 사는 것도
        가이드 좀 해주고."*) ═══════════════════════════════════════════════
      ⚠ 씨앗 사는 길(§seedNeed)과 **같은 결**이다 — 걸음 셋: [상점] → 그 줄의 [주문] →
@@ -10758,6 +10796,14 @@ const ACT_KO = { water: '💧 물 주는 중', sow: '🌱 씨앗 심는 중', ha
 /* 걷는 동안의 말 — 한 곳에만 둔다(하단 막대와 말풍선이 같은 말을 해야 한다) */
 const ACT_WALK_KO = '🚶 가는 중…';
 let acting = false;
+/* ★ 11-03 7C11(총괄 가름 · 7C5 재현 x7c5_plus1s) — 바닥 단추를 누르면 주인공이 걸어가 닿기까지 5~9초 동안 그 단추 · 체력 칸이 그대로였다(«🚶 가는 중…»은 방 안 말풍선 위에만)
+     ⇒ 단추만 보는 사람은 «안 먹혔나» 하고 또 누른다(둘째 누름은 §doAct 줄 서기가 버려 안전 · 그래도 헷갈림).
+     ⇒ 누른 바닥 단추 둘째 줄에 지금 하는 말(말풍선 · 하단 막대와 같은 말 §actBar) · 흐림. ⚠ disabled 는 안 씀(막지 않는다 · 말풍선 click 을 삼킨다) · 끝나면 제자리(§clearActing)
+     ⚠ 걷는 빠르기 · 체력 · 줄 서기는 안 건드림 */
+let actBtn = null, actBtnLast = null;
+const ACT_BTN_IDS = ['waterCrop', 'harvestCrop', 'waterPot', 'resow'];
+function actBtnSay(ko) { if (actBtn && ko) actBtn.dataset.walk = ko; }
+function actBtnOff() { if (actBtn) { delete actBtn.dataset.walk; actBtn = null; } }
 /* ★★★ 2026-08-16 — **재촉을 걷고 줄 서기로 바꿨다** (박사님: "거두기 씨앗심기 물주기
    버튼 갈기면 게이지 없이 바로 되버려").
    ══════════════════════════════════════════════════════════════════
@@ -10913,6 +10959,7 @@ function clearActing(why) {
   const was = acting;
   if (was) sfx.stopAll();  /* ★ 걸음도 게이지도 끝났다 — 소리도 여기서 함께 멎는다 */
   acting = false; actingKey = null; actingKind = null;
+  actBtnOff();   /* ★ 11-03 7C11 */
   actBar(false);
   if (why && was) console.warn('[동작] 잠금을 풀었습니다 —', why);
   walkSfxOff();           /* ★ 재는 쪽도 같이 끈다 — 안 끄면 다음 틱이 도로 켠다(§E-3) */
@@ -11069,6 +11116,9 @@ function doAct(kind, done, opt = {}) {
        ③ 새 동작의 잠금·게이지가 그 자리에서 풀린다
      ⇒ 번호가 다르면 **남의 뒷정리를 하지 않는다.** 막는 것이 아니라 헷갈리지 않게 하는 것이다. */
   const myAct = ++actSeq;
+  actBtnOff();
+  actBtn = (actBtnLast && performance.now() - actBtnLast.t < 600) ? $(actBtnLast.id) : null; actBtnLast = null;   /* ★ 11-03 7C11 — 막 누른 바닥 단추(말풍선이 부른 .click() 도 같은 단추) */
+  actBtnSay(ACT_WALK_KO);
   actBar(true, ko, 0);
   let settled = false;
   const runOnce = () => { if (settled) return; settled = true; try { done(); } catch (e) { throw e; } };
@@ -11106,6 +11156,7 @@ function doAct(kind, done, opt = {}) {
       sfx.gauge(!walking && kind !== 'water');
       if (!walking && kind === 'water') sfx.water();
       actBar(true, walking ? ACT_WALK_KO : ko, p);
+      actBtnSay(walking ? ACT_WALK_KO : ko);   /* ★ 11-03 7C11 */
     },
     onDone: () => { finishAct(); },
     onFail: (why) => {
@@ -11604,6 +11655,13 @@ function questSnapshotNow(turn) {
     monsteraSeeds: (() => { try { return stockOf(S, 'monstera_seed') || 0; } catch { return null; } })(),
     /* ★ 2026-11-01 [plan] — 주문해 오는 중인 몬스테라 씨앗(oneroom_seed_restart todo «오면 🌱» · 배너 §emptyPotSubKo 와 같은 자) · 하네스 칸은 없음(num → 0 → 옛 글) */
     monsteraSeedsComing: (() => { try { return monsteraSeedsComingNow(); } catch { return null; } })(),
+    /* ★ 11-03 7C9(총괄 가름 · 비판 7판 MINOR #13 runS_95) — 주문해 오는 중인 빈 화분(shop.POT_KINDS 품목) 수 · 가장 이른 도착까지 날(1 이상)
+         ⛔ Day 94 화분 주문(2일 뒤) → Day 95 할 일 «상점에서 화분을 사세요»(두 번 사게 함) ⇒ quest §oneroom_seed_restart «화분이 오는 중 — n일 뒤» · 하네스 칸은 없음(num → 0 → 옛 글) */
+    emptyPotsComing: (() => { try { const ids = new Set(Object.values(POT_KINDS).map(k => k && k.itemId).filter(Boolean));
+                                    return ((shopStatus(S) || {}).orders || []).reduce((n, o) => n + ((o && ids.has(o.itemId)) ? (Number(o.qty) || 0) : 0), 0); } catch { return null; } })(),
+    emptyPotsComingDays: (() => { try { const ids = new Set(Object.values(POT_KINDS).map(k => k && k.itemId).filter(Boolean));
+                                        const ds = ((shopStatus(S) || {}).orders || []).filter(o => o && ids.has(o.itemId) && (Number(o.qty) || 0) > 0).map(o => Number(o.daysLeft)).filter(Number.isFinite);
+                                        return ds.length ? Math.max(1, Math.min(...ds)) : null; } catch { return null; } })(),
     emptyPotItems: (() => { try { return Object.values(POT_KINDS).reduce((a, k) => a + ((k && k.itemId) ? (stockOf(S, k.itemId) || 0) : 0), 0); } catch { return null; } })(),
     emptyPotsPlaced: Array.isArray(S.emptyPots) ? S.emptyPots.length : 0,
     /* ★★ 2026-10-08 — **원룸 줄의 칸**([plan] f39fbddb · quest.js oneroom_*). null = 「모른다」(그 줄은 안 열린다 · 안전 폴백) */
@@ -12558,6 +12616,8 @@ function drawBagQuestBtn() {
 /* ★ 2026-11-01 비판 다섯째 판 #15 — [다음 날]의 꼬리 «· 수확까지 N일»이 바닥 왼쪽 단추와 겹치면 꼬리만 숨긴다(.tight) · 반 초 지킴이도 다시 잰다
      ⚠ 같은 틀에서 떼고 재고 다시 단다 — 그 사이 그림이 안 그려져 깜빡이지 않는다 */
 const BOTTOM_LEFT_BTNS = ['waterCrop', 'harvestCrop', 'waterPot', 'resow', 'sellSurplusBtn'];
+/* ★ 11-03 7C11 — 바닥 동작 단추를 누른 때를 적는다(§doAct 가 0.6초 안이면 그 단추에 꼬리) · 남는 채소 팔기는 걷지 않아 뺀다 */
+for (const id of ACT_BTN_IDS) { const b = $(id); if (b) b.addEventListener('click', () => { actBtnLast = { id, t: performance.now() }; }, true); }
 /* ★ 2026-11-02 총괄 C7(비판 6판 #10 · d27_zero · A100_lampcheck) — 체력 0 바닥 단추는 하나(같은 글 «오늘 손이 다 떨어졌습니다»가 둘 — 초록 · 파랑 — 섰다).
      엄지 자리부터(거두기 → 물 → 다시 심기) 하나만 남기고 나머지 .tired 는 감춘다 · 셋을 다 그린 «뒤»에 부른다(§refreshOverlays · §draw) */
 function tiredOne() {
@@ -13888,12 +13948,14 @@ function drawJourney() {
     try { const cur = (JOB.jobOf(S) || {}).id; const h = cur === 'shop' ? JOB.jobHeadOf(S) : cur === 'care' ? CARE.careHeadOf(S) : cur === 'breed' ? BREED.breedHeadOf(S) : null; return (h && h.ko) || null; }
     catch (e) { console.warn('[진로 머리 줄]', e && e.message); return null; } })();
   const potDark = movedOutNow ? potDarkNow() : null;   /* ★ C3③ — 원룸 화분이 어두운 자리(§potDarkNow) · 칩 · 이 줄 · 판 머리 · 손가락이 같은 자 */
+  const dealLine = (() => { try { return (((marketStatus(S) || {}).contactedCount) || 0) >= 1 ? DEAL_KO.chip : null; } catch (e) { return null; } })();   /* ★ 11-02 7C8 — 연락 온 매물이 있는 동안 */
   const moveLive = moveLiveNow() && (!questGoal || questWait);   /* ★ C2 — 이사 단추가 살고 할 일 칩이 없거나 «기다리는 중»이면 칩 · 이 줄이 이사 줄(§moveLineOver 와 같은 뜻) */
   $('quest').textContent = endingLockedNow() ? CHAPTER_KO.chip   /* ★ 11-03 8C1 — 진로를 골라야 다음 날 */
     : justMoved
     ? `${josaRo(slotLabel(plant.slotId))} 옮겼습니다. 빛 판정은 7일 평균이라 ` +
       `나흘쯤 지나야 새 자리 값이 됩니다 — 하루씩 넘겨 보세요.`
-    : movedOutNow ? ((potDark && potDark.ko) || (homeReadyNow() ? HOME_READY_KO.chip : '') || questGoal || livingGoal || jobLine || '')   /* ★ C3③ — 어두운 화분이 먼저 */
+    : movedOutNow ? ((potDark && potDark.ko) || (homeReadyNow() ? HOME_READY_KO.chip : '') || dealLine || questGoal || livingGoal || jobLine || '')   /* ★ C3③ — 어두운 화분이 먼저 · ★ 7C8 거래 연락은 내 집 자금(8C3) 다음 */
+    : dealLine ? dealLine   /* ★ 11-02 7C8 — 이사 전(그루를 내놓은 판)은 연락 온 거래가 먼저 — 거래해야 이사비가 찬다 */
     : moveLive ? MOVE_ROUTE_KO.chip
     : (questGoal || livingGoal || quest[fp.phase] || '첫 플레이를 진행하세요.');
   /* ★ [가방]에 있던 진행 안내가 [식물] 맨 위로 왔다 (2026-08-06).
@@ -13965,6 +14027,7 @@ function drawJourney() {
       const chipBody = endingLockedNow() ? CHAPTER_KO.chip   /* ★ 11-03 8C1 — 진로를 골라야 다음 날 */
         : (potDark && potDark.ko) ? potDark.ko   /* ★ C3③ */
         : homeReadyNow() ? HOME_READY_KO.chip   /* ★ 11-03 8C3 — 자금이 모였고 아직 안 삼 */
+        : dealLine ? dealLine   /* ★ 11-02 7C8 — 연락 온 거래 */
         : questFresh && questFresh.todo ? questFresh.todo
         : (!movedOutNow && moveLive) ? MOVE_ROUTE_KO.chip   /* ★ C2 — 새 줄(할 손이 있는 줄)은 그대로 앞 */
         : movedOutNow ? (questGoal || livingGoal || jobLine || '')
@@ -19590,6 +19653,14 @@ function slotHolderOf(slotId) {
      ㉰ 이 방 어디도 안 밝다 → «식물등을 달아 밝은 자리를 만드세요»(반지하 buy_lamp 와 같은 말)
      «밝은» = growBandAt 이 dark 가 아님(몬스테라 min 2.7 = 빛 분포 «밝음» 문턱 grow 와 같은 값) · 가장 밝은 칸을 그루 · 삽수가 차지했으면 줄 없음.
      ⚠ 빈 화분은 [📍 자리]가 없어(심으면 생긴다) 심은 그루만 본다 · 못 재면 null(지어내지 않는다) */
+/* ★ 11-02 7C8(총괄 가름 · 비판 7판 MINOR #11 S4_d94 · S5_shop) — 중고 거래에 연락 온 매물이 있는 동안(marketStatus.contactedCount ≥ 1 · 거래 · [내리기] 까지 남음 · shop.js §stepMarket)
+     ⛔ «📩 연락이 왔습니다 — [상점]에서 거래하세요» 알림이 손일 한 번에 걷히면 칩은 «무늬 잎 0/2», 손가락은 [다음 날] — 거래할 곳이 [상점] 주황 점뿐이었다
+     chip(총괄 가름 글) · door ㉠ · deal ㉡([plan] §13) */
+const DEAL_KO = Object.freeze({
+  chip: '📩 [상점]에서 거래하세요',
+  door: '연락이 왔습니다 — 거래하러 갑니다',
+  deal: '누르면 팔기 전에 한 번 더 묻습니다'
+});
 const POT_DARK_KO = Object.freeze({
   go: '몬스테라 화분을 밝은 빈 칸으로 옮기세요',   /* ★ 11-02 7C2([plan] §3 ㉠) — 앞 걸음 «… 밝은 칸을 비우세요»와 이어 읽힌다 · 'go' 조건만으로 늘 참 */
   fingerRow: '여기가 밝은 빈 칸입니다',   /* ★ 11-02 7C2 — 자리 고르기 창 그 칸 줄(§brightFreeGrowSlot 칸일 때만) */

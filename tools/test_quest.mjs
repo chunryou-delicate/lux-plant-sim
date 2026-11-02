@@ -589,6 +589,13 @@ check('D100 ③ 원천 0 갈래 — 무늬 줄 넷이 닫히고 · home_fund 가
   assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, emptyPotsPlaced: 1, monsteraSeeds: 1, monsteraSeedsComing: 1 }), '빈 화분의 🌱 을 눌러 씨앗을 심으세요');
   assert.ok('몬스테라 씨앗이 오면 🌱 을 눌러 심으세요'.length <= 28);
   assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, monsteraSeeds: 1 }), '상점에서 화분을 사세요');
+  /* ★ 11-03 7C9(총괄 가름 · 비판 7판 MINOR #13 runS_95) — 빈 화분이 오는 중이면 «화분을 사세요»는 거짓 · 씨앗이 있거나 오는 중이면 «화분이 오는 중 — n일 뒤» · 씨앗도 없고 안 오면 씨앗만 · 칸이 없으면(하네스) 옛 글 */
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, monsteraSeeds: 1, emptyPotsComing: 1, emptyPotsComingDays: 2 }), '화분이 오는 중 — 2일 뒤');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, monsteraSeedsComing: 1, emptyPotsComing: 1, emptyPotsComingDays: 1 }), '화분이 오는 중 — 1일 뒤');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, emptyPotsComing: 1, emptyPotsComingDays: 2 }), '상점에서 몬스테라 씨앗을 사세요');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, monsteraSeeds: 1, emptyPotsComing: 1 }), '화분이 오는 중');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, monsteraSeeds: 1, emptyPotItems: 1, emptyPotsComing: 1, emptyPotsComingDays: 2 }), '빈 화분을 방에 놓으세요');
+  assert.equal(questTodo('oneroom_seed_restart', { ...base, varieSourceN: 0, emptyPotsPlaced: 1, monsteraSeeds: 1, emptyPotsComing: 1, emptyPotsComingDays: 2 }), '빈 화분의 🌱 을 눌러 씨앗을 심으세요');
   const r3 = stepQuests(b, { ...base, day: 120, varieSourceN: 0, monsteraPots: 1 });
   assert.ok(r3.finished.includes('oneroom_seed_restart'), `씨앗을 심었는데 안 끝났습니다: ${r3.finished}`);
   info(`닫힌 줄 ${closed.join(' · ')} · 열린 줄 ${v.open.join(' · ')} · 씨앗 줄 끝 ${r3.finished.join(' · ')}`);
