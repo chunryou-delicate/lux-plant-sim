@@ -4715,7 +4715,7 @@ function hintAt(el, say) {
        ★ 2026-10-30 — 같은 이름·같은 말이면 요소가 새로 그려졌어도 같은 걸음이다(§fenceKeyOf) */
   { const k = el ? fenceKeyOf(el, say) : null; if (k !== fenceKey) { fenceMiss = 0; fenceKey = k; } }
   if (hintTargetEl && hintTargetEl !== el) hintTargetEl.classList.remove('hintTarget');
-  if (!el) { h.classList.remove('on'); hintTargetEl = null; dimOff();
+  if (!el) { h.classList.remove('on'); hintTargetEl = null; dimOff(); hintRoomClear(null);
              hintFollow = null; hintFollowLoop(false); return; }
   /* ★ 이 대상을 기억해 두고 프레임마다 다시 놓는다(§hintFollowLoop) */
   hintFollow = { el, say };
@@ -4735,6 +4735,7 @@ function hintAt(el, say) {
 /* 놓기만 하는 몫 — 점 손가락도 요소 손가락처럼 «놓는 셈»과 «따라다니는 고리»를 가른다 */
 function placePointHint(cx, cy, say, r = 48) {
   const h = $('hint');
+  hintRoomClear(null);   /* ★ 11-02 #13 — 상점 줄 위 틈(§hintRoomClear) */
   h.querySelector('.say').textContent = say;
   h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리 폭을 되돌린다 */
   h.classList.remove('side', 'toRight');
@@ -4783,10 +4784,17 @@ function hintAtPoint(cx, cy, say, r = 48, pointOf = null) {
 }
 
 /* 놓기만 하는 몫 — `hintAt` 과 프레임 고리가 **같은 셈**을 쓰게 갈라냈다 */
+/* ★ 2026-11-02 총괄 · 비판 6판 #13(사진 d05_004) — 상점 줄 위에 비운 말풍선 자리(틈)를 걷는다 · except 줄은 둔다(지금 짚는 줄) */
+function hintRoomClear(except) {
+  try {
+    for (const x of document.querySelectorAll('#shopList .shopRow[data-hint-room]'))
+      if (x !== except) { x.style.marginTop = ''; delete x.dataset.hintRoom; }
+  } catch (e) { void e; }
+}
 function placeHintAt(el, say) {
   const h = $('hint');
-  const r = el.getBoundingClientRect();
-  if (!r.width || !r.height) { h.classList.remove('on'); dimOff(); return; }   // 안 보이는 것은 안 가리킨다
+  let r = el.getBoundingClientRect();   /* ★ 11-02 #13 — 상점 줄 위에 틈을 내면 다시 읽는다 */
+  if (!r.width || !r.height) { h.classList.remove('on'); dimOff(); hintRoomClear(null); return; }   // 안 보이는 것은 안 가리킨다
   dimAt(r.left + r.width / 2, r.top + r.height / 2, Math.max(r.width, r.height) / 2 + 16);
   const hand = h.querySelector('.hand');
   h.querySelector('.say').textContent = say;
@@ -4837,6 +4845,41 @@ function placeHintAt(el, say) {
   }
   /* ★★ 2026-10-08 #8 — **할 일 칩(#questChip)을 덮지 않는다.** 칩은 퀘스트가 바뀌는 그 순간에 읽혀야 하는 글이다
        (실측: 열린 탭을 짚는 말풍선이 칩을 83~95% 덮었다). 겹치면 ① 대상 «아래»로(손가락이 위를 짚는다) ② 그래도 겹치면 «왼쪽». 칩은 안 옮긴다 */
+  /* ★★ 2026-11-02 총괄 · 비판 6판 #13(사진 d05_004 · C11 #13 갈래) — **상점 줄 단추는 그 줄 «위»에 말풍선 자리를 비우고 거기서 짚는다.**
+       ⛔ 위(갈래 탭 · 윗줄)가 막히면 말풍선이 왼쪽으로 물러나 «제 줄» 이름 · «1일 뒤 도착» · 값을 덮었다(390 · 430 — 비판 다섯째 판 #10 고침이
+         제 줄 글을 비킬 글에서 뺐다) · 위에 그대로 서면 갈래 탭 단추 아랫단을 덮었다(360 · 390)
+       ⇒ 그 줄에 margin-top(말풍선 높이 − 줄 안 단추 자리)을 주면 말풍선이 줄 «원래 자리» 안에 서서 아무 글 · 단추도 안 덮는다 · 아래 줄은 그만큼 밀린다(굴림 칸)
+       ⚠ 프레임마다 다시 놓으므로 셈은 늘 같은 값(멱등) · 굴림 칸은 틈을 «처음 낼 때만» 맞춘다(사람이 굴린 것을 프레임마다 되돌리지 않게)
+       ⚠ 손가락이 다른 것을 짚거나 꺼지면 틈을 걷는다(§hintRoomClear · hintAt null · 점 손가락) · 값은 안 바뀐다(D95 보이게 하기) */
+  let shopRoomRow = null;
+  try {
+    const sl = $('shopList');
+    const row = (!h.classList.contains('side') && sl && el.closest) ? el.closest('.shopRow') : null;
+    if (row && sl.contains(row)) {
+      shopRoomRow = row;
+      const rr = row.getBoundingClientRect();
+      const cur = parseFloat(row.style.marginTop) || 0;
+      const need = Math.max(0, Math.ceil(hh - (r.top - rr.top) - 4 + 2));   /* 말풍선 꼭대기 = 줄 원래 꼭대기 + 2px */
+      if (Math.abs(need - cur) > 0.5) {
+        const first = !row.dataset.hintRoom;
+        row.style.marginTop = need + 'px'; row.dataset.hintRoom = '1';
+        if (first) {
+          /* 처음 낼 때 — 말풍선 꼭대기가 굴림 칸(시트 몸) 위로 나가거나 줄이 아래로 빠지면 굴려 맞춘다(말풍선 꼭대기가 먼저) */
+          let sc = row.parentElement;
+          while (sc && sc !== document.body) { const oy = getComputedStyle(sc).overflowY; if (/(auto|scroll)/.test(oy) && sc.scrollHeight > sc.clientHeight + 1) break; sc = sc.parentElement; }
+          if (sc && sc !== document.body) {
+            const sr = sc.getBoundingClientRect(), r1 = el.getBoundingClientRect(), row1 = row.getBoundingClientRect();
+            const topOk = Math.max(sr.top, lim) + 2, capTop = r1.top - hh + 4;
+            if (capTop < topOk) sc.scrollTop -= Math.ceil(topOk - capTop);
+            else if (row1.bottom > sr.bottom - 2) sc.scrollTop += Math.ceil(Math.min(row1.bottom - (sr.bottom - 2), capTop - topOk));
+          }
+        }
+      }
+      r = el.getBoundingClientRect();
+      h.style.top = (r.top - hh + 4) + 'px';
+    }
+  } catch (e) { void e; }
+  hintRoomClear(shopRoomRow);
   try { hintAvoidChip(h, hand, r); } catch (e) { try { const a = (window.__hintAvoidErr ||= []); a.push(String((e && e.message) || e)); if (a.length > 5) a.shift(); } catch (e2) { void e2; } }   /* ★ 11-01 — 비키다 던지면 말풍선이 중간 자리에 남는다 · 던진 말을 남긴다(재는 손잡이) */
   /* ★ 2026-11-02 총괄 · [plan](0400a798 사진 c3_where2) — 자리 고르기 창의 줄(.slotrow)은 줄 안 오른쪽 빈자리에 말풍선을 세우고 손(👈)이 그 줄 글을 짚는다.
        ⛔ 손끝이 1번 줄과 2번 줄 경계에 서고 말풍선이 2번 줄 «… · 지금 여기 있습니다 · 어둠»(견줄 값)을 덮었다 */
@@ -4918,8 +4961,12 @@ function hintAvoidChip(h, hand, r) {
   /* ★ 확인 바 제목(«여기에 둘까요?»)도 — 말풍선 «여기에 둘까요? — [확인]»이 그 제목 위에 앉았다(같은 재현 판 사진) */
   const confirmWho = textBox($('placeConfirmWho'));
   /* ★ 2026-11-02 총괄(0400a798 사진 c7_zero · C11 #13 꼴) — 바닥 왼쪽 단추 글(거두기 · 물 · 다시 심기 · 남는 채소)도 비킨다 · 짚는 그 단추는 빼고 */
+  /* ★ 11-02 #13(d05) — «정말 보이는» 단추만: 시트가 올라와 그 밑에 깔린 단추(그 점에서 잡히는 것이 그 단추가 아님)는 안 센다.
+       ⛔ 상점 줄을 짚는 말풍선이 시트 밑에 깔린 [💧 물 주기] · [🪴 화분에 물] 글 자리에 걸려 옆으로 밀려나 제 줄 글을 덮었다(390 씨앗 주문 판) */
   const bottomTexts = (typeof BOTTOM_LEFT_BTNS !== 'undefined' ? BOTTOM_LEFT_BTNS : []).map(id => $(id))
-    .filter(b => b && b.style.display !== 'none' && !(b.getBoundingClientRect().left === r.left && b.getBoundingClientRect().top === r.top)).map(textBox);
+    .filter(b => b && b.style.display !== 'none' && !(b.getBoundingClientRect().left === r.left && b.getBoundingClientRect().top === r.top))
+    .filter(b => { try { const q = b.getBoundingClientRect(); const c = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return !!c && (c === b || b.contains(c)); } catch (e) { return true; } })
+    .map(textBox);
   const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('placeConfirmFit')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...rowBtns, ...popTexts, confirmWho, ...bottomTexts].filter(Boolean);   /* ★ D95 ③ 빛 낱말 줄도 비킨다 · ★ 11-01 #10 다른 줄 단추 */
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
