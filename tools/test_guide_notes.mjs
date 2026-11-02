@@ -176,10 +176,15 @@ if (!fp) {
   /* 옮기기에 들어가면 쪽지는 걷힌다 — 그때는 `#dropLabel` 이 말한다(통로 하나) */
   await page.eval(`(()=>{ const b=document.getElementById('furnMove');
     b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:2,isPrimary:true})); })()`, false);
-  await sleep(500);
-  const d = await page.eval(VISIBLE);
+  /* ★ 2026-11-02 [core] 총괄 F2 — **페이지 안 타이머로 기다린 뒤 잰다**(예전: node 에서 500ms 자고 한 번 잼 → 가끔 빨강).
+       쪽지를 걷는 것은 게임의 120ms 틱(§coachTick · WALK_SFX_MS)이다 — 보통은 누른 뒤 30~118ms 에 걷힌다(10번 잼).
+       ⛔ 누른 직후 페이지 메인 스레드가 막히면(GPU · 다른 크롬과 겹친 판) node 의 eval 이 밀린 게임 틱보다 «먼저» 돌아
+          걷히기 전 화면을 읽었다 — 누른 뒤 0.9초 멈춤을 일부러 넣으면 옛 잼 3번 중 2번 빨강 · 이 잼 3번 다 맞음.
+       ⇒ 잼을 페이지 setTimeout 안에서 한다 — 게임 틱보다 늦게 잡힌 타이머라 늘 그 뒤에 돈다. 게임이 안 걷으면(10초 COACH_MS 전) 그대로 빨강 */
+  const d = await page.eval(`new Promise(r => setTimeout(() => r(${VISIBLE}), 500))`);
+  const dMode = await page.eval(`document.getElementById('stage').classList.contains('furnmoving')`);
   is(!d.coach, '②-c 옮기기에 들어가면 쪽지가 걷힌다 — 그 자리는 [떨굼표시]가 말한다',
-     d.dropLabel ? '떨굼표시 ' + JSON.stringify(d.dropLabel) : '떨굼표시 없음');
+     (d.dropLabel ? '떨굼표시 ' + JSON.stringify(d.dropLabel) : '떨굼표시 없음') + ` · 옮기는 중 ${dMode} · 쪽지 ${d.coachNow || '없음'}`);
   await page.eval(`(()=>{ try{ furnPicked && furnPicked.clear && furnPicked.clear(); }catch{}
                           try{ document.getElementById('furnClose').click(); }catch{} })()`, false);
   await sleep(400);
