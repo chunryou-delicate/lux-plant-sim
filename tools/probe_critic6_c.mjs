@@ -1,6 +1,6 @@
 /* 비판 6판 가름 C 묶음 ㉢(core 11-02 · 총괄 C11 · C12 · [plan] P6 · P8 · P9 · P10 · 글 507ba40d) — 390×844
    판(비판 6판 세이브 — C:/Users/pc/byeot-core-keep/critic6/ · 프로필은 안 건드림): A100 = 비판 A Day 100(반지하 · 안 팖 · 체력 0 · 등 1)
-   ㉮ #18 [방] 판 «밥으로 아낀 식비 +n원 아낌» · P10 빛 범례 넷째 줄 «어둠 0.3까지 · 밝음 2.7부터 · 아주 밝음 6부터 — 칸의 수는 하루 빛 양(DLI)» ·
+   ㉮ #18 [방] 판 «밥으로 아낀 식비 +n원 아낌» · P10 빛 범례 넷째 줄 «어둠 0.3까지 · 밝음 2.7부터 · 아주 밝음 6부터» · 다섯째 줄 «칸의 수는 하루 빛 양(DLI)»(11-02 §16 ③ 두 줄) ·
       #8 놓인 등 메뉴가 왼쪽 탭 기둥과 안 겹침 · #15 «몬스테라 내놓기» 설명(#sellHint)이 그 단추 바로 밑 · #13 할 일 창에서 손가락이 [✕]를 안 짚음 ·
       #16 같은 순간(1.5초 안) 알림 둘은 합쳐 보이고 그 뒤 것은 갈아 끼움 · [확인] 바 동안 쪽지는 안 보임 · #17 반찬가게 배너 글([plan] P6)
    ㉯ #20 밥상 창 밖을 누르면 창만 닫히고 날은 그대로 → [다음 날]을 다시 누르면 이어진다
@@ -57,9 +57,10 @@ const sh = await J(`(()=>{ const h=document.getElementById('sellHint'); const pr
 ok(!sh.탈 && sh.afterPlant, '㉮ #15 «몬스테라 내놓기» 설명(#sellHint)이 그 단추 바로 밑', JSON.stringify(sh));
 await page.eval(`(()=>{ window.__byeotSheet.open('plants'); return 1; })()`, false); await sleep(1200);
 await tapSel('#lightHeat'); await sleep(2500); await dlgOnly();
-const leg = await J(`(()=>{ const c=[...document.querySelectorAll('.byeot-lightgrid div')].map(e=>e.innerText||'').find(s=>/칸의 수는/.test(s)) || ''; const lines=c.split('\\n'); return { line: lines.find(l=>/칸의 수는/.test(l)) || null, all: c.slice(0,200) }; })()`);
+const leg = await J(`(()=>{ const c=[...document.querySelectorAll('.byeot-lightgrid div')].map(e=>e.innerText||'').find(s=>/칸의 수는/.test(s)) || ''; const lines=c.split('\\n'); return { line: lines.find(l=>/^어둠 /.test(l)) || null, line5: lines.find(l=>/칸의 수는/.test(l)) || null, all: c.slice(0,200) }; })()`);
 if (OUT) await page.shot(`${OUT}/390_c6c_legend.png`);
-ok(!leg.탈 && leg.line === '어둠 0.3까지 · 밝음 2.7부터 · 아주 밝음 6부터 — 칸의 수는 하루 빛 양(DLI)', '㉮ P10 빛 범례 넷째 줄', JSON.stringify(leg));
+/* ★ 11-02 넷째 묶음 [plan] §16 ③ — 넷째 줄을 둘로(«—» 뺌) */
+ok(!leg.탈 && leg.line === '어둠 0.3까지 · 밝음 2.7부터 · 아주 밝음 6부터' && leg.line5 === '칸의 수는 하루 빛 양(DLI)', '㉮ P10 빛 범례 넷째 · 다섯째 줄', JSON.stringify(leg));
 await page.eval(`(()=>{ const b=document.getElementById('lightHeatOff'); if (b && b.style.display !== 'none') b.click(); return 1; })()`, false); await sleep(1200);
 await page.eval(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`, false); await camStill(); await sleep(800);
 /* #8 등 메뉴 */
@@ -134,7 +135,7 @@ if (OUT) await page.shot(`${OUT}/390_c6c_p8_move.png`);
 console.log('  ㉱ P8', JSON.stringify(mv));
 const L = (mv.lines || []);
 const iCarry = L.findIndex(t => /^가져가는 것 — /.test(t)), iBox = L.findIndex(t => t === '시루 · 재배판은 이삿짐이 되어, 원룸에 놓을 때까지 자라지 않습니다'),
-      iLeave = L.findIndex(t => /^두고 가는 것 — 벽 · 창에 붙인 가구 \d+개$/.test(t)), iSrc = L.findIndex(t => /^무늬 원천/.test(t));
+      iLeave = L.findIndex(t => /^두고 가는 것 — 벽 · 창 · 천장에 붙은 가구 \d+개$/.test(t)),   /* ★ 11-02 [plan] §16 ① */ iSrc = L.findIndex(t => /^무늬 원천/.test(t));
 ok(!mv.탈 && mv.on && iCarry >= 0 && /시루 \d+개/.test(L[iCarry]) && /몬스테라 1그루/.test(L[iCarry]), '㉱ P8 «가져가는 것 — 가구 … · 시루 … · 몬스테라 1그루 …»', JSON.stringify(L[iCarry]));
 ok(iBox > iCarry && (iLeave < 0 || iLeave > iBox) && iSrc > Math.max(iBox, iLeave), '㉱ P8 줄 차례 carry → boxed → leave → 무늬 원천', JSON.stringify({ iCarry, iBox, iLeave, iSrc }));
 await page.eval(`(()=>{ const c=document.getElementById('moveCancel'); if (c) c.click(); return 1; })()`, false); await sleep(800);

@@ -314,7 +314,7 @@ export function createLightGridLabels(o = {}) {
     if (!/\{(dark|grow|split)\}/.test(T)) return `<small style="opacity:.8">${escapeHtml(T.replace('{t}', th))}</small>`;
     const num = v => Number.isFinite(v) ? `<small class="num">${escapeHtml(String(+v))}</small>` : '';
     return escapeHtml(T).replace('{dark}', num(bands.dark)).replace('{grow}', num(bands.grow)).replace('{split}', num(bands.split))
-      .replace('(DLI)', '<small class="num">(DLI)</small>');
+      .replace('(DLI)', '<small class="num">(DLI)</small>').replace(/\n/g, '<br>');   /* ★ 11-02 [plan] §16 ③ — 줄 가름(\n → <br>) */
   }
   function setCaption() {
     if (!grid) { cap.textContent = ''; return; }
@@ -330,6 +330,7 @@ export function createLightGridLabels(o = {}) {
            ⚠ 범례는 탭 기둥 오른쪽에 서서(D93 ⑥) 폰 390 의 안쪽 폭이 ≈ 290px 다 — «■아주 / 밝음 갈라짐»처럼 낱말 가운데서 접혔다(core 사진 regs95c) */
       const sw = (c, t, d) => `<span data-lg="1" style="white-space:nowrap"><span style="color:${c}">■</span>${escapeHtml(t)}${d ? ' ' + escapeHtml(d) : ''}</span>`;
       cap.style.whiteSpace = 'normal'; cap.style.maxWidth = 'calc(100% - 16px)';
+      cap.style.wordBreak = 'keep-all';   /* ★ 11-02 [plan] §16 ③ — 좁은 폰에서 꺾여도 낱말 사이에서 */
       cap.innerHTML = `<b>${escapeHtml(k.head || '빛')}</b> · ${escapeHtml(unit)}` + (extra ? ` · ${escapeHtml(extra)}` : '') + '<br>' +
         /* ★ D95 ⑤ 둘째 고침(plan 4746ef5d) — 덩이 둘마다 정해 꺾는다: 회색 둘(작물 자리) / 색 둘(몬스테라 자리) — 짝으로 읽히고 글꼴마다 꺾이는 데가 안 갈린다(범례 네 줄) */
         [sw(heatDarkHex(), k.dark, L.dark), sw(heatShadeHex(), k.shade, L.shade)].join(' · ') + '<br>' +

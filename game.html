@@ -4738,6 +4738,7 @@ function placePointHint(cx, cy, say, r = 48) {
   hintRoomClear(null);   /* ★ 11-02 #13 — 상점 줄 위 틈(§hintRoomClear) */
   h.querySelector('.say').textContent = say;
   h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리 폭을 되돌린다 */
+  h.querySelector('.say').style.whiteSpace = ''; h.querySelector('.say').style.width = ''; h.querySelector('.say').style.wordBreak = '';
   h.classList.remove('side', 'toRight');
   h.querySelector('.hand').textContent = '👇';
   h.style.left = cx + 'px';
@@ -4799,6 +4800,7 @@ function placeHintAt(el, say) {
   const hand = h.querySelector('.hand');
   h.querySelector('.say').textContent = say;
   h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리(§sideNarrow)의 폭을 되돌린다 */
+  h.querySelector('.say').style.whiteSpace = ''; h.querySelector('.say').style.width = ''; h.querySelector('.say').style.wordBreak = '';   /* ★ 11-02 넷째 묶음 — 위 자리에서 접은 말(§hintAvoidChip ⓪-b)을 되돌린다 */
   h.classList.remove('side', 'toRight', 'below', 'row');
   hand.style.left = '0px';        /* ★ 지난 번에 민 것을 되돌린다 — 안 되돌리면 쌓인다 */
   hand.textContent = '👇';
@@ -4967,7 +4969,10 @@ function hintAvoidChip(h, hand, r) {
     .filter(b => b && b.style.display !== 'none' && !(b.getBoundingClientRect().left === r.left && b.getBoundingClientRect().top === r.top))
     .filter(b => { try { const q = b.getBoundingClientRect(); const c = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return !!c && (c === b || b.contains(c)); } catch (e) { return true; } })
     .map(textBox);
-  const obs = [shown($('questChip')), shown($('placeConfirmWarn')), shown($('placeConfirmFit')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...rowBtns, ...popTexts, confirmWho, ...bottomTexts].filter(Boolean);   /* ★ D95 ③ 빛 낱말 줄도 비킨다 · ★ 11-01 #10 다른 줄 단추 */
+  /* ★ 2026-11-02 넷째 묶음(plan f373262a 대조 ⑤ 사진 next_finger) — 바닥 체력 줄 글(#staText «오늘은 여기까지 — … 최대 체력이 하나 늡니다»)도 비킨다 · 그 점에서 정말 보일 때만 */
+  const seenText = el => { const q = textBox(el); if (!q) return null;
+    try { const c = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return c && (c === el || el.contains(c) || c.contains(el)) ? q : null; } catch (e) { return q; } };
+  const obs = [seenText($('staText')), shown($('questChip')), shown($('placeConfirmWarn')), shown($('placeConfirmFit')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...rowBtns, ...popTexts, confirmWho, ...bottomTexts].filter(Boolean);   /* ★ D95 ③ 빛 낱말 줄도 비킨다 · ★ 11-01 #10 다른 줄 단추 */
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
@@ -5001,6 +5006,31 @@ function hintAvoidChip(h, hand, r) {
           if (!hitAny(hb3) && !hit(hb3, r) && hb3.top >= 4 && hb3.bottom <= innerHeight - 8) return;
           say.style.maxWidth = '';
         }
+      }
+    } catch (e) { void e; }
+  }
+  /* ⓪-b ★ 2026-11-02 넷째 묶음(plan f373262a 대조 ⑤ 사진 next_finger) — 위에 선 말풍선이 옆 글에 걸리면 «아래»로 가기 전에
+       걸린 글 사이 폭으로 말을 접어(두 줄) 위에 그대로 세워 본다 · 96px 아래면 안 한다.
+       ⛔ [다음 날] 말풍선 «자라는 중입니다 — 내일이면 거둡니다»가 왼쪽 바닥 단추 글 끝(«…촉촉합니다»)에 16px 걸려 아래로 가서
+         빨간 체력 줄(«… 최대 체력이 하나 늡니다»)을 덮었다(390 · A100) */
+  if (!h.classList.contains('side') && !h.classList.contains('below')) {
+    try {
+      const say = h.querySelector('.say'), s0 = say.getBoundingClientRect(), cx = r.left + r.width / 2;
+      const band = obs.filter(o => o.bottom > s0.top - 48 && o.top < s0.bottom);   /* 접으면 위로 한 줄 자란다 */
+      const L = Math.max(8, ...band.filter(o => o.right <= cx).map(o => o.right + 6));
+      const R = Math.min(innerWidth - 8, ...band.filter(o => o.left >= cx).map(o => o.left - 6));
+      const mx = Math.floor(R - L - 24);
+      if (mx >= 96 && R - L < s0.width + 2) {
+        /* ⚠ 폭은 글 폭(max-content)을 mx 로 묶는다 — 안 그러면 #hint(fixed · 가운데 기준)의 «오른쪽 끝까지 남은 폭»에 묶여 64px 로 접혔다(잼) */
+        say.style.whiteSpace = 'normal'; say.style.maxWidth = mx + 'px'; say.style.width = 'max-content'; say.style.wordBreak = 'keep-all';   /* 낱말 사이에서만 꺾음(«내일이 / 면» 꼴 막음) */
+        const hb1 = h.getBoundingClientRect();
+        const got = Math.min(R - hb1.width / 2, Math.max(L + hb1.width / 2, cx));
+        h.style.left = got + 'px'; h.style.top = (r.top - hb1.height + 4) + 'px';
+        hand.style.left = Math.max(-(hb1.width / 2 - 8), Math.min(hb1.width / 2 - 8, cx - got)).toFixed(1) + 'px';
+        const hb2 = h.getBoundingClientRect();
+        if (!hitAny(hb2) && !hit(say.getBoundingClientRect(), r) && hb2.top >= 4) return;
+        say.style.whiteSpace = ''; say.style.maxWidth = ''; say.style.width = ''; say.style.wordBreak = '';
+        h.style.left = initPose.left; h.style.top = initPose.top; hand.style.left = initPose.handLeft;
       }
     } catch (e) { void e; }
   }
@@ -5084,7 +5114,7 @@ function hintAvoidChip(h, hand, r) {
         ...((inConfirm || shopRowBtn) ? [() => sideNarrow(true), () => sideNarrow(false)] : [])   /* ★ #10 상점 줄 단추도 «말을 좁힌 옆자리» */
       ];
       /* 앞 다섯 자리는 좁힌 폭을 안 쓴다 — 고를 때마다 되돌린다 */
-      for (let i = 0; i < 5; i++) { const f = poses[i]; poses[i] = () => { if (say) say.style.maxWidth = ''; return f(); }; }
+      for (let i = 0; i < 5; i++) { const f = poses[i]; poses[i] = () => { if (say) { say.style.maxWidth = ''; say.style.whiteSpace = ''; say.style.width = ''; say.style.wordBreak = ''; } return f(); }; }
       let best = 0, bestS = Infinity;
       poses.forEach((f, i) => { const sc = score(f()); if (sc < bestS - 0.5) { bestS = sc; best = i; } });
       poses[best]();
@@ -13993,7 +14023,7 @@ const HEAT_BANDS_KO = Object.freeze({ dark: '어둠', shade: '그늘', grow: '�
   /* ★ D95 ⑤ 범례 낱말 줄임(plan e02bc464 · 390 폭) — «몬스테라 자람 · 잎 갈라짐»이면 둘째 줄이 안쪽 폭 360px 를 넘어 범례가 네 줄이 됐다 */
   legend: Object.freeze({ dark: '콩나물', shade: '무순', grow: '몬스테라', split: '갈라짐' }),
   /* ★ 2026-11-02 총괄 · [plan] 507ba40d P10 — 문턱 줄을 낱말로(«어둠 0.3까지 · 밝음 2.7부터 · 아주 밝음 6부터») · 수와 «(DLI)»는 칸 수와 같은 작은 글(light_grid_labels §setCaption) · «mol/m²·d» 걷음 */
-  thresh: '어둠 {dark}까지 · 밝음 {grow}부터 · 아주 밝음 {split}부터 — 칸의 수는 하루 빛 양(DLI)',
+  thresh: '어둠 {dark}까지 · 밝음 {grow}부터 · 아주 밝음 {split}부터\n칸의 수는 하루 빛 양(DLI)',   /* ★ 11-02 [plan] §16 ③ — 두 줄(390 상자 306px 에서 «수 / 는»으로 꺾였다) */
   below: '안 자람' });
 /* 그 빛 d 의 낱말 — 빛 지도 칸과 같은 표(§HEAT_BANDS_KO) · 문턱을 못 읽으면 null */
 function lightWordOf(d) {
@@ -14274,7 +14304,8 @@ const NEIGHBOR_ORDER_KO = Object.freeze({ title: '🧺 반찬가게가 오늘 �
 function neighborOrderBannerOf(events) {
   const e = (events || []).find(x => x && x.id === 'neighbor_order');
   if (!e) return [];
-  let left = 0; try { const f = S.firstPlay && S.firstPlay.food; left = (f && Array.isArray(f.pantryLots)) ? f.pantryLots.filter(l => l && (l.g || 0) > 0).length : 0; } catch { left = 0; }
+  /* ★ 2026-11-02 넷째 묶음 — 꾸러미는 { kind, day, won, meals } 라 g 칸이 없다(first_play §pantryLotsOf) · ⛔ f373262a 는 l.g 로 세어 늘 0 → 전에 거둔 채소가 남아도 «+{won}원»만 섰다 */
+  let left = 0; try { const f = S.firstPlay && S.firstPlay.food; left = (f && Array.isArray(f.pantryLots)) ? f.pantryLots.filter(l => l && ((l.won || 0) > 0 || (l.g || 0) > 0)).length : 0; } catch { left = 0; }
   const w = Math.round(e.won || 0).toLocaleString('ko-KR');
   return [{ title: NEIGHBOR_ORDER_KO.title, sub: (left > 0 ? NEIGHBOR_ORDER_KO.sub : NEIGHBOR_ORDER_KO.subNone).replace('{won}', w) }];
 }
@@ -21985,15 +22016,17 @@ const MOVE_ASK_KO = Object.freeze({
        ⚠ lamp(원룸 걸이 수) · light(원룸 가장 밝은 자리 낱말) 두 줄은 이사 «전»에 원룸 조도 창이 없어 못 센다 — [plan] «못 세면 그 줄만 뺀다» */
   carry: '가져가는 것 — {list}',
   boxed: '시루 · 재배판은 이삿짐이 되어, 원룸에 놓을 때까지 자라지 않습니다',
-  leave: '두고 가는 것 — 벽 · 창에 붙인 가구 {n}개'
+  leave: '두고 가는 것 — 벽 · 창 · 천장에 붙은 가구 {n}개'   /* ★ 11-02 [plan] §16 ① — 천장등 · 처음부터 붙어 있던 것도 센다(셈 그대로) */
 });
 /* P8 — 가져가는 것 셈(§carryFurnitureListNow · 작물 그릇 · 그루 · 삽수) · 못 세면 null */
 function moveCarryNow() {
   try {
     const f = carryFurnitureListNow().length;
     let rows = []; try { rows = cropPotList(S.firstPlay, S.day) || []; } catch { rows = []; }
-    let spare = 0; try { spare = spareSiru(); } catch { spare = 0; }
-    const s = rows.filter(r => r && r.kind === 'beansprout').length + spare;
+    /* ★ 2026-11-02 넷째 묶음 [plan] §16 ② — 시루 = 콩나물 줄 + 시루 재고(재배판과 같은 꼴) · ⛔ 예전 spareSiru()(재고 + 안 놓인 시루)는
+         [회수]한 시루를 cropPotList 의 inBag 줄과 두 번 셌다(A100 에서 하나 회수 → «시루 17개» · 실제 16) */
+    let siruItem = 'siru'; try { siruItem = cropKindOf('beansprout').containerItemId || 'siru'; } catch { siruItem = 'siru'; }
+    const s = rows.filter(r => r && r.kind === 'beansprout').length + ((stockOf(S, siruItem) || 0));
     const t = rows.filter(r => r && r.kind === 'musun').length + ((stockOf(S, 'sprout_tray') || 0));
     const p = (S.pots || []).length;
     const c = (S.cuttings || []).filter(x => x && x.status !== 'dead').length;
