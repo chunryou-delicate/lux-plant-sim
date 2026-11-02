@@ -4690,6 +4690,11 @@ setInterval(() => {
 /* ★ 2026-10-08 #8([plan] plan-friction-7-8-14) — 시트가 목표를 덮을 때 열린 탭을 짚는 말. 손가락이 이미 그 탭 «위»라 탭 이름도
      「할 일」(칩 이름)도 안 쓴다. 세 자리가 이 한 상수를 쓴다 */
 const HINT_SHEET_DOOR = '한 번 더 누르면 닫힙니다';
+/* ★ 2026-11-02 [plan] §19(cc0556b1 · 총괄 덤 ③ ②) — 시트가 돌봄 점(방 안 표지 · 바닥 단추)을 가렸을 때 [식물] 창 안 같은 손 줄 단추를 짚는 말.
+     «도» = 표지와 줄 단추가 같은 손(§siruAct · §waterPotOf · §sowEmptyPot) · «수 있습니다» = markLive(체력 · 씨앗)일 때만 이 갈래에 온다 ·
+     방 표지 말(«거둘 때가 됐습니다»)을 쓰면 익은 줄 상태 글 «거둘 때가 됐습니다 · …»와 한 화면에 같은 말이 둘 섰다(plan 이 버린 까닭) */
+const HINT_SHEET_ROW_KO = Object.freeze({ harvest: '여기서도 거둘 수 있습니다', water: '여기서도 물을 줄 수 있습니다', sow: '여기서도 심을 수 있습니다' });
+window.__byeotSheetRowKo = HINT_SHEET_ROW_KO;   /* 재는 손잡이(글) */
 function hintAt(el, say) {
   const h = $('hint');
   /* ★ 진단 손잡이 — **마지막으로 «무엇을» 짚으라 했나**(2026-08-30).
@@ -4801,7 +4806,7 @@ function hintAtPoint(cx, cy, say, r = 48, pointOf = null) {
 /* ★ 2026-11-02 총괄 · 비판 6판 #13(사진 d05_004) — 상점 줄 위에 비운 말풍선 자리(틈)를 걷는다 · except 줄은 둔다(지금 짚는 줄) */
 function hintRoomClear(except) {
   try {
-    for (const x of document.querySelectorAll('#shopList .shopRow[data-hint-room]'))
+    for (const x of document.querySelectorAll('#shopList .shopRow[data-hint-room], #sheet .siru[data-hint-room], #sheet .siruRow[data-hint-room]'))
       if (x !== except) { x.style.marginTop = ''; delete x.dataset.hintRoom; }
   } catch (e) { void e; }
 }
@@ -4869,8 +4874,9 @@ function placeHintAt(el, say) {
   let shopRoomRow = null;
   try {
     const sl = $('shopList');
-    const row = (!h.classList.contains('side') && sl && el.closest) ? el.closest('.shopRow') : null;
-    if (row && sl.contains(row)) {
+    /* ★ 11-02 덤 ③ ② — [식물] 창 줄(시루 .siru · 몬스테라 · 빈 화분 .siruRow)의 단추를 짚을 때도 같은 틈(줄 단추는 좁아 위아래 줄 글을 덮었다) */
+    const row = (!h.classList.contains('side') && el.closest) ? el.closest('#shopList .shopRow, #sheet .siru, #sheet .siruRow') : null;
+    if (row) {
       shopRoomRow = row;
       const rr = row.getBoundingClientRect();
       const cur = parseFloat(row.style.marginTop) || 0;
@@ -4895,7 +4901,9 @@ function placeHintAt(el, say) {
     }
   } catch (e) { void e; }
   hintRoomClear(shopRoomRow);
-  try { hintAvoidChip(h, hand, r); } catch (e) { try { const a = (window.__hintAvoidErr ||= []); a.push(String((e && e.message) || e)); if (a.length > 5) a.shift(); } catch (e2) { void e2; } }   /* ★ 11-01 — 비키다 던지면 말풍선이 중간 자리에 남는다 · 던진 말을 남긴다(재는 손잡이) */
+  /* ★ 11-02 덤 ③ ② — 틈을 낸 줄이면 비키기를 건너뛴다: 말풍선은 비워 둔 틈에 서고 손은 그 단추를 위에서 짚는다.
+       ⛔ 손가락 상자(손 둘레 투명한 몫까지)가 그 줄 머리글(«서랍장 2번 칸»)에 걸린다고 세어, 비키기가 말풍선을 아랫줄 [자리] 곁으로 옮겼다(손 · 단추 틈 56px) */
+  if (!shopRoomRow) try { hintAvoidChip(h, hand, r); } catch (e) { try { const a = (window.__hintAvoidErr ||= []); a.push(String((e && e.message) || e)); if (a.length > 5) a.shift(); } catch (e2) { void e2; } }   /* ★ 11-01 — 비키다 던지면 말풍선이 중간 자리에 남는다 · 던진 말을 남긴다(재는 손잡이) */
   /* ★ 2026-11-02 총괄 · [plan](0400a798 사진 c3_where2) — 자리 고르기 창의 줄(.slotrow)은 줄 안 오른쪽 빈자리에 말풍선을 세우고 손(👈)이 그 줄 글을 짚는다.
        ⛔ 손끝이 1번 줄과 2번 줄 경계에 서고 말풍선이 2번 줄 «… · 지금 여기 있습니다 · 어둠»(견줄 값)을 덮었다 */
   try {
@@ -7027,6 +7035,29 @@ function updateHint() {
        (core 자 probe_core_d11_13 D13 · 6일: 거두러 가는 동안 손가락이 없어 [다음 날]만 눌러 막힘). ⇒ 여기선 돌봄 손가락만 건너뛰고,
        «손가락 없음»은 예전 자리(사는 갈래 뒤 · [다음 날] 앞 — 아래 §careActing)에서 그대로 한다 */
   const careActing = !!($('marks') && $('marks').querySelector('.mark.acting'));
+  /* ★★ 2026-11-02 넷째 묶음 꼬리(총괄 덤 ③ ② · [plan] §19) — 돌봄 점이 시트에 가렸을 때, [식물] 창이 열려 있고 그 일의 «같은 손» 줄 단추가 화면 안에 보이면
+       «닫는 문» 대신 그 단추를 짚는다.
+       ⛔ [식물] 창을 열어 시루 판을 보는 중 익은 시루 [🥣 거두기] 줄이 바로 보이는데 손가락은 기둥 [식물] «한 번 더 누르면 닫힙니다»를 짚었다(사람 판에서도 · core 잼 11-02)
+       같은 손: 거두기 · 물 · 심기 = 시루 줄 data-act(§siruAct) · 몬스테라 물 = data-plantwater(§waterPotOf) · 빈 화분 🌱 = 그 화분 data-sow(§sowEmptyPot)
+       줄이 여럿이면 화면에서 맨 위에 보이는 하나(§seenAt — 굴림 칸 밖 · 접힌 줄은 안 셈) · 창은 안 굴린다 · 안 보이면 예전처럼 닫는 문 ·
+       넓은 화면(옆 시트)은 점이 안 가려 이 갈래에 안 온다 */
+  const sheetRowBtn = (ko, mark) => {
+    try {
+      if (!sheetShown()) return null;
+      const tab = $('tabPlants'); if (!tab || tab.getAttribute('aria-selected') !== 'true') return null;
+      const sh = $('sheet'); if (!sh) return null;
+      let sel = null, kind = null;
+      if (mark && mark.dataset && mark.dataset.pot) { sel = `[data-sow="${CSS.escape(mark.dataset.pot)}"]`; kind = 'sow'; }
+      else if (/거두/.test(ko)) { sel = '#siruList button[data-act="harvest"]'; kind = 'harvest'; }
+      else if (/몬스테라/.test(ko)) { sel = 'button[data-plantwater]'; kind = 'water'; }
+      else if (/물/.test(ko)) { sel = '#siruList button[data-act="water"]'; kind = 'water'; }
+      else if (/심/.test(ko)) { sel = '#siruList button[data-act="plant"], #siruList button[data-act="sow"]'; kind = 'sow'; }
+      if (!sel) return null;
+      const list = [...sh.querySelectorAll(sel)].filter(b => !b.disabled && onScreen(b) && seenAt(b))
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+      return list.length ? { el: list[0], say: HINT_SHEET_ROW_KO[kind] } : null;
+    } catch (e) { void e; return null; }
+  };
   /* ★ 2026-10-31 비판 셋째 판 MAJOR #5 ① — 두 바퀴 뒤 · 세팅 끝 전에도 «심기»(씨앗이 온 날 · 새 시루)는 짚는다. 거두기 · 물 손가락은 뗀 채(박사님 08-17) */
   const sowNow = !pointStill && (markLive('심') || !!potSowMark());   /* ★ 11-01 빈 화분 🌱 도 «심기» */
   /* ★★ 2026-11-01 총괄 D100 #8 ㉠ — **심기의 짝(물)도 짚는다.** 작물 needsWater 는 «심고 아직 한 번도 물을 안 받은 판»뿐이다(물을 받으면 바퀴가 시작).
@@ -7039,6 +7070,8 @@ function updateHint() {
       if (el.dataset && el.dataset.pot ? !potSowLive(el) : !markLive(ko)) continue;   /* ★ 11-01 빈 화분 🌱 은 그 화분 · 몬스테라 씨앗으로 판정 */
       /* ★ 2026-11-01 총괄 사진(08782dbb Day 91) — 그 점에서 정말 잡히는 말풍선만(바닥 왼쪽 단추 뒤에 가린 🥣 를 짚어 손가락이 «남는 채소 팔기»를 짚는 것처럼 읽혔다) ·
            다 가렸으면 아래 바닥 단추로 떨어진다 */
+      /* ★ 11-02 덤 ③ ② — 시트가 이 표지를 가렸으면(그 점에서 시트가 잡혀 아래 seenAt 에서 빠진다) 창 안 같은 손 줄 단추가 보이면 그것부터 */
+      if (onScreen(el) && sheetCovers(el)) { const rb = sheetRowBtn(ko, el); if (rb) return hintAt(rb.el, rb.say); }
       if (!onScreen(el) || !seenAt(el)) continue;
       /* ★ 시트가 말풍선을 가리면 «닫는 길»을 짚는다(폰 실측 d13~16: 손가락 없음) */
       if (sheetCovers(el)) { const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR); continue; }
@@ -7056,6 +7089,7 @@ function updateHint() {
     if (careActing) break;
     if (!(pointStill && onScreen(b) && !b.disabled && sheetCovers(b))) continue;
     if (/거두/.test(say) ? !markLive('거두') : !markLive('물')) continue;
+    { const rb = sheetRowBtn(b === btnHarvest ? '거두' : '물', null); if (rb) return hintAt(rb.el, rb.say); }   /* ★ 11-02 덤 ③ ② — 창 안 같은 손 줄 단추 · 종류는 단추로 가른다(말 «거둘 …»은 /거두/ 에 안 걸림) */
     const door = sheetCloseDoor(); if (door) return hintAt(door, HINT_SHEET_DOOR);
   }
   /* ★ D93 ⑤ — 아래 [거두기] · [물]도 «지금 되는가»(§markLive · 체력 바닥이면 안 됨)를 같이 본다 */
