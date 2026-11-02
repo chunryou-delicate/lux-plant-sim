@@ -7053,7 +7053,11 @@ function updateHint() {
       else if (/물/.test(ko)) { sel = '#siruList button[data-act="water"]'; kind = 'water'; }
       else if (/심/.test(ko)) { sel = '#siruList button[data-act="plant"], #siruList button[data-act="sow"]'; kind = 'sow'; }
       if (!sel) return null;
-      const list = [...sh.querySelectorAll(sel)].filter(b => !b.disabled && onScreen(b) && seenAt(b))
+      /* ★ 11-02 [plan] §20 ㉠ — 심기(시루 줄)는 그 줄 작물 씨앗이 있을 때만(§markLive «심»과 같은 문) · 빈 화분(data-sow)은 그 화분 표지가 이미 씨앗을 본다(§potSowLive)
+           ⛔ 안 심은 줄 [🌱 심기]는 씨앗 0 에도 안 꺼져, 무 씨앗 0 인 무순 줄을 «여기서도 심을 수 있습니다»로 짚었다(누르면 «⚠ 안 됐습니다» · 5776a9cc 판에서 잼) */
+      const seedOk = b => { if (kind !== 'sow' || (mark && mark.dataset && mark.dataset.pot)) return true;
+        try { const k = cropKindOf(b.dataset.kind || 'beansprout'); return !k || !k.seedItemId || stockOf(S, k.seedItemId) >= 1; } catch (e) { return true; } };
+      const list = [...sh.querySelectorAll(sel)].filter(b => !b.disabled && seedOk(b) && onScreen(b) && seenAt(b))
         .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
       return list.length ? { el: list[0], say: HINT_SHEET_ROW_KO[kind] } : null;
     } catch (e) { void e; return null; }
