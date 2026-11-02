@@ -1,0 +1,82 @@
+/* 비판 7판 7C3 자(core 11-02 · 총괄 가름) — 판이 닫히면 판 안 대상 손가락은 [가방] 기둥을 짚는다
+   ⛔ 비판 7판 S(S16 · S18 · S19_bag3): 이사 → 가방에서 3단 선반 놓기 → 가방 판 닫힘 → 손가락 «들고 온 채소를 가구 위에 올리세요»가 방 아래 빈 자리(css 64,660)를 짚음 ·
+      세 번 눌러도 아무 일 없음 · 가방을 열자 같은 손가락이 «이삿짐 — 콩나물 시루» 칸에 나타남
+   까닭(재현): 판 속 목록(.sheetbody)을 굴린 채 판을 닫으면 판 위로 잘려 나간 칸의 네모가 닫힌 판 위쪽에 «화면 안»으로 남는다(§onScreen 이 잘림을 안 봄) — 그 점에서 잡히는 것은 방 바닥
+   판: 총괄 humanQ premove(반지하 Day 134 · C:/Users/pc/AppData/Local/Temp/byeot-master/d_66841206/humanQ/humanQ_g_premove.json · 프로필 안 건드림) → [다음 날] → 지갑 손질 → 원룸 이사
+   단언
+     ㉮ 이사 직후 손가락 [가방]
+     ㉯ 가방에서 3단 선반을 누르면(판 닫힘) 1.5초 뒤 손가락은 [가방] — 손가락이 짚는 것의 가운데에서 그것이 잡힌다
+     ㉰ 가방을 다시 열고 판 속 목록을 맨 아래로 굴린 뒤 닫으면 손가락은 [가방](판 안 칸 아님) · 짚는 것의 가운데에서 그것이 잡힌다 — 세 번 다시 물어도 같다
+     ㉱ 가방을 다시 열면(목록은 굴린 그대로) 손가락이 판 안 칸을 «보이게» 짚는다(잘린 칸은 굴려 보임 · 가운데에서 그 칸이 잡힘)
+     예외 0 · J 단언엔 !탈 */
+import fs from 'node:fs';
+import { launch, sleep } from './test_cdp.mjs';
+const BASE = process.env.BYEOT_URL || 'http://127.0.0.1:9451', OUT = process.env.OUT || null;
+const SAVE = process.env.SAVE || 'C:/Users/pc/AppData/Local/Temp/byeot-master/d_66841206/humanQ/humanQ_g_premove.json';
+if (OUT) fs.mkdirSync(OUT, { recursive: true });
+let bad = 0; const ok = (c, m, d = '') => { console.log(`${c ? '  OK' : 'FAIL'}  ${m}${d ? '  → ' + d : ''}`); if (!c) bad++; };
+if (!fs.existsSync(SAVE)) { ok(false, '세이브 없음', SAVE); process.exit(1); }
+const exc = [];
+const page = await launch({ width: 390, height: 844, dpr: 2 });
+page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
+await page.send('Runtime.enable');
+await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+const J = async (js) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, 120000));
+await page.goto(`${BASE}/data/balance/homes.json`);
+await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(fs.readFileSync(SAVE, 'utf8'))}); localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
+await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted === true', 300000, 500); await page.waitFor('!!window.__rv', 240000, 500); await sleep(4000);
+const dlgOnly = async () => { for (let i = 0; i < 80; i++) { const t = await J(`document.getElementById('stage').classList.contains('talking')`); if (t !== true) return; await page.eval(`(()=>{ const s=document.getElementById('dlgSkip'); if(s) s.click(); const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(250); } };
+const bannerOff = async () => { for (let i = 0; i < 20; i++) { const on = await J(`document.getElementById('event').classList.contains('on')`); if (on !== true) return; await J(`(()=>{ document.getElementById('event').click(); return 1; })()`); await sleep(400); } };
+await dlgOnly();
+/* premove → [다음 날] → 지갑을 이사비 + 2,780(probe_b2_unpack 과 같은 손질) → [원룸으로 이사] */
+await page.eval(`(()=>{ const b=document.getElementById('next'); b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); b.click(); return 1; })()`, false);
+await sleep(1500); await page.eval(`(()=>{ const g=document.getElementById('mealGo'); if (g && g.offsetParent) g.click(); return 1; })()`, false);
+await sleep(4000); await dlgOnly();
+await J(`(()=>{ const ts=window.__S().tutorial; ts.cashWon = ts.rules.moveOutCostWon + 2780; window.__redraw(); return 1; })()`);
+for (let i = 0; i < 6; i++) {
+  const mv = await J(`(()=>({ moved: !!window.__S().tutorial.movedOut, panel: document.getElementById('movePanel').classList.contains('on') }))()`);
+  if (mv.moved) break;
+  if (mv.panel) await page.eval(`(()=>{ document.getElementById('moveGo').click(); return 1; })()`, false);
+  else await page.eval(`(()=>{ window.__byeotSheet.tab('room'); document.getElementById('moveOut').click(); return 1; })()`, false);
+  await sleep(1200); await dlgOnly();
+}
+await sleep(6000); await page.waitFor('!!window.__rv', 240000, 500); await sleep(3000); await dlgOnly();
+await J(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`); await sleep(1500); await bannerOff();
+const H = `(async()=>{ try { window.__byeotHint(); } catch (e) { void e; } await new Promise(r=>setTimeout(r,900)); const h=document.getElementById('hint'), t=document.querySelector('.hintTarget');
+  if (!t || !h.classList.contains('on')) return { on: h.classList.contains('on'), none: true };
+  const q=t.getBoundingClientRect(); const hit=document.elementFromPoint(q.left+q.width/2, q.top+q.height/2);
+  return { on: true, tid: t.id || null, inSheet: !!t.closest('#sheet'), cell: !!t.closest('.bagslot'), r: [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)],
+    hitIsT: !!hit && (hit === t || t.contains(hit)), hit: hit ? (hit.id || hit.tagName + '.' + (hit.className||'').toString().slice(0,24)) : null, say: (h.querySelector('.say')||{}).textContent,
+    sheetOpen: document.getElementById('sheet').classList.contains('open') }; })()`;
+const a = await J(H);
+console.log('  ㉮ 이사 직후', JSON.stringify(a));
+ok(!a.탈 && a.on && a.tid === 'openBag', '㉮ 이사 직후 손가락 [가방]', JSON.stringify(a));
+/* ㉯ 3단 선반 */
+await page.eval(`(()=>{ document.getElementById('openBag').click(); return 1; })()`, false); await sleep(1500);
+const furn = await J(`[...document.querySelectorAll('#bagGrid [data-furnbag]')].map(b=>({ uid: b.getAttribute('data-furnbag'), t: (b.textContent||'').trim().slice(0,30) }))`);
+const pick = (furn.find(f => /선반/.test(f.t)) || furn[0] || {}).uid;
+await page.eval(`(()=>{ const b=document.querySelector('#bagGrid [data-furnbag="${pick}"]'); if (b) b.click(); return 1; })()`, false);
+await sleep(4000); await dlgOnly(); await bannerOff(); await sleep(1500);
+const b = await J(H);
+console.log('  ㉯ 선반 놓은 뒤(판 닫힘)', pick, JSON.stringify(b));
+ok(!b.탈 && b.on && b.tid === 'openBag' && b.hitIsT && !b.sheetOpen, '㉯ 가방에서 3단 선반을 놓아 판이 닫히면 손가락 [가방](짚는 것의 가운데에서 그것이 잡힘)', JSON.stringify(b));
+/* ㉰ 다시 열고 목록을 맨 아래로 굴린 뒤 닫음 */
+await page.eval(`(()=>{ document.getElementById('openBag').click(); return 1; })()`, false); await sleep(1500);
+const sc = await J(`(()=>{ const body=document.querySelector('#sheet .sheetbody'); if (!body) return { 없음: true }; body.scrollTop = body.scrollHeight; return { top: body.scrollTop, sh: body.scrollHeight, ch: body.clientHeight }; })()`);
+await sleep(800);
+await J(`(()=>{ window.__byeotSheet.close(); return 1; })()`); await sleep(1500);
+const c = [];
+for (let k = 0; k < 3; k++) { c.push(await J(H)); await sleep(1200); }
+console.log('  ㉰ 굴린 채 닫은 뒤', JSON.stringify({ sc, c }));
+if (OUT) await page.shot(`${OUT}/390_c7d_closed.png`);
+ok(c.every(x => !x.탈 && x.on && x.tid === 'openBag' && x.hitIsT && !x.inSheet), '㉰ 판 속 목록을 굴린 채 판을 닫으면 손가락은 [가방](판 안 칸 아님 · 세 번 다 · 짚는 것의 가운데에서 그것이 잡힘)', JSON.stringify(c.map(x => [x.tid, x.inSheet, x.hitIsT, x.hit, x.r, x.say])));
+/* ㉱ 다시 열면 판 안 칸을 보이게 짚는다 */
+await page.eval(`(()=>{ document.getElementById('openBag').click(); return 1; })()`, false); await sleep(1600);
+const d = await J(H);
+console.log('  ㉱ 다시 연 뒤', JSON.stringify(d));
+if (OUT) await page.shot(`${OUT}/390_c7d_reopen.png`);
+ok(!d.탈 && d.on && d.cell && d.hitIsT && (d.r[1] + d.r[3]) / 2 > 0 && (d.r[1] + d.r[3]) / 2 < 844, '㉱ 가방을 다시 열면 손가락이 판 안 칸을 보이게 짚는다(그 칸 가운데가 화면 안 · 가운데에서 그 칸이 잡힘)', JSON.stringify(d));
+ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
+try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
+console.log(bad ? `probe_critic7_d: 빨강 ${bad}` : 'probe_critic7_d: 다 통과');
+process.exit(bad ? 1 : 0);

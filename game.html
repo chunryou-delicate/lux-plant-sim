@@ -6611,7 +6611,19 @@ function updateHint() {
   const onScreen = (el) => {
     if (!el) return false;
     const r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight;
+    if (!(r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight)) return false;
+    /* ★ 11-02 7C3(총괄 가름 · 비판 7판 S16 · S18 · S19_bag3) — 시트(가방 · 식물 · 상점 판) 안 것은 «시트가 올라와 있고(§sheetShown) · 판 몸(.sheetbody)의 보이는 칸 안에 그 가운데가 있을 때»만 화면 안이다.
+         ⛔ 판 속 목록을 굴린 채 판을 닫으면, 판 위로 잘려 나간 칸의 네모가 닫힌 판 위쪽(css 64,660 · 재현 578~705)에 «화면 안»으로 남아
+           손가락 «들고 온 채소를 가구 위에 올리세요»가 빈 바닥을 짚었다 — 세 번 눌러도 아무 일 없음(그 점에서 잡히는 것은 방 바닥).
+         ⇒ 닫힌 판 안 대상은 «안 보임» → 짐 풀기 갈래가 [가방] 기둥으로 간다 · 열린 판에서 잘린 칸은 그 갈래가 굴려 보이게 한다(§cutCell0 · 이삿짐 칸) */
+    try {
+      if (el.closest && el.closest('#sheet')) {
+        if (!sheetShown()) return false;
+        const body = el.closest('.sheetbody');
+        if (body) { const b = body.getBoundingClientRect(), cy = (r.top + r.bottom) / 2; if (cy < b.top || cy > b.bottom) return false; }
+      }
+    } catch (e) { void e; }
+    return true;
   };
   /* ★ 2026-10-31 (D92 잼) — 시트가 «정말» 화면에 올라와 있나 — 가방 칸을 굴려(scrollIntoView) 보이게 하는 갈래 셋(삽수 · 이삿짐 · 식물등)의 문.
        ⛔ 접힌 시트(폰 · 화면 아래 850px)에서 칸을 굴리면 시트 밖 조상까지 굴러 칸이 «화면 안»이 되어, 손가락이 [가방] 문 대신 그 칸을 짚었다(probe_box ④).
@@ -6930,6 +6942,8 @@ function updateHint() {
       }
       return null;
     };
+    /* ★ 11-02 7C3 — 판이 올라와 있는데 그 칸이 판 속에서 잘려 있으면(§onScreen 판 몸 자) 굴려 보이게 한다(삽수 · 이삿짐 칸과 같은 손) — 차례가 뒤 갈래로 밀리지 않게 */
+    const seeBag = (el) => { try { if (sheetShown() && el && el.offsetParent && !onScreen(el)) (el.closest('.bagslot') || el).scrollIntoView({ block: 'center' }); } catch (e) { void e; } };
     /* ★③ 놓인 «순간» 한 줄 — 첫 가구가 서면 한 번만(이 판에서). 말은 [plan] 문안 그대로 */
     /* ★ 2026-10-10 한 판 걸음(총괄 물음 ②) — «놓인 순간»만. 예전엔 «가구가 하나라도 있으면»이라 ⓐ 투룸(가게 첫날 받은 주문판이 «첫 가구»)에서도 섰고
          ⓑ «한 번» 표시가 메모리라 다시 켤 때마다 또 섰다(새 집 첫 순간에 «어두워졌다»가 뜻 없이 겹침). ⇒ 원룸에서 · 이 켬에 0 이던 것이 1 이상이 될 때 */
@@ -6953,13 +6967,16 @@ function updateHint() {
       /* ① · ② 가구 하나 — 아직 하나도 안 놓았고 가방에 가구가 있으면 · ★ 10-10 원룸에서만(글이 «반지하에서 가져온 것» · 투룸 첫날은 plan 이 안 가르치기로) */
       if (S.home && S.home.room === 'oneroom' && furnDone === 0 && furnBag > 0) {
         const cell = $('bagGrid') && $('bagGrid').querySelector('[data-furnbag]');
+        seeBag(cell);   /* ★ 7C3 */
         if (onScreen(cell) && !sheetCovers(cell)) return hintAt(cell, '선반을 꺼내 놓아 보세요');
         const door = bagDoor(); if (door) return hintAt(door, '가방을 열어 보세요 — 반지하에서 가져온 것이 다 있습니다');
       }
       /* ④ 식물·시루 — 세 갈래 문안(ⓓ). 있는 것부터: 그루 → 삽수 → 시루/재배판 */
       const potCell = $('bagGrid') && $('bagGrid').querySelector('[data-potbag]');
+      if (potN > 0) seeBag(potCell);   /* ★ 7C3 */
       if (potN > 0 && onScreen(potCell) && !sheetCovers(potCell)) return hintAt(potCell, '몬스테라를 밝은 자리에 놓으세요');
       let cutCell = null; try { const c0 = bagCuttings()[0]; cutCell = c0 ? $(cutThumbId(c0.id)) : null; } catch { cutCell = null; }
+      if (cutN > 0) seeBag(cutCell);   /* ★ 7C3 */
       if (cutN > 0 && onScreen(cutCell) && !sheetCovers(cutCell)) return hintAt(cutCell, '삽수를 밝은 자리에 놓으세요');
       /* ★ 11-02 7C2(총괄 가름 · 비판 7판 S41 · S43_trayplace · S45) — 밝은 칸이 비면 다음 걸음은 «몬스테라 화분을 밝은 빈 칸으로»다.
            ⛔ 할 일 'clear' 를 따라 무순 판을 [가방으로] 빼면 이 갈래가 가방 판을 먼저 짚어(«시루를 놓으세요») 누르기 자동 자리가 그 판을 방금 비운 칸에 도로 놓았다(고리)
@@ -6970,6 +6987,7 @@ function updateHint() {
       const boxCell = $('bagGrid') && $('bagGrid').querySelector('[data-boxpot]');
       try { if (sheetShown() && boxN > 0 && boxCell && boxCell.offsetParent && !onScreen(boxCell)) boxCell.scrollIntoView({ block: 'center' }); } catch { }
       if (boxN > 0 && onScreen(boxCell) && !sheetCovers(boxCell)) return hintAt(boxCell, '들고 온 채소를 가구 위에 올리세요');
+      if ((siruN + trayN) > 0) seeBag(siruCell);   /* ★ 7C3 */
       if ((siruN + trayN) > 0 && onScreen(siruCell) && !sheetCovers(siruCell)) return hintAt(siruCell, '시루를 놓고 씨앗을 심으세요 — 처음처럼');
       /* ★ MINOR ② — 남은 것을 그대로 말한다(삽수는 위 갈래가 맡음) · 섞였을 때만 예전 말 */
       const growN = potN, contN = Math.max(0, siruN) + Math.max(0, trayN);
