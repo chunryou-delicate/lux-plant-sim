@@ -1388,6 +1388,8 @@
        아래를 가리키는 손(👇)을 옆에 두면 다시 「반대를 가리키는」 그 사고가 난다. */
   #hint.side{transform:translate(0,-50%);display:none;align-items:center;gap:1px}
   #hint.side.on{display:flex}
+  /* ★ 11-02 7C6 — 확인 바 [확인]을 옆에서 «손만»으로 짚는 자리(§hintAvoidChip handOnly) — 묻는 말은 확인 바 제목이 이미 한다 */
+  #hint.handOnly .say{display:none}
   #hint.side .say{white-space:normal;max-width:min(60vw,250px);border-radius:14px;text-align:left}   /* ★ 2026-11-01 비판 넷째 판 ⑧(b104) — 긴 꼬리표가 화면 밖 */
   #hint.side .hand{margin-top:0;font-size:26px;animation:handBobXR 1.1s ease-in-out infinite}
   #hint.side.toRight{flex-direction:row-reverse}   /* 대상이 왼쪽 — 손이 왼쪽에서 가리킨다 */
@@ -4767,7 +4769,7 @@ function placePointHint(cx, cy, say, r = 48) {
   h.querySelector('.say').textContent = say;
   h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리 폭을 되돌린다 */
   h.querySelector('.say').style.whiteSpace = ''; h.querySelector('.say').style.width = ''; h.querySelector('.say').style.wordBreak = '';
-  h.classList.remove('side', 'toRight', 'navSide');
+  h.classList.remove('side', 'toRight', 'navSide', 'handOnly');
   h.querySelector('.hand').textContent = '👇';
   h.style.left = cx + 'px';
   h.style.top = Math.max(4, cy - 86) + 'px';
@@ -4829,7 +4831,7 @@ function placeHintAt(el, say) {
   h.querySelector('.say').textContent = say;
   h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리(§sideNarrow)의 폭을 되돌린다 */
   h.querySelector('.say').style.whiteSpace = ''; h.querySelector('.say').style.width = ''; h.querySelector('.say').style.wordBreak = '';   /* ★ 11-02 넷째 묶음 — 위 자리에서 접은 말(§hintAvoidChip ⓪-b)을 되돌린다 */
-  h.classList.remove('side', 'toRight', 'below', 'row', 'navSide');   /* ★ 7C2 꼬리 — 칩 좁힘 표(navSide)도 자리마다 새로 */
+  h.classList.remove('side', 'toRight', 'below', 'row', 'navSide', 'handOnly');   /* ★ 7C2 꼬리 — 칩 좁힘 표(navSide)도 자리마다 새로 · ★ 7C6 손만 표도 */
   hand.style.left = '0px';        /* ★ 지난 번에 민 것을 되돌린다 — 안 되돌리면 쌓인다 */
   hand.textContent = '👇';
   h.style.left = (r.left + r.width / 2) + 'px';
@@ -5003,7 +5005,14 @@ function hintAvoidChip(h, hand, r) {
   /* ★ 2026-11-02 넷째 묶음(plan f373262a 대조 ⑤ 사진 next_finger) — 바닥 체력 줄 글(#staText «오늘은 여기까지 — … 최대 체력이 하나 늡니다»)도 비킨다 · 그 점에서 정말 보일 때만 */
   const seenText = el => { const q = textBox(el); if (!q) return null;
     try { const c = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return c && (c === el || el.contains(c) || c.contains(el)) ? q : null; } catch (e) { return q; } };
-  const obs = [seenText($('staText')), shown($('questChip')), shown($('placeConfirmWarn')), shown($('placeConfirmFit')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...rowBtns, ...popTexts, confirmWho, ...bottomTexts].filter(Boolean);   /* ★ D95 ③ 빛 낱말 줄도 비킨다 · ★ 11-01 #10 다른 줄 단추 */
+  /* ★ 11-02 7C6(비판 7판 MINOR #7 · d13_place) — 확인 바 단추를 짚을 때는 «놓일 점»(그 자리 · 등 자리)도 비킨다 — 손 · 말풍선이 그 자리를 덮어 어디인지 못 봤다 */
+  const placePt = (() => { try {
+      const pc = $('placeConfirm'); const q = pc && pc.offsetParent !== null ? pc.getBoundingClientRect() : null;
+      if (!q || !(r.left >= q.left - 1 && r.right <= q.right + 1 && r.top >= q.top - 1 && r.bottom <= q.bottom + 1)) return null;
+      const p = confirmPointNow();
+      return p ? { left: p.x - 14, right: p.x + 14, top: p.y - 14, bottom: p.y + 14, width: 28, height: 28 } : null;
+    } catch (e) { return null; } })();
+  const obs = [seenText($('staText')), shown($('questChip')), shown($('placeConfirmWarn')), shown($('placeConfirmFit')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...rowBtns, ...popTexts, confirmWho, ...bottomTexts, placePt].filter(Boolean);   /* ★ D95 ③ 빛 낱말 줄도 비킨다 · ★ 11-01 #10 다른 줄 단추 */
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
@@ -5131,7 +5140,7 @@ function hintAvoidChip(h, hand, r) {
         const room = right ? innerWidth - 8 - (r.right + 8) : r.left - 16;
         const mx = Math.floor(room - (hand.getBoundingClientRect().width || 30) - 6);
         if (!say || mx < 64) { if (say) say.style.maxWidth = ''; const q = sideAt(right); return { left: q.left, right: q.right + 9999, top: q.top, bottom: q.bottom, width: q.width, height: q.height }; }
-        say.style.maxWidth = mx + 'px';
+        say.style.maxWidth = mx + 'px'; say.style.wordBreak = 'keep-all';   /* ★ 11-02 7C6 — 낱말 사이에서만 꺾음(«둘까 / 요» · «[확 / 인]» 꼴 막음 · 7C2 꼬리와 같은 손) */
         return sideAt(right);
       };
       const score = (q) => obs.reduce((a, o) => a + area(q, o), 0) + 3 * area(q, r) + 2 * rowBtns.reduce((a, o) => a + area(q, o), 0)   /* ★ #10 다른 단추 = 짚는 것과 같은 무게(obs 1 + 2) */
@@ -5151,8 +5160,14 @@ function hintAvoidChip(h, hand, r) {
         () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(false); },
         () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(true); },
         /* ★ 2026-11-01 비판 넷째 판 b106 — 확인 바 안 단추면 «말을 좁힌 옆자리»도 잰다(아래 §sideNarrow) */
-        ...((inConfirm || shopRowBtn) ? [() => sideNarrow(true), () => sideNarrow(false)] : [])   /* ★ #10 상점 줄 단추도 «말을 좁힌 옆자리» */
+        ...((inConfirm || shopRowBtn) ? [() => sideNarrow(true), () => sideNarrow(false)] : []),   /* ★ #10 상점 줄 단추도 «말을 좁힌 옆자리» */
+        /* ★ 11-02 7C6(비판 7판 MINOR #6 · S43_trayplace · 재현 360) — 확인 바 옆에 말풍선 글이 안 들어가면(좁힌 옆자리 64px 아래) 위 자리가 뽑혀 손이 제목 «N번 칸에 둘까요?»를 덮었다.
+             ⇒ 옆에 «손만» 세운다(묻는 말은 제목이 한다) · 글을 덮는 자리보다 앞서게 넓이 0 이면 뽑힌다 */
+        ...(inConfirm ? [() => { h.classList.remove('below', 'row'); h.classList.add('side', 'handOnly'); if (say) say.style.maxWidth = ''; return sideAt(true); },
+                         () => { h.classList.remove('below', 'row'); h.classList.add('side', 'handOnly'); if (say) say.style.maxWidth = ''; return sideAt(false); }] : [])
       ];
+      /* ★ 7C6 — 자리마다 손만 표를 먼저 지운다(손만 자리는 제 안에서 다시 단다) */
+      for (let i = 0; i < poses.length; i++) { const f = poses[i]; poses[i] = () => { h.classList.remove('handOnly'); return f(); }; }
       /* 앞 다섯 자리는 좁힌 폭을 안 쓴다 — 고를 때마다 되돌린다 */
       for (let i = 0; i < 5; i++) { const f = poses[i]; poses[i] = () => { if (say) { say.style.maxWidth = ''; say.style.whiteSpace = ''; say.style.width = ''; say.style.wordBreak = ''; } return f(); }; }
       let best = 0, bestS = Infinity;
@@ -18396,6 +18411,18 @@ const FURN_MENU_GAP = 16;              // 가구와 메뉴 사이 [px] — 가�
    폰 배치의 [확인] 바(`#placeConfirm`)도 가구 메뉴와 똑같은 일을 한다 —
    물건 옆에 뜨고, 시점을 돌리면 따라가고, 화면 밖으로 나가면 접힌다.
    베끼면 한쪽만 고쳐지는 날이 온다(이 저장소가 여러 번 겪은 모양이다). */
+/* ★ 11-02 7C6 — 확인 바가 묻는 «놓일 점»(화면 좌표) — 등 다는 갈래면 그 등 자리(§lampAsk) · 아니면 고른 자리(§picked) · 못 재면 null(§hintAvoidChip · 재는 손잡이) */
+function confirmPointNow() {
+  try {
+    let p = null;
+    if (lampAsk.uid && lampAsk.pos) p = roomView && roomView.worldToScreen(lampAsk.pos.x, lampAsk.pos.y, lampAsk.pos.z);
+    else if (picked.slotId) p = roomView && roomView.screenPosOf(picked.slotId);
+    if (!p) return null;
+    const c = $('roomCanvas').getBoundingClientRect();
+    return { x: c.left + p.x, y: c.top + p.y };
+  } catch (e) { return null; }
+}
+window.__byeotPlacePt = () => { const p = confirmPointNow(); return p ? { x: Math.round(p.x), y: Math.round(p.y), lamp: !!(lampAsk.uid && lampAsk.pos) } : null; };   /* 재는 손잡이(7C6) */
 function placeFloatMenu(el, p) {
   if (!el) return;
   if (!p) { el.style.visibility = 'hidden'; return; }
@@ -18420,7 +18447,21 @@ function placeFloatMenu(el, p) {
   if (left + w > x1) left = x - FURN_MENU_GAP - w;
   left = Math.max(x0, Math.min(x1 - w, left));   /* ⚠ let — 아래 #8 탭 기둥 비킴이 다시 민다 */
   /* 세로는 그 점을 **가운데**에 둔다. 발밑 좌표라 위로만 올리면 키 큰 가구에서 멀어진다 */
-  const top = Math.max(y0, Math.min(y1 - h, y - h / 2));
+  let top = Math.max(y0, Math.min(y1 - h, y - h / 2));
+  /* ★ 11-02 7C6(비판 7판 MINOR #7 · d11_mplace · d13_place · d15_p1 · d45_lamp) — 확인 바가 놓일 점을 덮으면(좌우 다 넘쳐 화면 안으로 물렸을 때) 그 점 위 · 아래로 비킨다.
+       ⛔ 창턱 · 서랍장 · 창 위가 «여기에 둘까요?» 창 밑에 가려 어디에 놓이는지 못 봤다 · 위가 먼저(손이 위에서 짚는다) · 둘 다 안 되면 그대로 */
+  if (el.id === 'placeConfirm') {
+    /* 점은 «발밑»이라 물건은 그 위로 솟는다 — 위로 비킬 땐 물건 키만큼(44) 더 띄운다 */
+    const m = 16, rise = 44;
+    if (x >= left - m && x <= left + w + m && y >= top - m && y <= top + h + rise) {
+      const up = y - rise - h, dn = y + m;
+      /* 위로 비킬 땐 할 일 칩 · [🔆 빛 분포 보기](보일 때 · 가로로 겹치면) 밑까지만 — 덮으면 아래로(360 협탁: 바가 칩 «내 집까지 …»를 덮었다) */
+      let yTop = y0;
+      for (const id of ['questChip', 'lightHeatOff']) { try { const e = $(id); if (!e || !e.offsetParent) continue; const cs = getComputedStyle(e); if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+        const q = e.getBoundingClientRect(); if (q.height > 0 && q.left < left + w && q.right > left) yTop = Math.max(yTop, q.bottom + pad); } catch (e2) { void e2; } }
+      if (up >= yTop) top = up; else if (dn + h <= y1) top = dn;
+    }
+  }
   /* ★ 2026-11-02 총괄 C11(#8 · 6판 A100_lamptap1 «부형 식물등») — 왼쪽 탭 기둥(#navbar · z 41)과 세로로 겹치면 그 오른쪽으로 민다 */
   try { const nv = $('navbar'); if (nv && nv.offsetParent && getComputedStyle(nv).opacity !== '0') { const q = nv.getBoundingClientRect();
         if (q.width > 0 && top < q.bottom && top + h > q.top && left < q.right + pad) left = Math.max(left, Math.min(x1 - w, q.right + pad)); } } catch (e) { void e; }
