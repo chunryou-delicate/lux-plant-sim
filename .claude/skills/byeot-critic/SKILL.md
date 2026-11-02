@@ -47,4 +47,4 @@ description: 볕 «비판 플레이어» 판 띄우기 — 고정 커밋으로 �
 |---|---|---|---|---|
 | 10-31 | swiftshader 로 띄워 CPU 61% · 박사님 컴 버벅임 | 크롬 기본 GL | 지시서에 d3d11 · --mute-audio 못박음 | ✓ |
 | 11-02 | 6번째 판을 옛 해시로 띄우려 함 | 그 뒤 고친 빈 화분을 다시 적게 됨 | «가장 새 해시로» 줄 · 띄우는 까닭을 캠페인에 | ✓ (6번째 판이 8d443621 로 돌아 빈 화분을 고친 판으로 봄 · 다섯째 판 BLOCKER «사라짐») |
-| 11-02 | 6번째 판 비판이 작업 트리 `.claude/skills/byeot-fix-cycle/` 에 chrome.out · driver.out · play.log 를 남김 | 끝난 뒤 다시 띄울 때 셸 작업 폴더가 저장소였고 출력에 상대 경로를 씀 | 지시서 안전 절에 «출력은 임시 폴더 절대 경로 · 끝에 git status --short --ignored 로 새 파일 0 · 생기면 지우지 말고 알림». 남은 셋은 지우지 않고 `C:/Users/pc/byeot-master-keep/critic6_stray/` 로 옮김 | 확인 전 |
+| 11-02 | 6번째 판 비판이 작업 트리 `.claude/skills/byeot-fix-cycle/` 에 chrome.out · driver.out · play.log 를 남김 | 끝난 뒤 다시 띄울 때 셸 작업 폴더가 저장소였고 출력에 상대 경로를 씀 | 지시서 안전 절에 «출력은 임시 폴더 절대 경로 · 끝에 git status --short --ignored 로 새 파일 0 · 생기면 지우지 말고 알림». 남은 셋은 지우지 않고 `C:/Users/pc/byeot-master-keep/critic6_stray/` 로 옮김 | ✓ (7번째 판: 출력은 다 `Temp/byeot-critic7/` · 끝에 git status 로 보고서 말고 새 파일을 찾아 «내 것 아님 · 안 지움»으로 알림 — `img/lightview/*_now.png` 는 15:43 core 회귀 쪽) |
