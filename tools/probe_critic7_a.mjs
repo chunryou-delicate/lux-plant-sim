@@ -9,7 +9,8 @@
      ㉯ 같은 판 [＋] 로 5 → 손가락 [모자란 만큼] «모자란 만큼으로 맞춥니다» · 누르면 4 · 손가락 [주문]
      ㉰ 씨앗 10 · 상점 [주문]으로 연 창 — [모자란 만큼] 회색 · «… — 씨앗은 모자라지 않습니다» · 기본 1 · 손가락 [그만두기] «닫아도 됩니다»
      ㉱ 새 시루만 2 · 씨앗 0 — 개수 줄 «오늘 · 내일 심을 시루 2개 — 씨앗 2개가 모자랍니다»(«모자라지 않습니다» 아님 · 안 심은 줄을 셈)
-     ㉲ 360 — 넷째 칸 글 두 줄 안 · 낱말 안 꺾임 없음 · 씨앗 아닌 품목(시루)은 넷째 칸 없음 · 예외 0 · J 단언엔 !탈 */
+     ㉲ 360 — 넷째 칸 글 두 줄 안 · 낱말 안 꺾임 없음 · 씨앗 아닌 품목(시루)은 넷째 칸 없음 · 예외 0 · J 단언엔 !탈
+     ㉳ 총괄 덤(7C1 꼬리) — 씨앗 넉넉한 창은 [그만두기]가 주 단추(주황) · [주문]은 보통 단추 — 모자랄 때(㉮)와 단추 판이 뒤바뀜(6판 #24 · C10 경고 창과 같은 꼴) */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
 const BASE = process.env.BYEOT_URL || 'http://127.0.0.1:9451', OUT = process.env.OUT || null;
@@ -55,8 +56,10 @@ const PANEL = `(async()=>{ try { window.__byeotHint(); } catch (e) { void e; } a
     all: all ? { shown: all.style.display !== 'none' && !!all.offsetParent, text: (all.textContent||'').trim(), dis: all.disabled, rows, breaks } : null,
     need: need && need.style.display !== 'none' ? (need.textContent||'') : null, count: (document.getElementById('buyCount')||{}).textContent,
     hint: { on: h.classList.contains('on'), tid: t ? t.id || null : null, say: (h.querySelector('.say')||{}).textContent },
+    bg: { go: getComputedStyle(document.getElementById('buyGo')).backgroundImage, cancel: getComputedStyle(document.getElementById('buyCancel')).backgroundImage },
     counted, seedTomorrow: st }; })()`;
 
+let needBg = null;   /* ㉮ 판(모자람)의 단추 판 — ㉳ 에서 견줌 */
 /* ═══ ㉮ ㉯ ㉲ — 거둔 2 · 새 2 · 씨앗 0 ═══ */
 for (const w of [390, 360]) {
   const { page, J, boot } = await open(w);
@@ -70,6 +73,7 @@ for (const w of [390, 360]) {
     ok(!a.탈 && btn.buy === 'bean_seed' && a.on && a.all && a.all.shown && a.all.text === '모자란 만큼', '㉮ 바닥 🛒 로 연 콩 씨앗 창 — 넷째 칸 «모자란 만큼»(소지금 [전부] 아님)', JSON.stringify({ btn, all: a.all }));
     ok(!a.탈 && a.need === '오늘 · 내일 심을 시루 4개 — 씨앗 4개가 모자랍니다' && a.count === '4개', '㉮ 개수 줄 «오늘 · 내일 심을 시루 4개 — 씨앗 4개가 모자랍니다» · 기본 개수 4', JSON.stringify({ need: a.need, count: a.count }));
     ok(!a.탈 && a.hint.on && a.hint.tid === 'buyGo' && a.hint.say === '개수를 정하고 [주문] — 내일 옵니다', '㉮ 개수 = 모자란 수 → 손가락 [주문]', JSON.stringify(a.hint));
+    needBg = a.bg;
     ok(!a.탈 && a.counted === 4 && a.seedTomorrow && a.seedTomorrow.want === 4 && a.seedTomorrow.have === 0, '㉮ 한 셈 — 창 w = §seedTomorrowOf want = 판에서 센 거둔 + 안 심은 수(두 번 안 셈)', JSON.stringify({ counted: a.counted, seedTomorrow: a.seedTomorrow }));
     /* ㉯ [＋] 로 5 */
     await J(`(()=>{ document.getElementById('buyPlus').click(); return 1; })()`); await sleep(500);
@@ -96,6 +100,7 @@ for (const w of [390, 360]) {
   if (OUT) await page.shot(`${OUT}/390_c7a_enough.png`);
   ok(!d.탈 && d.on && d.all && d.all.shown && d.all.dis === true && d.need === '오늘 · 내일 심을 시루 4개 — 씨앗은 모자라지 않습니다' && d.count === '1개', '㉰ 씨앗 넉넉 — [모자란 만큼] 회색 · «… — 씨앗은 모자라지 않습니다» · 기본 1', JSON.stringify({ all: d.all, need: d.need, count: d.count }));
   ok(!d.탈 && d.hint.on && d.hint.tid === 'buyCancel' && d.hint.say === '닫아도 됩니다', '㉰ 손가락 [그만두기] «닫아도 됩니다»', JSON.stringify(d.hint));
+  ok(!d.탈 && !!needBg && !!d.bg && d.bg.cancel === needBg.go && d.bg.go === needBg.cancel && needBg.go !== needBg.cancel, '㉳ 씨앗 넉넉한 창은 [그만두기]가 주 단추 · [주문]은 보통 단추(모자랄 때와 뒤바뀜)', JSON.stringify({ need: needBg, enough: d.bg }));
   await J(`(()=>{ document.getElementById('buyCancel').click(); return 1; })()`); await sleep(800);
   await J(`(()=>{ const b=document.querySelector('#shopList [data-buy="siru"]'); if (b) b.click(); return !!b; })()`); await sleep(1200);
   const e = await J(PANEL);

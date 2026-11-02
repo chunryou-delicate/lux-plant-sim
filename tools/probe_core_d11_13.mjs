@@ -49,7 +49,8 @@ await clearDlg();
 const heads = [];
 heads.push(await chipHead());
 console.log('■ D12 첫 칩 머리 —', heads[0]);
-ok('D12 첫날 칩 머리가 「📜 1/5 · 시루 놓기」', heads[0] === '📜 1/5 · 시루 놓기', String(heads[0]));
+/* ★ 2026-11-02 core(총괄) — 칩 머리 정본은 «📜 첫걸음 N/5 · …»(«첫걸음»이 붙은 뒤 옛 글을 단언하던 낡은 줄) */
+ok('D12 첫날 칩 머리가 「📜 첫걸음 1/5 · 시루 놓기」', heads[0] === '📜 첫걸음 1/5 · 시루 놓기', String(heads[0]));
 
 /* 손가락을 따라 시루를 놓고 심고 물을 준다(probe_zoom 과 같은 손) */
 const tapHint = async () => {
@@ -66,7 +67,7 @@ for (let i = 0; i < 14; i++) {
 }
 { const h = await chipHead(); if (h && h !== heads[heads.length - 1]) heads.push(h); }
 console.log('■ D12 칩 머리 차례 —', JSON.stringify(heads));
-ok('D12 걸음마다 칩 머리가 오른다(1/5 → 2/5 …)', heads.length >= 2 && /^📜 2\/5 · /.test(heads[1] || ''), JSON.stringify(heads));
+ok('D12 걸음마다 칩 머리가 오른다(1/5 → 2/5 …)', heads.length >= 2 && /^📜 첫걸음 2\/5 · /.test(heads[1] || ''), JSON.stringify(heads));
 
 /* ── D13 · [다음 날]만 누른다. 날마다 «팝업이 떴나 · 배너가 무엇인가»를 적는다 ── */
 const quiet = async () => { await clearDlg(); for (let i = 0; i < 30; i++) { const b = await page.eval(`!!window.__dayAnimRunning || document.getElementById('stage').classList.contains('dayanim')`); if (!b) return; await sleep(200); } };

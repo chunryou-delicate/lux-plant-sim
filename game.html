@@ -388,6 +388,10 @@
        ⚠ 옷만 바꾼다 — `.go` 표(창의 «하는» 단추 · 자 · 손가락 셈)는 그대로 [그래도 …]에 있다 */
   .pop[data-warn="1"] .pbtns button.go{flex:1;background-image:url(./assets/ui/button_plate_slate.png);color:#f2eef8}
   .pop[data-warn="1"] .pbtns button.ghost{flex:1.45;background-image:url(./assets/ui/button_plate_amber.png);color:#3a2c12}
+  /* ★ 2026-11-02 7C1 꼬리(총괄) — 씨앗이 모자라지 않은 주문 창(§drawBuyPanel data-enough)은 [그만두기]가 주 단추 · [주문]은 보통 단추(위 경고 창과 같은 꼴) ·
+       ⛔ 손가락은 [그만두기] «닫아도 됩니다»를 짚는데 주황 주 단추는 «1개 주문 · 500원»이었다(390_c7a_enough) · 손가락 물러섬 표(data-warn)와는 다른 표 */
+  #buyPanel[data-enough="1"] .pbtns button.go{flex:1;background-image:url(./assets/ui/button_plate_slate.png);color:#f2eef8}
+  #buyPanel[data-enough="1"] .pbtns button.ghost{flex:1.45;background-image:url(./assets/ui/button_plate_amber.png);color:#3a2c12}
   /* ══ 넘어가는 중 — [다음 날]을 누르면 시계가 빠르게 돌아 **새벽 6시**에 선다 (2026-08-15) ══
      ★★ **조용히 막지 않는다.** 이 저장소의 지병이 「조용한 실패」다(quiet §1: *하는 중은
        그 자리*). 연출이 도는 동안 다른 것을 못 누르게 하는 것은 맞는데, 못 누르는 까닭을
@@ -7301,8 +7305,11 @@ function updateHint() {
       if (!sid) return null;
       let rows = [];
       try { rows = cropPotList(S.firstPlay, S.day).filter(r => r.placed); } catch { }
-      /* 아직 한 번도 안 거뒀으면 살 때가 아니다 — 첫 봉지로 도는 중이다 */
-      if (!rows.some(r => (r.harvestCount || 0) > 0 || r.harvested)) return null;
+      /* 아직 한 번도 안 거뒀으면 살 때가 아니다 — 첫 봉지로 도는 중이다
+         ★ 2026-11-02 다섯째 7C7(비판 7판 MINOR #8 d10_001) — 문은 바닥 🛒 미리(§drawSow)와 같은 «첫 수확 했나»(자리 사본 harvestCount ≥ 1).
+           ⛔ 예전 문 «놓인 줄 가운데 harvestCount > 0 ∨ 거둔 줄»은 cropPotList 줄에 harvestCount 칸이 없어, 거둔 시루를 다시 심어 거둔 줄이 0 인 날
+             (Day 10 · 20 · 21) 이 갈래가 통째로 꺼졌다 — 바닥 🛒 «내일 심을 씨앗이 모자랍니다»는 섰는데 손가락은 [다음 날]을 짚었다 */
+      if (!((((S.firstPlay && S.firstPlay.beansprout && S.firstPlay.beansprout.harvestCount) || 0) >= 1))) return null;
       const st = shopStatus(S);
       const have = ((st.stock && st.stock[sid]) || 0)
                  + (st.orders || []).reduce((n, o) => n + (o.itemId === sid && o.daysLeft >= 0 ? (o.qty || 1) : 0), 0);
@@ -7398,6 +7405,11 @@ function updateHint() {
        그 물음이 거짓이 되고, 상점 줄이 «화면에 보이는데도» 손가락이 통째로 사라졌다(실측). */
     if (buyBtn && seenAt(buyBtn) && !buyBtn.disabled && !sheetCovers(buyBtn))
       return hintAt(buyBtn, '여기서 씨앗을 주문합니다 — 하루 뒤에 옵니다');
+    /* ★ 2026-11-02 다섯째 7C7(총괄 «거두기 · 심기 뒤 · [다음 날] 앞») — 상점이 닫혀 있으면 바닥 🛒 단추(그 씨앗 주문 지름길 · 미리 · §drawSow)를 짚는다.
+         돌봄 갈래(표지 · 바닥 [거두기] · [물] · [다시 심기])는 이 갈래보다 앞이고 [다음 날] 기다림은 뒤다 · 단추가 안 보이거나 다른 씨앗이면 예전처럼 [상점] 문 */
+    { const rb = $('resow');
+      if (rb && rb.dataset && rb.dataset.buy === seedNeed && rb.style.display !== 'none' && !rb.disabled && onScreen(rb) && seenAt(rb) && !sheetCovers(rb))
+        return hintAt(rb, '씨앗을 사러 갑니다'); }
     { const door = shopDoor(); if (door) return hintAt(door, '씨앗을 사러 갑니다'); if (shopOpenNow) return hintAt(null); }   /* 재고 0 에 「미리」는 틀린 말(#11) */
   }
   /* ══ ★★★ 2026-08-17 — **시루를 하나 더 사는 길** (박사님: *"시루 추가로 1개 사는 것도
@@ -10142,6 +10154,7 @@ function drawBuyPanel() {
   /* ★★ 2026-11-02 다섯째 7C1(비판 7판 MAJOR #1 · [plan] critic7 §1 · 총괄 ㉮) — [전부](소지금 전부 · A Day 13 «2324개 · 1,162,000원»)는 덫이었다.
        씨앗은 넷째 칸이 «모자란 만큼»(오늘 · 내일 심을 수 − 가방 − 오는 중 · 0 이면 회색) · 씨앗 아닌 품목(시루 · 재배판 · 화분 · 가구 · 등)은 넷째 칸을 숨긴다 */
   const sn = buySeedNeedOf(it.id, st);
+  panel.dataset.enough = (sn && sn.need < 1) ? '1' : '';   /* ★ 7C1 꼬리 — 모자라지 않으면 [그만두기]가 주 단추(CSS #buyPanel[data-enough]) */
   $('buyAll').style.display = sn ? '' : 'none';
   $('buyAll').textContent = BUY_NEED_KO.btn;
   $('buyAll').disabled = !sn || maxQty < 1 || sn.need < 1 || buyQty === Math.min(sn.need, maxQty);
