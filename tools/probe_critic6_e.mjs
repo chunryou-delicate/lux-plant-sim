@@ -70,10 +70,20 @@ const open = async (w) => {
     const hit = await J(`(()=>{ const b=document.querySelector('#siruList button[data-siru="${id}"][data-act="harvest"]'); if (!b) return false; b.click(); return true; })()`);
     const talk = await waitHarvested([id]); const sn = await snap(); const lines = await dlgLines();
     await sleep(1500);   /* 대사 뒤 손가락이 다시 서기를(기둥 [식물] «한 번 더 누르면 닫힙니다») */
-    const hob = await J(`(()=>{ const h=document.getElementById('hint'), ev=document.getElementById('event'); if (!h.classList.contains('on') || !ev.classList.contains('on')) return { both: false };
+    /* ★ 11-03 core(regs11 · regs12a ㉮ 빨강 — HEAD c2211624 와 고친 판이 번갈아 갈림 · c7/xa_alt) — 배너가 손을 비키는 것은 매 프레임 고리(hintFollowLoop rAF → hintCoachMute → bannerFit)뿐이라
+         헤드리스 프레임이 멈추면 배너가 첫 자리 그대로(_fitHand null · 칩 숨는 움직임 opacity 0.98 에 멈춤) ⇒ 최대 6초 동안 0.3초마다 다시 재고 · 잴 때마다 작은 화면 찍기로 프레임을 한 장씩 민다 · 끝내 안 비키면 빨강 그대로 · 몇 번 만에 비켰나 tries
+         ⚠ 총괄 가름(11-03) — 다시 재는 동안 손 자리가 처음 그대로인지도 본다(handMoved · 손이 옮겨 겹침이 0 이 된 것을 «배너가 비켰다»로 세면 거짓 초록) · 게임 쪽(placeHintAt 끝 hintCoachMute)은 안 바꿈 */
+    let hob = null, hobTries = 0, hand0 = null, handMoved = false; const hobT0 = Date.now();
+    for (; hobTries < 21; hobTries++) {
+    hob = await J(`(()=>{ const h=document.getElementById('hint'), ev=document.getElementById('event'); if (!h.classList.contains('on') || !ev.classList.contains('on')) return { both: false };
       const rg=document.createRange(); rg.selectNodeContents(h.querySelector('.hand')); const q=rg.getBoundingClientRect(), b=ev.getBoundingClientRect();
       const a=Math.max(0,Math.min(q.right,b.right)-Math.max(q.left,b.left))*Math.max(0,Math.min(q.bottom,b.bottom)-Math.max(q.top,b.top));
       return { both: true, a: Math.round(a), hand: [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)], ev: [Math.round(b.left),Math.round(b.top),Math.round(b.right),Math.round(b.bottom)], say: (h.querySelector('.say')||{}).textContent, cls: h.className }; })()`);
+      if (hob && !hob.탈 && Array.isArray(hob.hand)) { if (!hand0) hand0 = hob.hand; else if (hob.hand.some((v, i) => Math.abs(v - hand0[i]) > 1)) handMoved = true; }
+      if (!hob || hob.탈 || hob.both === false || hob.a <= 4 || Date.now() - hobT0 > 6000) break;
+      await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 10, clip: { x: 0, y: 0, width: 10, height: 10, scale: 1 } }); await sleep(300);
+    }
+    if (hob && !hob.탈) { hob.tries = hobTries; hob.hand0 = hand0; hob.handMoved = handMoved; hob.lost = !!hand0 && hob.both === false; }   /* lost — 처음엔 둘 다 떠 있었는데 다시 재는 사이 배너 · 손가락이 걷힘(비킴을 못 봄 · 빨강) */
     const nbb = sn.banners.find(b => NB.test(b.all)) || {};
     oneSteps.push({ id, hit, talk, nod: sn.nod, cash: sn.cash, todayLots: sn.todayLots, lots: sn.lots, nb: nbb.all || null, nbT: nbb.t || null, nbSub: nbb.sub || null, log: sn.log, 대사: lines[0] || null, hob });
     if (OUT && id === RIPE[0]) await page.shot(`${OUT}/390_c6e_p6_one.png`);
@@ -102,7 +112,8 @@ const open = async (w) => {
      '㉮ 하나씩 — 첫 [거두기]에 반찬가게가 그날 거둔 것(첫 그릇 몫)을 사 가고 대사가 그 자리에서 선다', JSON.stringify(oneSteps[0]));
   ok(!bat1.탈 && bt && bat1.nod === 100 && bat1.cash - bat0.cash === oneEnd.cash - one0.cash && bat1.todayLots === oneEnd.todayLots && bat1.lots === oneEnd.lots,
      '㉮ 묶음 [거두기] = 하나씩 셋의 끝 판(돈 · 남은 오늘 꾸러미 · 꾸러미 수 같음)', JSON.stringify({ 하나씩: { cash: oneEnd.cash - one0.cash, todayLots: oneEnd.todayLots, lots: oneEnd.lots }, 묶음: { cash: bat1.cash - bat0.cash, todayLots: bat1.todayLots, lots: bat1.lots } }));
-  ok(!!oneSteps[0] && !!oneSteps[0].hob && !oneSteps[0].hob.탈 && (oneSteps[0].hob.both === false || oneSteps[0].hob.a <= 4), '㉮ [식물] 창 판에서 거둔 뒤 손가락(손 👉)이 배너 위에 안 앉는다(plan §18 덤 ③ 사진 390_c6e_p6_one)', JSON.stringify(oneSteps[0] && oneSteps[0].hob));
+  ok(!!oneSteps[0] && !!oneSteps[0].hob && !oneSteps[0].hob.탈 && ((oneSteps[0].hob.both === false && !oneSteps[0].hob.lost) || oneSteps[0].hob.a <= 4), '㉮ [식물] 창 판에서 거둔 뒤 손가락(손 👉)이 배너 위에 안 앉는다(plan §18 덤 ③ 사진 390_c6e_p6_one)', JSON.stringify(oneSteps[0] && oneSteps[0].hob));
+  ok(!!oneSteps[0] && !!oneSteps[0].hob && !oneSteps[0].hob.탈 && oneSteps[0].hob.handMoved === false, '㉮ 다시 재는 동안 손 자리가 처음 그대로(손이 옮겨 겹침이 0 이 된 것을 «배너가 비켰다»로 안 셈 · 총괄 11-03)', JSON.stringify(oneSteps[0] && oneSteps[0].hob && { hand0: oneSteps[0].hob.hand0, hand: oneSteps[0].hob.hand, tries: oneSteps[0].hob.tries, handMoved: oneSteps[0].hob.handMoved }));
   const T17 = '🧺 반찬가게에 채소를 팔았습니다', SUB17 = '+200,000원 · 오늘 거둔&nbsp;1판<br>나머지는 그대로 있습니다', LOG17 = '🧺 반찬가게에 채소를 팔았습니다 — 오늘 거둔 1판 · +200,000원';
   ok(!!firstNb && oneSteps[0].nbT === T17 && oneSteps[0].nbSub === SUB17 && batB.t === T17 && batB.sub === SUB17,
      '㉮ §17 배너 «🧺 반찬가게에 채소를 팔았습니다» / «+200,000원 · 오늘 거둔 1판» + «나머지는 그대로 있습니다»(전 꾸러미가 남은 판 · 하나씩 · 묶음)', JSON.stringify({ one: [oneSteps[0].nbT, oneSteps[0].nbSub], batch: [batB.t, batB.sub] }));

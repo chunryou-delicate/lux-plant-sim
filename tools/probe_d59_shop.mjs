@@ -2,7 +2,7 @@
    ------------------------------------------------------------
    판(세운 판): 새 판 → 몬스테라 · 원룸 이사(화면 단추) → 저장 → 다시 켬 → 뿌리낸 삽수 하나 · 엔딩을 낸 판으로(ending.doneOnDay) → 저장 → 다시 켬
    잰다(화면 손):
-     ① 다시 켜면 덮개에 진로 카드 셋(가게 열림 · 돌봄·육종 준비 중) · [다음 날]은 잠김(D28)
+     ① 다시 켜면 덮개에 진로 카드 셋(가게 · 돌봄 · 육종 — 단추 셋 · 11-03 돌봄 · 육종이 열린 뒤) · [다음 날]은 잠김(D28)
      ② [가게를 연다] → 다시 켜지 않고 투룸 방뷰가 선다 · story.job · 주문판에 첫 주문(반찬가게 사장님) · 기록 «반찬가게 사장님 — …»
      ③ [상점] 주문판 줄 · [납품] → 고르는 카드 → 보냄 → 지갑 += 값 · 단골 1 · 기록 «… — {thanks}»
      ④ [다음 날]이 다시 간다 · 앞치마 옷 · 세이브 → 다시 켬 — 가게가 그대로
@@ -57,7 +57,8 @@ try {
     cards: [...document.querySelectorAll('#jobCards .job b')].map(b=>b.textContent), btn: [...document.querySelectorAll('#jobCards [data-job]')].map(b=>b.textContent) }))()`);
   console.log('① —', JSON.stringify(c1));
   await shot('1_job_cards');
-  ok(c1.on && c1.cards.length === 3 && c1.btn.length === 1 && /가게를 연다/.test(c1.btn[0]), '덮개에 진로 카드 셋 · 가게만 [가게를 연다]');
+  /* ★ 2026-11-03 core(총괄) — 돌봄(B) · 육종(C)이 열린 뒤로 단추가 셋이다(D59 때 «가게만»은 낡은 단언) */
+  ok(c1.on && c1.cards.length === 3 && c1.btn.length === 3 && /가게를 연다/.test(c1.btn[0]) && /돌봄을 시작한다/.test(c1.btn[1]) && /육종을 시작한다/.test(c1.btn[2]), '덮개에 진로 카드 셋 · 단추 셋(가게를 연다 · 돌봄을 시작한다 · 육종을 시작한다)');
   ok(await J(imgOk('#chapterEndArt')), '⑤ 덮개 그림 ev_first_story_end 가 섰다');
   const day0 = await J(`(()=>window.__S().day)()`);
   await page.eval(`(()=>{ const n=document.getElementById('mealGo'); if(n) n.click(); })()`, false); await sleep(800);

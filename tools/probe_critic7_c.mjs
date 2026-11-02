@@ -84,9 +84,12 @@ for (const w of [430, 390, 360]) {
     await J(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`); await sleep(1500);
     const tap = await J(`(()=>{ const c=document.querySelector('#pageBag .bagslot[data-place="musun"]') || document.querySelector('.bagslot[data-place="musun"]'); if (!c) return { 없음: true }; c.click(); return { 누름: true }; })()`);
     await sleep(1800);
-    const placed = await J(`(()=>{ const S=window.__S(); const t=Object.values(S.firstPlay.crops||{}).flatMap(v=>(v&&v.pots)||[]).find(p=>p.id==='crop_02_05'); return { slot: t ? t.slotId : null, confirming: document.getElementById('stage').classList.contains('confirming') }; })()`);
-    console.log('  ㉰ 가방 무순 판 누름', JSON.stringify({ tap, placed }));
-    if (OUT) await page.shot(`${OUT}/390_c7c_trayplace.png`);
+    /* ★ 11-03 core(regs12 ㉵ 빨강 — on:false · ev null · 재는 순간 배너가 이미 걷힘) — 배너는 6초에 걷히는데 예전엔 누른 뒤 1.8초 + J + 화면 찍기(OUT · 헤드리스에서 늦음) 뒤에 쟀다
+         ⇒ 재기를 먼저(누른 뒤 1.8초 바로) · 찍기는 그 뒤 · 배너가 안 떠 있으면 «배너를 못 봄»으로 빨강(칩 · 겹침 단언은 건너뜀 — «칩을 안 비킴»으로 적히면 엉뚱한 데를 판다 · ㉮ lost 와 같은 결 · 총괄 가름)
+         ⚠ 재기를 먼저 하니 이번엔 on:true 인데 배너 opacity 0(ev null) · 칩 그대로 — 나타나는 움직임 첫머리에서 프레임이 멎은 꼴(예전엔 찍기가 프레임을 밀어 줬다)
+         ⇒ 재기 전에 움직임을 끝 상태로(getAnimations().finish() · critic6_e ㉲ 와 같은 손) · 10×10 찍기로 프레임 한 장 */
+    await J(`(()=>{ for (const a of document.getAnimations()) { try { a.finish(); } catch (e) { void e; } } return 1; })()`);
+    await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 10, clip: { x: 0, y: 0, width: 10, height: 10, scale: 1 } }); await sleep(150);
     /* ㉵ 총괄(7C2 꼬리 · c_fix5/390_c7c_trayplace) — 확인 창 동안 «여기에 둘까요?» 배너: 제목 한 줄 · 숨은 칩을 안 비킴(폭) · 보이는 것(기둥 · [?] · 빛 분포 단추 · 손가락)과 겹침 0 */
     const bn = await J(`(()=>{ const rr=e=>{ if(!e) return null; const cs=getComputedStyle(e); if (cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.05) return null; const q=e.getBoundingClientRect(); if(!q.width) return null; return [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)]; };
       const ev=document.getElementById('event'), b=ev.querySelector('b'), tn=b ? [...b.childNodes].find(n=>n.nodeType===3 && n.textContent.trim()) : null;
@@ -96,9 +99,15 @@ for (const w of [430, 390, 360]) {
       return { on: ev.classList.contains('on'), title: tn ? tn.textContent.trim() : null, titleLines: tl, ev: rr(ev), chip: rr(document.getElementById('questChip')), chipBox: cb.width ? [Math.round(cb.left),Math.round(cb.top),Math.round(cb.right),Math.round(cb.bottom)] : null,
         nav: rr(document.getElementById('navbar')), help: rr(document.getElementById('guideOpen')), heat: rr(document.getElementById('lightHeatOff')), say: rr(document.querySelector('#hint.on .say')), hand: handR }; })()`);
     console.log('  ㉵ 확인 창 배너', JSON.stringify(bn));
+    const placed = await J(`(()=>{ const S=window.__S(); const t=Object.values(S.firstPlay.crops||{}).flatMap(v=>(v&&v.pots)||[]).find(p=>p.id==='crop_02_05'); return { slot: t ? t.slotId : null, confirming: document.getElementById('stage').classList.contains('confirming') }; })()`);
+    console.log('  ㉰ 가방 무순 판 누름', JSON.stringify({ tap, placed }));
+    if (OUT) await page.shot(`${OUT}/390_c7c_trayplace.png`);   /* ★ 11-03 — 찍기는 잰 «뒤»(아래 ㉵ 주석) */
     const bw = bn.ev ? bn.ev[2] - bn.ev[0] : 0;
+    ok(!bn.탈 && bn.on, '㉵ 확인 창 배너를 봄(재는 순간 떠 있음 — 못 보면 아래 둘은 건너뜀)', JSON.stringify({ on: bn.on, ev: bn.ev, title: bn.title }));
+    if (!bn.탈 && bn.on) {
     ok(!bn.탈 && bn.on && bn.title === '여기에 둘까요?' && bn.titleLines === 1 && !bn.chip && !!bn.chipBox && !!bn.ev && bn.ev[2] > bn.chipBox[0] + 8, '㉵ 확인 창 동안 배너 제목 «여기에 둘까요?» 한 줄 · 숨은 할 일 칩을 안 비킴(배너 오른쪽 끝이 숨은 칩 왼쪽 끝을 넘는다)', JSON.stringify({ title: bn.title, lines: bn.titleLines, ev: bn.ev, w: bw, chip: bn.chip, chipBox: bn.chipBox }));
     ok(!bn.탈 && !!bn.ev && ![bn.nav, bn.help, bn.heat, bn.say, bn.hand].some(o => ovr(bn.ev, o)), '㉵ 배너가 기둥 · [?] · [🔆 빛 분포 보기] · 손가락과 겹침 0', JSON.stringify(bn));
+    } else console.log('  -- ㉵ 칩 · 겹침 두 단언은 건너뜀(배너를 못 봄)');
     ok(!placed.탈 && !tap.없음 && !!placed.slot && placed.slot !== 'oneroom-sill:0', '㉰ 가방 무순 판을 누르면 그 밝은 빈 칸(창턱 1번)에 안 놓는다(자동 자리)', JSON.stringify({ tap, placed }));
     /* [취소]로 가방에 되돌림 */
     await J(`(()=>{ const b=document.getElementById('placeCancel'); if (b && b.offsetParent) b.click(); return 1; })()`); await sleep(1200);

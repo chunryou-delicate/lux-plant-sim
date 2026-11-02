@@ -5013,7 +5013,11 @@ function hintAvoidChip(h, hand, r) {
       const p = confirmPointNow();
       return p ? { left: p.x - 14, right: p.x + 14, top: p.y - 14, bottom: p.y + 14, width: 28, height: 28 } : null;
     } catch (e) { return null; } })();
-  const obs = [seenText($('staText')), shown($('questChip')), shown($('placeConfirmWarn')), shown($('placeConfirmFit')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...rowBtns, ...popTexts, confirmWho, ...bottomTexts, placePt].filter(Boolean);   /* ★ D95 ③ 빛 낱말 줄도 비킨다 · ★ 11-01 #10 다른 줄 단추 */
+  /* ★ 11-03 8C3 — 할 일 칩이 열린 창(.pop.on · 할 일 창) 밑에 깔렸으면 안 센다(깔린 칩을 세어 옆자리가 막혀 말풍선이 첫 줄 이름을 덮었다 · 390_c8b_tab)
+       ⛔ «그 점에서 칩이 잡힐 때만»으로 넓게 빼면 배너(#event)가 덮은 칩도 빠져 손 👉이 배너 위에 앉았다(regs11 critic6_e ㉮ · hint_chip #8 대조) ⇒ 창 밑일 때만 · 자 probe_critic8_b ㉲ */
+  const chipSeen = (() => { const c = $('questChip'), q = shown(c); if (!q) return null;
+    try { const t = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); const p = t && t.closest ? t.closest('.pop.on') : null; return p && !p.contains(c) ? null : q; } catch (e) { return q; } })();
+  const obs = [seenText($('staText')), chipSeen, shown($('placeConfirmWarn')), shown($('placeConfirmFit')), shown($('mealSay')), textBox($('questSub')), ...sibs, ...rowBtns, ...popTexts, confirmWho, ...bottomTexts, placePt].filter(Boolean);   /* ★ D95 ③ 빛 낱말 줄도 비킨다 · ★ 11-01 #10 다른 줄 단추 */
   if (!obs.length) return;
   const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
   const hitAny = (a) => obs.some(o => hit(a, o));
@@ -5136,6 +5140,8 @@ function hintAvoidChip(h, hand, r) {
       /* 짚는 것이 확인 바 안인가 — 이 함수는 상자 자리(r)만 받으므로 자리로 가른다(§sibs 와 같은 꼴) */
       const pcBox = (() => { const pc = $('placeConfirm'); return pc && pc.offsetParent !== null ? pc.getBoundingClientRect() : null; })();
       const inConfirm = !!(pcBox && r.left >= pcBox.left - 1 && r.right <= pcBox.right + 1 && r.top >= pcBox.top - 1 && r.bottom <= pcBox.bottom + 1);
+      /* ★ 11-03 8C3 — 할 일 창(#questPanel) 안 단추([내 집 마련하기])도 «말을 좁힌 옆자리»를 잰다 — 아래로 가면 첫 할 일 줄 «시루를 방에 놓는다»를 덮었다(390_c8b_tab) */
+      const inQuestPop = (() => { const qp = $('questPanel'); if (!qp || !qp.classList.contains('on')) return false; const q = qp.getBoundingClientRect(); return r.left >= q.left - 1 && r.right <= q.right + 1 && r.top >= q.top - 1 && r.bottom <= q.bottom + 1; })();
       const sideNarrow = (right) => {
         h.classList.remove('below', 'row'); h.classList.add('side');
         const room = right ? innerWidth - 8 - (r.right + 8) : r.left - 16;
@@ -5161,7 +5167,7 @@ function hintAvoidChip(h, hand, r) {
         () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(false); },
         () => { h.classList.remove('below', 'row'); h.classList.add('side'); return sideAt(true); },
         /* ★ 2026-11-01 비판 넷째 판 b106 — 확인 바 안 단추면 «말을 좁힌 옆자리»도 잰다(아래 §sideNarrow) */
-        ...((inConfirm || shopRowBtn) ? [() => sideNarrow(true), () => sideNarrow(false)] : []),   /* ★ #10 상점 줄 단추도 «말을 좁힌 옆자리» */
+        ...((inConfirm || shopRowBtn || inQuestPop) ? [() => sideNarrow(true), () => sideNarrow(false)] : []),   /* ★ #10 상점 줄 단추도 «말을 좁힌 옆자리» · ★ 8C3 할 일 창 단추도 */
         /* ★ 11-02 7C6(비판 7판 MINOR #6 · S43_trayplace · 재현 360) — 확인 바 옆에 말풍선 글이 안 들어가면(좁힌 옆자리 64px 아래) 위 자리가 뽑혀 손이 제목 «N번 칸에 둘까요?»를 덮었다.
              ⇒ 옆에 «손만» 세운다(묻는 말은 제목이 한다) · 글을 덮는 자리보다 앞서게 넓이 0 이면 뽑힌다 */
         ...(inConfirm ? [() => { h.classList.remove('below', 'row'); h.classList.add('side', 'handOnly'); if (say) say.style.maxWidth = ''; return sideAt(true); },
@@ -6816,7 +6822,11 @@ function updateHint() {
          ⛔ [그래도 내놓는다/판다/간다](.go)를 짚고 «여기를 눌러 보세요» — 창 글과 반대 말(96f1fe9c 사진) · 표는 경고 줄을 넣는 자리가 단다(data-warn) */
     if (pop && pop.dataset && pop.dataset.warn === '1') return hintAt(null, null);
     /* ★ 2026-11-02 총괄 C11 #13(비판 6판 S83_shopM) — 할 일 창은 «읽는 창»이다 · 살아 있는 마지막 단추가 [✕]라 «여기를 눌러 보세요»가 ✕ 를 덮었다 ⇒ 짚지 않는다 */
-    if (pop && pop.id === 'questPanel') return hintAt(null, null);
+    /* ★ 11-03 8C3 — 단, 내 집 자금이 모였으면 그 창의 [내 집 마련하기](§drawQuestPanel #questHome)는 짚는다 */
+    if (pop && pop.id === 'questPanel') {
+      const hb = homeReadyNow() && $('questHome') && [...$('questHome').querySelectorAll('[data-act="homeAsk"]')].find(b => !b.disabled && b.offsetParent);
+      return hb ? hintAt(hb, HOME_READY_KO.btn) : hintAt(null, null);
+    }
     if (pop) {
       const live = (el) => el && !el.disabled && onScreen(el);
       /* ★ 2026-11-02 총괄 C3②(S97_where) — 자리 고르기 창의 «살아 있는 마지막 단추»가 [그만두기]라 손가락 «여기를 눌러 보세요»가 그것을 짚었다.
@@ -7483,6 +7493,17 @@ function updateHint() {
       if (rb && rb.dataset && rb.dataset.buy === seedNeed && rb.style.display !== 'none' && !rb.disabled && onScreen(rb) && seenAt(rb) && !sheetCovers(rb))
         return hintAt(rb, '씨앗을 사러 갑니다'); }
     { const door = shopDoor(); if (door) return hintAt(door, '씨앗을 사러 갑니다'); if (shopOpenNow) return hintAt(null); }   /* 재고 0 에 「미리」는 틀린 말(#11) */
+  }
+  /* ★ 11-03 8C3(총괄 가름 · 비판 8판 MAJOR #3) — 내 집 자금이 모였고 아직 안 산 동안: 할 일 탭이 열려 있으면 [내 집 마련하기](§homeGoalHtml) · 아니면 기둥 [할 일] · 글 [plan] critic8 §2 */
+  if (homeReadyNow()) {
+    const hb = $('pageQuest') && [...$('pageQuest').querySelectorAll('[data-act="homeAsk"]')].find(b => !b.disabled && b.offsetParent);
+    if (hb && sheetShown() && seenAt(hb) && !sheetCovers(hb)) return hintAt(hb, HOME_READY_KO.btn);
+    for (const id of ['navQuest', 'tabQuest']) {
+      const el = $(id);
+      if (!el || !onScreen(el) || sheetCovers(el)) continue;
+      if (el.getAttribute && (el.getAttribute('aria-selected') === 'true' || el.getAttribute('aria-current') === 'true' || (el.classList && el.classList.contains('cur')))) continue;
+      return hintAt(el, HOME_READY_KO.door);
+    }
   }
   /* ══ ★★★ 2026-08-17 — **시루를 하나 더 사는 길** (박사님: *"시루 추가로 1개 사는 것도
        가이드 좀 해주고."*) ═══════════════════════════════════════════════
@@ -11746,6 +11767,11 @@ function drawQuestPanel() {
     const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     $('questSub').innerHTML = headHTML + (subKo ? `<br>${esc(subKo)}` : '');
   } else $('questSub').textContent = subKo;
+  /* ★ 11-03 8C3 — 자금이 모였고 아직 안 산 동안 할 일 창 머리 밑에도 «내 집 마련 자금이 모였습니다 [내 집 마련하기]»(§homeGoalHtml — 할 일 탭 머리와 같은 조각) */
+  { let hEl = $('questHome');
+    if (!hEl) { hEl = document.createElement('div'); hEl.id = 'questHome'; hEl.className = 'plots'; $('questSub').insertAdjacentElement('afterend', hEl); }
+    const hv = homeReadyNow() ? homeGoalOf() : null;
+    hEl.style.display = hv ? '' : 'none'; hEl.innerHTML = hv ? homeGoalHtml(hv) : ''; }
   /* 띠와 수는 **같은 값**을 말한다. 다르면 어느 쪽이 참인지 물어야 한다 */
   $('questBar').firstElementChild.style.width = `${total ? Math.round(done / total * 100) : 0}%`;
 
@@ -11980,6 +12006,8 @@ function doFinishHome() {
         if (paid > 0) { const m = monthLoad(); if (m && m.cur && m.cur.run) { m.cur.run.home = (m.cur.run.home || 0) + paid; monthSave(m); } } }
   catch (e) { console.warn('[가계부]', e && e.message); }
   closeHomeAsk();
+  /* ★ 11-03 8C2(총괄 가름 · 비판 8판 MAJOR #2 A_011~013) — 계약 단추를 누른 [할 일] 판이 열린 채라 엔딩 그림 아래 2/3를 덮고 8초 넘게 그대로였다(시트 밖을 눌러야 대사 시작) ⇒ 그림부터 */
+  try { window.__byeotSheet.close(); } catch (e) { void e; }
   document.documentElement.classList.add('homescene');
   const sc = $('homeScene'); sc.classList.add('on'); sc.setAttribute('aria-hidden', 'false');
   $('homeCard').style.display = 'none';
@@ -12057,6 +12085,9 @@ function closeHomeScene() {
    ⛔ «끝»·«클리어»·점수 없음(본편이 이어진다). 다시 켜도 엔딩을 낸 판이면 이 덮개가 다시 선다. */
 /* ★ 11-03 8C1(총괄 가름 · 비판 8판 BLOCKER #1) — 진로 화면 [방 둘러보기] 뒤 [다음 날]이 «다음 장이 준비되면 이어집니다»만 말하고 돌아갈 단추가 없어 다시 켜야 나왔다(갇힘).
      진로는 이미 열렸다 — «준비 중»은 거짓 ⇒ 잠긴 동안 [다음 날] 자리가 [🏡 진로 고르기 ▸](누르면 진로 화면) · 칩 · 손가락도 그 단추 · 글 [plan] critic8 §1 */
+/* ★ 11-03 8C3(총괄 가름 · 비판 8판 MAJOR #3 A_001~009) — 내 집 자금이 모였고 아직 안 산 동안: 칩 · 손가락이 할 일 탭 [내 집 마련하기](사는 것은 사람 몫 — 막지 않음) · 글 [plan] critic8 §2 */
+const HOME_READY_KO = Object.freeze({ chip: '🏠 자금이 모였습니다 — 내 집을 계약하세요', door: '내 집을 계약하러 갑니다', btn: '누르면 계약 전에 한 번 더 묻습니다' });
+function homeReadyNow() { try { if (endingDoneNow()) return false; const v = homeGoalOf(); return !!(v && v.ok); } catch (e) { return false; } }
 const CHAPTER_KO = Object.freeze({ locked: '먼저 진로를 고르세요', lockedSub: '[🏡 진로 고르기]를 누르면 고르는 화면이 열립니다',
   btn: '🏡 진로 고르기 ▸', finger: '둘러본 뒤 여기서 진로를 고릅니다', chip: '🏡 진로를 골라야 다음 날로 갑니다',
   again: '처음부터 다시', againArmed: '한 번 더 누르면 지웁니다' });
@@ -13862,7 +13893,7 @@ function drawJourney() {
     : justMoved
     ? `${josaRo(slotLabel(plant.slotId))} 옮겼습니다. 빛 판정은 7일 평균이라 ` +
       `나흘쯤 지나야 새 자리 값이 됩니다 — 하루씩 넘겨 보세요.`
-    : movedOutNow ? ((potDark && potDark.ko) || questGoal || livingGoal || jobLine || '')   /* ★ C3③ — 어두운 화분이 먼저 */
+    : movedOutNow ? ((potDark && potDark.ko) || (homeReadyNow() ? HOME_READY_KO.chip : '') || questGoal || livingGoal || jobLine || '')   /* ★ C3③ — 어두운 화분이 먼저 */
     : moveLive ? MOVE_ROUTE_KO.chip
     : (questGoal || livingGoal || quest[fp.phase] || '첫 플레이를 진행하세요.');
   /* ★ [가방]에 있던 진행 안내가 [식물] 맨 위로 왔다 (2026-08-06).
@@ -13933,6 +13964,7 @@ function drawJourney() {
              그 말은 옮긴 순간 배너 · 식물 줄이 이미 한다). ⇒ 새 줄 머리면 몸은 그 줄 할 일 · 나머지는 할 일 줄(옮긴 직후 알림은 칩에 안 싣는다) */
       const chipBody = endingLockedNow() ? CHAPTER_KO.chip   /* ★ 11-03 8C1 — 진로를 골라야 다음 날 */
         : (potDark && potDark.ko) ? potDark.ko   /* ★ C3③ */
+        : homeReadyNow() ? HOME_READY_KO.chip   /* ★ 11-03 8C3 — 자금이 모였고 아직 안 삼 */
         : questFresh && questFresh.todo ? questFresh.todo
         : (!movedOutNow && moveLive) ? MOVE_ROUTE_KO.chip   /* ★ C2 — 새 줄(할 손이 있는 줄)은 그대로 앞 */
         : movedOutNow ? (questGoal || livingGoal || jobLine || '')
@@ -22237,7 +22269,7 @@ const doUnlist = guard((listingId) => {
 /* ★ 2026-10-08 ④ 내 집 마련 — 단추(할 일 머리·가계부 줄 · data-act="homeAsk") → 되묻기 → [계약한다] → 장면 → 카드 → [다음] */
 document.addEventListener('click', (e) => {
   const b = e.target && e.target.closest && e.target.closest('[data-act="homeAsk"]');
-  if (b && !b.disabled) { try { openHomeAsk(); } catch (err) { console.warn('[엔딩]', err && err.message); } }
+  if (b && !b.disabled) { try { if (b.closest('#questPanel')) closeQuestPanel(); openHomeAsk(); } catch (err) { console.warn('[엔딩]', err && err.message); } }   /* ★ 8C3 — 할 일 창에서 누르면 그 창을 닫고 계약 창 */
 });
 $('homeGo').onclick = guard(() => { doFinishHome(); });
 $('shopEndGo').onclick = guard(() => { closeShopEnd(); });   /* D75 [계속 산다] */
