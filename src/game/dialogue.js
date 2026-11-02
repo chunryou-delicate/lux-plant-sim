@@ -1882,11 +1882,13 @@ export const SCRIPTS = {
      ⚠ 수는 안 말한다(금액은 배너·로그가 «값에서» 말한다 · TUTORIAL_RULES 칸은 [core]). 한 판에 한 번(REPEATABLE 아님).
      ⚠ 언제([core] · 사건 `neighbor_order`): 게임 Day 90~110 · 반지하(!movedOut) · 아직 무늬 삽수를 판 적 없음(varieSale.count 0) ·
        그 사이 «처음 거둔 날»(콩나물·무순) — 그날 거둔 것을 가져가고 지갑에 금액을 넣는다. 110일까지 안 거두면 110일에 곳간이 있으면 그날, 없으면 없음. */
+  /* ★ 2026-11-02 [plan] 비판 6판 §17(plan-to-core-critic6) — 사 가는 길이 셋(하나씩 · 묶음 · Day 110 결산)이라 셋 다 참인 말로.
+       무엇을 얼마나는 배너(«+{won}원 · 오늘 거둔 1판»)가 말한다 · «오늘 · 다»(묶음 · 결산에서 거짓)와 «매일»(결산은 창 안에 안 거둔 판)을 뺐다 */
   neighborOrder: [
-    { who: 'jachwi', face: 'surprise', text: '아랫길 반찬가게 사장님이 오늘 거둔 걸 다 사 가셨다.' },
+    { who: 'jachwi', face: 'surprise', text: '아랫길 반찬가게 사장님이 우리 채소를 사 가셨다.' },
     { who: 'moni',   face: 'cheer',    text: '맛있다고 소문났나 봐!' },
     { who: 'jachwi', face: 'happy',    text: '값을 생각보다 많이 쳐 주셨어.' },
-    { who: 'moni',   face: 'proud',    text: '매일 거둔 게 이렇게 돌아오네.' }
+    { who: 'moni',   face: 'proud',    text: '키운 게 이렇게 돌아오네.' }
   ],
   /* ★ 2026-10-09 [plan] 재미 점검 — 16주(Day 50~165)의 «작은 새것» 둘(한 판에 한 번 · 값 0 · 일어난 일을 지어내지 않는 말).
      statusNeighborAsk 는 D35 의 복선(«물어보셨다» — 가져갔다고는 안 한다: 곳간이 안 줄었으니) · statusLandlordPlant 는 잎 둘 뒤 «화분이 눈에 띈다». */

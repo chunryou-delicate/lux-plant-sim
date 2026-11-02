@@ -832,9 +832,13 @@ export function neighborOrderStep(S, opt = {}) {
   fp.food.pantryWon = Math.max(0, Math.round((fp.food.pantryWon || 0) - takenWon));
   ts.cashWon += won;
   ts.neighborOrderDay = day;
-  const ko = `반찬가게에서 오늘 거둔 것을 사 갔습니다 — +${won.toLocaleString()}원`;
+  /* ★ 2026-11-02 [plan] §17(비판 6판 넷째) — 사 가는 길이 셋(하나씩 · 묶음 · Day 110 결산)이라 «오늘 거둔 것을»은 묶음(셋 다로 읽힘) · 결산(창 앞 날의 것)에서 거짓이었다.
+       ⇒ 한 글: «반찬가게에 채소를 팔았습니다 — {언제} 거둔 {n}판 · +{won}원» · 언제 = 결산 길이면 «가장 최근에» · 아니면 «오늘» · n = 가져간 꾸러미 수
+       사건에 takenLots · lastDay 두 칸을 더한다(화면 배너가 같은 말을 짓는다 §neighborOrderBannerOf) · 값 · 문 · 가져가는 것은 그대로 */
+  const when = opt.lastDay ? '가장 최근에' : '오늘';
+  const ko = `반찬가게에 채소를 팔았습니다 — ${when} 거둔 ${take.length}판 · +${won.toLocaleString()}원`;
   if (opt.harvested) pushLog(S, '🧺 ' + ko);   /* 결산 길(lastDay)은 stepTutorial 이 사건마다 «📅» 로그를 남긴다 — 두 번 안 적는다 */
-  return { id: 'neighbor_order', ko, won, takenWon, day };
+  return { id: 'neighbor_order', ko, won, takenWon, day, takenLots: take.length, lastDay: !!opt.lastDay };
 }
 
 /* ══ turn.events — 이 턴에 난 일 **한 목록** (2026-08-03 신설) ═══════════

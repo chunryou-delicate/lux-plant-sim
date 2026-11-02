@@ -44,6 +44,10 @@ check('A 창 안의 수확 날 — 그날 거둔 몫을 빼고 지갑이 금액�
     assert.equal(S.firstPlay.food.pantryWon, 3000, '곳간 총액에서 오늘 몫이 안 빠졌다');
     assert.deepEqual(S.firstPlay.food.pantryLots.map(l => l.day), [day - 3], '오늘 아닌 꾸러미가 같이 빠졌다');
     assert.equal(S.tutorial.neighborOrderDay, day);
+    /* ★ 2026-11-02 [plan] §17 — 사건 칸 takenLots · lastDay · 기록 글 «반찬가게에 채소를 팔았습니다 — {언제} 거둔 {n}판 · +{won}원» */
+    assert.equal(e.takenLots, 2, '가져간 꾸러미 수(takenLots)');
+    assert.equal(e.lastDay, false, '수확 길은 lastDay 거짓');
+    assert.equal(e.ko, `반찬가게에 채소를 팔았습니다 — 오늘 거둔 2판 · +${WON.toLocaleString()}원`, '기록 글(수확 길)');
   }
 });
 
@@ -78,6 +82,10 @@ check('E 창 끝날 결산 — 안 났으면 곳간의 가장 최근 몫 · 비�
   const e = neighborOrderStep(S, { lastDay: true });
   assert.ok(e, '끝날 결산에 안 났다');
   assert.equal(e.takenWon, 3500, '가장 최근 날(85)의 꾸러미만 가져가야 한다');
+  /* ★ 2026-11-02 [plan] §17 — 결산 길은 «가장 최근에 거둔 {n}판» */
+  assert.equal(e.takenLots, 2, '결산 길 takenLots');
+  assert.equal(e.lastDay, true, '결산 길 lastDay');
+  assert.equal(e.ko, `반찬가게에 채소를 팔았습니다 — 가장 최근에 거둔 2판 · +${WON.toLocaleString()}원`, '기록 글(결산 길)');
   assert.equal(S.firstPlay.food.pantryWon, 2000);
   assert.equal(neighborOrderStep(board(D1, []), { lastDay: true }), null, '곳간이 비었는데 났다');
 });

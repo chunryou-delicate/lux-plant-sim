@@ -89,7 +89,8 @@ ok(!b1.탈 && /시험 다/.test(b1.c) && !/시험 가/.test(b1.c), '㉮ #16 1.5�
 const co = await J(`(()=>{ const st=document.getElementById('stage'), c=document.getElementById('coach'); c.classList.add('on'); st.classList.add('confirming'); const v=getComputedStyle(c).visibility; st.classList.remove('confirming'); const v2=getComputedStyle(c).visibility; c.classList.remove('on'); return { during: v, after: v2 }; })()`);
 ok(!co.탈 && co.during === 'hidden' && co.after !== 'hidden', '㉮ #16 [확인] 바(confirming) 동안 쪽지는 안 보인다', JSON.stringify(co));
 const nb = await J(`window.__byeotNeighborBanner(200000)`);
-ok(!nb.탈 && nb[0] && nb[0].title === '🧺 반찬가게가 오늘 거둔 채소를 사 갔습니다' && /^\+200,000원( — 전에 거둔 채소는 그대로 있습니다)?$/.test(nb[0].sub), '㉮ #17 · P6 반찬가게 배너 «… 사 갔습니다» · «+200,000원 …»', JSON.stringify(nb));
+/* ★ 11-02 넷째 묶음 둘째 — [plan] §17 한 글(세 길) */
+ok(!nb.탈 && nb[0] && nb[0].title === '🧺 반찬가게에 채소를 팔았습니다' && /^\+200,000원 · 오늘 거둔 1판(<br>나머지는 그대로 있습니다)?$/.test(nb[0].sub), '㉮ #17 · P6 · §17 반찬가게 배너 «🧺 반찬가게에 채소를 팔았습니다» · «+200,000원 · 오늘 거둔 1판 …»', JSON.stringify(nb));
 
 /* ═══ ㉯ #20 밥상 창 밖 ═══ */
 const d0 = await J(`window.__S().day`);

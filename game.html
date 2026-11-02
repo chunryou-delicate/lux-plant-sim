@@ -61,7 +61,7 @@
   html,body{height:100%;font-family:'Pretendard','Pretendard Variable',system-ui,-apple-system,'Segoe UI',sans-serif;background:#14101c;color:#f2eef8;overflow:hidden}
   /* ★ 한글은 어절 단위로 끊는다. 기본값은 글자 단위라 "…옮겨 보세 / 요." 처럼
      마지막 줄에 한 글자만 남는 고아 줄이 생긴다(퀘스트 박스에서 실제로 났다). */
-  .quest,.itemline,.note,.slotline,.bad,.err,.sub,#stageEmpty,#event{word-break:keep-all;overflow-wrap:break-word}
+  .quest,.itemline,.note,.slotline,.bad,.err,.sub,#stageEmpty,#event,#staText{word-break:keep-all;overflow-wrap:break-word}   /* ★ 11-02 #staText — 430 에서 «… 최 / 대 체력이» 꼴(총괄 사진) */
   #app{display:flex;height:100%}
 /* ══════════════════════════════════════════════════════════════════════════
    폰 세로 셸 (2026-08-03) — ★여기가 게임 화면이다.
@@ -14300,14 +14300,18 @@ const siruWater = guard((id, kind) => {
 /* ★ 2026-10-09 D35 — 반찬가게 주문 배너(사건 neighbor_order · 코어 loop §neighborOrderStep). 글은 코어 ko 그대로 */
 /* ★ 2026-11-02 총괄 C11 #17 · [plan] 507ba40d P6 — 금액은 둘째 줄 · 사장님은 «오늘 거둔 꾸러미만» 가져가(loop §neighborOrderStep) 전에 거둔 채소는 남는다 —
      «다 사 가셨다»와 같은 날 «남는 채소 팔기»가 엇갈려 읽혔다(6판 Day 90). 남은 꾸러미가 없으면 금액만 */
-const NEIGHBOR_ORDER_KO = Object.freeze({ title: '🧺 반찬가게가 오늘 거둔 채소를 사 갔습니다', sub: '+{won}원 — 전에 거둔 채소는 그대로 있습니다', subNone: '+{won}원' });
+/* ★ 2026-11-02 [plan] §17(넷째 묶음 둘째) — 세 길(하나씩 · 묶음 · Day 110 결산)에 참인 한 글 · ⛔ «오늘 거둔 채소를 사 갔습니다»는 묶음(셋 다로 읽힘) · 결산(창 앞 날의 것)에서 거짓
+     둘째 줄 = «+{won}원 · {언제} 거둔 {n}판»(«거둔»과 «{n}판» 사이는 안 꺾는 빈칸) + 남은 꾸러미가 있으면 <br>«나머지는 그대로 있습니다» · 제목이 하나라 정렬 두 곳(§siruHarvest · §reallyHarvest)은 그대로 */
+const NEIGHBOR_ORDER_KO = Object.freeze({ title: '🧺 반찬가게에 채소를 팔았습니다', sub: '+{won}원 · {when} 거둔\u00a0{n}판', whenToday: '오늘', whenLast: '가장 최근에', left: '나머지는 그대로 있습니다' });
 function neighborOrderBannerOf(events) {
   const e = (events || []).find(x => x && x.id === 'neighbor_order');
   if (!e) return [];
   /* ★ 2026-11-02 넷째 묶음 — 꾸러미는 { kind, day, won, meals } 라 g 칸이 없다(first_play §pantryLotsOf) · ⛔ f373262a 는 l.g 로 세어 늘 0 → 전에 거둔 채소가 남아도 «+{won}원»만 섰다 */
   let left = 0; try { const f = S.firstPlay && S.firstPlay.food; left = (f && Array.isArray(f.pantryLots)) ? f.pantryLots.filter(l => l && ((l.won || 0) > 0 || (l.g || 0) > 0)).length : 0; } catch { left = 0; }
   const w = Math.round(e.won || 0).toLocaleString('ko-KR');
-  return [{ title: NEIGHBOR_ORDER_KO.title, sub: (left > 0 ? NEIGHBOR_ORDER_KO.sub : NEIGHBOR_ORDER_KO.subNone).replace('{won}', w) }];
+  const n = Number.isFinite(e.takenLots) && e.takenLots > 0 ? e.takenLots : 1;   /* 옛 사건(칸 없음)은 1판 — (가)(나)는 늘 1판([plan] §17) */
+  const sub = NEIGHBOR_ORDER_KO.sub.replace('{won}', w).replace('{when}', e.lastDay ? NEIGHBOR_ORDER_KO.whenLast : NEIGHBOR_ORDER_KO.whenToday).replace('{n}', String(n));
+  return [{ title: NEIGHBOR_ORDER_KO.title, sub: sub + (left > 0 ? '<br>' + NEIGHBOR_ORDER_KO.left : '') }];
 }
 function surplusBannerOf(r) {
   const gained = Math.round((r && r.surplusWon) || 0);
@@ -22442,14 +22446,46 @@ function banners(events) {
   try { const st = $('stage'), cap = st && st.classList.contains('heatOn') ? document.querySelector('.byeot-lightgrid > div') : null;
         if (cap && cap.offsetParent !== null && cap.getBoundingClientRect().height > 0) { const cq = cap.getBoundingClientRect(), sq = st.getBoundingClientRect(); el.style.top = Math.round(cq.bottom - sq.top + 22) + 'px'; }
         else el.style.top = ''; } catch (e) { void e; }
+  try { bannerFit(el); } catch (e) { void e; }   /* ★ 11-02 넷째 묶음 둘째 — 상자 폭(§bannerFit) */
   /* 누르면 바로 없앤다. `onclick` 이라 여러 번 붙어도 하나만 남는다 */
   el.onclick = () => { clearTimeout(bannerTimer); el.classList.remove('on'); bannerSawTalk = false; };
   bannerSawTalk = talkingNow();   /* ★ #9 */
   bannerArm(6000);                /* ★ #9 — 6초 · 대사 동안은 안 걷고 닫힌 뒤 더 둔다 */
 }
+/* ★ 2026-11-02 넷째 묶음 둘째(총괄 · [plan] §17 폭) — 배너 상자(#event) 폭.
+     ⛔ `left:50%` 뒤 남은 폭(화면의 반)에 묶여 max-width 88% 까지 안 가 390 에서 194 css — 제목이 거의 다 두세 줄로 꺾였다
+       («🧺 반찬가게가 오늘 / 거둔 채소를 사 / 갔습니다» · «🥣 콩나물 시루 / 3개를 거뒀습니다»)
+     ⇒ 글 폭(max-content)을 «덮으면 안 되는 것» 사이 폭으로 묶고 그 가운데에 세운다:
+       왼쪽 탭 기둥(#navbar) · 오른쪽 위 [?](#guideOpen) · 할 일 칩(보일 때 — 배너 동안은 숨음) · 손가락 말풍선(#hint 글 · 손) · 넓은 화면 옆 시트
+       세로로 겹치는 것만 막는다(배너 높이는 폭 따라 달라 세 번까지 다시 잰다 · 나타나는 움직임 14px 넉넉히) · 상한은 무대의 88%(예전 CSS 그대로) */
+function bannerFit(el) {
+  const st = $('stage'); if (!st || !el) return;
+  const sq = st.getBoundingClientRect(); if (!sq.width) return;
+  const vis = e => { if (!e) return null; const cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) return null;
+                     const q = e.getBoundingClientRect(); return q.width > 1 && q.height > 1 && q.bottom > 0 && q.top < innerHeight ? q : null; };
+  const h = $('hint'), hOn = !!(h && h.classList.contains('on'));
+  const handG = (() => { if (!hOn) return null; const n = h.querySelector('.hand'); if (!n || !vis(h)) return null; const rg = document.createRange(); rg.selectNodeContents(n); const q = rg.getBoundingClientRect(); return q.width > 1 ? q : null; })();
+  /* ★ 11-02 총괄 사진(390_c6e_p6_batch · 배너 둘 쌓인 판) — [?](#guideOpen)는 쪽지가 떠 있는 동안(#stage.coaching) display:none 이라 그 순간 배너를 지으면 안 셌고,
+       쪽지가 걷혀 [?] 가 돌아오면 넓게 선 배너 위 오른쪽 귀퉁이와 겹쳤다(css 8px) ⇒ 숨어 있으면 잠깐 켜서 자리만 잰다(그리기 전 · 깜빡임 없음) */
+  const guideQ = (() => { const g = $('guideOpen'); if (!g) return null; const q0 = vis(g); if (q0) return q0;
+    if (getComputedStyle(g).display !== 'none') return null; const was = g.style.display; g.style.display = 'block'; const q = g.getBoundingClientRect(); g.style.display = was; return q.width > 1 ? q : null; })();
+  const obs = [vis($('navbar')), guideQ, vis($('questChip')), hOn ? vis(h.querySelector('.say')) : null, handG, vis($('sheet'))].filter(Boolean);
+  const cap = sq.width * 0.88;
+  let L = sq.left + 8, R = sq.right - 8;
+  for (let k = 0; k < 3; k++) {
+    const w = Math.max(120, Math.min(cap, R - L));
+    el.style.maxWidth = Math.floor(w) + 'px'; el.style.width = 'max-content';
+    el.style.left = Math.round((L + R) / 2 - sq.left) + 'px';
+    const q = el.getBoundingClientRect(), top = q.top - 16, bot = q.bottom + 16, mid = (L + R) / 2;
+    let L2 = L, R2 = R;
+    for (const o of obs) { if (o.bottom <= top || o.top >= bot) continue; if (o.right <= mid) L2 = Math.max(L2, o.right + 8); else if (o.left >= mid) R2 = Math.min(R2, o.left - 8); }
+    if (L2 === L && R2 === R) break;
+    L = L2; R = R2;
+  }
+}
 function banner(title, sub) { banners([{ title, sub }]); }
 window.__byeotBannerTest = (list) => { banners(list); return (($('event') || {}).innerText || ''); };   /* 재는 손잡이(#16 합치기) */
-window.__byeotNeighborBanner = (won) => neighborOrderBannerOf([{ id: 'neighbor_order', won }]);   /* 재는 손잡이(#17 글) */
+window.__byeotNeighborBanner = (won, o) => neighborOrderBannerOf([{ id: 'neighbor_order', won, ...(o || {}) }]);   /* 재는 손잡이(#17 · §17 글 — o: { lastDay, takenLots }) */
 
 function fenOn() {
   const f = io.growth.canFenestrate ? io.growth.canFenestrate(pot0(S) && pot0(S).variegated) : null;
