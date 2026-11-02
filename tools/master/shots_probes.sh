@@ -7,6 +7,7 @@ SP=$!
 for i in $(seq 1 40); do c=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9321/game.html); [ "$c" = 200 ] && break; sleep 0.5; done
 echo "server http=$c"
 export BYEOT_URL=http://127.0.0.1:9321 CDP_GL=gpu
+export C6D_DUMP_DIR=C:/Users/pc/AppData/Local/Temp/byeot-master/d_$R/c6d   # probe_critic6_d 판 dump(끝 걸음과 같은 곳)
 for t in "$@"; do
   OUT=C:/Users/pc/AppData/Local/Temp/byeot-master/shots_$R/$t timeout 1500 node tools/$t.mjs > $M/${R}_shot_$t.log 2>&1; echo "$t exit=$? shots=$(ls $M/shots_$R/$t 2>/dev/null | wc -l)"; tail -1 $M/${R}_shot_$t.log | cut -c1-160
 done
