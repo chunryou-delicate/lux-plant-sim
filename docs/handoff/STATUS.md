@@ -488,11 +488,14 @@ test_sill_winter_margin.mjs   창턱 겨울 여유. ★ 이걸 붉히는 것은 
 3. 나머지 5방 slotId 고정 시점 — 세이브 붙기 전이 싸다
 
 ## core
-갱신: 2026-11-02 (a40b1f2c) — 요즘 core 보고는 총괄에게 직접(창이 꺼져 있으면 `core-to-master.md` 맨 위) · 고치기 한 바퀴는 `.claude/skills/byeot-fix-cycle`. 아래 08-04 덩이는 옛 기록
+갱신: 2026-11-02 (f373262a) — 요즘 core 보고는 총괄에게 직접(창이 꺼져 있으면 `core-to-master.md` 맨 위) · 고치기 한 바퀴는 `.claude/skills/byeot-fix-cycle`. 아래 08-04 덩이는 옛 기록
 
-완료(11-02): 8d443621 원룸 빈 화분 — 배너 셋(씨앗 있음 · 오는 중 · 없음) · 할 일 «오면 🌱» · 손가락이 빈 화분 🌱 을 짐 풀기보다 먼저 + 집 되묻기 창 «계약하면 남는 돈» · 5f3fbe01 씨앗 0 배너 «짐을 푼 뒤, …»(짐 풀기 손가락과 한 함수 unpackFingerLive) · a40b1f2c 고치기 스킬 core 손 세 줄 — 자 tools/probe_minor5_pot(새)
+완료(11-02 · 비판 6판 가름 C1~C12 · [plan] P1~P10 — 글 docs/handoff/plan-to-core-critic6-20261102.md): 0400a798 첫 묶음(C1 울타리 · C2 이사 길 · C3 원룸 화분 자리 · C5 등 · C6 빛 분포 칩 · C7 체력 0 단추 · C10 경고 창) ·
+  158a35a4 둘째(C4/P1 자르기 문 한 말 · 남은 양 · C8 첫 심기 바닥 단추 · C9 씨앗 주문 진행 줄 · P2 · P7 · plan 0400a798 대 봄 고침) ·
+  f373262a 셋째(C11 MINOR · C12 남는 채소 묻지 않고 팔기 · P6 · P8 · P9 · P10 · 총괄 사진 넷 · plan 18405b99 고침 둘) — 자 tools/probe_critic6_a · b · c(새 · 세이브 C:/Users/pc/byeot-core-keep/critic6/) · C4 진단(무늬 잎 다 자람은 굴림 · 반지하 빛 바닥 10%)
+완료(11-02 앞): 8d443621 원룸 빈 화분 — 배너 셋(씨앗 있음 · 오는 중 · 없음) · 할 일 «오면 🌱» · 손가락이 빈 화분 🌱 을 짐 풀기보다 먼저 + 집 되묻기 창 «계약하면 남는 돈» · 5f3fbe01 씨앗 0 배너 «짐을 푼 뒤, …»(짐 풀기 손가락과 한 함수 unpackFingerLive) · a40b1f2c 고치기 스킬 core 손 세 줄 — 자 tools/probe_minor5_pot(새)
 완료(11-01): 08782dbb probe_cutting_ui 판 나눔(하네스 cutDoorDay · dumpDoor) + MINOR #12 #13 #16 #18 · f39306c2 MINOR #9 #10 #14 #15 + ③ 내 집 뒤 가계부 · 진로 수입 + try 훑기 · faec7731 #11 체력 0 말풍선 · 가린 말풍선 안 짚음 · plan 옛 거짓 줄 둘 · 자 시간 셋 · ending_walk 낡은 자 16 · adc6e5e9 houseC 낡은 자 3
-대기: 총괄 다음 차례(비판 6번째 판 8d443621 가름)
+대기: 총괄 F 둘(probe_endgame.mjs:77 글 · test_guide_notes ②-c 가끔 빨강) · #13 상점 줄 말풍선(d05 꼴) · 빈 화분 «둘까요?» 창은 비판 7판 뒤 · 6판 Q 는 박사님 몫
 
 갱신(옛): 2026-08-04 (커밋 전 · 물주기 `39278d3` 다음)
 
