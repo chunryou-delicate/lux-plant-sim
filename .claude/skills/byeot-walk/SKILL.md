@@ -17,8 +17,11 @@ description: 볕 총괄 «끝 걸음» — 커밋 하나를 고정 복사본(git
 ## 1. 돌린다(백그라운드 · 약 2시간)
 
 ```bash
-bash tools/master/walk_then_shots.sh <R>
+mkdir -p $M/run_tools_<R> && cp tools/master/* $M/run_tools_<R>/   # M=C:/Users/pc/AppData/Local/Temp/byeot-master
+cd $M && bash run_tools_<R>/walk_then_shots.sh <R>
 ```
+
+- ⚠ 저장소의 `tools/master/*.sh` 를 직접 돌리지 않고 복사본으로 돌린다. 걷는 동안 새 자를 목록에 더하면(6절) bash 가 도는 스크립트를 바이트 자리로 이어 읽어 엉뚱한 줄을 돌린다.
 
 - 일터는 `C:/Users/pc/AppData/Local/Temp/byeot-master/` 이다: `pin_<R>`(고정 복사본 · assets junction) · `walk_<R>.out` · `shots_<R>.out` · `<R>_<자>.log` · `shots_<R>/`.
 - walkfinal 순서: node 22 → dump 5(probe_branches · 씨앗 g) → 긴 크롬 걸음 5(dump 를 실음) → force5 CYCLES=3 → 브라우저 묶음 → 옛 세이브(8b2c6f41 로 뜬 것).
@@ -68,3 +71,4 @@ bash tools/master/walk_then_shots.sh <R>
 | 11-02 | probe_houseC_furnlight exit 2 | 묶음이 OUTDIR 을 안 넘김 | 묶음 전체에 `OUTDIR=$M/shots_$R/$t` | ✓ (5f3fbe01 걸음 묶음에서 PASS · 사진 넷) |
 | 11-02 | 긴 걸음 넷이 로그 멈춘 채 1500초 | 혼자 돌리니 넷 다 PASS(106~272초) → 판 탓(23:3x~01:00 · 원인 미상) | `rerun_stalled.sh`: 5분 멈춤 감시 + 그 node 의 크롬만 CDP close | ✓ 스크립트(02:18 다섯 PASS) · 멈춤 감시 자체는 아직 안 걸려 봄 |
 | 11-02 | 걸음 끝 «chrome 9xxx 남음: 2» | 남은 크롬은 core 회귀(byeot-core/fm14 의 node 자식)였음 · 이 창 것 아님 | 남음 줄이 뜨면 부모 node 의 명령 줄로 누구 것인지 먼저 가린다(남의 것은 안 건드림) | ✓ (05:58 부모 = core probe_m4_cam) |
+| 11-02 | 158a35a4 걸음 끝에 `line 5: shots exit=0: command not found` | 도는 중에 저장소 `walk_then_shots.sh` 넷째 줄에 자(probe_critic6_c)를 더함 → bash 가 바뀐 바이트 자리로 이어 읽음(결과는 그 전에 다 나와 무해) | 1절: 복사본(`run_tools_<R>/`)으로 돌린다 | 확인 전(f373262a 걸음이 run_tools_f373 로 돎) |
