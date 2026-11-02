@@ -14,7 +14,7 @@ echo "server http=$c"
 export BYEOT_URL=http://127.0.0.1:9321
 export C6D_DUMP_DIR=$MW/d_$R/c6d   # probe_critic6_d 가 하네스 dump 를 이 판 코드로 뜬다(os.tmpdir 남의 캐시 안 씀)
 echo "== node"
-for t in test_ending_flow probe_oneroom_econ probe_lamp_when test_crop_seat test_save test_oneroom test_save_roundtrip test_first_play test_propagation test_quest test_quest_chip test_dialogue_coverage test_tutorial test_stamina test_elec test_resow_atomic test_pantrysale test_cropsale test_econ test_job_breed probe_crop_grams test_events_banjiha; do
+for t in test_ending_flow probe_oneroom_econ probe_lamp_when test_crop_seat test_save test_oneroom test_save_roundtrip test_first_play test_propagation test_quest test_quest_chip test_dialogue_coverage test_tutorial test_stamina test_elec test_resow_atomic test_pantrysale test_cropsale test_econ test_job_breed probe_crop_grams test_events_banjiha test_job_shop test_job_care test_job_switch test_neighbor_order; do
   [ -f tools/$t.mjs ] || { echo "$t 없음"; continue; }
   timeout 600 node tools/$t.mjs > $M/${R}_$t.log 2>&1; echo "$t exit=$?"
 done
@@ -32,7 +32,7 @@ for pair in probe_switch_walk:switchW probe_breed_walk:breedR probe_care_walk:ca
 done
 mkdir -p $M/shots_$R/force5
 CYCLES=3 OUTDIR=$M/shots_$R/force5 timeout 2400 node tools/probe_force5.mjs > $M/${R}_force5.log 2>&1; echo "force5 exit=$?"; grep "판정" -A6 $M/${R}_force5.log | head -7
-for t in test_sellpopup test_questui test_guide_notes test_place_confirm test_lampswitch test_siru_pick test_siru_each test_multisiru test_dawn6 test_bagcell probe_lightview probe_b1_move probe_b2_unpack probe_d96_ev probe_d96_cards probe_m4_cam probe_m6_water probe_m10_spot probe_d99a probe_d99b probe_d99c probe_d99d probe_d99e probe_f_lamp_top test_quiet probe_questchain probe_d100a probe_d100b probe_d100_5 probe_d100_78 probe_d100_8a probe_d100_6 probe_d100_6a probe_minor3 probe_minor5 probe_cutting_ui probe_minor5_9 probe_minor5_10 probe_minor5_11 probe_minor5_14 probe_minor5_15 probe_minor5_15m probe_minor5_home probe_minor5_pot probe_critic6_a probe_critic6_b probe_critic6_c probe_critic6_d probe_critic6_e probe_critic6_f probe_ending_walk probe_houseC_furnlight; do
+for t in test_sellpopup test_questui test_guide_notes test_place_confirm test_lampswitch test_siru_pick test_siru_each test_multisiru test_dawn6 test_bagcell probe_lightview probe_b1_move probe_b2_unpack probe_d96_ev probe_d96_cards probe_m4_cam probe_m6_water probe_m10_spot probe_d99a probe_d99b probe_d99c probe_d99d probe_d99e probe_f_lamp_top test_quiet probe_questchain probe_d100a probe_d100b probe_d100_5 probe_d100_78 probe_d100_8a probe_d100_6 probe_d100_6a probe_minor3 probe_minor5 probe_cutting_ui probe_minor5_9 probe_minor5_10 probe_minor5_11 probe_minor5_14 probe_minor5_15 probe_minor5_15m probe_minor5_home probe_minor5_pot probe_critic6_a probe_critic6_b probe_critic6_c probe_critic6_d probe_critic6_e probe_critic6_f probe_ending_walk probe_houseC_furnlight probe_d59_shop probe_hint_chip probe_hintwhere probe_hintwide probe_hintdim probe_hintgone probe_hintgate probe_core_d11_13 test_nextday_gate test_buypopup test_uiwire probe_critic7_a probe_critic7_b probe_critic7_c probe_critic7_d probe_critic7_e probe_critic7_f probe_critic8_a probe_critic8_b; do
   [ -f tools/$t.mjs ] || { echo "$t 없음"; continue; }
   mkdir -p $M/shots_$R/$t; OUTDIR=$M/shots_$R/$t timeout 900 node tools/$t.mjs > $M/${R}_$t.log 2>&1; echo "$t exit=$?"; tail -1 $M/${R}_$t.log | cut -c1-120
 done
