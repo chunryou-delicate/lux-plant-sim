@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 진행 보고</title>
+<meta name="description" content="총괄 → 박사님 · 2026-11-03 진행 보고 — 비판 여덟째 판(엔딩 · 진로) · 다섯째 묶음 · 박사님이 정하실 것 18~23">
+<style>
+:root{
+  --bg:#f6f1e7; --panel:#fffaf0; --ink:#2a2118; --muted:#6f6253; --line:#e3d7c3;
+  --accent:#c9782a; --ok:#2f7d4a; --ok-bg:#e2f2e6; --warn:#9a6a00; --warn-bg:#fbefcf;
+  --bad:#b23a2c; --bad-bg:#f8e0dc; --q:#2f5f9a; --q-bg:#e0eaf7;
+  --shadow:0 1px 2px rgba(60,40,10,.08),0 4px 14px rgba(60,40,10,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16120e; --panel:#211b15; --ink:#efe6d8; --muted:#b0a28f; --line:#3a3026;
+    --accent:#e09243; --ok:#7fd39a; --ok-bg:#1d3324; --warn:#f0c35a; --warn-bg:#3a2f12;
+    --bad:#ff8a7a; --bad-bg:#3c1d18; --q:#8db8f0; --q-bg:#1b2a3e; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16120e; --panel:#211b15; --ink:#efe6d8; --muted:#b0a28f; --line:#3a3026;
+  --accent:#e09243; --ok:#7fd39a; --ok-bg:#1d3324; --warn:#f0c35a; --warn-bg:#3a2f12;
+  --bad:#ff8a7a; --bad-bg:#3c1d18; --q:#8db8f0; --q-bg:#1b2a3e; --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;word-break:keep-all;overflow-wrap:anywhere}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.55rem;margin:.2em 0 .1em}
+h2{font-size:1.18rem;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+h3{font-size:1.02rem;margin:1.2em 0 .4em}
+.sub{color:var(--muted);font-size:.92rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);margin:12px 0}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:1px}
+.ok{background:var(--ok-bg);color:var(--ok)} .warn{background:var(--warn-bg);color:var(--warn)}
+.bad{background:var(--bad-bg);color:var(--bad)} .q{background:var(--q-bg);color:var(--q)}
+ul,ol{padding-left:1.2em;margin:.4em 0} li{margin:.25em 0}
+code{font-size:.86em;background:var(--line);padding:0 4px;border-radius:4px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin:12px 0}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+figure img{display:block;width:100%;height:auto;cursor:zoom-in}
+figcaption{padding:8px 10px;font-size:.88rem;color:var(--muted)}
+figcaption b{color:var(--ink)}
+.ptitle{font-weight:700;margin:1.4em 0 .2em}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.tw{overflow-x:auto}
+a{color:var(--accent)}
+#zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:12px;z-index:9}
+#zoom img{max-width:100%;max-height:100%}
+</style>
+</head>
+<body>
+<main>
+<h1>볕 진행 보고</h1>
+<div class="sub">총괄 → 박사님 · 2026-11-03 (01:0x 적음 · 11-02 밤 21시 ~ 11-03 01시) · 값(밸런스)은 안 바꿈(D95) · 어제 보고 <a href="master-progress-20261102.html">master-progress-20261102.html</a> · 큰 줄기 계획 <a href="master-roadmap-20261102.html">master-roadmap-20261102.html</a></div>
+
+<h2>한눈에</h2>
+<div class="card"><ul>
+<li><span class="tag bad">비판 여덟째 판</span>큰 줄기 계획 3단계를 시작했다. 엔딩과 진로를 사람 눈으로 처음 본 판이다. 내 집 계약 → 엔딩 → 진로 셋(가게 40일 · 돌봄 30일 · 육종 30일) → 돌봄 끝맺음 → 진로 바꾸기까지 갔다. 판정은 <b>BLOCK</b> 이고, 막힘 1 · 큰 문제 10 · 작은 문제 15 · 물음 6 이다. 막힘은 진로 화면 [방 둘러보기]를 누르면 옛 원룸에 갇히는 것이다(②). 값이 아니라 core 가 바로 고친다. 이것 하나를 빼면 엔딩과 진로는 끝까지 돈다.</li>
+<li><span class="tag ok">좋은 곳</span>엔딩 대사와 그림(«엄마, 아빠. 나 집 생겼어.»), 돌봄의 «자세히 → 자르기 → 나음 → 돌려준다» 손맛, 진로 바꾸기 화면(⑤)을 비판이 좋다고 했다.</li>
+<li><span class="tag warn">큰 문제</span>엔딩 그림을 할 일 시트가 덮은 채 시작함(③) · 자금이 모인 날 손가락이 계약 단추를 안 짚음 · 새 집 첫날 자동 자리가 길을 막는 칸을 고름 · 진로 판(주문판 · 맡김판 · 기록장)이 상점 탭 셋째 화면에 묻힘 · 진로 목표와 진척이 안 보임 · 육종은 30일 수입 0 으로 Day 472 에 0원(④). 값이 안 걸린 것은 core 13 · plan 7 줄로 나눴다.</li>
+<li><span class="tag ok">다섯째 묶음</span>밤사이 셋을 더 고쳤다. 다시 심기가 아껴 둔 물 줄 체력까지 쓰던 것(ed8c32c5)과, 확인 창 · 손가락이 놓일 자리와 제목을 덮던 것(990b0bda)이다. 심기 말풍선 흐림은 회귀에서 빨강 하나가 나와 core 가 가르는 중이다. 바닥 단추 첫 누름이 안 먹힌다던 것은 다시 일으켜 보니 비판 도구 탓이어서 버렸다.</li>
+<li><span class="tag q">여쭐 것</span>새로 여섯(18~23)이다. 진로 첫 주문 값 · 진로 끝맺음까지의 길이 · 진로 하루 · 초반 벌이 · 기한 넘긴 주문 · 끝맺음 그림이다(맨 아래).</li>
+</ul></div>
+
+<h2>비판 여덟째 판 — 사진으로</h2>
+<p class="sub">판 c19b3233 · 자동 플레이어가 키운 세이브(Day 445 · 원룸 · 5,063,924원)에서 시작했다. 총괄이 사진을 직접 봤다. 누르면 크게 보인다.</p>
+<div class="shots">
+<figure><img src="img/master-progress-20261103/p1_career_select.jpg" alt="진로 고르기 화면" loading="lazy">
+<figcaption><b>① 진로 고르기</b> · 엔딩 뒤 노을 창가 그림과 진로 셋이 나온다. 비판은 «셋이 한 줄씩뿐이라 목표 · 벌이 · 바꿀 수 있는지를 모르고 고른다»고 했다. 그리고 지울 수 있는 [처음부터 다시]가 진로 단추와 같은 초록이다. → 카드마다 목표 한 줄과 «진로는 끝맺음 뒤 바꿀 수 있습니다»를 넣고, [처음부터 다시]는 회색 보조 단추로 바꾼다(8C6).</figcaption></figure>
+<figure><img src="img/master-progress-20261103/p2_stuck.jpg" alt="방 둘러보기 갇힘" loading="lazy">
+<figcaption><b>② 막힘 — [방 둘러보기] 뒤 갇힘</b> · 진로 화면에서 [방 둘러보기]를 누르면 새 집이 아니라 짐이 빠진 옛 원룸이 나온다. [다음 날]은 «다음 장이 준비되면 이어집니다»만 띄우고, 진로로 돌아갈 단추가 없다. 게임을 다시 켜야 나온다. plan 이 판 전에 코드에서 짚은 것(S1)이 사람 손으로 맞았다. → 진로를 안 고른 동안 [다음 날] 자리를 «🏡 진로 고르기 ▸»로 바꿔 진로 화면을 다시 연다(8C1 · 가장 먼저).</figcaption></figure>
+<figure><img src="img/master-progress-20261103/p3_ending_covered.jpg" alt="엔딩 그림을 시트가 덮음" loading="lazy">
+<figcaption><b>③ 엔딩 첫 화면</b> · [계약한다]를 누르면 엔딩 그림이 뜨는데, 열려 있던 할 일 시트가 그림 아래 2/3를 덮은 채 8초 넘게 그대로다. 그 전에도 자금이 모인 날 손가락은 계약 단추가 아니라 채소 팔기 · 물 · [방]을 짚었다. → 계약하면 시트를 닫고 그림부터 띄운다. 자금이 모인 날은 칩 · 손가락이 [내 집 마련하기]를 짚는다(8C2 · 8C3).</figcaption></figure>
+<figure><img src="img/master-progress-20261103/p4_breed_zero.jpg" alt="육종 0원" loading="lazy">
+<figcaption><b>④ 육종 30일 — Day 472 에 0원</b> · 육종은 손 쓸 일이 «새 잎이 나면 저절로 적힙니다»뿐이고, 30일 동안 수입이 없어 돈이 바닥났다. 0원인데도 🛒 주문 단추는 초록이다. → 돈이 모자라면 🛒 를 회색으로 하고 까닭을 단다(8C9). 초반 벌이를 둘지는 값이라 여쭌다(21번).</figcaption></figure>
+<figure><img src="img/master-progress-20261103/p5_switch.jpg" alt="진로 바꾸기 화면" loading="lazy">
+<figcaption><b>⑤ 진로 바꾸기(좋은 곳)</b> · 돌봄 끝맺음(살린 화분 서른 · 진로 277일) 뒤 나온다. «그대로 가는 것 — 돈 · 그루 · 삽수 · 가구 · 칭호 · 기록 · 이사는 없습니다» · 하던 진로 표시 · [지금 진로 그대로]까지 한 화면에 다 있다. 이사 창과 같은 결이다. 정작 내 집 계약 창에는 이런 줄이 없어서, 같은 결로 한두 줄 더한다(8P2).</figcaption></figure>
+</div>
+
+<h2>고친 것 · 가른 것 — 목록 (11-02 21시 뒤)</h2>
+<div class="card tw">
+<table>
+<tr><th>무엇</th><th>어떻게(값 안 바꿈)</th><th>판</th></tr>
+<tr><td>다시 심기가 아낀 물 줄 체력까지 씀(7판 #4 보이는 몫)</td><td>남은 체력이 물 줄 몫뿐이면 회색 «(남은 체력은 물 줄 몫 — 💧 먼저)» · 누르면 심지 않고 알림 · 꼬리 수는 이미 물 기다리는 줄까지 셈</td><td>ed8c32c5</td></tr>
+<tr><td>확인 창 · 손가락이 놓일 자리와 제목을 덮음(7판 #6 · #7)</td><td>확인 바가 놓일 자리를 비켜 위 · 아래로 · 손가락도 그 자리를 비킴 · 좁으면 손만 · 등 다는 창 제목 «식물등을»도 다 보임</td><td>990b0bda</td></tr>
+<tr><td>바닥 단추 첫 누름이 안 먹힘(7판 · 6판 #1)</td><td><b>버림</b> — 첫 누름은 먹히고 주인공이 걸어가는 5~9초 뒤 체력이 준다. 비판 도구가 3.5초 만에 읽고 또 눌렀다. 다만 걷는 동안 단추가 그대로라 사람도 헷갈릴 수 있어, «가는 중…»을 다는 줄(7C11)을 따로 넣었다</td><td>core 재현</td></tr>
+<tr><td>심기 말풍선이 물 몫을 씀</td><td>다시 심기가 회색인 동안 거둔 시루 «🌱» 말풍선 · 줄 단추를 흐리게(누르면 그대로 심김 — 낱개는 사람의 고름) · 회귀 빨강 하나를 가르는 중</td><td>올리기 전</td></tr>
+<tr><td>비판 여덟째 판 가름</td><td>core 8C1 ~ 8C13 · plan 8P1 ~ 8P7 · 박사님 물음 18 ~ 23 · 도구 탓 일곱 버림</td><td><a href="master-critic8-triage-20261103.md">가름 문서</a></td></tr>
+</table>
+</div>
+
+<h2>총괄이 정한 것(D95 안 · 값 아님)</h2>
+<div class="card"><ul>
+<li><b>3단계를 박사님 답 전에 시작</b>: 큰 줄기 계획대로, 2단계 값 답을 기다리는 동안 엔딩 · 진로를 사람 눈으로 먼저 봤다. 덕분에 막힘을 박사님이 만나시기 전에 찾았다.</li>
+<li><b>막힘이 먼저</b>: core 는 지금 하던 고침 하나를 마치면 [방 둘러보기] 갇힘부터 고친다. 그다음 엔딩으로 들어가는 길(시트 · 손가락), 남은 다섯째 묶음, 나머지 순이다.</li>
+<li><b>진로 카드에 목표와 «끝맺음 뒤 바꿀 수 있음»</b>: 이미 있는 규칙(D75)을 화면에 보이는 것이라 넣는다. 끝맺음까지 날수(몇 년)는 사람마다 달라 쓰지 않는다. 그 길이 자체는 여쭌다(19번).</li>
+<li><b>기한 넘긴 주문은 알림만</b>: 말없이 사라지던 것에 아침 알림 한 줄을 단다. 손님 반응 · 벌은 값이라 여쭌다(22번).</li>
+<li><b>심기 말풍선은 흐리게만</b>: 한 화면이 두 말을 하지 않게 흐리지만, 사람이 골라 누르는 것은 막지 않는다.</li>
+</ul></div>
+
+<h2>다음</h2>
+<div class="card"><ol>
+<li>core: 심기 말풍선 흐림 마무리 → <b>[방 둘러보기] 갇힘(8C1)</b> → 엔딩으로 들어가는 길(8C2 · 8C3) → 남은 다섯째 묶음(7C8 ~ 7C11) → 여섯째 묶음 나머지(8C4 ~ 8C13). plan: core 가 쓸 글(8P1)부터.</li>
+<li>묶음이 들어가면 plan 대조 → 총괄 끝 걸음 → 비판 아홉째 판(1막 재확인) · 열째 판(엔딩 · 진로 재확인).</li>
+<li>그 뒤 박사님 폰 판(큰 줄기 계획 갈림목 A) — 덫과 막힘이 빠진 판으로.</li>
+</ol></div>
+
+<h2>박사님이 정하실 것 — 새로 여섯</h2>
+<div class="card">
+<p>전체는 <a href="master-to-doctor-20261101.md">master-to-doctor-20261101.md</a> 맨 아래 «11-03 보탬». 말씀이 없으면 값은 그대로 두고 진행한다.</p>
+<ol>
+<li value="18"><b>가게 첫 주문을 받은 그루로 바로 맞춘다</b> — 가게를 연 둘째 날 1,365,000원(집값의 27%)이 들어온다. «키워 맞추는» 맛보다 «받은 것 넘기기»가 먼저다. 값 · 차례가 뜻하신 것인가.</li>
+<li value="19"><b>진로 끝맺음까지의 길이</b> — 돌봄 «살린 화분 서른»은 진로 277일이다. 하네스로 가게 Day 1009 · 육종 Day 654 다. 엔딩 뒤 반년~1년 반이다.</li>
+<li value="20"><b>진로 하루가 시루 반복</b> — 진로 일은 띄엄띄엄이고(가게 40일에 주문 5건) 체력이 남는다. 15번(Day 31~90 반복)과 같은 뿌리다.</li>
+<li value="21"><b>돌봄 · 육종 초반 수입 0</b> — 육종은 Day 472 에 0원. 진로마다 초반 벌이를 둘까(값).</li>
+<li value="22"><b>기한 넘긴 주문 · 맡김</b> — 알림은 넣는다. 손님 반응 · 벌을 둘까.</li>
+<li value="23"><b>진로 끝맺음에 그림</b> — 엔딩은 그림 둘, 끝맺음은 카드 한 장이다. 새 그림은 크레딧이 든다. 총괄 추천: 진로를 한 번 해 보신 뒤 정한다.</li>
+</ol>
+<p class="sub">앞서 여쭌 1~17 과 큰 줄기 계획 갈림목 A~D 도 그대로 기다린다. 급한 것은 2번(1막 기다리는 길의 속도)이다.</p>
+</div>
+
+<p class="sub">자세한 기록: 비판 여덟째 판 <a href="playtest-critic8-20261102.md">playtest-critic8-20261102.md</a> · 가름 <a href="master-critic8-triage-20261103.md">master-critic8-triage-20261103.md</a> · plan 미리 훑기 <a href="plan-critic8-prescan-20261102.md">plan-critic8-prescan-20261102.md</a> · 캠페인 <a href="master-campaign-20261007.md">master-campaign-20261007.md</a></p>
+</main>
+<div id="zoom" role="dialog" aria-label="크게 보기"><img alt=""></div>
+<script>
+const z=document.getElementById('zoom'), zi=z.querySelector('img');
+document.querySelectorAll('figure img').forEach(i=>i.addEventListener('click',()=>{zi.src=i.src;zi.alt=i.alt;z.style.display='flex';}));
+z.addEventListener('click',()=>{z.style.display='none';zi.src='';});
+</script>
+</body>
+</html>
