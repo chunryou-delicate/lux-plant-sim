@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볕 장비 추천</title>
+<meta name="description" content="총괄 → 박사님 · 2026-11-04 캐릭터 창 장비 효과 크기 추천 한 장 — growth 민감도(53bf4693) 22판 · 진로 33판 · 판 깸 0">
+<style>
+:root{
+  --bg:#f6f1e7; --panel:#fffaf0; --ink:#2a2118; --muted:#6f6253; --line:#e3d7c3;
+  --accent:#c9782a; --ok:#2f7d4a; --ok-bg:#e2f2e6; --warn:#9a6a00; --warn-bg:#fbefcf;
+  --bad:#b23a2c; --bad-bg:#f8e0dc; --q:#2f5f9a; --q-bg:#e0eaf7;
+  --shadow:0 1px 2px rgba(60,40,10,.08),0 4px 14px rgba(60,40,10,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16120e; --panel:#211b15; --ink:#efe6d8; --muted:#b0a28f; --line:#3a3026;
+    --accent:#e09243; --ok:#7fd39a; --ok-bg:#1d3324; --warn:#f0c35a; --warn-bg:#3a2f12;
+    --bad:#ff8a7a; --bad-bg:#3c1d18; --q:#8db8f0; --q-bg:#1b2a3e; --shadow:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16120e; --panel:#211b15; --ink:#efe6d8; --muted:#b0a28f; --line:#3a3026;
+  --accent:#e09243; --ok:#7fd39a; --ok-bg:#1d3324; --warn:#f0c35a; --warn-bg:#3a2f12;
+  --bad:#ff8a7a; --bad-bg:#3c1d18; --q:#8db8f0; --q-bg:#1b2a3e; --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;word-break:keep-all;overflow-wrap:anywhere}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:1.55rem;margin:.2em 0 .1em}
+h2{font-size:1.18rem;margin:2em 0 .6em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
+.sub{color:var(--muted);font-size:.92rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);margin:12px 0}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;padding:1px 8px;border-radius:999px;margin-right:6px;vertical-align:1px}
+.ok{background:var(--ok-bg);color:var(--ok)} .warn{background:var(--warn-bg);color:var(--warn)}
+.bad{background:var(--bad-bg);color:var(--bad)} .q{background:var(--q-bg);color:var(--q)}
+ul,ol{padding-left:1.2em;margin:.4em 0} li{margin:.25em 0}
+code{font-size:.86em;background:var(--line);padding:0 4px;border-radius:4px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;white-space:nowrap}
+td.big{font-weight:700;white-space:nowrap}
+.tw{overflow-x:auto}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<h1>캐릭터 창 장비 — 효과 크기 추천</h1>
+<p class="sub">총괄 → 박사님 · 2026-11-04 04:5x · 바탕: growth 민감도 <code>53bf4693</code>(<a href="growth-equip-sensitivity-20261103.md">growth-equip-sensitivity-20261103.md</a>) · 장비 칸 · 후보: plan <a href="plan-ui-fun-20261103.md">plan-ui-fun-20261103.md</a> E 절</p>
+
+<div class="card">
+<p><span class="tag ok">한눈에</span><b>효과 일곱 가지를 세 크기씩 재 보니, 판이 깨지는 크기는 하나도 없었습니다.</b> 판은 사람 흉내 둘 × 씨앗 11 = 22판(700일), 진로는 33판(1300일)입니다. 내 집 날이 맨손의 절반 밑으로 당겨진 판은 0입니다.</p>
+<ul>
+<li>돈을 당기는 장비는 «체력이 막히는 날»을 풀어 주는 것뿐입니다. 그것도 «체력이 한 번도 안 막히는 사람»만큼까지만 오릅니다. 시루마다 거두느라 잃던 몫(이사 0~5일 · Day 120 약 1만 원)을 되돌리는 데서 멈춥니다.</li>
+<li>무늬 · 쌍혹 장비는 생각보다 작습니다. 그 굴림이 내 집 전에 판마다 몇 번뿐이라 22판 중 한두 판에서만 보입니다.</li>
+<li>아래 표가 총괄 추천입니다. 장비를 함께 꼈을 때의 판(조합 셋)은 growth 가 지금 잽니다. 숫자가 나오면 이 장에 덧붙입니다.</li>
+</ul>
+</div>
+
+<h2>장비마다 — 추천 크기</h2>
+<p class="sub">칸은 셋입니다(손 · 몸 · 주머니 · 칸마다 하나). 그래서 효과는 많아야 셋이고, 채반 바구니만 칸 밖입니다. 칸에서 빼면 효과가 0 이 됩니다. «게임 손»은 시루마다 따로 거두고 심는, 화면에서 사람이 하는 손입니다.</p>
+<div class="tw"><table>
+<tr><th>장비 · 칸</th><th>효과</th><th>추천</th><th>왜 이 크기 · 무엇이 보이나</th><th>얻는 길</th></tr>
+<tr><td>💧 긴 주둥이 물뿌리개 · 손</td><td>몬스테라 화분 물 주기 간격 +N일</td><td class="big">+1일</td><td>박사님 말씀 «물주기 횟수 저감» 그대로입니다. 이사 전 물 주기가 판마다 27.9 → 22.8번으로 줍니다. Day 50 «흙이 말랐습니다» 하루가 22판 모두에서 사라집니다. +2 · +3 은 +1 보다 나은 게 없고, 이사 뒤 마른 날이 오히려 조금 늡니다.</td><td>상점</td></tr>
+<tr><td>✂️ 전정가위 · 손</td><td>삽수 뿌리 내리는 날 −N일(물꽂이 12 · 화분 24 은 두 배)</td><td class="big">−2일</td><td>22판 모두 첫 삽수 판매가 꼭 이틀 당겨집니다. 크기만큼 그대로 보여서 보상으로 좋습니다. −3 도 판은 안 깨지지만 물꽂이 날의 4분의 1이 빠집니다.</td><td>업적 «첫 삽수 뿌리»</td></tr>
+<tr><td>💨 안개 분무기 · 손</td><td>중간빛에서 무늬 등급을 밝은빛 쪽으로</td><td class="big">30%</td><td>10 · 20%는 거의 안 보입니다. 30%에서도 «중간빛 + 분무기» 무늬 한 장 기댓값이 58.6만 원으로 «밝은빛 맨손» 67.0만 원보다 아래입니다. 그래서 «빛이 길»이라는 줄은 지켜집니다. 육종 진로에서 반달 후보가 일찍 뜨는 판이 생깁니다.</td><td>처방 의뢰 보상(원룸)</td></tr>
+<tr><td>🎽 앞치마 · 몸</td><td>체력 최대 +N칸</td><td class="big">+2칸</td><td>게임 손에서 이사 전 체력 0 인 날이 15일 → 3일로 줍니다. 돈은 그대로입니다(±5천 원). +3 이면 1일이 되고 Day 120 지갑이 약 1만 원 늘지만, 바구니와 겹치면 더 얻는 것이 없습니다.</td><td>상점</td></tr>
+<tr><td>🧤 원예 장갑 · 몸</td><td>쌍혹(한 마디에 혹 둘) 확률 +a(지금 0.15)</td><td class="big">+0.08</td><td><span class="tag warn">작음</span>가장 큰 후보로도 22판 중 한 판에서 삽수 한 개가 더 나올 뿐입니다. 쌍혹은 잎이 중간잎이 되는 때 한 번만 굴리기 때문입니다. 아래 물음 27번에 길을 적었습니다.</td><td>처방 의뢰 보상(원룸)</td></tr>
+<tr><td>🌡️ 온습도계 · 주머니</td><td>무늬 잎 날 확률 ×m(모주만)</td><td class="big">×1.2</td><td><span class="tag warn">작음</span>22판 중 두 판에서 무늬 잎이 한 장 더 납니다(그 판 내 집 −28 · −30일). ×1.35 는 ×1.2 와 22판 모두 같아서 작은 쪽을 고릅니다. 분무기와 겹쳐도 «중간빛 + 장비 &lt; 밝은빛 맨손»이 지켜지는지는 growth 가 셈하는 중입니다.</td><td>업적 «첫 하프문»</td></tr>
+<tr><td>🔍 돋보기 · 주머니</td><td>값 0 — 새 잎을 펼치기 전에 «무늬 낌새»만 보여 줌</td><td class="big">—</td><td>값에 안 닿습니다. 새 잎 펼치기(F1)와 함께 넣습니다.</td><td>업적 «첫 무늬 잎»</td></tr>
+<tr><td>📔 식물 일지 · 주머니</td><td>값 0 — 도감 무늬 잎 칸에 그 잎이 난 날의 빛 · 자리를 적음</td><td class="big">—</td><td>값에 안 닿습니다. 도감(C)과 함께 넣습니다.</td><td>상점</td></tr>
+<tr><td>🧺 채반 바구니 · 칸 밖(설정에서 끔)</td><td>자동 거두기(거두는 체력 0)</td><td class="big">켬</td><td>박사님 08-04 말씀 «자동수확은 아이템 · 특수보상 · 업적 보상»을 따랐습니다. 게임 손에서 체력이 막힌 날이 12일 → 0일이 되고, 22판 중 10판에서 이사가 5일 당겨집니다. 지갑은 체력이 안 막히는 사람과 날마다 같아집니다. 딱 그만큼만 되돌리는 것입니다.</td><td>업적 «콩나물 서른 번 거둠»</td></tr>
+</table></div>
+
+<h2>왜 안전한가 · 무엇을 아직 재나</h2>
+<div class="card">
+<ul>
+<li><b>판 깸 0</b> — 모든 효과 · 모든 크기에서 그렇습니다. 진로 판의 이사 · 내 집 · 엔딩 가운데값(145 · 367 · 1097일)도 모든 효과에서 그대로입니다.</li>
+<li><b>체력 장비는 위가 막혀 있습니다</b> — 앞치마 · 바구니를 다 껴도 «체력이 안 막히는 사람» 판 위로는 안 오릅니다.</li>
+<li><b>내 집 날은 씨앗 하나에서 크게 튑니다</b> — 하루만 밀려도 판마다 −143~+107일이 움직입니다. 그래서 판 하나의 −30일을 효과 크기로 읽지 않습니다. 가운데값과 당겨진 판 수로 읽습니다.</li>
+<li><span class="tag q">재는 중</span>growth 가 조합 셋을 잽니다. A = 물뿌리개 + 앞치마 + 온습도계 + 바구니, B = 가위 + 장갑 + 온습도계 + 바구니, C = 분무기 + 앞치마 + 온습도계 + 바구니입니다. C 는 진로 판도 돕니다. 함께 낀 효과가 하나씩 잰 것의 합보다 커지는 줄이 있는지 봅니다.</li>
+<li><span class="tag q">재는 중</span>무늬 쪽 캐논 셈: 온습도계 × 분무기를 함께 껴도 «중간빛 + 장비 &lt; 밝은빛 맨손»인지 봅니다. 아니면 온습도계를 더 작게 줄입니다.</li>
+<li>덤으로 찾은 것: Day 50 에 화분 자리가 하룻밤에 밝아지면, 물 드는 사흘 창 첫날에 물을 준 사람은 그날 흙이 마릅니다. 화면이 시킨 대로 했는데 마르는 꼴입니다. 게임 규칙은 안 바꿉니다. 그 까닭이 화면에 보이는지는 plan 이 봅니다.</li>
+</ul>
+</div>
+
+<h2>언제 들어가나</h2>
+<div class="card">
+<ol>
+<li>지금 차례: 새 식물 덩이 → 그루 이름(F3) → 빛 분포 도움말(U11 · U6) → 물꽂이 기한 가방 멈춤(D29) → 새 잎 펼치기(F1) → 자취 일기(F2) → 편의 손질 → 도감 · 업적(C).</li>
+<li>그다음 장비(E). [나] 창 칸 셋을 먼저 달고, 값 0 인 돋보기 · 일지를 넣습니다. 그 뒤 효과 장비를 하나씩 넣습니다. 하나 넣을 때마다 판을 다시 재고, 끄는 길을 같이 둡니다.</li>
+</ol>
+</div>
+
+<h2>박사님이 정하실 것 — 넷</h2>
+<div class="card">
+<p>말씀이 없으면 추천대로 짓습니다. 지어도 장비에서 빼면 효과가 0 이니 되돌리기 쉽습니다.</p>
+<ol>
+<li value="25"><b>장비 크기 표를 이대로 갈까</b> — 추천: 예. 다른 길: 체력 장비(앞치마)를 +3 으로 올립니다. 그러면 바구니 없이도 체력 막힘이 거의 다 풀리지만, 바구니의 보람이 줍니다.</li>
+<li value="26"><b>물뿌리개 효과는 «물 주기 간격 +1일»</b> — 추천: 이것. 말씀하신 «횟수 저감» 그대로이고, 체력은 앞치마 · 바구니가 맡습니다. 다른 길: «하루 물 두 번까지 체력 0». 체력 0 인 날이 15 → 1일로 줄지만, 앞치마와 일이 겹칩니다.</li>
+<li value="27"><b>쌍혹 장갑이 작다</b> — 추천: +0.08 로 두고, 쌍혹이 났을 때 «혹이 둘 났습니다» 한 줄을 띄웁니다(값 0). 드문 기쁨으로 보이게 하는 길입니다. 다른 길: 크기를 0.15 → 0.30 으로 두 배 올려 다시 잽니다. 또는 장갑을 빼고 몸 칸은 앞치마 하나로 갑니다.</li>
+<li value="28"><b>상점 값</b> — 추천: 물뿌리개 12,000원 · 앞치마 18,000원 · 식물 일지 6,000원. 견준 값은 검은 모종포트 7,000원 · 콩나물 시루 5,000원 · 반지하 월세 200,000원/달입니다. 들이기 전에 첫 달 월세를 막지 않는지 지갑 줄로 한 번 더 잽니다.</li>
+</ol>
+<p class="sub">앞서 여쭌 1~24 와 갈림목 A~D 는 그대로 기다립니다. 메모리 정리(쓰지 않는 Claude 창 · WowClassic · Overwolf · 남의 grep)도 여쭈어 두었습니다. 크롬 검사가 그것 때문에 멈춰 있습니다.</p>
+</div>
+</main>
+</body>
+</html>
