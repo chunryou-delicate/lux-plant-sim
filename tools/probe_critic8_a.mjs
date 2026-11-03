@@ -9,6 +9,12 @@
      ㉰ 다시 [방 둘러보기] → 할 일 칩을 누르면 진로 화면(할 일 탭 막다른 길 아님)
      ㉱ 기록 «🏡 다음 장 — 무엇을 하며 살까» · «준비 중» 글 없음(기록 · 진로 화면 밑글)
      ㉲ [가게를 연다] 뒤 — [다음 날] 자리가 예전 [다음 날] · 칩이 진로 잠김 글 아님
+     ㉴ (11-03 8C6 · plan §4 ㉠~㉢) 진로 카드마다 목표 줄 = 끝맺음 카드 머리(«단골 서른 — 가게 끝맺음» · «살린 화분 서른 — 돌봄 끝맺음» · «이름 붙인 품종 셋 — 육종 끝맺음») · 390 · 360
+     ㉵ 목표 줄 한 줄 · 카드 셋 아래 «진로는 끝맺음 뒤 바꿀 수 있습니다» 한 줄(㉣) · 390 · 360
+     ㉶ 목표 줄이 늘어도 카드 셋 단추 · [방 둘러보기] · [처음부터 다시]가 굴림 없이 화면 안(plan §4 ㉮) · 390 · 360
+     ㉸ (11-03 총괄) 진로 고르기 화면에서만 그림 200px(#chapterEnd.jobpick) — [가게를 연다]로 덮개가 닫히면 jobpick 이 빠지고 그림 자는 300px 그대로
+        (진로 바꾸기 §openSwitchCards · 마지막 덮개 §openFinalCover 는 §resetChapterEnd 로 jobpick 을 뺀 뒤 연다) · 390
+     ㉷ [처음부터 다시]는 회색(ghost · primary 아님) · 첫 누름 되묻기 줄 «처음부터 다시 할까요? 지금 판은 지워집니다.» · 단추 «한 번 더 누르면 지웁니다» 그대로(㉯) · 390
      ㉳ 360 — [🏡 진로 고르기 ▸] 글이 안 잘림 · 예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
@@ -43,6 +49,32 @@ for (const W of [390, 360]) {
   await J(`(()=>{ const b=document.getElementById('homeNext'); if (b && b.offsetParent) b.click(); return 1; })()`); await sleep(2500); await dlg();
   const c0 = await J(ST);
   console.log(`  ${W} 진로 화면`, JSON.stringify(c0));
+  /* ★ 11-03 8C6(plan §4) — 진로 카드 목표 줄 · 한 줄 · 굴림 없음 · [처음부터 다시] 회색 */
+  const JG = { shop: '단골 서른 — 가게 끝맺음', care: '살린 화분 서른 — 돌봄 끝맺음', breed: '이름 붙인 품종 셋 — 육종 끝맺음' }, JNOTE = '진로는 끝맺음 뒤 바꿀 수 있습니다';
+  const CG = await J(`(()=>{ for (const an of document.getAnimations()) { try { an.finish(); } catch (e) { void e; } }
+    const lines = el => { if (!el) return null; const rg=document.createRange(); rg.selectNodeContents(el); return new Set([...rg.getClientRects()].filter(q=>q.width>0).map(q=>Math.round(q.top))).size; };
+    const R = el => { if (!el) return null; const q = el.getBoundingClientRect(); return [Math.round(q.left), Math.round(q.top), Math.round(q.right), Math.round(q.bottom)]; };
+    const jobs = [...document.querySelectorAll('#jobCards .job')].map(j => { const b = j.querySelector('[data-job]'), g = j.querySelector('.jgoal'); return { id: b ? b.dataset.job : null, goal: g ? g.textContent : null, gl: lines(g), btn: R(b) }; });
+    const note = document.querySelector('#jobCards .jswitch'), ag = document.getElementById('chapterAgain'), lk = document.getElementById('chapterLook'), ce = document.getElementById('chapterEnd'), card = ce.querySelector('.card');
+    const keys = [...jobs.map(j => j.btn), R(lk), R(ag), R(card)];
+    return { jobs, note: note ? note.textContent : null, nl: lines(note), again: { cls: ag.className, txt: (ag.textContent||'').trim(), bg: getComputedStyle(ag).backgroundImage.slice(-36), r: R(ag) }, look: R(lk), card: R(card), ih: innerHeight,
+      allIn: keys.every(k => k && k[1] >= 0 && k[3] <= innerHeight), scroll: ce.scrollHeight > ce.clientHeight + 1 }; })()`);
+  console.log(`  8C6 ${W} 진로 카드`, JSON.stringify(CG));
+  if (OUT) await page.shot(`${OUT}/${W}_c8a_cards.png`);
+  ok(!CG.탈 && Array.isArray(CG.jobs) && CG.jobs.length === 3 && CG.jobs.every(j => j.goal === JG[j.id]), `㉴ ${W} 진로 카드마다 목표 줄 = 끝맺음 카드 머리(가게 · 돌봄 · 육종)`, JSON.stringify(CG.jobs));
+  ok(!CG.탈 && Array.isArray(CG.jobs) && CG.jobs.length === 3 && CG.jobs.every(j => j.gl === 1) && CG.note === JNOTE && CG.nl === 1,
+     `㉵ ${W} 목표 줄 한 줄 · 카드 셋 아래 «${JNOTE}» 한 줄`, JSON.stringify({ gl: (CG.jobs || []).map(j => j.gl), note: CG.note, nl: CG.nl }));
+  ok(!CG.탈 && CG.allIn && !CG.scroll, `㉶ ${W} 카드 셋 단추 · [방 둘러보기] · [처음부터 다시]가 굴림 없이 화면 안`, JSON.stringify({ card: CG.card, look: CG.look, again: CG.again && CG.again.r, ih: CG.ih, scroll: CG.scroll }));
+  if (W === 390) {
+    await J(`(()=>{ document.getElementById('chapterAgain').click(); return 1; })()`); await sleep(500);
+    const AA = await J(`(()=>{ const ag=document.getElementById('chapterAgain'), ask=document.getElementById('chapterEndAsk'); return { cls: ag.className, txt: (ag.textContent||'').trim(), ask: ask.style.display !== 'none' && !!ask.offsetParent, askTxt: (ask.textContent||'').trim(), saved: !!localStorage.getItem('byeot/save/1') }; })()`);
+    ok(!CG.탈 && !AA.탈 && /(^| )ghost( |$)/.test(CG.again.cls) && !/(^| )primary( |$)/.test(CG.again.cls) && CG.again.txt === '처음부터 다시'
+       && AA.ask && AA.askTxt === '처음부터 다시 할까요? 지금 판은 지워집니다.' && AA.txt === '한 번 더 누르면 지웁니다' && AA.saved,
+       '㉷ [처음부터 다시] 회색(ghost) · 첫 누름 되묻기 줄 · «한 번 더 누르면 지웁니다» 그대로(판 안 지움)', JSON.stringify({ before: CG.again, after: AA }));
+  }
+  const ARTQ = `(()=>{ const ce=document.getElementById('chapterEnd'), a=document.getElementById('chapterEndArt'); const r=a.getBoundingClientRect();
+    return { on: ce.classList.contains('on'), jobpick: ce.classList.contains('jobpick'), maxW: getComputedStyle(a).maxWidth, w: Math.round(r.width) }; })()`;
+  const ART1 = await J(ARTQ);
   if (W === 390) ok(!c0.탈 && c0.chapter && c0.cards >= 1 && !/준비 중/.test(c0.sub), '판 — 진로 화면(카드) · 밑글에 «준비 중» 없음', JSON.stringify({ chapter: c0.chapter, cards: c0.cards, sub: c0.sub }));
   /* ㉮ [방 둘러보기] */
   await J(`(()=>{ document.getElementById('chapterLook').click(); return 1; })()`); await sleep(1500); await dlg(); await bannerOff();
@@ -73,6 +105,9 @@ for (const W of [390, 360]) {
     console.log('  ㉲ 가게 연 뒤', JSON.stringify(d));
     if (OUT) await page.shot(`${OUT}/390_c8a_shop.png`);
     ok(!d.탈 && !d.chapter && d.next !== BTN && /다음 날/.test(d.next) && d.chip !== CHIP, '㉲ [가게를 연다] 뒤 — [다음 날] 예전 꼴 · 칩이 진로 잠김 글 아님', JSON.stringify({ next: d.next, chip: d.chip }));
+    const ART2 = await J(ARTQ);
+    ok(!ART1.탈 && !ART2.탈 && ART1.on && ART1.jobpick && ART1.maxW === '200px' && ART1.w === 200 && !ART2.on && !ART2.jobpick && ART2.maxW === '300px',
+       '㉸ 진로 고르기 화면에서만 그림 200px(jobpick) · 덮개를 닫으면 jobpick 이 빠지고 그림 자 300px 그대로', JSON.stringify({ 고르기: ART1, 닫은뒤: ART2 }));
   }
   try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
 }

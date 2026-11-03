@@ -4,6 +4,8 @@
    단언(390)
      ㉮ 가방 이삿짐 머리줄에 [한꺼번에 놓기 (N개)] · N = 이삿짐 시루 + 판
      ㉯ 그 단추 한 번 — 이삿짐이 다 놓임(남은 것 0 · 그렇지 않으면 하나씩 놓은 판과 같은 수가 남음)
+        (11-03 총괄 · critic8_h ㉰ 가름과 같은 약점) 고리는 하나씩 방 뷰에 설 때까지 기다리는 비동기라 끝나는 때가 판마다 다르다 ⇒
+        맺음 기록 줄이 설 때까지(최대 40초) 기다린 뒤 ㉯ ㉰ 를 잰다 · 40초가 지나도 없으면 빨강(기록 끝 줄) · 맺음 줄 N = 놓인 수
      ㉰ 놓인 자리가 하나씩 [누름] → [확인] 으로 놓은 판과 개체마다 같음(자리 이름 · 좌표 1mm 안)
      ㉱ §11(plan a8f0d8bf ㉠) — 원룸(바닥 금지 · 비판 6판 S Day 97 세이브)에서 이삿짐이 맞는 자리보다 많으면(작물을 다 이삿짐으로 · 시루 9개 덧붙임):
         배너 «📦 이삿짐 N개를 놓았습니다» / «남은 M개는 맞는 자리가 없습니다 — {할 말}» · 기록 «… · M개 남음» · 가방 칸 ×M
@@ -60,13 +62,31 @@ const a = await J(`(()=>{ const b=document.querySelector('#pageBag [data-act="bo
 console.log('  ㉮ 단추', JSON.stringify(a));
 if (OUT) await page.shot(`${OUT}/390_c8e_bag.png`);
 ok(!!a && !a.탈 && a.shown && a.t === `한꺼번에 놓기 (${boxIds.length}개)`, `㉮ 가방 이삿짐 머리줄에 [한꺼번에 놓기 (${boxIds.length}개)]`, JSON.stringify(a));
-await J(`(()=>{ const b=document.querySelector('#pageBag [data-act="boxAll"]'); if (b) b.click(); return !!b; })()`); await sleep(2500); await dlg();
+/* 기록은 200줄에서 앞을 덜어 낸다(state §pushLog) — 자리 번호로 자르지 않고 «누르기 전 맺음 줄 수»를 센다(판: 0) */
+const sum0 = await J(`(window.__S().log||[]).filter(x => x && typeof x.msg === 'string' && x.msg.includes('한꺼번에 놓았습니다')).length`);
+await J(`(()=>{ const b=document.querySelector('#pageBag [data-act="boxAll"]'); if (b) b.click(); return !!b; })()`);
+/* ★ 11-03 총괄 — 고리(§placeAllBoxes)가 끝나야 맺음 기록 줄 · 배너가 선다 ⇒ 그 줄이 설 때까지(최대 40초) 기다린다 */
+let sumLine = null; const tw0 = Date.now();
+while (Date.now() - tw0 < 40000) {
+  const nl = await J(`(window.__S().log||[]).map(x => x && x.msg).filter(m => typeof m === 'string' && m.includes('한꺼번에 놓았습니다'))`);
+  if (nl.탈) break;
+  if (Array.isArray(nl) && nl.length > (typeof sum0 === 'number' ? sum0 : 0)) { sumLine = nl[nl.length - 1]; break; }
+  await sleep(200);
+}
+const waited = Date.now() - tw0;
+await sleep(600); await dlg();
 const ev = await J(`(document.getElementById('event').innerText||'').replace(/\\s+/g,' ').slice(0,140)`);
 const sB = await J(SNAP);
 const leftB = Object.keys(sB).filter(k => sB[k].box).length;
 console.log('  B 한꺼번에', JSON.stringify({ leftB, ev }));
 if (OUT) await page.shot(`${OUT}/390_c8e_all.png`);
-ok(!sB.탈 && leftB === leftA, `㉯ 단추 한 번 — 남은 이삿짐 ${leftB}(하나씩 놓은 판 ${leftA})`, JSON.stringify({ leftA, leftB, ev }));
+const sumN = sumLine ? parseInt(String(sumLine).split('이삿짐 ')[1], 10) : null;
+const placedB = boxIds.length - leftB;
+const lgB = await J(`(window.__S().log||[]).slice(-4).map(x => x && x.msg)`);
+console.log('  B 맺음 줄까지', JSON.stringify({ sum0, waited, sumLine, sumN, placedB }));
+ok(!sB.탈 && !lgB.탈 && sum0 === 0 && !!sumLine && sumN === placedB && leftB === leftA,
+   `㉯ 단추 한 번 — 맺음 기록 줄이 설 때까지(최대 40초) 기다린 뒤 남은 이삿짐 ${leftB}(하나씩 놓은 판 ${leftA}) · 맺음 줄 N = 놓인 수`,
+   JSON.stringify({ leftA, leftB, waited, sumLine, sumN, placedB, ev, logTail: lgB }));
 const diff = boxIds.filter(id => { const x = sA[id], y = sB[id]; if (!x || !y) return true; if (x.slot !== y.slot) return true;
   if (!!x.at !== !!y.at) return true; if (x.at && y.at && x.at.some((v, i) => Math.abs(v - y.at[i]) > 0.001)) return true; return false; });
 ok(!sA.탈 && !sB.탈 && boxIds.length > 0 && diff.length === 0, `㉰ 놓인 자리가 하나씩 놓은 판과 개체마다 같음(${boxIds.length}개)`, JSON.stringify({ diff: diff.slice(0, 5).map(id => ({ id, A: sA[id], B: sB[id] })) }));

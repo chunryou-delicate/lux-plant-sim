@@ -4,6 +4,9 @@
    ㉯ #18 몬스테라에 물을 주면 그 그루 위로 뜨는 글자(#floats .float)가 선다(마르지 않은 날에도)
    ㉱ #16 물 셈 한 곳(목록 줄 · 자세히 · 단추) · ㉲ #12 반지하 범례 «철 따라 안 바뀜»
    ㉰ #12 빛 분포 범례 철 = [방] 판 철 — 이사 첫날(원룸 · 판: 총괄 humanQ g premove → 이사) 범례 «…겨울…» 과 [방] «겨울 N일째»
+   ㉴ (11-03 총괄) 이사 첫날 가방 빈 화분(모종포트)을 누른 그 순간 짐 풀기 할 일이 열린다 — 그 누름 뒤 그날 대사 기록에 questOneroomUnpack ·
+        questsOpenedOn.oneroom_unpack = 그날(누름 길도 놓은 순간 할 일을 다시 센다 · 끌기 · [확인] 길과 같은 때 · 전에는 그 뒤 어느 checkQuests 때)
+        그 뒤 ㉳ 판은 대사를 사람처럼 닫고 잰다(대사 동안 손가락은 쉼 · 배너는 대사 동안 안 걷히고 닫힌 뒤 4초) · 돌아온 손가락 글 = HEAD 글
    예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
@@ -179,10 +182,23 @@ if (!ONLY || ONLY === 'B') {
     await sleep(2500); await dlgOnly();
     if (await J(`!!document.querySelector('#bagGrid [data-furnbag="${uid}"]')`) === true) break;
   }
+  /* ㉴ — 누르기 전: 대사 기록 길이 · 짐 풀기 할 일이 열린 날(아직 안 열렸어야 판이 선다) */
+  const OPEN0 = await J(`(()=>{ const S0=window.__S(); const on=((S0.stamina||{}).questsOpenedOn||{}).oneroom_unpack; return { dl: (window.__dlgLog||[]).length, on: on == null ? null : on, day: S0.day }; })()`);
   const potCell = await J(`(()=>{ window.__byeotSheet.open('bag'); const c=document.querySelector('#bagGrid [data-place^="monsteraSeed"]'); if (!c) return null; c.click(); return c.getAttribute('data-place'); })()`);
   let confOn = false;
   for (let i = 0; i < 10 && !confOn; i++) { await sleep(400); confOn = await J(`document.getElementById('stage').classList.contains('confirming')`) === true; }
   if (confOn) await page.eval(`(()=>{ document.getElementById('placeOk').click(); return 1; })()`, false);
+  /* ㉴ — 누른 뒤: 그 누름 뒤 · 그날 대사만(아침 대사와 안 섞임) */
+  const OPEN1 = await J(`(()=>{ const S0=window.__S(); const on=((S0.stamina||{}).questsOpenedOn||{}).oneroom_unpack;
+    return { ids: (window.__dlgLog||[]).slice(${OPEN0.dl || 0}).filter(x => x && x.day === S0.day).map(x => x.id), on: on == null ? null : on, day: S0.day,
+             talking: document.getElementById('stage').classList.contains('talking'), dlg: ((document.getElementById('dlgBox')||{}).innerText||'').split(String.fromCharCode(10)).join(' ').slice(0,60) }; })()`);
+  console.log('  빈 화분 누름 — 할 일 열림', JSON.stringify({ OPEN0, OPEN1 }));
+  if (OUT && OPEN1 && OPEN1.talking) await page.shot(`${OUT}/390_minor5_unpack_dlg.png`);
+  ok(!OPEN0.탈 && !OPEN1.탈 && OPEN0.on === null && OPEN1.day === OPEN0.day && OPEN1.on === OPEN1.day && (OPEN1.ids || []).includes('questOneroomUnpack'),
+     '㉴ 이사 첫날 가방 빈 화분을 누른 그 순간 짐 풀기 할 일이 열린다(그 누름 뒤 대사 questOneroomUnpack · questsOpenedOn = 그날) — 누름 길도 놓은 순간 할 일을 다시 센다',
+     JSON.stringify({ OPEN0, OPEN1 }));
+  /* ㉳ 판 — 대사 동안 손가락은 쉰다(§updateHint talking) ⇒ 사람처럼 대사를 닫고 잰다(배너는 대사 동안 안 걷히고 닫힌 뒤 4초) */
+  await dlgOnly();
   const samples = [];
   for (let i = 0; i < 16; i++) {
     await sleep(300);
@@ -196,7 +212,10 @@ if (!ONLY || ONLY === 'B') {
   const both = samples.filter(x => x && /빈 화분/.test(x.ev || '') && x.hint);
   console.log('  빈 화분 배너', JSON.stringify({ potCell, confOn, both: both.length, over: samples.filter(x => x && x.over).length, s: samples.slice(0, 6) }));
   /* ⚠ 모종포트 칸은 확인 바 없이 바로 놓인다(비판 판 #21 «확인 없이 바로 놓임») — 확인 바는 판 조건이 아니다 */
-  ok(!!potCell && !potCell.탈 && both.length > 0, '판 — 원룸 빈 화분 배너가 뜬 동안 손가락이 서 있다', JSON.stringify({ potCell, confOn, s: samples.slice(0, 4) }));
+  /* (11-03 총괄) 대사를 닫은 뒤 돌아온 손가락 글 = HEAD(대사 없이 그대로 선) 글 — «쉬었다 돌아왔다» */
+  const back = both.length ? both[0].hint : null;
+  console.log('  대사 닫은 뒤 첫 손가락 글', JSON.stringify(back));
+  ok(!!potCell && !potCell.탈 && both.length > 0 && back === '이제 식물과 시루를 놓으세요', '판 — 원룸 빈 화분 배너가 뜬 동안 손가락이 서 있다(대사를 닫은 뒤 · 손가락 글 = HEAD «이제 식물과 시루를 놓으세요»)', JSON.stringify({ potCell, confOn, back, s: samples.slice(0, 4) }));
   ok(samples.every(x => x && !x.탈 && !x.over), '㉳ 배너 «🪴 빈 화분을 놓았습니다»와 말풍선 글이 겹치지 않는다(겹치면 글이 접힌다)', JSON.stringify(samples.filter(x => !x || x.탈 || x.over).slice(0, 3)));
 }
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));

@@ -1515,6 +1515,9 @@
   #chapterEnd .card{max-width:340px;width:100%}
   #chapterEndArt{display:block;width:100%;max-width:300px;aspect-ratio:1/1;object-fit:cover;margin:0 auto 12px;border-radius:12px}
   @media (max-height:640px){ #chapterEndArt{max-width:180px} }
+  /* ★ 11-03 8C6(plan §4 ㉮) — 진로 고르기 화면(카드 셋)에서만 그림을 줄인다: 목표 줄 셋 · 아래 한 줄이 늘어 390 · 360 에서 카드가 36px 넘쳐 굴렀다(core red50) */
+  #chapterEnd.jobpick #chapterEndArt{max-width:200px;margin-bottom:10px}
+  @media (max-height:640px){ #chapterEnd.jobpick #chapterEndArt{max-width:150px} }
   #chapterEnd h2{font-size:20px;font-weight:800;color:#f0a35f;margin:0 0 8px}
   #chapterEnd p{font-size:13px;line-height:1.6;color:var(--dim);margin:0 0 14px}
   #chapterEnd .pbtns{display:flex;gap:8px;justify-content:center}
@@ -1529,6 +1532,9 @@
   /* ★ D 나머지 — 진로 바꾸기 카드 표(지금 하는 중 · 끝맺음 봄 · 해 볼 수 있음) · 덮개 동안 대사 창이 덮개 위(몬이 두 줄) */
   #jobCards .job i.jmark{display:block;font-style:normal;font-size:12px;font-weight:700;color:#f0c674;margin-top:4px}   /* ⚠ .mark 는 방 위 말풍선 꼴(전역) — 이름을 겹치지 않는다(10-24 사진) */
   #jobCards .job.cur{border-color:rgba(240,198,116,.5)}
+  /* ★ 11-03 8C6(plan §4) — 진로 고르기 카드 목표 줄(끝맺음 카드 머리와 같은 글) · 카드 셋 아래 한 줄 */
+  #jobCards .job i.jgoal{display:block;font-style:normal;font-size:12px;font-weight:700;color:#f0c674;margin-top:4px;word-break:keep-all}
+  #jobCards .jswitch{font-size:12px;line-height:1.5;color:var(--dim);text-align:center;word-break:keep-all}
   #chapterEndSub .jobNote{display:block;margin-top:6px;font-size:12px;color:var(--dim)}
   html.finalcover #dlg{z-index:96}
   html.finalcover #dlgFace{display:none}   /* 덮개 동안 초상이 제목을 덮었다(10-24 사진) — 이름표(몬이)는 대사 창에 남는다 */
@@ -2022,7 +2028,7 @@
       <div id="jobCards"></div>
       <div class="pbtns">
         <button id="chapterLook" class="ghost" type="button">방 둘러보기</button>
-        <button id="chapterAgain" class="primary" type="button">처음부터 다시</button>
+        <button id="chapterAgain" class="ghost" type="button">처음부터 다시</button><!-- ★ 11-03 8C6(plan §4 ㉯) — 지우는 단추는 회색 · 첫 누름 되묻기는 그대로 -->
       </div>
     </div>
   </div>
@@ -7149,7 +7155,7 @@ function updateHint() {
     const home = S.home || {};
     /* ★ 2026-10-10 [plan] — 받은 물건(가게 첫날 주문판 · state §giveFurniture)은 사람이 고른 가구가 아니다 — «놓은 가구» 셈에서 뺀다 */
     const furnBag = (home.furnitureBag || []).length, furnDone = (home.furnitureAdded || []).filter(f => f && !GIVEN_FURNITURE.includes(f.preset)).length;
-    const { cutN, potN, siruN, trayN, boxN, plantsLeft } = unpackCountsNow();
+    const { cutN, potN, siruN, trayN, boxN, spN, plantsLeft } = unpackCountsNow();
     const bagDoor = () => {
       for (const id of ['tabBag', 'openBag']) {
         const el = $(id);
@@ -7199,6 +7205,17 @@ function updateHint() {
            ⛔ 할 일 'clear' 를 따라 무순 판을 [가방으로] 빼면 이 갈래가 가방 판을 먼저 짚어(«시루를 놓으세요») 누르기 자동 자리가 그 판을 방금 비운 칸에 도로 놓았다(고리)
            ⇒ 할 일 'go' 이면 [식물] › 그 그루 [📍 자리] › 그 칸 줄이 먼저 · 화분이 옮겨 가면 판은 다른 칸으로(§provisionalSpot 도 그 칸을 남긴다) */
       if (potDarkFinger()) return;
+      /* ★ 11-03 8C6 plan §17(752cad07 · 총괄 가름) — 새 식물(가방 첫 species: 칸)이 이삿짐 · 시루보다 먼저 — 손가락이 할 일 끝 셈(home · oneroom_unpack bagGrowers)을 따른다.
+           ⛔ 칩 «가방의 식물을 새 집에 놓으세요»는 새 종을 기다리는데 이 갈래 셈(§unpackCountsNow)이 새 종을 안 세어 손가락이 한 번도 안 짚었다(core band4)
+           corm: · spstock: 칸은 bagGrowers 에 안 들어 짚지 않는다 · 빛 낱말 없음(§provisionalSpot('species') 는 닿는 가장 밝은 칸 — 칼라테아 · 물꽂이 스킨답서스엔 «밝은 자리»가 거짓) */
+      if (spN > 0) {
+        const spCell = $('bagGrid') && $('bagGrid').querySelector('[data-place^="species:"]');
+        seeBag(spCell);
+        if (onScreen(spCell) && !sheetCovers(spCell)) {
+          let q = null; try { q = SPC.speciesPotOf(S, String(spCell.getAttribute('data-place') || '').slice('species:'.length)); } catch (e) { q = null; }
+          return hintAt(spCell, josa(SPC.SPECIES_KO[q && q.species] || '새 식물', '을', '를') + ' 놓으세요');
+        }
+      }
       const siruCell = $('bagGrid') && $('bagGrid').querySelector('[id="cropThumb"], [id="musunThumb"]');
       /* ★ 2026-10-31 총괄 D92 — 이삿짐이 먼저다(돌던 것 · 가방에선 멈춤) — 말은 할 일 줄과 같은 말([plan] oneroom_unpack «들고 온 채소를 가구 위에 올리세요») */
       /* ★ 11-03 여섯째 묶음 8C5(총괄 가름 · D95 덜 귀찮게) — 이삿짐 시루 · 판이 둘 이상이면(머리줄 [한꺼번에 놓기 (N개)]가 선 때만) 그 단추를 짚는다.
@@ -7206,15 +7223,21 @@ function updateHint() {
       const boxAllBtn = $('bagGrid') && $('bagGrid').querySelector('[data-act="boxAll"]');
       const boxCell = boxAllBtn || ($('bagGrid') && $('bagGrid').querySelector('[data-boxpot]'));
       try { if (sheetShown() && boxN > 0 && boxCell && boxCell.offsetParent && !onScreen(boxCell)) boxCell.scrollIntoView({ block: 'center' }); } catch { }
-      /* ★ 11-03 plan §15(6cffb974) — 단추를 짚을 때는 누르면 무엇이 되나(§provisionalSpot 은 작물 띠 안 빈 자리만 · 확인 바 없이 곧장) · 하나뿐이면 그대로 */
-      if (boxN > 0 && onScreen(boxCell) && !sheetCovers(boxCell)) return hintAt(boxCell, boxAllBtn ? '빛이 맞는 빈 자리에 바로 놓습니다' : '들고 온 채소를 가구 위에 올리세요');
+      /* ★ 11-03 plan §15(6cffb974) — 단추를 짚을 때는 누르면 무엇이 되나(확인 바 없이 곧장) · 하나뿐이면 그 칸
+           ⚠ §provisionalSpot ①(화면 구석)은 띠를 안 거른다 — 잰 판 다섯(원룸 둘 · 투룸 셋)에서 띠 밖 0(core 11-03 band1 · plan §15 ㉱ (가))
+         ★ 11-03 plan §16 갈림 B(f633091f) — 그 칸 말은 원룸만 «가구 위에»(방바닥 금지) · 원룸 밖(§provisionalSpot floorOk 와 같은 문)은 바닥 구석에 서므로 «들고 온 채소를 놓으세요»(문 말과 같은 글) */
+      if (boxN > 0 && onScreen(boxCell) && !sheetCovers(boxCell)) return hintAt(boxCell, boxAllBtn ? '빛이 맞는 빈 자리에 바로 놓습니다'
+        : (S.home && S.home.room === 'oneroom') ? '들고 온 채소를 가구 위에 올리세요' : '들고 온 채소를 놓으세요');
       if ((siruN + trayN) > 0) seeBag(siruCell);   /* ★ 7C3 */
       if ((siruN + trayN) > 0 && onScreen(siruCell) && !sheetCovers(siruCell)) return hintAt(siruCell, '시루를 놓고 씨앗을 심으세요 — 처음처럼');
       /* ★ MINOR ② — 남은 것을 그대로 말한다(삽수는 위 갈래가 맡음) · 섞였을 때만 예전 말 */
       const growN = potN, contN = Math.max(0, siruN) + Math.max(0, trayN);
-      const doorSay = (boxN > 0 && !growN && !contN) ? '들고 온 채소를 놓으세요'
-                    : (growN > 0 && !boxN && !contN) ? '몬스테라를 놓으세요'
-                    : (contN > 0 && !boxN && !growN) ? '시루를 놓으세요'
+      /* ★ 11-03 plan §17-2(33062fea) — 새 식물(spN)도 센다 · 몬스테라와 새 식물만 남은 판에 «… 시루»가 서면 거짓 */
+      const doorSay = (boxN > 0 && !growN && !contN && !spN) ? '들고 온 채소를 놓으세요'
+                    : (growN > 0 && !boxN && !contN && !spN) ? '몬스테라를 놓으세요'
+                    : (contN > 0 && !boxN && !growN && !spN) ? '시루를 놓으세요'
+                    : (spN > 0 && !boxN && !growN && !contN) ? '새 식물을 놓으세요'
+                    : (growN > 0 && spN > 0 && !boxN && !contN) ? '몬스테라와 새 식물을 놓으세요'
                     : '이제 식물과 시루를 놓으세요';
       const door = bagDoor(); if (door) return hintAt(door, doorSay);
       return hintAt(null);
@@ -9545,7 +9568,7 @@ function speciesBagHTML() {
   for (const [id, n] of stock) { const k = SPECIES_STOCK[id];
     cells += cell(`spstock:${id}`, SPECIES_ART[k.species], k.ko, `산 것${n > 1 ? ' ×' + n : ''} · 눌러서 ${k.verb}`); }
   return `<div class="grouphead">새 식물</div><div class="baggrid">${cells}</div>` +
-    `<div class="lotline">끌거나 눌러서 방에 놓으세요 — <b>밝은 자리</b>라야 자랍니다.</div>`;
+    `<div class="lotline">끌거나 눌러서 방에 놓으세요 — <b>기르는 법</b>은 놓으면 알려 줍니다.</div>`;   /* ★ 11-03 plan §17-3 — «밝은 자리라야»는 물꽂이 스킨답서스 · 칼라테아에 거짓 · 놓는 길 셋이 다 §speciesPlaceSub 를 낸다 */
 }
 
 /* 카드를 [가방] ↔ [식물] 사이로 **노드째** 옮긴다.
@@ -12268,7 +12291,7 @@ function openShopEndWhenQuiet() {
   const care = shopEndKind === 'care', breed = shopEndKind === 'breed';
   const J = breed ? BREED.jobBreedOf(S) : care ? CARE.jobCareOf(S) : JOB.jobShopOf(S);
   $('shopEndTitle').textContent = breed ? BREED.BREED_JOB.ending.titleKo : care ? CARE.CARE_JOB.ending.titleKo : '동네 식물 가게';
-  $('shopEndSub').textContent = breed ? '이름 붙인 품종 셋 — 육종 끝맺음' : care ? '살린 화분 서른 — 돌봄 끝맺음' : '단골 서른 — 가게 끝맺음';
+  $('shopEndSub').textContent = JOB_GOAL_KO[breed ? 'breed' : care ? 'care' : 'shop'];   /* ★ 11-03 8C6 — 진로 카드 목표 줄과 한 곳(§JOB_GOAL_KO) */
   const rows = [`처음 그 방에서 ${S.day}일`];
   if (Number.isInteger(J.openedOn)) rows.push(`${breed ? '육종을 시작한' : care ? '돌봄을 시작한' : '가게를 연'} 지 ${S.day - J.openedOn}일`);
   const escE = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -12384,8 +12407,12 @@ window.__byeotDeliver = (orderId, ref) => deliverNow(orderId, ref);   /* 재는 
 /* ★ 2026-10-10 D59 — 시간 잠금은 «엔딩을 냈고 아직 진로를 안 고른» 동안만(가게를 열면 하루가 다시 간다) */
 function endingLockedNow() { try { return endingDoneNow() && !JOB.hasJob(S); } catch { return endingDoneNow(); } }   /* B — 진로 공통 */
 /* ★ 2026-10-10 D59(plan-shop-spec §1·§6) — 엔딩 [다음] 뒤 «진로 고르기». 식물 가게만 열림 · 돌봄·육종은 «준비 중» */
+/* ★ 11-03 8C6(plan §4 ㉠~㉢) — 진로 카드 목표 줄 = 끝맺음 카드 머리(§openShopEndWhenQuiet) — 한 곳에서 짓고 둘이 가져다 쓴다(처음 본 말이 끝에서 그대로 돌아온다).
+     문턱: 가게 단골 30(job_shop) · 돌봄 살린 화분 30(job_care) · 육종 이름 붙인 품종 3(job_breed) · 날수 · 벌이는 안 쓴다(박사님 Q19 · Q21 전) */
+const JOB_GOAL_KO = Object.freeze({ shop: '단골 서른 — 가게 끝맺음', care: '살린 화분 서른 — 돌봄 끝맺음', breed: '이름 붙인 품종 셋 — 육종 끝맺음' });
 const JOB_KO = Object.freeze({
   title: '다음 장 — 무엇을 하며 살까',
+  switchNote: '진로는 끝맺음 뒤 바꿀 수 있습니다',   /* ★ 11-03 8C6 ㉣(총괄 글) — §canSwitchJob 은 지금 진로의 끝맺음 날이 있을 때만 참 */
   sub: '이어받는 것 — 키운 그루·삽수·가구·남은 돈',
   cards: [
     { id: 'shop', ko: '식물 가게', sub: '손님이 원하는 식물을 기한 안에 키워 맞춥니다', go: '가게를 연다' },
@@ -12407,10 +12434,13 @@ function openChapterEnd() {
                         s2.textContent = MOVE_ASK_KO.leave.replace('{n}', lv); $('chapterEndSub').appendChild(s2); } }
     catch (e) { console.warn('[진로 카드 두고 가는 것]', e && e.message); }
     jc.innerHTML = JOB_KO.cards.map(c => `<div class="job${c.go ? '' : ' soon'}"><b>${c.ko}</b><span>${c.sub}</span>` +
-      (c.go ? `<button class="primary" type="button" data-job="${c.id}">${c.go}</button>` : '') + `</div>`).join('');
+      (JOB_GOAL_KO[c.id] ? `<i class="jgoal">${JOB_GOAL_KO[c.id]}</i>` : '') +   /* ★ 11-03 8C6 ㉠~㉢ */
+      (c.go ? `<button class="primary" type="button" data-job="${c.id}">${c.go}</button>` : '') + `</div>`).join('') +
+      `<div class="jswitch">${JOB_KO.switchNote}</div>`;   /* ★ 11-03 8C6 ㉣ */
     jc.style.display = 'flex';
+    el.classList.add('jobpick');   /* ★ 11-03 8C6 — 그림 줄임(CSS #chapterEnd.jobpick) */
     for (const b of jc.querySelectorAll('[data-job]')) b.onclick = guard(() => (b.dataset.job === 'care' ? startCareNow() : b.dataset.job === 'breed' ? startBreedNow() : startShopNow()));
-  } else if (jc) jc.style.display = 'none';
+  } else if (jc) { jc.style.display = 'none'; el.classList.remove('jobpick'); }
   el.classList.add('on'); el.setAttribute('aria-hidden', 'false');
 }
 /* ══ ★ 2026-10-24 D 나머지 — 간판 한 자리(house signOf · 총괄 D85 ③) ══
@@ -12647,6 +12677,7 @@ function closeChapterEnd() { const el = $('chapterEnd'); if (!el) return; el.cla
 /* 덮개는 셋이 같이 쓴다(진로 고르기 · 진로 바꾸기 · 마지막 덮개) — 닫을 때·열 때 처음 꼴로 */
 function resetChapterEnd() {
   document.documentElement.classList.remove('finalcover');
+  { const ce = $('chapterEnd'); if (ce) ce.classList.remove('jobpick'); }   /* ★ 11-03 8C6 — 진로 바꾸기 · 마지막 덮개는 그림 그대로 */
   const art = $('chapterEndArt'); if (art && art.dataset.hide) { art.style.display = ''; delete art.dataset.hide; }
   if ($('chapterLook')) $('chapterLook').textContent = '방 둘러보기';
   if ($('chapterAgain')) $('chapterAgain').style.display = '';
@@ -18975,7 +19006,7 @@ function startPhonePlacePot(what) {
   try { window.__byeotSheet.close(); } catch { }
   { const darkE = darkPlaceWarn((() => { const e = (S.emptyPots || []).slice(-1)[0]; return e ? { obj: e, kind: 'empty', variegated: false } : null; })());   /* ★ 2026-10-08 A·B */
     banner('🪴 빈 화분을 놓았습니다', darkE ? `⚠ ${darkE}` : emptyPotSubKo()); }
-  draw();
+  afterPlace();   /* ★ 11-03 총괄 ① — 확인 바 없는 누름 길(빈 화분)도 놓은 순간 할 일을 다시 센다(원칙 하나 · 끝이 빈 화분 수에 걸린 할 일은 grep 상 없음 — 해 없음) */
   return { ok: true };
 }
 
@@ -19006,7 +19037,7 @@ function startPhonePlaceCut(id) {
     /* ★ D99 ④ — 뿌리 전 무늬 삽수인데 이 방에 밝은 빈자리가 없으면 그렇다고 먼저 말한다(손가락은 식물등 · §updateHint) */
     const noBright = !!(c.varieFromCut && c.status === 'rooting' && !c.varieLightBand && varieBrightFreeNow(c.id) === false);
     banner(noBright ? '🪴 삽수를 놓았습니다 — 밝은 빈자리가 없습니다' : '🪴 삽수를 놓았습니다', darkC ? `⚠ ${darkC}` : '놓은 자리의 빛이 새 잎의 무늬를 정합니다'); }
-  syncRoom(); draw();
+  syncRoom(); afterPlace();   /* ★ 11-03 총괄 ① — 확인 바 없는 누름 길: 놓은 순간 할 일을 다시 센다(§afterPlace = checkQuests + draw · 끌기 §commitPlace 와 같음) — 마지막 삽수를 놓아도 칩 «들고 온 삽수부터 창가에 놓으세요»가 다음 손까지 남았다 */
   return { ok: true };
 }
 
@@ -19042,7 +19073,7 @@ function startPhonePlaceSpecies(id) {
   } catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return { ok: false, why: (e && e.message) || String(e) }; }
   try { window.__byeotSheet.close(); } catch { }
   banner(`🌿 ${josa(SPC.SPECIES_KO[q.species] || '새 식물', '을', '를')} 놓았습니다`, speciesPlaceSub(q) + ' · 눌러서 <span class="nowrap">[옮기기]로</span> 자리를 고르세요');   /* ★ 11-03 8C6 — 조사 · «[옮기기]로» 한 덩이 */
-  syncRoom(); draw();
+  syncRoom(); afterPlace();   /* ★ 11-03 총괄 ① — 확인 바 없는 누름 길: 놓은 순간 할 일을 다시 센다 — 마지막 새 종을 놓아도 칩 «가방의 식물을 새 집에 놓으세요»(home_unpack)가 다음 손까지 남았다(core critic8_h ㉯) */
   return { ok: true, id: q.id };
 }
 /* 가방 칸 — 그루면 놓고 · 구근이면 심어서 놓고 · 산 재고면 그루로 풀어서 놓는다 */
@@ -19245,7 +19276,8 @@ function unpackCountsNow() {
   let potN = 0; try { potN = bagPots().length; } catch { potN = 0; }
   let siruN = 0, trayN = 0; try { siruN = spareSiru(); trayN = spareContainerOf('musun'); } catch { }
   const boxN = boxedCountOf('beansprout') + boxedCountOf('musun');   /* ★ D92 — 이삿짐(빈 용기 수엔 안 든다 · §spareContainerOf) */
-  return { cutN, potN, siruN, trayN, boxN, plantsLeft: potN + cutN + siruN + trayN + boxN };
+  let spN = 0; try { spN = bagSpeciesPots().length; } catch (e) { spN = 0; }   /* ★ 11-03 plan §17 — 새 종(home · oneroom_unpack 끝 bagGrowers 와 같은 셈) */
+  return { cutN, potN, siruN, trayN, boxN, spN, plantsLeft: potN + cutN + siruN + trayN + boxN + spN };
 }
 /* 짐 풀기 갈래가 서는가(이사 뒤 · 자리 없음[B2 ③] 아님 · 이삿짐 채소만 남아 넘어간 판[MINOR ②] 아님) */
 function unpackChainOn() {
@@ -19260,9 +19292,12 @@ function unpackFingerLive() {
 function unpackPassedBoxesOnly() {
   try {
     if (!((S.stamina && S.stamina.questsTaken) || []).includes('oneroom_unpack')) return false;
+    /* ★ 11-03 plan §16 갈림 C(총괄 가름) — 산 집으로 옮긴 날(story.homeOnDay)은 넘기지 않는다: 그날 이삿짐은 «남긴 짐»이 아니라 게임이 막 싼 짐이다.
+         끝: 다 놓음 · 자리 없음(§unpackStuckNow) · 날을 넘김(남기기로 고른 것 — 그 뒤는 몬 상태 줄 statusBagCrops) · 원룸 판(ae32f79c)은 그대로 */
+    if (S.story && Number.isInteger(S.story.homeOnDay) && S.story.homeOnDay === S.day) return false;
     const boxN = boxedCountOf('beansprout') + boxedCountOf('musun');
     if (!(boxN > 0)) return false;
-    return bagPots().length + bagCuttings().length + Math.max(0, spareSiru()) + Math.max(0, spareContainerOf('musun')) <= 0;
+    return bagPots().length + bagCuttings().length + bagSpeciesPots().length + Math.max(0, spareSiru()) + Math.max(0, spareContainerOf('musun')) <= 0;   /* ★ 11-03 §17 — 새 종도 «이삿짐 밖» */
   } catch { return false; }
 }
 function unpackStuckNow() {

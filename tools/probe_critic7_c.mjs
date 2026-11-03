@@ -13,7 +13,8 @@
      ㉳ 걸어서(390) — 그 줄 누름 → 화분이 그 칸 · 할 일 걷힘 → 손가락 가방 판 → 판 [확인] 뒤에도 그 칸은 화분 하나 · 할 일이 «비우세요»로 안 돌아감
      ㉴ 총괄(7C2 꼬리 · 430 · 390 · 360) — 긴 할 일 글에도 [식물] 손가락이 옆에 서고 손 · 말풍선이 다른 기둥 칸을 안 덮음 · 좁힌 칩이 [🔆 빛 분포 보기] · [?] · 배너와 겹침 0 · 두 줄 안 · 줄임표 0 ·
         손가락이 다른 데로 가면 칩이 원래 폭
-     ㉵ 총괄(7C2 꼬리 · 390) — 확인 창 동안 «여기에 둘까요?» 배너 제목 한 줄 · 숨은 칩을 안 비킴 · 기둥 · [?] · 빛 분포 단추 · 손가락과 겹침 0 */
+     ㉵ 총괄(7C2 꼬리 · 390) — 확인 창 동안 «여기에 둘까요?» 배너 제목 한 줄 · 숨은 칩을 안 비킴 · 기둥 · [?] · 빛 분포 단추 · 손가락과 겹침 0
+        (11-03 총괄 — «섰나»는 감시 줄 기록으로 판정 · 재는 때가 늦어도 안 흔들림 · RED_NOBANNER=1 은 배너가 안 서는 판) */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
 const BASE = process.env.BYEOT_URL || 'http://127.0.0.1:9451', OUT = process.env.OUT || null;
@@ -82,7 +83,27 @@ for (const w of [430, 390, 360]) {
     ok(!!pd && !pd.탈 && pd.kind === 'go' && pd.ko === '몬스테라 화분을 밝은 빈 칸으로 옮기세요', '㉯ ② 할 일 «몬스테라 화분을 밝은 빈 칸으로 옮기세요»', JSON.stringify(pd));
     /* ㉰ 가방 무순 판 누르기 — 자동 자리 */
     await J(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`); await sleep(1500);
-    const tap = await J(`(()=>{ const c=document.querySelector('#pageBag .bagslot[data-place="musun"]') || document.querySelector('.bagslot[data-place="musun"]'); if (!c) return { 없음: true }; c.click(); return { 누름: true }; })()`);
+    /* ★ 11-03 총괄(regs18 ㉵ 거짓 빨강 — 자 하나가 130초 → 557초 · 겹침으로 그림이 늦어 재는 순간 배너가 이미 걷힘 · regs12 도 같은 꼴) —
+         배너가 «섰나»를 한 번 찍어 보지 않고 **감시 줄**로 남긴다(HINT_OOB 와 같은 결): 누르기 전에 #event 감시(MutationObserver + 0.25초)를 건다 —
+         «섰다»(제목 글 · 때) · 떠 있는 동안 «자리»(그 배너 움직임은 끝 상태로 보낸 뒤 · 아래 ㉵ 와 같은 재기) · «걷혔다».
+         판정은 그 기록으로 — «섰다 · 여기에 둘까요?»가 있으면 배너를 본 것 · 제목 · 칩 · 겹침은 떠 있던 마지막 «자리» · 재는 때가 늦어도 안 흔들린다.
+         RED_NOBANNER=1 이면 무순 판을 누르지 않는다(배너가 아예 안 서는 판 — 빨강 먼저 보기) */
+    await J(`(()=>{ if (window.__evWatch) return 1; window.__evWatch = []; const ev = document.getElementById('event'), t0 = performance.now(); let on = false, n = 0;
+      const snap = () => { const rr=e=>{ if(!e) return null; const cs=getComputedStyle(e); if (cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.05) return null; const q=e.getBoundingClientRect(); if(!q.width) return null; return [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)]; };
+      const ev=document.getElementById('event'), b=ev.querySelector('b'), tn=b ? [...b.childNodes].find(n=>n.nodeType===3 && n.textContent.trim()) : null;
+      const tl = tn ? (()=>{ const rg=document.createRange(); rg.selectNodeContents(tn); return new Set([...rg.getClientRects()].filter(q=>q.width>0).map(q=>Math.round(q.top))).size; })() : null;
+      const handR = (()=>{ const h=document.getElementById('hint'); if (!h.classList.contains('on')) return null; const rg=document.createRange(); rg.selectNodeContents(h.querySelector('.hand')); const q=rg.getBoundingClientRect(); return q.width>1 ? [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)] : null; })();
+      const cb = document.getElementById('questChip').getBoundingClientRect();   /* 숨은 칩의 자리(배치는 남는다) — 배너가 이 왼쪽 끝에 묶이면 «숨은 것을 비킨» 것 */
+      return { on: ev.classList.contains('on'), title: tn ? tn.textContent.trim() : null, titleLines: tl, ev: rr(ev), chip: rr(document.getElementById('questChip')), chipBox: cb.width ? [Math.round(cb.left),Math.round(cb.top),Math.round(cb.right),Math.round(cb.bottom)] : null,
+        nav: rr(document.getElementById('navbar')), help: rr(document.getElementById('guideOpen')), heat: rr(document.getElementById('lightHeatOff')), say: rr(document.querySelector('#hint.on .say')), hand: handR }; };
+      const look = () => { try { const o = ev.classList.contains('on'), b = ev.querySelector('b'), tn = b ? [...b.childNodes].find(x => x.nodeType === 3 && x.textContent.trim()) : null, title = tn ? tn.textContent.trim() : null;
+          if (o && title) { for (const a of ev.getAnimations({ subtree: true })) { try { a.finish(); } catch (e) { void e; } }
+            if (!on) window.__evWatch.push({ k: '섰다', t: Math.round(performance.now() - t0), title }); on = true;
+            if (n++ < 80) window.__evWatch.push({ k: '자리', t: Math.round(performance.now() - t0), snap: snap() }); }
+          else if (on && !o) { on = false; window.__evWatch.push({ k: '걷혔다', t: Math.round(performance.now() - t0) }); } }
+        catch (e) { window.__evWatch.push({ k: '탈', m: String((e && e.message) || e) }); } };
+      new MutationObserver(look).observe(ev, { attributes: true, childList: true, subtree: true, characterData: true }); setInterval(look, 250); return 1; })()`);
+    const tap = process.env.RED_NOBANNER ? { 안누름: true } : await J(`(()=>{ const c=document.querySelector('#pageBag .bagslot[data-place="musun"]') || document.querySelector('.bagslot[data-place="musun"]'); if (!c) return { 없음: true }; c.click(); return { 누름: true }; })()`);
     await sleep(1800);
     /* ★ 11-03 core(regs12 ㉵ 빨강 — on:false · ev null · 재는 순간 배너가 이미 걷힘) — 배너는 6초에 걷히는데 예전엔 누른 뒤 1.8초 + J + 화면 찍기(OUT · 헤드리스에서 늦음) 뒤에 쟀다
          ⇒ 재기를 먼저(누른 뒤 1.8초 바로) · 찍기는 그 뒤 · 배너가 안 떠 있으면 «배너를 못 봄»으로 빨강(칩 · 겹침 단언은 건너뜀 — «칩을 안 비킴»으로 적히면 엉뚱한 데를 판다 · ㉮ lost 와 같은 결 · 총괄 가름)
@@ -91,19 +112,18 @@ for (const w of [430, 390, 360]) {
     await J(`(()=>{ for (const a of document.getAnimations()) { try { a.finish(); } catch (e) { void e; } } return 1; })()`);
     await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 10, clip: { x: 0, y: 0, width: 10, height: 10, scale: 1 } }); await sleep(150);
     /* ㉵ 총괄(7C2 꼬리 · c_fix5/390_c7c_trayplace) — 확인 창 동안 «여기에 둘까요?» 배너: 제목 한 줄 · 숨은 칩을 안 비킴(폭) · 보이는 것(기둥 · [?] · 빛 분포 단추 · 손가락)과 겹침 0 */
-    const bn = await J(`(()=>{ const rr=e=>{ if(!e) return null; const cs=getComputedStyle(e); if (cs.display==='none'||cs.visibility==='hidden'||+cs.opacity<0.05) return null; const q=e.getBoundingClientRect(); if(!q.width) return null; return [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)]; };
-      const ev=document.getElementById('event'), b=ev.querySelector('b'), tn=b ? [...b.childNodes].find(n=>n.nodeType===3 && n.textContent.trim()) : null;
-      const tl = tn ? (()=>{ const rg=document.createRange(); rg.selectNodeContents(tn); return new Set([...rg.getClientRects()].filter(q=>q.width>0).map(q=>Math.round(q.top))).size; })() : null;
-      const handR = (()=>{ const h=document.getElementById('hint'); if (!h.classList.contains('on')) return null; const rg=document.createRange(); rg.selectNodeContents(h.querySelector('.hand')); const q=rg.getBoundingClientRect(); return q.width>1 ? [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)] : null; })();
-      const cb = document.getElementById('questChip').getBoundingClientRect();   /* 숨은 칩의 자리(배치는 남는다) — 배너가 이 왼쪽 끝에 묶이면 «숨은 것을 비킨» 것 */
-      return { on: ev.classList.contains('on'), title: tn ? tn.textContent.trim() : null, titleLines: tl, ev: rr(ev), chip: rr(document.getElementById('questChip')), chipBox: cb.width ? [Math.round(cb.left),Math.round(cb.top),Math.round(cb.right),Math.round(cb.bottom)] : null,
-        nav: rr(document.getElementById('navbar')), help: rr(document.getElementById('guideOpen')), heat: rr(document.getElementById('lightHeatOff')), say: rr(document.querySelector('#hint.on .say')), hand: handR }; })()`);
-    console.log('  ㉵ 확인 창 배너', JSON.stringify(bn));
+    const wl = await J(`(window.__evWatch || []).slice(0, 120)`);
+    const seen = Array.isArray(wl) ? wl.filter(x => x.k !== '자리') : wl;
+    const stood = Array.isArray(wl) ? wl.find(x => x.k === '섰다' && x.title === '여기에 둘까요?') : null;
+    const spots = Array.isArray(wl) ? wl.filter(x => x.k === '자리' && x.snap && x.snap.title === '여기에 둘까요?') : [];
+    const bn = (wl && wl.탈) ? { 탈: wl.탈 } : spots.length ? { ...spots[spots.length - 1].snap, at: spots[spots.length - 1].t } : { on: false, ev: null, title: null };
+    console.log('  ㉵ 배너 감시 줄', JSON.stringify({ seen, 자리: spots.length }));
+    console.log('  ㉵ 확인 창 배너(떠 있던 마지막 자리)', JSON.stringify(bn));
     const placed = await J(`(()=>{ const S=window.__S(); const t=Object.values(S.firstPlay.crops||{}).flatMap(v=>(v&&v.pots)||[]).find(p=>p.id==='crop_02_05'); return { slot: t ? t.slotId : null, confirming: document.getElementById('stage').classList.contains('confirming') }; })()`);
     console.log('  ㉰ 가방 무순 판 누름', JSON.stringify({ tap, placed }));
     if (OUT) await page.shot(`${OUT}/390_c7c_trayplace.png`);   /* ★ 11-03 — 찍기는 잰 «뒤»(아래 ㉵ 주석) */
     const bw = bn.ev ? bn.ev[2] - bn.ev[0] : 0;
-    ok(!bn.탈 && bn.on, '㉵ 확인 창 배너를 봄(재는 순간 떠 있음 — 못 보면 아래 둘은 건너뜀)', JSON.stringify({ on: bn.on, ev: bn.ev, title: bn.title }));
+    ok(!bn.탈 && !!stood && bn.on && spots.length > 0, '㉵ 확인 창 배너가 섰다(감시 줄 «섰다 · 여기에 둘까요?» · 떠 있던 자리 있음 — 못 보면 아래 둘은 건너뜀)', JSON.stringify({ seen, 자리: spots.length, on: bn.on, ev: bn.ev, title: bn.title }));
     if (!bn.탈 && bn.on) {
     ok(!bn.탈 && bn.on && bn.title === '여기에 둘까요?' && bn.titleLines === 1 && !bn.chip && !!bn.chipBox && !!bn.ev && bn.ev[2] > bn.chipBox[0] + 8, '㉵ 확인 창 동안 배너 제목 «여기에 둘까요?» 한 줄 · 숨은 할 일 칩을 안 비킴(배너 오른쪽 끝이 숨은 칩 왼쪽 끝을 넘는다)', JSON.stringify({ title: bn.title, lines: bn.titleLines, ev: bn.ev, w: bw, chip: bn.chip, chipBox: bn.chipBox }));
     ok(!bn.탈 && !!bn.ev && ![bn.nav, bn.help, bn.heat, bn.say, bn.hand].some(o => ovr(bn.ev, o)), '㉵ 배너가 기둥 · [?] · [🔆 빛 분포 보기] · 손가락과 겹침 0', JSON.stringify(bn));
