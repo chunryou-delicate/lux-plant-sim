@@ -4373,7 +4373,13 @@ export const CHATTER = [
      ⚠ «오늘 처음 참»은 조건 자체가 문턱(이레 · 0.5 · 스무 날)이라 그 문턱을 넘은 날이 곧 첫날이다 — 어제 ctx 를 안 쥔다.
        사건·독촉 날에 걸리면 다음 빈 날로 밀린다(조건이 참인 채 남으므로).
      ⚠ 칸은 전부 [core] turn.leafWait 에서 온다(§chatterContext). 없으면 null → 조건 거짓 → 안 뜬다. 판을 안 바꾼다.
-     ⚠ 수는 조건에만 있다(대사에는 없다). 「이레」·「스무 날」은 값이 아니라 «얼마나 기다렸나»의 자다 — 문턱 NUDGE_DAYS 와 같은 걸음. */
+     ⚠ 수는 조건에만 있다(대사에는 없다). 「이레」·「스무 날」은 값이 아니라 «얼마나 기다렸나»의 자다 — 문턱 NUDGE_DAYS 와 같은 걸음.
+   ■ 차례 — 가방 줄은 상태 줄 맨 앞(11-04 · 총괄 · critic8_i ㉴): statusBagCuttingsMove · statusBagCropsMove · statusBagCuttings · statusBagCrops · statusBagCropsNoSpot 이 statusSill 앞에 선다.
+     까닭: 스물두째에 두면 게이지 · 지갑 · 잎 단계 같은 «소식» 줄에 밀려, 이삿짐 21개를 가방에 둔 나흘 동안 «가방에선 안 자라» 줄이 한 번도 안 섰다
+     (투룸 446~448 · 원룸 136~138). 가방 줄은 «지금 손을 대야 하는 것»이고, 칸이 0 인 보통 날에는 안 서서 다른 줄을 밀지 않는다.
+     statusBagCuttings(첫 이레 밖)도 같이 올리고 채소 줄 앞에 둔다(plan 11-04). 까닭: 첫 이레 줄과 같은 «삽수 먼저 · 창턱 차례»다. 물꽂이 삽수의 분갈이 기한은
+     절대 날(propagation §deadlineDayOf = clockOnDay + nodeDays + 유예)이라 가방에서도 흐른다. 그래서 가방에 오래 둘수록 놓은 뒤 혹이 나는 그날 밤 시들 수 있다(plan 자 11-04 · 갈래 지도 16).
+     ⚠ 그러면 몬이 «가방에선 하루가 안 가»는 그 기한에서는 거짓이다. 기한을 멈추는 손은 [core] · 총괄 판단이다(D29 «놓인 것만 하루가 간다»의 남은 몫). */
 const fin = v => Number.isFinite(v);
 export function pickStatus(ctx = {}, lastDay = {}) {
   for (const c of CHATTER) {
