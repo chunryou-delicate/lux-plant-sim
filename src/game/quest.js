@@ -1302,8 +1302,9 @@ const CARE_QUESTS = Object.freeze([
     room: 'tworoom',
     ko: '짐을 풀고 자리를 잡는다',
     reward: '투룸이 돌봄 자리가 됩니다',
-    teaches: ['남의 화분보다 내 자리부터'],
-    why: '들고 온 것은 가방에서 아무 일도 안 합니다. 남의 화분을 받기 전에 내 것부터 자리를 잡습니다.',
+    /* ★ 11-03 plan §13 ㉠ — 첫 맡김은 §openCare 가 그 손에서 이미 가방에 넣는다 · 맡김 기한은 가방에 있어도 간다(job_care §careRequestsStep) */
+    teaches: ['손님 화분도 자리부터'],
+    why: '들고 온 것은 가방에서 아무 일도 안 합니다. 첫 손님 화분도 벌써 가방에 있고, 가방에 있어도 맡김 기한은 갑니다 — 다 같이 자리를 잡습니다.',
     todo: (q, s) => (s && Number.isFinite(s.bagCuttings) && s.bagCuttings > 0)
       ? '들고 온 삽수부터 창가에 놓으세요' : '가방의 식물을 새 집에 놓으세요',
     opens: s => isCare(s) && !switchedIn(s),
@@ -1416,7 +1417,7 @@ const BREED_QUESTS = Object.freeze([
     reward: '기록장에 첫 줄이 섭니다',
     teaches: ['하나 나온 건 우연이다'],
     why: '무늬 마디 삽수의 새 잎 · 구근의 싹 · 핑크프린세스의 새 잎이 나면 기록장에 저절로 적힙니다.',
-    todo: () => '새 잎이나 싹이 나면 저절로 적힙니다',
+    todo: () => '무늬 삽수·핑크프린세스 잎·구근 싹이 적힙니다',   /* ★ 11-03 plan §13 ㉧ — 적히는 것은 셋뿐(job_breed §freshSamples) */
     after: 'breed_unpack',
     opens: (s, ctx) => isBreed(s) && !!(ctx && (ctx.doneIds.includes('breed_unpack') || switchedIn(s))),
     done:  s => isBreed(s) && Number.isFinite(s.breedSamples) && s.breedSamples >= 1

@@ -1339,7 +1339,7 @@ export const SCRIPTS = {
   ],
   endingHome: [
     { who: 'jachwi', face: 'surprise', text: '…볕이 드는 방이네.' },
-    { who: 'moni',   face: 'calm',     text: '들어오자마자 그 말이 나오네.' },
+    { who: 'moni',   face: 'calm',     text: '문 열자마자 그 말이 나오네.' },   /* ★ 11-03 plan §13 ㉢ — 옮기는 것은 진로를 고를 때다 */
     { who: 'jachwi', face: 'tired',    text: '통장이 또 한 번에 얇아졌다.' },
     { who: 'moni',   face: 'proud',    text: '이번 건 안 아까워. 네가 모은 거잖아.' },
     /* ★ 2026-10-08 [plan] 갈래 지도 — 엔딩 때 몬스테라가 없는 판(엔딩 직전 다 팖 · 안 자르고 모주를 통째로 팔아 닿음)에서도 참이게.
@@ -1870,11 +1870,11 @@ export const SCRIPTS = {
   /* ★ 2026-10-09 [plan] 재미 점검 — 수확 이정표(작은 새것). 콩나물을 열 번째·서른 번째 거둔 날 한 줄씩(한 판에 한 번).
      칸 harvestTotal 은 [core] turn.cropNow.harvestTotal(누적 거둔 수) — 없으면 안 뜬다. 자취생은 수를 말해도 된다(몬이는 안 함). */
   statusHarvest10: [
-    { who: 'jachwi', text: '시루를 열 번 열었다.' },
+    { who: 'jachwi', text: '시루를 열 번은 열었다.' },   /* ★ 11-03 plan §12 ㉣ */
     { who: 'moni',   face: 'proud', text: '손이 익었네.' }
   ],
   statusHarvest30: [
-    { who: 'jachwi', face: 'think', text: '서른 번째 콩나물이다.' },
+    { who: 'jachwi', face: 'think', text: '콩나물을 서른 번은 거뒀다.' },   /* ★ 11-03 plan §12 ㉣ — 앞 줄에 밀려 늦게 서도 참 */
     { who: 'moni',   face: 'calm',  text: '이젠 눈 감고도 하겠다.' }
   ],
   /* ═══ ★★ 2026-10-09 [plan] D35(총괄 결정 · 박사님 «재미있게») — **반지하 중반 작은 수입 사건 한 번: 반찬가게 주문** ═══
@@ -2030,6 +2030,10 @@ export const SCRIPTS = {
   statusBagCrops: [
     { who: 'moni', face: 'teach', text: '가방에 든 채소는 안 자라. 놓으면 이어서 자라.' }
   ],
+  /* ★ 11-03 plan §12 ㉣ — 같은 글 · 짐 풀기 «자리 없음»을 들은 판(c.unpackNoSpot)이면 gap 30(몰라서가 아니라 자리가 없어서 남은 것) · 되풀이 자는 statusBagCrops 와 함께 센다(sameAs) */
+  statusBagCropsNoSpot: [
+    { who: 'moni', face: 'teach', text: '가방에 든 채소는 안 자라. 놓으면 이어서 자라.' }
+  ],
   /* ═══ ★★ 2026-10-09 [plan] D45(총괄) — **새 식물 두 종: 핑크프린세스 «가위» · 알로카시아 «철»** ═══
      기록: 10-09 총괄 D45 · 후보는 docs/handoff/plan-newspecies-20261009.md §판단필요.
      몬스테라는 «자리»(빛)를 가르친다. 둘은 빛이 아닌 축을 연다 — PP 는 «어느 마디에서 자르나», AL 은 «언제를 기다리나».
@@ -2165,7 +2169,7 @@ export const SCRIPTS = {
      넷째 줄은 참이다 — 간판(단골 10)이 단골 30 보다 늘 먼저 선다. 다섯째는 «내일도 주문»(5~9일 · 원천이 있을 때만)이 아니라 늘 참인 «끝이 아니야». */
   shopEnding: [
     { who: 'jachwi', face: 'think',    text: '문을 열기 전에 가게를 한 바퀴 둘러봤다.' },
-    { who: 'jachwi', face: 'happy',    text: '선반마다 내가 늘린 그루다.' },
+    { who: 'jachwi', face: 'happy',    text: '하나씩 늘려 온 그루들이다.' },   /* ★ 11-03 plan §13 ㉥ — 받은 · 산 그루 · 창턱 · 바닥도 참 · 맡은 화분은 셈에서 뺀다(job_shop §placedPlantsOf) */
     { who: 'moni',   face: 'proud',    text: '오늘부터 여긴 «동네 식물 가게»야.' },
     { who: 'jachwi', face: 'beam',     text: '간판보다 그 말이 더 좋다.' },
     { who: 'moni',   face: 'teach',    text: '여기서 끝이 아니야. 가게는 계속이야.' },
@@ -2236,6 +2240,10 @@ export const SCRIPTS = {
   careStuckAlWinter: [
     { who: 'moni',   face: 'teach', text: '겨울엔 자는 거야. 버리지 말고 봄을 기다려.' }
   ],
+  /* ★ 11-03 plan §13 ㉤(총괄 가름 B) — al_winter 가 겨울 밖(가을에 연 판)에 막힘 · 잠 철 밖은 밝은 데 7일이면 깬다(species_growth §stepAL) · 까닭은 안 말한다 */
+  careStuckAlWinterOff: [
+    { who: 'moni',   face: 'teach', text: '죽은 거 아니야. 밝은 데 두면 깨.' }
+  ],
   careSavedAlWinter: [
     { who: 'jachwi', face: 'beam', text: '봄이 되니 다시 깨어났다.' }
   ],
@@ -2282,7 +2290,8 @@ export const SCRIPTS = {
   /* 돌봄 사슬 열림·끝(quest.js §CARE_QUESTS) */
   questCareUnpack: [
     { who: 'jachwi', face: 'curious',  text: '창이 둘이다. 어디부터 놓지.' },
-    { who: 'moni',   face: 'teach',    text: '남의 화분 받기 전에 네 것부터 자리를 잡자.' }
+    { who: 'moni',   face: 'teach',    text: '손님 화분도 벌써 왔어.' },   /* ★ 11-03 plan §13 ㉠ — 첫 맡김은 그 손에서 이미 가방에 든다 */
+    { who: 'moni',   face: 'teach',    text: '가방에 둬도 기한은 가. 같이 놓자.' }
   ],
   questDoneCareUnpack: [
     { who: 'moni',   face: 'proud',    text: '다 놓았네. 여기가 네 집이고 돌봄 자리야.' }
@@ -2389,7 +2398,8 @@ export const SCRIPTS = {
     { who: 'moni',   face: 'proud',    text: '다 놓았네. 이제 적을 일만 남았어.' }
   ],
   questBreedFirstSample: [
-    { who: 'moni',   face: 'teach',    text: '새 잎이 나면 저절로 적혀. 무엇이 났는지, 어디서 났는지.' }
+    { who: 'moni',   face: 'teach',    text: '무늬 삽수, 핑크프린세스 잎, 구근 싹.' },   /* ★ 11-03 plan §13 ㉧ — 적히는 것은 셋뿐(job_breed §freshSamples) */
+    { who: 'moni',   face: 'teach',    text: '그게 나면 저절로 적혀. 어디서 났는지도.' }
   ],
   questDoneBreedFirstSample: [
     { who: 'jachwi', face: 'think',    text: '기록장에 첫 줄이 섰다.' },
@@ -2537,7 +2547,7 @@ export const SCRIPTS = {
      몬이는 수를 안 말한다(옛 questShopSign «단골이 열이면»과 달리 수 없이). 자취생 낯은 앞치마 낯 안에서만. */
   shopSignKept: [
     { who: 'jachwi', face: 'surprise', text: '단골이 꽤 늘었다.' },
-    { who: 'moni',   face: 'cheer',    text: '진열대 옆 간판이 이제 가게 간판 몫도 하겠어.' }
+    { who: 'moni',   face: 'cheer',    text: '있는 간판을 같이 쓰자!' }   /* ★ 11-03 plan §14 — 배너 «몫도 합니다» · 할 일 끝 «몫도 한다»와 세 번 겹쳤다 */
   ],
   questShopSignKept: [
     { who: 'moni',   face: 'teach',    text: '간판은 벌써 있어. 단골이 더 늘면 그 간판이 가게 몫도 할 거야.' }
@@ -2548,7 +2558,7 @@ export const SCRIPTS = {
   ],
   careMilestone10Kept: [
     { who: 'jachwi', face: 'surprise', text: '돌려준 화분이 꽤 쌓였다.' },
-    { who: 'moni',   face: 'cheer',    text: '진열대 옆 간판이 이제 돌봄 간판 몫도 하겠어.' }
+    { who: 'moni',   face: 'cheer',    text: '있는 간판을 같이 쓰자!' }   /* ★ 11-03 plan §14 */
   ],
   questCareSignKept: [
     { who: 'moni',   face: 'teach',    text: '간판은 벌써 있어. 살린 화분이 쌓이면 그 간판이 돌봄 몫도 할 거야.' }
@@ -2797,6 +2807,12 @@ export const SCRIPTS = {
   statusGauge: [
     { who: 'jachwi', face: 'curious', text: '빛이 쌓인 만큼이라며. 얼마나 쌓였어?' },
     /* ★ 2026-11-01 [plan] 총괄 D100 ⑤(비판 다섯째 판 ④ Day 19) — «얘를 눌러 봐»를 따라 누르면 메뉴만 떴다 · 게이지는 [확대 보기] 안에 있다(game.html §확대 보기) */
+    { who: 'moni',   face: 'teach', text: '얘를 눌러서 [확대 보기]로 봐.' },
+    { who: 'moni',   face: 'teach', text: '차오르는 게 그거야.' }
+  ],
+  /* ★ 11-03 plan §12 ㉣ — 반지하를 나온 뒤의 같은 가리킴 줄(한 판에 한 번 · §STATUS statusGaugeOut) · 글은 statusGauge 와 같다(test_dialogue_coverage 가 견줌) */
+  statusGaugeOut: [
+    { who: 'jachwi', face: 'curious', text: '빛이 쌓인 만큼이라며. 얼마나 쌓였어?' },
     { who: 'moni',   face: 'teach', text: '얘를 눌러서 [확대 보기]로 봐.' },
     { who: 'moni',   face: 'teach', text: '차오르는 게 그거야.' }
   ],
@@ -3332,7 +3348,7 @@ export const REPEATABLE = new Set(
              'nudgeSiruOffer', 'nudgeSiruPush', 'statusOneroomNoVarie', 'statusOneroomCutSill',
              'lampUnderEmpty', 'statusBagCuttings', 'statusBagCuttingsMove', 'movedInBagCuttings',
              /* ★ 2026-10-31 [plan] D92 — 이삿짐(들고 온 채소) 줄 셋 */
-             'statusBagCrops', 'statusBagCropsMove', 'movedInBagCrops',
+             'statusBagCrops', 'statusBagCropsMove', 'movedInBagCrops', 'statusBagCropsNoSpot', 'statusGaugeOut',
              /* ★ 2026-10-09 [plan] D45 — 새 종 사건은 판마다 여러 번 난다(구근마다 싹 · 잎마다 경고). 교환·퀘스트는 한 번 */
              'ppPinkWarn', 'ppTipWithered', 'ppReverted', 'alSproutVarie', 'alSproutPlain', 'statusAlSleeping', 'alAsleepCorms', 'alWakeAgain',
              /* ★ D55 — 그루마다·칸마다 한 번(core 가 거른다) — 그루가 여럿이면 여러 번 */
@@ -3390,6 +3406,17 @@ export function createDialogue(seen = new Set()) {
      (첫 플레이 신호는 first_play.firstPlayEventsOf, 살림 신호는 tutorial.tutorialDay,
       식물·배움·이사 신호는 loop.stepTutorial 이 낸다.) */
 /* ★ 2026-10-23 [plan] D72 B — 고장마다 대사 세 줄(보이는 것 · 막힐 때 · 나았을 때). data/balance/care_problems.json 의 scripts 와 같아야 한다(test_dialogue_coverage) */
+/* ★ 2026-10-10 [plan] D59 — 이정표와 그 퀘스트 끝(짝 표 · 한 곳). 한 묶음 안이면 «퀘스트 끝만»(§scriptsForEvents) ·
+     ★ 11-03 비판 8판 §13 ㉨ S21(총괄 가름) — 묶음을 건너면 §createStoryteller 가 «오늘 선 id»(lastDay)로 거른다 */
+export const MILESTONE_QUEST_PAIRS = Object.freeze([
+  ['shopRegulars3', 'questDoneShopRegulars3'], ['shopSign', 'questDoneShopSign'], ['shopTown', 'questDoneShopTown'],
+  /* ★ 2026-10-23 [plan] D72 B — 돌봄 이정표 10 · 30 과 그 퀘스트 끝 */
+  ['careMilestone10', 'questDoneCareSign'], ['careMilestone30', 'questDoneCareTown'],
+  /* ★ 2026-10-24 [plan] D72 C — 육종 이정표 1 · 3 · 5 와 그 퀘스트 끝 */
+  ['breedMilestone1', 'questDoneBreedFirstVariety'], ['breedMilestone3', 'questDoneBreedThree'], ['breedMilestone5', 'questDoneBreedAll'],
+  /* ★ 2026-10-24 [plan] D85 ③ — 간판 한 자리 갈래도 같은 짝 */
+  ['shopSignKept', 'questDoneShopSignKept'], ['careMilestone10Kept', 'questDoneCareSignKept']
+].map(p => Object.freeze(p)));
 export const CARE_SCRIPT = Object.freeze({
   ca_bright: Object.freeze({ new: 'careNewCaBright', stuck: 'careStuckCaBright', saved: 'careSavedCaBright' }),
   ca_dark: Object.freeze({ new: 'careNewCaDark', stuck: 'careStuckCaDark', saved: 'careSavedCaDark' }),
@@ -3884,10 +3911,16 @@ function scriptOf(ev, S = null) {
   if (id === 'breed_milestone') return ev && ev.n === 1 ? 'breedMilestone1' : ev && ev.n === 3 ? 'breedMilestone3' : ev && ev.n === 5 ? 'breedMilestone5' : null;
   if (id === 'care_new' || id === 'care_stuck' || id === 'care_saved') {
     const m = CARE_SCRIPT[ev && ev.problem];
+    /* ★ 11-03 plan §13 ㉤(총괄 가름 B) — al_winter 는 대사가 서는 그날 철로 가른다(core ev.season · job_care §careRequestsStep).
+         막힘: 겨울 → careStuckAlWinter «봄을 기다려» · 아니면 careStuckAlWinterOff · 나음: 봄 → careSavedAlWinter «봄이 되니» · 아니면 careSavedAlDark «다시 깨어났다.» */
+    if (m && ev.problem === 'al_winter' && typeof ev.season === 'string') {
+      if (id === 'care_stuck' && ev.season !== 'winter') return 'careStuckAlWinterOff';
+      if (id === 'care_saved' && ev.season !== 'spring') return 'careSavedAlDark';
+    }
     return m ? m[id === 'care_new' ? 'new' : id === 'care_stuck' ? 'stuck' : 'saved'] : null;
   }
   if (id === 'care_return' || id === 'care_expired' || id === 'care_cut_gift') return null;
-  /* ★ D85 ③ — 10 이정표: 다른 진로 간판이 이미 서 있으면([core] ev.signKept · house signOf) «몫도 하겠어» */
+  /* ★ D85 ③ — 10 이정표: 다른 진로 간판이 이미 서 있으면([core] ev.signKept · house signOf) «있는 간판을 같이 쓰자!»(11-03 plan §14) */
   if (id === 'care_milestone') return ev && ev.n === 3 ? 'careMilestone3' : ev && ev.n === 10 ? (ev.signKept === true ? 'careMilestone10Kept' : 'careMilestone10') : ev && ev.n === 30 ? 'careMilestone30' : null;
   if (id === 'order_done') return ev && ev.newRegular === true ? 'shopNewRegular' : null;
   if (id === 'regulars_milestone') return ev && ev.n === 3 ? 'shopRegulars3' : ev && ev.n === 10 ? (ev.signKept === true ? 'shopSignKept' : 'shopSign') : ev && ev.n === 30 ? 'shopTown' : null;
@@ -3949,13 +3982,7 @@ export function scriptsForEvents(events = [], S = null) {
   /* ★ 2026-10-08 [plan] 혹 난 날은 경고(w_node)도 같이 난다 — 같은 순간이라 «혹이 났어» 한 벌만 */
   if (out.includes('cuttingNode')) { const w = out.indexOf('cuttingWarn'); if (w >= 0) out.splice(w, 1); }
   /* ★ 2026-10-10 [plan] D59 — 이정표와 그 퀘스트 끝이 같은 턴이면 퀘스트 끝 대사만(같은 말 두 번 · «단골이 셋이야»). 퀘스트를 이미 끝낸 판(두 번째 서른 등)은 이정표가 말한다 */
-  for (const [ms, qd] of [['shopRegulars3', 'questDoneShopRegulars3'], ['shopSign', 'questDoneShopSign'], ['shopTown', 'questDoneShopTown'],
-                          /* ★ 2026-10-23 [plan] D72 B — 돌봄 이정표 10 · 30 과 그 퀘스트 끝 */
-                          ['careMilestone10', 'questDoneCareSign'], ['careMilestone30', 'questDoneCareTown'],
-                          /* ★ 2026-10-24 [plan] D72 C — 육종 이정표 1 · 3 · 5 와 그 퀘스트 끝 */
-                          ['breedMilestone1', 'questDoneBreedFirstVariety'], ['breedMilestone3', 'questDoneBreedThree'], ['breedMilestone5', 'questDoneBreedAll'],
-                          /* ★ 2026-10-24 [plan] D85 ③ — 간판 한 자리 갈래도 같은 짝 */
-                          ['shopSignKept', 'questDoneShopSignKept'], ['careMilestone10Kept', 'questDoneCareSignKept']])
+  for (const [ms, qd] of MILESTONE_QUEST_PAIRS)
     if (out.includes(ms) && out.includes(qd)) out.splice(out.indexOf(ms), 1);
   /* 새 단골 «하나 늘었어»와 «단골 셋/간판/서른» 끝이 같은 턴이면 앞말은 군말 */
   if (out.includes('shopNewRegular') && out.some(id => /^questDoneShop(Regulars3|Sign|Town)$|^shop(Regulars3|Sign|Town)$/.test(id)))
@@ -4257,20 +4284,25 @@ export const CHATTER = [
   { id: 'statusSill',     status: true, gap: 30, when: c => c.hasMonstera && !c.movedOut && !(c.lampOwned >= 1) && c.potOnSill === true
                                             && (c.band === 'mid' || c.band === 'bright') },
   /* ⓑ 게이지 가리킴 — 도착 사흘째까지 확대창을 한 번도 안 열었으면. 「날짜로는 못 세」의 짝: 셀 수 있는 것은 «쌓인 빛»이다 */
-  { id: 'statusGauge',    status: true, gap: 120, when: c => c.hasMonstera && fin(c.arrivedOnDay) && fin(c.day) && c.day - c.arrivedOnDay >= 3
+  /* ★ 11-03 plan §12 ㉣ · ㉷ — 가리킴 줄은 반지하를 나온 뒤엔 다시 안 낸다(한 판에 한 번 · statusGaugeOut gap 9999 · 반지하에서 난 날도 함께 셈 sameAs).
+       ⚠ 반지하는 지금과 같다(gap 120) — 확대창을 안 연 채 반지하에 «도착 + 3 + 120»일 넘게 머문 판은 반지하에서 두 번째가 선다(plan 전제 «반지하는 120일 안에 끝난다»가 늘 참은 아니라 갈랐다) */
+  { id: 'statusGauge',    status: true, gap: 120, when: c => !c.movedOut && c.hasMonstera && fin(c.arrivedOnDay) && fin(c.day) && c.day - c.arrivedOnDay >= 3
+                                            && c.zoomOpenedSinceArrival === false },
+  { id: 'statusGaugeOut', status: true, gap: 9999, sameAs: 'statusGauge', when: c => !!c.movedOut && c.hasMonstera && fin(c.arrivedOnDay) && fin(c.day) && c.day - c.arrivedOnDay >= 3
                                             && c.zoomOpenedSinceArrival === false },
   /* ⓒ 쉬지 않고 — 멈춤 없이 자란 날이 이레(그날 새 잎이 났으면 그 말이 먼저다) */
-  { id: 'statusStreak',   status: true, gap: 90, when: c => c.hasMonstera && fin(c.growStreak) && c.growStreak >= 7 && c.newLeafToday !== true },
+  /* ★ 11-03 plan §12 ㉣ — 집을 산 뒤(c.movedHome · 진로 판)엔 안 낸다: 기다림 줄 다섯(Streak · LeafWide · LeafWide2 · SiruVs · SiruVs2) */
+  { id: 'statusStreak',   status: true, gap: 90, when: c => c.hasMonstera && !c.movedHome && fin(c.growStreak) && c.growStreak >= 7 && c.newLeafToday !== true },
   /* ⓓ 첫 잎 넓어짐 — 가장 어린 펴진 잎의 leafM(렌더러가 잎 크기로 쓰는 값)이 반을 넘음 · 새 잎 뒤 사흘은 안 함 */
-  { id: 'statusLeafWide', status: true, gap: 30, when: c => c.hasMonstera && fin(c.youngestLeafM) && c.youngestLeafM >= 0.5
+  { id: 'statusLeafWide', status: true, gap: 30, when: c => c.hasMonstera && !c.movedHome && fin(c.youngestLeafM) && c.youngestLeafM >= 0.5
                                             && fin(c.leafWaitDays) && c.leafWaitDays >= 3 && !(fin(c.leaves) && c.leaves >= 2) },
   /* ★ D100 ⑤ — 둘째 기다림부터는 둘째 벌(펴진 잎 ≥ 2 · 잎 수를 모르면 첫 벌) */
-  { id: 'statusLeafWide2', status: true, gap: 30, when: c => c.hasMonstera && fin(c.youngestLeafM) && c.youngestLeafM >= 0.5
+  { id: 'statusLeafWide2', status: true, gap: 30, when: c => c.hasMonstera && !c.movedHome && fin(c.youngestLeafM) && c.youngestLeafM >= 0.5
                                             && fin(c.leafWaitDays) && c.leafWaitDays >= 3 && fin(c.leaves) && c.leaves >= 2 },
   /* ⓕ 시루와 견줌 — 거둔 날 · 도착 뒤 둘째 거둠부터 · 잎이 이레 넘게 그대로. 두 이레에 한 번 */
-  { id: 'statusSiruVs',   status: true, gap: 45, when: c => c.hasMonstera && c.harvestedToday === true && fin(c.harvestsSinceArrival)
+  { id: 'statusSiruVs',   status: true, gap: 45, when: c => c.hasMonstera && !c.movedHome && c.harvestedToday === true && fin(c.harvestsSinceArrival)
                                             && c.harvestsSinceArrival >= 2 && fin(c.leafWaitDays) && c.leafWaitDays >= 7 && !(fin(c.leaves) && c.leaves >= 2) },
-  { id: 'statusSiruVs2',  status: true, gap: 45, when: c => c.hasMonstera && c.harvestedToday === true && fin(c.harvestsSinceArrival)
+  { id: 'statusSiruVs2',  status: true, gap: 45, when: c => c.hasMonstera && !c.movedHome && c.harvestedToday === true && fin(c.harvestsSinceArrival)
                                             && c.harvestsSinceArrival >= 2 && fin(c.leafWaitDays) && c.leafWaitDays >= 7 && fin(c.leaves) && c.leaves >= 2 },
   /* ⓖ 지갑 — 잎이 스무 날 그대로. 「돈은 매일 줄고」는 하루 지출이 늘 있어 참 · 「잎은 줄지는 않아」는 잎 떨굼 꺼짐(growth_tuning health.drop_enabled:false) */
   /* ★ 2026-10-09 [plan] 원룸 후반 13달 — 기다림 줄 넷의 간격을 늘렸다(게이지 30→120 · 쉬지 않고 30→90 · 시루 14→45 · 지갑 30→90).
@@ -4300,7 +4332,10 @@ export const CHATTER = [
   /* ★ 2026-10-31 [plan] D92 ㉠ — 이삿짐(들고 온 채소)이 아직 가방(첫 이레 · 삽수가 가방에 있으면 삽수 줄 차례 — 창턱 먼저) */
   { id: 'statusBagCropsMove',   status: true, gap: 3, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
                                                               && fin(c.bagCrops) && c.bagCrops > 0 && !(fin(c.bagCuttings) && c.bagCuttings > 0) },
-  { id: 'statusBagCrops',       status: true, gap: 7, when: c => fin(c.bagCrops) && c.bagCrops > 0
+  { id: 'statusBagCrops',       status: true, gap: 7, sameAs: 'statusBagCropsNoSpot', when: c => fin(c.bagCrops) && c.bagCrops > 0 && c.unpackNoSpot !== true
+                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
+  /* ★ 11-03 plan §12 ㉣ — 짐 풀기 «자리 없음»을 들은 판(화면 §noteUnpackNoSpot · turn.unpackNoSpot)이면 같은 글을 gap 30 */
+  { id: 'statusBagCropsNoSpot', status: true, gap: 30, sameAs: 'statusBagCrops', when: c => fin(c.bagCrops) && c.bagCrops > 0 && c.unpackNoSpot === true
                                                               && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
   /* ★ 2026-10-09 [plan] D45 — 알로카시아가 자는 동안(칸 alDormantNow · [core]) */
   { id: 'statusAlSleeping',     status: true, gap: 14, when: c => c.alDormantNow === true },
@@ -4551,6 +4586,8 @@ export function chatterContext(turn = {}, S = null) {
     alDormantNow: (turn && typeof turn.alDormantNow === 'boolean') ? turn.alDormantNow : null,
     /* ★ 2026-10-09 [plan] 원룸 후반 — 엔딩 목표 금액([core] turn.homeTarget · homes.json ending.targetWon). 모르면 null */
     homeTarget: (turn && Number.isFinite(turn.homeTarget)) ? turn.homeTarget : null,
+    /* ★ 11-03 plan §12 ㉣ — 짐 풀기 «자리 없음»을 들은 판([core] turn.unpackNoSpot · 화면 §unpackStuckNow) */
+    unpackNoSpot: !!(turn && turn.unpackNoSpot === true),
     /* ★ 2026-10-08 [plan] 갈래 지도 13 — 씨앗 재고·빈 시루([core] turn.cropNow). 모르면 null */
     ...(() => {
       const cn = (turn && turn.cropNow) || {};
@@ -4603,7 +4640,9 @@ export const QUIET_DAYS_BEFORE_CHATTER = 2;
      ⚠ 범용 줄(`gap: 30`)은 그대로다. 잡담(nudge 아님)은 간격 없음(«가장 오래 안 나온 것»이 고른다). */
 export const NUDGE_LINE_GAP = 7;
 function repeatOk(c, ctx, lastDay) {
-  const d = ctx && ctx.day, last = lastDay && lastDay[c.id];
+  /* ★ 11-03 plan §12 ㉣ — sameAs: 같은 글을 내는 다른 id 와 «마지막 난 날»을 함께 센다(statusBagCrops ↔ statusBagCropsNoSpot) */
+  const lasts = [c.id, c.sameAs].map(k => (k && lastDay) ? lastDay[k] : undefined).filter(Number.isFinite);
+  const d = ctx && ctx.day, last = lasts.length ? Math.max(...lasts) : undefined;
   if (!Number.isFinite(d) || !Number.isFinite(last)) return true;
   if (d - last === 1) return false;
   const gap = c.gap || (c.nudge ? NUDGE_LINE_GAP : 0);
@@ -4629,6 +4668,21 @@ export function createStoryteller(opt = {}) {
   /* ★ 2026-10-08 [plan] D19 — 줄마다 «마지막으로 난 날»(§repeatOk). history 와 같은 자리에서 센다 — 세이브에 안 남는다(다시 켜면 처음부터) */
   const lastDay = { ...(opt.lastDay || {}) };
   const note = (ids, day) => { if (Number.isFinite(day)) for (const id of ids) lastDay[id] = day; };
+  /* ★ 11-03 비판 8판 §13 ㉨ S21(총괄 가름) — [돌려준다] · 납품 · 품종 등록 손은 이정표(story.events)와 할 일 끝(§checkQuests)을 따로 연다 →
+       한 묶음 안 짝 거름이 못 닿아 같은 두 줄이 잇달아 두 번 섰다(probe_critic8_s21 · 돌봄 30).
+       ⇒ 오늘 짝의 다른 쪽이 이미 섰으면 나중 것을 거른다 — (ㄱ) 두 대본의 글이 같거나 (ㄴ) 나중 것이 이정표일 때만.
+          그 밖(이정표 먼저 · 글이 다른 할 일 끝 뒤 «달자 → 달았다»)은 둘 다 둔다 · 한 묶음 안 규칙은 그대로. 날은 lastDay(세이브 talk.lastDay)라 다시 켜도 같다 */
+  const sameText = (a, b) => JSON.stringify((SCRIPTS[a] || []).map(l => l.text)) === JSON.stringify((SCRIPTS[b] || []).map(l => l.text));
+  const pairDropToday = (ids, day) => {
+    if (!Number.isFinite(day) || !ids.length) return ids;
+    return ids.filter(id => {
+      for (const [ms, qd] of MILESTONE_QUEST_PAIRS) {
+        if (id === ms && lastDay[qd] === day) return false;                       /* (ㄴ) 할 일 끝 뒤 이정표 */
+        if (id === qd && lastDay[ms] === day && sameText(ms, qd)) return false;   /* (ㄱ) 같은 글 */
+      }
+      return true;
+    });
+  };
   const quietMax = Number.isFinite(opt.quietDays) ? opt.quietDays : QUIET_DAYS_BEFORE_CHATTER;
   let quiet = 0;
 
@@ -4639,8 +4693,8 @@ export function createStoryteller(opt = {}) {
   let lastS = null;
   function turn(turnObj, S = null) {
     if (S) lastS = S;
-    const ids = scriptsForEvents((turnObj && turnObj.events) || [], S);
     const day = turnObj ? turnObj.day : null;
+    const ids = pairDropToday(scriptsForEvents((turnObj && turnObj.events) || [], S), day);   /* ★ S21 */
     if (ids.length) { quiet = 0; history.push(...ids); note(ids, day); return ids; }
     quiet++;
     /* ★ 2026-09-04 — 독촉 ①②③은 조용한 날 세기 «밖»이다: 오늘 나도 quiet 을 안 건드린다(잡담의 리듬은 잡담 것).
@@ -4659,8 +4713,11 @@ export function createStoryteller(opt = {}) {
   /* 턴 밖에서 나는 일(식물등 구입·이사 버튼) — 그쪽이 낸 events 를 그대로 준다.
      buyLamp()·moveOut() 의 반환값에 `events` 가 실려 온다. */
   function events(list, S = null) {
-    const ids = scriptsForEvents(list || [], S || lastS);
-    if (ids.length) { quiet = 0; history.push(...ids); }
+    const s = S || lastS;
+    /* ★ S21 — 턴 밖 사건도 «오늘 선 id»를 적는다(그날 = 판의 날 · 모르면 안 적음 · 예전엔 안 적어 묶음 건넌 짝을 몰랐다) */
+    const day = s && Number.isFinite(s.day) ? s.day : null;
+    const ids = pairDropToday(scriptsForEvents(list || [], s), day);
+    if (ids.length) { quiet = 0; history.push(...ids); note(ids, day); }
     return ids;
   }
   /* ★ 2026-10-31 [core] 총괄 D90 종합5 — 줄마다 마지막 난 날을 밖에서 읽는다(화면이 세이브에 싣는다 · 다시 켤 때 opt.lastDay 로 되돌려 준다) */

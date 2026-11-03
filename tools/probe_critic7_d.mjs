@@ -8,6 +8,8 @@
      ㉯ 가방에서 3단 선반을 누르면(판 닫힘) 1.5초 뒤 손가락은 [가방] — 손가락이 짚는 것의 가운데에서 그것이 잡힌다
      ㉰ 가방을 다시 열고 판 속 목록을 맨 아래로 굴린 뒤 닫으면 손가락은 [가방](판 안 칸 아님) · 짚는 것의 가운데에서 그것이 잡힌다 — 세 번 다시 물어도 같다
      ㉱ 가방을 다시 열면(목록은 굴린 그대로) 손가락이 판 안 칸을 «보이게» 짚는다(잘린 칸은 굴려 보임 · 가운데에서 그 칸이 잡힘)
+     ㉳ (11-03 여섯째 묶음 8C5 · 총괄 가름) 몬스테라 · 삽수를 사람 손으로 놓아 이삿짐 차례가 되면(시루 · 판 둘 이상) 손가락은 머리줄 [한꺼번에 놓기 (N개)] 단추(보이는 · 눌리는 단추 위)
+     ㉲ (11-03 plan §13 ㉡) 원룸 도착 배너 아래 줄 «할 일 탭과 가계부에서 내 집 마련까지 얼마인지 볼 수 있습니다»
      예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
@@ -28,6 +30,8 @@ await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted =
 const dlgOnly = async () => { for (let i = 0; i < 80; i++) { const t = await J(`document.getElementById('stage').classList.contains('talking')`); if (t !== true) return; await page.eval(`(()=>{ const s=document.getElementById('dlgSkip'); if(s) s.click(); const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(250); } };
 const bannerOff = async () => { for (let i = 0; i < 20; i++) { const on = await J(`document.getElementById('event').classList.contains('on')`); if (on !== true) return; await J(`(()=>{ document.getElementById('event').click(); return 1; })()`); await sleep(400); } };
 await dlgOnly();
+/* ★ 11-03 — 배너 글 적기(자 쪽 관찰 · 게임은 안 건드림) */
+await J(`(()=>{ const e=document.getElementById('event'); window.__c7dBan = []; new MutationObserver(()=>{ const t=(e.textContent||'').trim(); if (t) window.__c7dBan.push(t); }).observe(e, { childList:true, subtree:true, characterData:true }); return 1; })()`);
 /* premove → [다음 날] → 지갑을 이사비 + 2,780(probe_b2_unpack 과 같은 손질) → [원룸으로 이사] */
 await page.eval(`(()=>{ const b=document.getElementById('next'); b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})); b.click(); return 1; })()`, false);
 await sleep(1500); await page.eval(`(()=>{ const g=document.getElementById('mealGo'); if (g && g.offsetParent) g.click(); return 1; })()`, false);
@@ -41,11 +45,15 @@ for (let i = 0; i < 6; i++) {
   await sleep(1200); await dlgOnly();
 }
 await sleep(6000); await page.waitFor('!!window.__rv', 240000, 500); await sleep(3000); await dlgOnly();
+{ const ban = await J(`(window.__c7dBan || [])`);
+  console.log('  ㉲ 이사 배너', JSON.stringify((Array.isArray(ban) ? ban : []).filter(t => /내 집|가계부/.test(t)).slice(0, 3)));
+  ok(Array.isArray(ban) && ban.some(t => t.includes('할 일 탭과 가계부에서 내 집 마련까지 얼마인지 볼 수 있습니다')) && !ban.some(t => /\[방\] 판과 가계부에서/.test(t)),
+     '㉲ 원룸 도착 배너 아래 줄 «할 일 탭과 가계부에서 내 집 마련까지 얼마인지 볼 수 있습니다»', JSON.stringify((Array.isArray(ban) ? ban : []).filter(t => /가계부/.test(t)).slice(0, 3))); }
 await J(`(()=>{ try { window.__byeotSheet.close(); } catch (e) { void e; } return 1; })()`); await sleep(1500); await bannerOff();
 const H = `(async()=>{ try { window.__byeotHint(); } catch (e) { void e; } await new Promise(r=>setTimeout(r,900)); const h=document.getElementById('hint'), t=document.querySelector('.hintTarget');
   if (!t || !h.classList.contains('on')) return { on: h.classList.contains('on'), none: true };
   const q=t.getBoundingClientRect(); const hit=document.elementFromPoint(q.left+q.width/2, q.top+q.height/2);
-  return { on: true, tid: t.id || null, inSheet: !!t.closest('#sheet'), cell: !!t.closest('.bagslot'), r: [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)],
+  return { on: true, tid: t.id || null, act: t.getAttribute('data-act'), inSheet: !!t.closest('#sheet'), cell: !!t.closest('.bagslot'), r: [Math.round(q.left),Math.round(q.top),Math.round(q.right),Math.round(q.bottom)],
     hitIsT: !!hit && (hit === t || t.contains(hit)), hit: hit ? (hit.id || hit.tagName + '.' + (hit.className||'').toString().slice(0,24)) : null, say: (h.querySelector('.say')||{}).textContent,
     sheetOpen: document.getElementById('sheet').classList.contains('open') }; })()`;
 const a = await J(H);
@@ -76,6 +84,25 @@ const d = await J(H);
 console.log('  ㉱ 다시 연 뒤', JSON.stringify(d));
 if (OUT) await page.shot(`${OUT}/390_c7d_reopen.png`);
 ok(!d.탈 && d.on && d.cell && d.hitIsT && (d.r[1] + d.r[3]) / 2 > 0 && (d.r[1] + d.r[3]) / 2 < 844, '㉱ 가방을 다시 열면 손가락이 판 안 칸을 보이게 짚는다(그 칸 가운데가 화면 안 · 가운데에서 그 칸이 잡힘)', JSON.stringify(d));
+/* ★ 11-03 8C5(총괄 가름) — ㉱ 는 몬스테라 차례(그루 → 삽수 → 이삿짐 순)라 단추 차례가 아니다 ⇒ 사람 손으로 몬스테라 · 삽수를 [누름] → [확인]해 이삿짐 차례에 닿은 뒤
+     손가락은 머리줄 [한꺼번에 놓기 (N개)] 단추(N ≥ 2 · 판 안 · 보이게 · 가운데에서 그 단추가 잡힘) */
+const steps = [];
+for (let k = 0; k < 8; k++) {
+  const left = await J(`(()=>({ pot: document.querySelectorAll('#bagGrid [data-potbag]').length, cut: document.querySelectorAll('#bagGrid .bagslot[data-place^="cutting:"]').length }))()`);
+  steps.push(left);
+  if (left.탈 || (left.pot + left.cut) === 0) break;
+  await page.eval(`(()=>{ const c=document.querySelector('#bagGrid [data-potbag], #bagGrid .bagslot[data-place^="cutting:"]'); if (c) c.click(); return 1; })()`, false);
+  await sleep(2400);
+  await page.eval(`(()=>{ const b=document.getElementById('placeOk'); if (b && b.offsetParent) b.click(); return 1; })()`, false);
+  await sleep(2200); await dlgOnly(); await bannerOff();
+  await page.eval(`(()=>{ if (!document.getElementById('sheet').classList.contains('open')) document.getElementById('openBag').click(); return 1; })()`, false); await sleep(1600);
+}
+const boxN = await J(`(()=>{ const b=document.querySelector('#bagGrid [data-act="boxAll"]'); return b ? +(((b.textContent||'').match(/[0-9]+/)||[])[0] || 0) : 0; })()`);
+const e = await J(H);
+console.log('  ㉳ 이삿짐 차례', JSON.stringify({ steps, boxN, e }));
+if (OUT) await page.shot(`${OUT}/390_c7d_boxall.png`);
+ok(!e.탈 && boxN >= 2 && e.on && e.act === 'boxAll' && e.inSheet && e.hitIsT && (e.r[1] + e.r[3]) / 2 > 0 && (e.r[1] + e.r[3]) / 2 < 844,
+   '㉳ 이삿짐 차례(시루 · 판 둘 이상)엔 손가락이 [한꺼번에 놓기 (N개)] 단추를 보이게 짚는다(단추 가운데가 화면 안 · 가운데에서 그 단추가 잡힘)', JSON.stringify({ boxN, e }));
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
 try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }
 console.log(bad ? `probe_critic7_d: 빨강 ${bad}` : 'probe_critic7_d: 다 통과');

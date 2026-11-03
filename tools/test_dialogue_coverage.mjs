@@ -38,6 +38,7 @@ import assert from 'node:assert';
 import { readFileSync, existsSync } from 'node:fs';
 import { chatterContext as chatterContextOf } from '../src/game/dialogue.js';   /* ★ D78 귀띔 조건 */
 import { CARE_SCRIPT } from '../src/game/dialogue.js';                         /* ★ D72 B 돌봄 고장 대사 지도 */
+import { pickStatus } from '../src/game/dialogue.js';                           /* ★ 11-03 plan §12 ㉣ 되풀이 자(sameAs) */
 import { JOB_REST_TODO, questOf } from '../src/game/quest.js';                 /* ★ D72 D 나머지 쉬는 중 글 · D85 간판 줄 kept */
 import { SHOP_JOB } from '../src/game/job_shop.js';                            /* ★ D72 D 나머지 칭호(core 값과 같은 말) */
 import { CARE_JOB } from '../src/game/job_care.js';
@@ -671,6 +672,8 @@ check('데이터 — 대사마다 «부르는 자리»가 있다 («불린다»�
     'jobSwitch', 'jobSwitchCare', 'jobSwitchBreed', 'jobBack', 'shopOpenKept', 'careOpenKept',
     /* ★ 2026-10-24 [plan] D85 ③ — 간판 한 자리 갈림(scriptOf): 10 이정표 signKept · 간판 줄 kept */
     'shopSignKept', 'careMilestone10Kept', 'questShopSignKept', 'questDoneShopSignKept', 'questCareSignKept', 'questDoneCareSignKept',
+    /* ★ 11-03 plan §13 ㉤(총괄 가름 B) — al_winter 막힘이 그날 철(ev.season)로 갈림(scriptOf · 겨울 밖) */
+    'careStuckAlWinterOff',
     ...Object.values(CARE_SCRIPT).flatMap(m => [m.new, m.stuck, m.saved])
   ]);
   const dead = Object.keys(SCRIPTS).filter(id => !used.has(id) && !NOT_YET_USED.has(id));
@@ -1424,6 +1427,121 @@ check('대사 — 몬이 말이 놓기 확인 바 빛 낱말과 같음: 창턱 �
                     'moveLowCash', 'varieHalfMoon', 'questOneroomHomeFund'])
     for (const l of SCRIPTS[id]) if (l.who === 'moni')
       assert.ok(!/[0-9]|하나|(^|[^거])둘(?! 다)|셋|넷|다섯|이레|하루/.test(l.text), `'${id}' 몬이가 수를 말합니다: ${l.text}`);   /* «둘 다»만 예외(몬이 규칙) */
+});
+
+/* ★ 11-03 비판 8판 §13 ㉨ S21(총괄 가름) — 이정표와 할 일 끝을 따로 여는 손([돌려준다] · 납품 · 품종 등록 · 하루 넘김 뒤 §checkQuests)에서
+     같은 두 줄이 잇달아 두 번 섰다(probe_critic8_s21 · 돌봄 30). 묶음을 건넌 짝은 «오늘 선 id»(lastDay)로 거른다 —
+     (ㄱ) 글이 같은 짝이면 나중 것 · (ㄴ) 나중 것이 이정표면 이정표. 그 밖(이정표 먼저 · 글 다른 할 일 끝 뒤)은 둘 다 */
+const S21_S = { day: 721 };
+const s21q = sid => (Object.entries(QUEST_DONE_SCRIPT).find(([, v]) => v === sid) || [])[0];
+check('대사 — S21 (가) 같은 글 짝이 묶음 둘로 나뉘면 한 번(돌봄 30 · 품종 1 · 단골 3 · 하루 넘김 뒤 할 일 끝도)', () => {
+  for (const [ev, qd] of [[{ id: 'care_milestone', n: 30 }, 'questDoneCareTown'], [{ id: 'breed_milestone', n: 1 }, 'questDoneBreedFirstVariety'],
+                          [{ id: 'regulars_milestone', n: 3 }, 'questDoneShopRegulars3']]) {
+    const st = createStoryteller(); const a = st.events([ev], S21_S), b = st.events([{ id: 'quest_done', questId: s21q(qd) }], S21_S);
+    assert.equal(a.length, 1, `${ev.id} 이정표가 안 섬: ${a.join(',')}`);
+    assert.deepEqual(b, [], `같은 글 «${qd}»가 같은 날 두 번 섭니다(이정표 ${a.join(',')} 뒤)`);
+  }
+  const st = createStoryteller(); const a = st.turn({ day: 721, events: [{ id: 'care_milestone', n: 30 }] }, S21_S), b = st.events([{ id: 'quest_done', questId: 'care_town' }], S21_S);
+  assert.deepEqual([a, b], [['careMilestone30'], []], `하루 넘김 뒤 같은 글이 또 섭니다: ${JSON.stringify([a, b])}`);
+  /* 한 묶음 안 규칙(D59 «퀘스트 끝만»)은 그대로 */
+  assert.deepEqual(createStoryteller().events([{ id: 'care_milestone', n: 30 }, { id: 'quest_done', questId: 'care_town' }], S21_S), ['questDoneCareTown']);
+  assert.deepEqual(createStoryteller().events([{ id: 'regulars_milestone', n: 10 }, { id: 'quest_done', questId: 'shop_sign' }], S21_S), ['questDoneShopSign']);
+});
+check('대사 — S21 (나) 이정표 shopSign 먼저 · 글이 다른 할 일 끝 questDoneShopSign 뒤 → 둘 다 선다(«달자 → 달았다»)', () => {
+  for (const [ev, q, want] of [[{ id: 'regulars_milestone', n: 10 }, 'shop_sign', ['shopSign', 'questDoneShopSign']],
+                               [{ id: 'care_milestone', n: 10 }, 'care_sign', ['careMilestone10', 'questDoneCareSign']]]) {
+    const st = createStoryteller(); const a = st.events([ev], S21_S), b = st.events([{ id: 'quest_done', questId: q }], S21_S);
+    assert.deepEqual([...a, ...b], want, `글이 다른 짝(이정표 먼저)이 걸러졌습니다: ${JSON.stringify([a, b])}`);
+  }
+});
+check('대사 — S21 (다) 할 일 끝 먼저 · 이정표 뒤 → 이정표를 거른다(«했다» 뒤 «하자!»는 거꾸로)', () => {
+  const st = createStoryteller(); const a = st.events([{ id: 'quest_done', questId: 'shop_sign' }], S21_S), b = st.events([{ id: 'regulars_milestone', n: 10 }], S21_S);
+  assert.deepEqual([a, b], [['questDoneShopSign'], []], `할 일 끝 뒤 이정표가 섭니다: ${JSON.stringify([a, b])}`);
+});
+check('대사 — S21 (라) 다시 켠 같은 날(세이브 talk.lastDay 로 되돌린 이야기꾼)도 거르고 · 이튿날은 막지 않는다', () => {
+  const st = createStoryteller(); st.events([{ id: 'care_milestone', n: 30 }], S21_S);
+  const ld = st.lastDays();
+  assert.equal(ld.careMilestone30, 721, '턴 밖 사건이 «오늘 선 날»로 안 적힙니다');
+  assert.deepEqual(createStoryteller({ lastDay: ld }).events([{ id: 'quest_done', questId: 'care_town' }], S21_S), [], '다시 켠 같은 날 같은 글이 또 섭니다');
+  assert.deepEqual(createStoryteller({ lastDay: ld }).events([{ id: 'quest_done', questId: 'care_town' }], { day: 722 }), ['questDoneCareTown'], '이튿날까지 막습니다');
+});
+
+/* ★ 11-03 plan §13 ㉤(총괄 가름 B) — al_winter 는 대사가 서는 그날 철로 가른다 · clue · ko 에서 «겨울에»를 뺀다 */
+check('대사·데이터 — al_winter 막힘 · 나음은 그날 철: 겨울 밖 «밝은 데 두면 깨» · 봄 밖 «다시 깨어났다.»(plan §13 ㉤)', () => {
+  const f = (id, season) => scriptsForEvents([{ id, problem: 'al_winter', season }]);
+  assert.deepEqual(f('care_stuck', 'autumn'), ['careStuckAlWinterOff']);
+  assert.deepEqual(f('care_stuck', 'winter'), ['careStuckAlWinter']);
+  assert.deepEqual(f('care_saved', 'spring'), ['careSavedAlWinter']);
+  assert.deepEqual(f('care_saved', 'autumn'), ['careSavedAlDark']);
+  assert.deepEqual(f('care_saved', 'winter'), ['careSavedAlDark']);
+  assert.deepEqual(f('care_new', 'autumn'), ['careNewAlWinter']);
+  assert.deepEqual(scriptsForEvents([{ id: 'care_stuck', problem: 'al_dark', season: 'winter' }]), ['careStuckAlDark'], '다른 고장까지 철로 갈립니다');
+  assert.deepEqual(SCRIPTS.careStuckAlWinterOff.map(l => [l.who, l.text]), [['moni', '죽은 거 아니야. 밝은 데 두면 깨.']]);
+  const T = JSON.parse(readFileSync(new URL('../data/balance/care_problems.json', import.meta.url), 'utf8'));
+  const aw = T.problems.find(p => p.id === 'al_winter');
+  assert.ok(aw && aw.clue === '잎이 다 녹았다며 버리기 전에 맡겼다.' && aw.ko === '잎이 다 녹음', JSON.stringify(aw && { clue: aw.clue, ko: aw.ko }));
+});
+
+/* ★ 11-03 plan §14 — 간판 한 자리 이정표 둘째 줄: 이정표 «…몫도 하겠어» → 배너 «…몫도 합니다» → 할 일 끝 «…몫도 한다»로 세 번 이어졌다 */
+check('대사 — 간판 한 자리 이정표 둘째 줄은 «있는 간판을 같이 쓰자!» · 이어 서는 짝에서 «몫도»는 한 번 · 간판 없는 판은 그대로(plan §14)', () => {
+  for (const [ms, qd] of [['shopSignKept', 'questDoneShopSignKept'], ['careMilestone10Kept', 'questDoneCareSignKept']]) {
+    const mo = SCRIPTS[ms].filter(l => l.who === 'moni');
+    assert.deepEqual(mo.map(l => [l.face, l.text]), [['cheer', '있는 간판을 같이 쓰자!']], `'${ms}' 둘째 줄`);
+    const n = [...SCRIPTS[ms], ...SCRIPTS[qd]].filter(l => /몫도/.test(l.text)).length;
+    assert.equal(n, 1, `'${ms}' → '${qd}' 에 «몫도»가 ${n}번`);
+  }
+  assert.equal(SCRIPTS.shopSignKept[0].text, '단골이 꽤 늘었다.');
+  assert.equal(SCRIPTS.careMilestone10Kept[0].text, '돌려준 화분이 꽤 쌓였다.');
+  assert.ok(SCRIPTS.shopSign.some(l => l.text === '간판을 달자!') && SCRIPTS.careMilestone10.some(l => l.text === '간판을 세우자!'), '간판 없는 판 이정표가 바뀌었습니다');
+});
+
+/* ★ 11-03 plan §12 ㉣ — 되풀이 상태 줄: 게이지는 한 판에 한 번 · 기다림 줄 다섯은 진로 판(movedHome)에서 쉼 · 짐 풀기 «자리 없음» 판의 가방 채소 줄은 30일 */
+check('대사 — 되풀이 상태 줄: 게이지 한 판에 한 번 · 기다림 줄 다섯은 집을 산 뒤 쉼 · 가방 채소 «자리 없음» 판은 30일 · 수확 «열 번은 · 서른 번은»(plan §12 ㉣)', () => {
+  const rule = id => CHATTER.find(r => r.id === id);
+  const on = (id, c) => { try { return !!rule(id).when(c); } catch { return false; } };
+  /* 게이지 — 반지하는 지금과 같다(gap 120) · 나온 뒤는 statusGaugeOut 한 번(반지하에서 난 날도 함께 셈) */
+  const G = { hasMonstera: true, arrivedOnDay: 5, zoomOpenedSinceArrival: false };
+  assert.equal(rule('statusGauge').gap, 120);
+  assert.equal(on('statusGauge', { ...G, day: 200, movedOut: false }), true, '반지하 게이지가 안 섭니다');
+  assert.equal(on('statusGauge', { ...G, day: 200, movedOut: true }), false, '나온 뒤에 반지하 게이지(gap 120)가 섭니다');
+  assert.equal(on('statusGaugeOut', { ...G, day: 200, movedOut: true }), true);
+  assert.equal(rule('statusGaugeOut').gap, 9999);
+  assert.deepEqual(SCRIPTS.statusGaugeOut, SCRIPTS.statusGauge.filter(l => l && l.text), '나온 뒤 게이지 줄은 같은 글');
+  assert.notEqual(pickStatus({ ...G, day: 400, movedOut: true }, { statusGauge: 10 }), 'statusGaugeOut', '반지하에서 선 게이지가 나온 뒤 또 섭니다');
+  assert.equal(pickStatus({ ...G, day: 130, movedOut: false }, { statusGauge: 10 }), 'statusGauge', '반지하 게이지 간격(120)이 바뀌었습니다');
+  const W = { hasMonstera: true, growStreak: 7, newLeafToday: false, youngestLeafM: 0.6, leafWaitDays: 8, harvestedToday: true, harvestsSinceArrival: 2 };
+  for (const [id, extra] of [['statusStreak', {}], ['statusLeafWide', { leaves: 1 }], ['statusLeafWide2', { leaves: 2 }], ['statusSiruVs', { leaves: 1 }], ['statusSiruVs2', { leaves: 2 }]]) {
+    assert.equal(on(id, { ...W, ...extra, movedHome: false }), true, `'${id}' 가 반지하 · 원룸 판에서 안 섭니다`);
+    assert.equal(on(id, { ...W, ...extra, movedHome: true }), false, `'${id}' 가 진로 판에서 섭니다`);
+  }
+  const B = { bagCrops: 2, movedOut: true, daysInOneroom: 40 };
+  assert.equal(on('statusBagCrops', { ...B, unpackNoSpot: false }), true);
+  assert.equal(on('statusBagCropsNoSpot', { ...B, unpackNoSpot: false }), false);
+  assert.equal(on('statusBagCrops', { ...B, unpackNoSpot: true }), false);
+  assert.equal(on('statusBagCropsNoSpot', { ...B, unpackNoSpot: true }), true);
+  assert.deepEqual(SCRIPTS.statusBagCropsNoSpot, SCRIPTS.statusBagCrops, '«자리 없음» 판 줄은 같은 글이어야 합니다');
+  /* 간격 — 같은 글 두 id 가 마지막 난 날을 함께 센다(어제 난 statusBagCrops 뒤 열흘에 NoSpot 이 서지 않음 · 30일 뒤엔 섬) */
+  const ctxAt = day => ({ ...B, unpackNoSpot: true, day });
+  assert.notEqual(pickStatus(ctxAt(110), { statusBagCrops: 100 }), 'statusBagCropsNoSpot', '같은 글이 열흘 만에 다시 섭니다');
+  assert.equal(pickStatus(ctxAt(131), { statusBagCrops: 100 }), 'statusBagCropsNoSpot');
+  assert.equal(chatterContextOf({ day: 5, unpackNoSpot: true }, null).unpackNoSpot, true, '문맥이 turn.unpackNoSpot 을 못 읽습니다');
+  assert.equal(SCRIPTS.statusHarvest10[0].text, '시루를 열 번은 열었다.');
+  assert.equal(SCRIPTS.statusHarvest30[0].text, '콩나물을 서른 번은 거뒀다.');
+});
+
+/* ★ 11-03 plan §13 ㉠ · ㉢ · ㉥ · ㉧ — 새 글(몬이 줄은 25자 안 · 수 없음) */
+check('대사 — 돌봄 짐 풀기 «손님 화분도 벌써 왔어» · 엔딩 «문 열자마자» · 가게 끝맺음 «하나씩 늘려 온» · 육종 첫 표본 셋(plan §13)', () => {
+  assert.deepEqual(SCRIPTS.questCareUnpack.filter(l => l.who === 'moni').map(l => l.text), ['손님 화분도 벌써 왔어.', '가방에 둬도 기한은 가. 같이 놓자.']);
+  assert.ok(SCRIPTS.endingHome.some(l => l.text === '문 열자마자 그 말이 나오네.') && !SCRIPTS.endingHome.some(l => /들어오자마자/.test(l.text)));
+  assert.ok(SCRIPTS.shopEnding.some(l => l.text === '하나씩 늘려 온 그루들이다.') && !SCRIPTS.shopEnding.some(l => /선반마다/.test(l.text)));
+  assert.deepEqual(SCRIPTS.questBreedFirstSample.map(l => l.text), ['무늬 삽수, 핑크프린세스 잎, 구근 싹.', '그게 나면 저절로 적혀. 어디서 났는지도.']);
+  for (const id of ['questCareUnpack', 'questBreedFirstSample', 'careStuckAlWinterOff', 'shopSignKept', 'careMilestone10Kept'])
+    for (const l of SCRIPTS[id]) if (l.who === 'moni') assert.ok(l.text.length <= 25 && !/[0-9]/.test(l.text), `'${id}' 몬이 줄: ${l.text}`);
+  const B = JSON.parse(readFileSync(new URL('../data/balance/breed_slots.json', import.meta.url), 'utf8'));
+  assert.equal(B._ui.empty, '아직 적은 것이 없습니다 — 무늬 마디 삽수 · 핑크프린세스의 새 잎과 구근의 싹이 저절로 적힙니다');
+  const F = JSON.parse(readFileSync(new URL('../data/furniture_presets.json', import.meta.url), 'utf8'));
+  const sd = (F.presets || F).shop_display;
+  assert.equal(sd && sd.name_ko, '진열대', '진열대 이름(plan §12 ㉡)');
 });
 
 /* ── 보고 ─────────────────────────────────────────────────────────────── */

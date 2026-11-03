@@ -6,6 +6,7 @@
      ㉯ 다른 줄을 누르면 그 칸으로 옮겨짐(세이브 slotId) · 알림 «… 옮겼습니다»
      ㉰ 알로카시아(새 종)도 같은 길 — 제목 «알로카시아 — 어디에 둘까요» · 옮겨짐
      ㉱ 몬스테라 화분 [📍 자리]는 예전 그대로(제목 «어디에 둘까요» · 몬스테라 목록)
+       (11-03 §12 ㉶ 투룸 가방 이름이 «몬스테라 {n}» — 칸은 글 대신 data-potbag="pot_01" 로 콕 집고 · 없으면 «칸 없음» 빨강으로 끝)
      ㉲ §11(plan a8f0d8bf ㉡) — 옮긴 뒤 아래 줄 · 기록: 삽수 «삽수는 그날 빛으로 판정해 다음 날 바로 새 자리 값이 됩니다» · «🪴 삽수를 …» / 새 종 «빛 판정은 7일 평균이라 …» · «🪴 알로카시아를 …»
      예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
@@ -72,7 +73,9 @@ ok(!d.탈 && /빛 판정은 7일 평균이라/.test(d.ev) && (d.log || []).some(
 await bannerOff();
 /* ═══ ㉱ 몬스테라는 예전 그대로 ═══ */
 await J(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`); await sleep(1200); await settle();
-await J(`(()=>{ const c=[...document.querySelectorAll('#pageBag .bagslot')].find(e=>/축복받은/.test(e.textContent||'')); if (c) c.click(); return !!c; })()`); await sleep(2200); await settle();
+const pf = await J(`(()=>{ const c=document.querySelector('#pageBag .bagslot[data-potbag="pot_01"]'); if (c) c.click(); return !!c; })()`);
+if (pf !== true) { ok(false, '㉱ 칸 없음 — 가방에 [data-potbag="pot_01"] 칸이 없습니다(몬스테라를 못 집음)', JSON.stringify(pf)); try { await page.close(); } catch (e2) { void e2; } console.log(`\nprobe_critic8_d: 빨강 ${bad}`); process.exit(1); }
+await sleep(2200); await settle();
 await J(`(()=>{ const b=document.getElementById('placeOk'); if (b && b.offsetParent) b.click(); return 1; })()`); await sleep(1500); await dlg(); await bannerOff();
 const pk = await keyOf('pot_01');
 const e = await openWhere(pk);

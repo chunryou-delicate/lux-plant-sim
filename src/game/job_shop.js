@@ -117,12 +117,12 @@ export function jobHeadOf(S) {
   const J = jobShopOf(S), title = shopEndedOn(S) != null ? SJ.ending.titleKo : null;
   return { title, regulars: J.regulars.length, ko: `${title || '식물 가게'} · 단골 ${J.regulars.length}명` };
 }
-/* 방에 놓인 그루 수 — 몬스테라 화분 + 놓인 삽수(죽지 않은) + 놓인 새 종 */
+/* 방에 놓인 그루 수 — 몬스테라 화분 + 놓인 삽수(죽지 않은) + 놓인 새 종(★ 11-03 plan §13 ㉥ — 맡은 화분 q.care 는 손님 것이라 «늘려 온»에 안 넣는다) */
 function placedPlantsOf(S) {
   const placed = x => !!(x && (x.slotId || x.at));
   return (S.pots || []).filter(placed).length
        + (S.cuttings || []).filter(c => c && c.status !== 'dead' && placed(c)).length
-       + speciesPotsOf(S).filter(placed).length;
+       + speciesPotsOf(S).filter(q => placed(q) && !q.care).length;
 }
 /* 끝맺음 — 단골 30 이 된 날(이정표 날) 뒤 첫 하루 넘김에서 한 번(옛 세이브가 이미 넘었으면 불러온 뒤 첫 하루 넘김) */
 function shopEndingStep(S, J, day) {
@@ -253,6 +253,13 @@ export function shopSources(S, ctx = {}) {
     varieEst: est.some(c => gradeRankOfCutting(c) >= 1),
     maxLeaves: Math.max(0, ...est.map(leavesOfCutting))
   };
+}
+
+/* ★ 11-03 plan §13 ㉦ — 빈 주문판 «손님이 곧 옵니다»가 참인가: 하루 굴림(§stepShopJob · §rollOrder)이 이 판으로 낼 수 있는 주문이 하나라도 있나
+     (kind 깃발 · 그 kind 에 맞는 tier 가 하나라도) — ctx 는 하루 굴림과 같은 것(loop §shopSourceCtxOf) */
+export function shopHasSource(S, ctx = {}) {
+  const src = shopSources(S, ctx);
+  return KINDS.some(k => src[k] && ['easy', 'normal', 'hard'].some(t => needFor(k, t, src, 0) || needFor(k, t, src, 0.99)));
 }
 
 /* ── 주문 하나 짓기(kind · tier · need) ─────────────────────────────── */

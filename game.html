@@ -613,6 +613,7 @@
   /* ★ 2026-11-01 비판 넷째 판 ⑥ — 줄 안 단추는 제 폭(전역 .primary 의 width:100% · margin-top 이 [분갈이]를 줄 폭으로 늘렸다 · 포트 없을 때 [내놓기]가 밖으로) */
   .cutRow button{width:auto;flex:0 0 auto;margin-top:0;white-space:nowrap}
   .cutRow .nm small{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
+  .cutWhy{font-size:11px;line-height:1.4;color:rgba(240,160,140,.95);margin:-2px 6px 6px 12px}
   .cutRow .won{font-weight:700;font-size:12.5px;color:var(--gold);white-space:nowrap;text-align:right}
   /* ★★ 2026-08-23 — **자르면 모주가 얼마 깎이나** (plan 판단 · 「막지 않고 대가를 보여 준다」).
      급전은 대가를 치르는 것이 본질이다 — 대가를 숨기면 함정이고 보여 주면 기능이다. */
@@ -3570,7 +3571,7 @@ const endingOn = () => !!(ENDING_NOW && Number.isFinite(ENDING_NOW.targetWon));
    걷었다). loop.js 에는 그대로 있다 — 헤드리스 재현·밸런스 측정이 그 길로 돈다.
    ⚠ `runDays` 는 **빨리감기가 아니다.** 타이머 없이 `nextDay` 를 n번 도는 동기 함수이고,
      [검수]의 [30일 자동] 하나가 쓴다(플레이어 화면에 없다). 그래서 남긴다. */
-import { nextDay, runDays, avg, rollingAvg, harvestCrop, lightOptsOf, NO_GROW_BANDS, speciesDropInfoOf, careSpotsOf, selectPlantFor } from './src/game/loop.js';
+import { nextDay, runDays, avg, rollingAvg, harvestCrop, lightOptsOf, NO_GROW_BANDS, speciesDropInfoOf, careSpotsOf, selectPlantFor, shopSourceCtxOf, careSourceCtxOf } from './src/game/loop.js';
 import { renderHUD, renderLog, renderReport, renderSpark } from './src/game/ui.js';
 /* 체력 — 값만 읽는다. 규칙도 문구도 여기서 짓지 않는다(docs/stamina.md) */
 import { staminaView, staminaRulesFrom, takeLevelUps, xpNeededAt,
@@ -4004,6 +4005,7 @@ function fillLamps() {
 /* ★ 2026-11-01 비판 넷째 판 ⑧ — 프리셋 이름(name_ko «선반-다단-3단»)이 배너에 그대로 나왔다 · 자리 이름표와 같은 사람 말(아래 표)로 */
 function furnKoOfPreset(preset) { const p = String(preset || ''); const hit = FURN_KO.find(([k]) => p.includes(k)); return hit ? hit[1] : null; }
 const FURN_KO = [
+  ['shop_display', '진열대'],   /* ★ 11-03 여섯째 묶음(총괄 · plan §12 ㉡) — 칸 이름 «가구 N번 칸» → «진열대 N번 칸» */
   ['sill', '창턱 화분받침'], ['etagere', '3단 선반'], ['ladder', '사다리 선반'],
   ['growrack', '재배 선반'], ['cart', '이동 선반'], ['shelf_low', '낮은 선반'], ['shelf', '선반'],
   ['plant_step', '화분 계단'], ['pedestal', '화분 받침대'], ['nightstand', '협탁'],
@@ -7166,7 +7168,10 @@ function updateHint() {
       if (potDarkFinger()) return;
       const siruCell = $('bagGrid') && $('bagGrid').querySelector('[id="cropThumb"], [id="musunThumb"]');
       /* ★ 2026-10-31 총괄 D92 — 이삿짐이 먼저다(돌던 것 · 가방에선 멈춤) — 말은 할 일 줄과 같은 말([plan] oneroom_unpack «들고 온 채소를 가구 위에 올리세요») */
-      const boxCell = $('bagGrid') && $('bagGrid').querySelector('[data-boxpot]');
+      /* ★ 11-03 여섯째 묶음 8C5(총괄 가름 · D95 덜 귀찮게) — 이삿짐 시루 · 판이 둘 이상이면(머리줄 [한꺼번에 놓기 (N개)]가 선 때만) 그 단추를 짚는다.
+           하나뿐이면 예전대로 그 칸 · 삽수 차례(«들고 온 삽수부터 창가에»)는 위 갈래가 그대로 삽수 칸 */
+      const boxAllBtn = $('bagGrid') && $('bagGrid').querySelector('[data-act="boxAll"]');
+      const boxCell = boxAllBtn || ($('bagGrid') && $('bagGrid').querySelector('[data-boxpot]'));
       try { if (sheetShown() && boxN > 0 && boxCell && boxCell.offsetParent && !onScreen(boxCell)) boxCell.scrollIntoView({ block: 'center' }); } catch { }
       if (boxN > 0 && onScreen(boxCell) && !sheetCovers(boxCell)) return hintAt(boxCell, '들고 온 채소를 가구 위에 올리세요');
       if ((siruN + trayN) > 0) seeBag(siruCell);   /* ★ 7C3 */
@@ -9047,7 +9052,8 @@ function drawCuttings() {
     mine.push('<div class="cutRow' + (dying || (lst && lst.status === 'contacted') ? ' warn' : '') +
       '"><div class="nm">' +
       v.containerKo + ' · 잎 ' + v.leaves + '장' + (v.variegated ? ' · 무늬' : '') +
-      '<small>' + why + (dying && v.daysLeft != null ? ' · ★분갈이까지 ' + v.daysLeft + '일' : '') +
+      /* ★ 11-03 plan §12 ㉦ — «남은 날»(deadlineDay − 오늘)과 아래 «혹이 난 날부터 {grace}일»이 다른 것을 센다는 것이 낱말로 드러나게 */
+      '<small>' + why + (dying && v.daysLeft != null ? (v.daysLeft > 0 ? ' · ★ 분갈이 남은 날 ' + v.daysLeft + '일' : ' · ★ 오늘 분갈이해야 삽니다') : '') +
       '</small></div>' +
       (dying ? '<button class="primary" data-repot="' + c.id + '"' +
                (havePot ? '' : ' disabled title="검은 모종포트를 먼저 주문하세요"') +
@@ -9057,7 +9063,9 @@ function drawCuttings() {
       (lst ? '<div class="won">' + lst.won.toLocaleString() + '원</div>' +
              '<button class="ghost" data-unlist="' + lst.listingId + '">내리기</button>'
            : (canSell ? '<button class="ghost" data-list="' + c.id + '">내놓기 ' +
-                        sellWon.toLocaleString() + '원</button>' : '')) + '</div>');
+                        sellWon.toLocaleString() + '원</button>' : '')) + '</div>' +
+      /* ★ 11-03 plan §12 ㉦ — 회색 [분갈이] 까닭은 title 뿐이라 폰에서 안 보였다 · 줄 밑에 한 줄(방에 안 쓴 빈 검은 모종포트가 있으면 거두는 길) */
+      (dying && !havePot ? '<div class="cutWhy">' + repotNoPotKo() + '</div>' : ''));
     /* ★ 2026-10-08 — 자리 잡은 삽수면 «이 삽수에서 자를 마디»를 바로 밑에(§doCutFrom).
          ⚠ 올려 둔 삽수는 안 낸다 — 값이 올릴 때 얼므로 잎을 떼면 «떼어 팔기 이득»이 돌아온다(모주 §내놓은 그루와 같은 문) */
     if (v.status === 'established' && !lst) {
@@ -9102,8 +9110,8 @@ function drawCuttings() {
      합니다」**로 고쳤다 — 재서 확인한 것: 초보 유예 16일 · 자유 8일이라 둘 다 7일보다 길어
      탈출구가 **닫히지는 않는다.** 다만 **미루면 못 판다** — 그 말을 화면이 해야 한다. */
   $('cutHint').textContent = dyingN
-    ? ('⚠ 분갈이를 기다리는 삽수 ' + dyingN + '개 — 유예 ' +
-       graceDaysOf('water', novice) + '일을 넘기면 시들어 사라집니다. ' +
+    ? ('⚠ 분갈이를 기다리는 삽수 ' + dyingN + '개 — 혹이 난 날부터 ' +
+       graceDaysOf('water', novice) + '일 안에 분갈이하지 않으면 시들어 사라집니다. ' +   /* ★ 11-03 plan §12 ㉦ */
        '포트를 못 사면 그 전에 중고 거래에 내놓으세요 — 삽수 값이 포트값보다 높습니다. ' +
        '연락은 ' + marketWaitKo() + ', 미루면 시드는 쪽이 빠릅니다.')
     : ('물꽂이(병)는 ' + METHODS.water.rootDays + '일에 뿌리가 나고 ' +
@@ -9742,7 +9750,9 @@ function drawBag() {
         waiting.map((p, i) => {
           /* ★ 2026-08-27 박사님: 이 그루는 「축복받은 몬스테라 삽수」다 —
              상점의 「몬스테라 씨앗」과 «같은 것으로 보이면» 안 된다. */
-          const ko = waiting.length > 1 ? `축복받은 몬스테라 삽수 ${i + 1}` : '축복받은 몬스테라 삽수';
+          /* ★ 11-03 plan §12 ㉠ — 도착은 반지하에서만 · 반지하를 나온 뒤엔 다른 화면과 같은 «몬스테라 {n}»(S.pots 차례 · §potNameKo) */
+          const ko = (S.home && S.home.room === 'banjiha')
+            ? (waiting.length > 1 ? `축복받은 몬스테라 삽수 ${i + 1}` : '축복받은 몬스테라 삽수') : potNameKo(p);
           const art = potThumbOf(p) || './assets/ui/item_monstera.png';
           /* ⚠⚠ 껍질(`.art`·`.nm`)을 **그대로** 써야 한다. 처음에 맨 `<img>`+`<small>` 로 썼더니
              `.bagslot .art img{width:100%;height:100%}` 규칙이 안 걸려 그림이 **원본 크기**로
@@ -10422,7 +10432,7 @@ function drawBuyPanel() {
     q.textContent =
       `돈이 모자랍니다 — 한 개에 ${unitWon.toLocaleString()}원인데 소지금이 ` +
       `${cash.toLocaleString()}원입니다 (${(unitWon - cash).toLocaleString()}원 모자랍니다). ` +
-      `채소를 팔거나 며칠 지나야 시킬 수 있습니다.`;
+      `돈이 들어오면 시킬 수 있습니다 — 채소는 상점에 팔면 바로 들어옵니다.`;   /* ★ 11-03 plan §13 ㉩ — 날이 가면 저절로 들어오는 돈은 없다 */
   } else {
     q.className = 'pquote';
     q.textContent =
@@ -12305,7 +12315,7 @@ function shopOrderRowsHtml(J) {
 function drawShopBoard(box) {
   const J = JOB.jobShopOf(S);
   const head = `<h4>🪧 주문판 · 단골 ${J.regulars.length}명</h4>`;
-  if (!J.orders.length) { box.innerHTML = head + `<div class="empty">지금 걸린 주문이 없습니다 — 손님이 곧 옵니다</div>`; return; }
+  if (!J.orders.length) { box.innerHTML = head + `<div class="empty">${boardEmptyKo('shop')}</div>`; return; }
   box.innerHTML = head + shopOrderRowsHtml(J);
   for (const b of box.querySelectorAll('[data-deliver]')) b.onclick = guard(() => detail.open('deliver', { orderId: b.dataset.deliver }));
 }
@@ -12357,6 +12367,11 @@ function openChapterEnd() {
   if (jc && endingDoneNow() && !JOB.hasJob(S)) {
     $('chapterEndTitle').textContent = JOB_KO.title;
     $('chapterEndSub').textContent = JOB_KO.sub;
+    /* ★ 11-03 plan §13 ㉣ — 벽 · 창 · 모서리 · 사다리 가구와 천장등은 안 따라간다(§carryFurnitureListNow) · 0 이면 줄 없음 */
+    try { const mc = moveCarryNow(), lv = mc ? mc.leave : 0;
+          if (lv > 0) { const s2 = document.createElement('span'); s2.className = 'jobLeave'; s2.style.display = 'block'; s2.style.marginTop = '4px';
+                        s2.textContent = MOVE_ASK_KO.leave.replace('{n}', lv); $('chapterEndSub').appendChild(s2); } }
+    catch (e) { console.warn('[진로 카드 두고 가는 것]', e && e.message); }
     jc.innerHTML = JOB_KO.cards.map(c => `<div class="job${c.go ? '' : ' soon'}"><b>${c.ko}</b><span>${c.sub}</span>` +
       (c.go ? `<button class="primary" type="button" data-job="${c.id}">${c.go}</button>` : '') + `</div>`).join('');
     jc.style.display = 'flex';
@@ -12442,10 +12457,38 @@ window.__byeotStartCare = () => startCareNow();   /* 재는 손잡이 */
 function drawCareBoard(box) {
   const J = CARE.jobCareOf(S);
   const head = `<h4>🩺 맡김판 · 살린 화분 ${J.saved}</h4>`;
-  if (!J.requests.length) { box.innerHTML = head + `<div class="empty">지금 맡은 화분이 없습니다 — 손님이 곧 옵니다</div>`; return; }
+  if (!J.requests.length) { box.innerHTML = head + `<div class="empty">${boardEmptyKo('care')}</div>`; return; }
   box.innerHTML = head + careRowsHtml(J);
   for (const b of box.querySelectorAll('[data-careret]')) b.onclick = guard(() => returnCareNow(b.dataset.careret));
 }
+/* ★ 11-03 plan §13 ㉦ — «손님이 곧 옵니다»는 원천이 있을 때만 참이다(가게 §shopSources · 돌봄 §careSources — 하루 굴림과 같은 함수 · 같은 ctx loop §shopSourceCtxOf · §careSourceCtxOf).
+     원천을 못 세면 예전 글(곧 옵니다) · 판이 바뀌는 자리(날 · 방 · 가구 · 삽수 · 새 종 · 걸린 수)가 같으면 다시 안 센다 */
+const BOARD_EMPTY_KO = Object.freeze({
+  shopSoon: '지금 걸린 주문이 없습니다 — 손님이 곧 옵니다',
+  shopNone: '지금 걸린 주문이 없습니다 — 보낼 수 있는 삽수나 그루가 생기면 손님이 옵니다',
+  careSoon: '지금 맡은 화분이 없습니다 — 손님이 곧 옵니다',
+  careNone: '지금 맡은 화분이 없습니다 — 지금 이 집 빛으로 고칠 수 있는 맡김이 없습니다'
+});
+let boardSrcMemo = { key: null, shop: null, care: null };
+function boardEmptyKo(kind) {
+  let has = null;
+  try {
+    const sig = [spotUseKey(), S.day, (S.cutOpenToday && S.cutOpenToday.n) || 0,
+                 (S.cuttings || []).map(c => c ? `${c.id}:${c.status}:${c.listing ? 1 : 0}` : '').join(','),
+                 SPC.speciesPotsOf(S).map(q => q ? `${q.id}:${q.care ? 1 : 0}:${((q.plant && q.plant.leaves) || []).length}:${q.plant && q.plant.phase}` : '').join(','),
+                 (S.pots || []).length, ((S.species && S.species.corms) || []).length].join('|');
+    if (boardSrcMemo.key !== sig) boardSrcMemo = { key: sig, shop: null, care: null };
+    if (boardSrcMemo[kind] == null) {
+      boardSrcMemo[kind] = kind === 'shop'
+        ? !!JOB.shopHasSource(S, shopSourceCtxOf(S, io, io.light.skyFor(S.day, S.sim)))
+        : CARE.careSources(S, careSourceCtxOf(S, io)).length > 0;
+    }
+    has = boardSrcMemo[kind];
+  } catch (e) { console.warn('[빈 판 원천]', e && e.message); has = null; }
+  if (kind === 'shop') return has === false ? BOARD_EMPTY_KO.shopNone : BOARD_EMPTY_KO.shopSoon;
+  return has === false ? BOARD_EMPTY_KO.careNone : BOARD_EMPTY_KO.careSoon;
+}
+window.__byeotBoardEmpty = (kind) => boardEmptyKo(kind || 'shop');   /* 재는 손잡이 */
 function careRowsHtml(J) {
   const esc = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const cust = id => JOB.shopCustomers().find(c => c.id === id) || { ko: id };
@@ -15134,6 +15177,21 @@ function halfSceneDue(revealedToday) {
 /* ⚠ 밴드 차례는 엔진(daily_light §judgeDLI)의 «빛 많은 쪽»이다: … slow < best < good < over. good·over 는 «빛이 넘친다»라
    「더 밝아졌다 = 더 잘 자란다」로 읽히지 않는다 — 그래서 critical…best 안에서 오를 때만 센다(good·over 는 표에 없다 → 안 울린다). */
 const BAND_RANK = ['critical', 'poor', 'stagnant', 'slow', 'best'];
+/* ★ 11-03 plan §12 ㉤ — 띠 앞 말 · 뒤 말(BAND_KO 는 [자세히] 줄에 그대로) */
+const BAND_UP_FROM_KO = Object.freeze({ critical: '멈춰 있다가', poor: '멈춰 있다가', stagnant: '멈춰 있다가', slow: '느리게 자라다가', good: '잘 자라다가' });
+const BAND_UP_TO_KO = Object.freeze({ slow: '느리게 자랍니다', good: '잘 자랍니다', best: '가장 잘 자랍니다' });
+/* ★ 11-03 plan §12 ㉠ · ㉤ — 몬스테라 화분 이름 한 곳: 둘 이상이면 S.pots 차례 + 1([자세히] 제목 · [📍 자리] 창 · 기록 줄과 같은 수) */
+function potNameKo(p) {
+  const pots = S.pots || [], idx = pots.indexOf(p);
+  return pots.length > 1 && idx >= 0 ? `몬스테라 ${idx + 1}` : '몬스테라';
+}
+/* ★ 11-03 plan §12 ㉦ — 포트가 없어 [분갈이]가 회색일 때 보이는 까닭 · 방에 안 쓴(usedOnDay 없음) 빈 검은 모종포트는 [📦 가방으로] 거두면 재고로 돌아온다 */
+function repotNoPotKo() {
+  let spare = false;
+  try { spare = ((S && S.emptyPots) || []).some(x => x && x.itemId === 'pot' && x.usedOnDay == null); } catch { spare = false; }
+  return spare ? '가방에 포트가 없습니다 — 방의 빈 포트를 눌러 [📦 가방으로] 거두면 씁니다'
+               : '가방에 포트가 없습니다 — 상점에서 검은 모종포트를 주문하세요';
+}
 let _prevPhase = null, _prevBand = null;
 const bandUpShown = new Set();                   /* 한 판·한 그루·한 밴드에 한 번 */
 /* 새 판에서 비운다 — 그루 id 는 판마다 pot_01 부터 다시라 bandUpShown 이 남으면 둘째 판 배너가 조용히 빠진다 */
@@ -15227,7 +15285,8 @@ function showFirstPlayEvents(turn) {
     const r0 = BAND_RANK.indexOf(_prevBand), r1 = BAND_RANK.indexOf(bd);
     if (r0 >= 0 && r1 > r0 && r1 >= BAND_RANK.indexOf('slow') && !bandUpShown.has(p0.id + ':' + bd)) {
       bandUpShown.add(p0.id + ':' + bd);
-      events.push({ title: '💡 이 자리가 더 밝아졌습니다', sub: `자라는 속도: ${BAND_KO[_prevBand]} → ${BAND_KO[bd]}` });
+      /* ★ 11-03 plan §12 ㉤ — 띠는 7일 평균이라 옮김 · 등 · 철 어느 까닭이든 «받는 빛이 늘었다»가 참 · 이름은 아래 줄(«몬스테라 1가» 조사를 피함) */
+      events.push({ title: '💡 받는 빛이 늘었습니다', sub: `${potNameKo(p0)} — ${BAND_UP_FROM_KO[_prevBand]} 이제 ${BAND_UP_TO_KO[bd]}` });
       (window.__stageLog ||= []).push({ day: S.day, kind: 'bandUp', from: _prevBand, to: bd });
     }
     if (ph) _prevPhase = ph; if (bd) _prevBand = bd; }
@@ -15271,6 +15330,7 @@ function showFirstPlayEvents(turn) {
   /* ★ 2026-11-02 총괄 · [plan] 507ba40d P2 — 잡담(집 자금 NoVarie 세 벌)이 보는 무늬 원천을 이사 창 «무늬 원천 n»과 같은 자(§varieSourcesNow)로 싣는다.
        ⛔ 잡담 칸은 nudge_wait §varieSourceCount(등급 장부 · 삽수 무늬 잎까지)라 이사 창과 다른 수를 셀 수 있었다(한 낱말 두 자) · 못 세면 안 싣는다(대사 쪽 옛 셈) */
   try { const v = varieSourcesNow(); if (v && Number.isInteger(v.n)) turn.varieSourceN = v.n; } catch (e) { console.warn('[P2 원천]', e && e.message); }
+  try { turn.unpackNoSpot = unpackStuckNow() === true; } catch { turn.unpackNoSpot = false; }   /* ★ 11-03 plan §12 ㉣ */
   const ids = story.turn(turn, S);
   if (ids.includes('nudgeSiruPush')) bjDeferPending('nudge');   /* ★ D98 ㉮ — 시루 재촉이 선 날 카드는 내일 */
   if (ids.length) dlgOpen(ids);
@@ -18919,8 +18979,17 @@ function startPhonePlaceCut(id) {
 /* ══ ★★ 2026-10-09 D45 — 새 식물을 눌러서 놓는다(§startPhonePlaceCut 과 같은 뼈대) ══════════════ */
 function speciesPlaceSub(q) {
   if (q.species === 'alocasia_frydek' && q.plant && q.plant.phase === 'corm') return '구근을 심었습니다 — 싹이 나야 무늬인지 압니다';
-  return q.species === 'pink_princess' ? '새 잎마다 분홍이 달라집니다 — 분홍이 고운 마디 바로 위에서 자르면 그 분홍을 붙잡습니다'   /* [plan] a0d4b825 */
-                                        : '밝은 자리라야 자랍니다 — 겨울엔 잎을 다 떨구고 잡니다';
+  if (q.species === 'pink_princess') return '새 잎마다 분홍이 달라집니다 — 분홍이 고운 마디 바로 위에서 자르면 그 분홍을 붙잡습니다';   /* [plan] a0d4b825 */
+  if (q.species === 'alocasia_frydek') return '밝은 자리라야 자랍니다 — 겨울엔 잎을 다 떨구고 잡니다';
+  /* ★ 11-03 plan §12 ㉢ — 칼라테아 · 스킨답서스는 겨울잠이 없다(예전엔 알로카시아 글로 떨어졌다) · 칼라테아 수는 정본(그 그루 문턱)에서 */
+  if (q.species === 'calathea') {
+    let th = null; try { th = SPC.speciesRules().thresholdsOf(q.plant); } catch (e) { console.warn('[칼라테아 문턱]', e && e.message); th = null; }
+    return th && Number.isFinite(th.min) && Number.isFinite(th.max) ? `너무 밝으면 잎을 맙니다 — 알맞은 빛은 7일 평균 ${th.min}~${th.max}입니다`
+                                                                     : '너무 밝으면 잎을 맙니다';
+  }
+  if (q.species === 'scindapsus') return SPC.scRooting(q) ? '물꽂이로 뿌리를 냅니다 — 빛과 상관없이 놓인 날을 셉니다'
+                                                          : '높은 데 둘수록 줄기가 길게 자랍니다 — 바닥에 닿으면 멈춥니다';
+  return '놓은 자리의 빛으로 자랍니다';
 }
 function startPhonePlaceSpecies(id) {
   const q = SPC.speciesPotOf(S, id);
@@ -19036,6 +19105,10 @@ function youngTooWide(c, slotId) {
 function maybeSayYoungWide() {
   try {
     if (youngWideDay === S.day) return;
+    /* ★ 11-03 plan §12 ㉣ — 비판 A Day 445 하루에 세 번(다시 켤 때마다 메모리 칸이 비었다) ⇒ 이야기꾼의 «마지막 난 날»(세이브 talk.lastDay)도 본다 ·
+         진로를 고른 날(산 집으로 옮긴 날 story.homeOnDay)은 모든 그루를 새로 놓는 날이라 안 낸다 */
+    try { const ld = story.lastDays ? story.lastDays().cutTooWide : null; if (ld === S.day) return; } catch (e) { console.warn('[칸 넘침 날]', e && e.message); }
+    if (S.story && S.story.homeOnDay === S.day) return;
     if ($('stage').classList.contains('talking')) return;
     /* 새 두 종 그루도 같은 자(D45 · 알로카시아 성숙 잎 0.45m) */
     const growers = [...cuttingsOf(S).filter(c => c && c.status === 'established'),
@@ -19814,6 +19887,9 @@ const PLACE_DARK_KO = Object.freeze({
   varieDim: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 놓을 수 있는 제일 밝은 자리는 {best}입니다',
   /* [plan] 10-08 — 옛 꼬리 «밝은 자리는 등을 단 창턱입니다»는 봄·등1 에서 그 창턱 위에서 뜨는 거짓이었다. 방에 bright 칸이 하나도 없을 때만 뜬다 */
   varieDimNoBright: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 지금은 놓을 수 있는 자리 어디도 무늬가 잘 날 만큼 밝지 않습니다',
+  /* ★ 11-03 plan §12 ㉥ — 갈래 셋(§varieDimWarn): best 가 여기 · best 가 다른 칸인데 그 칸도 무늬엔 어두움 */
+  varieDimAtBest: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 여기가 놓을 수 있는 제일 밝은 자리입니다 · 식물등을 달면 밝아집니다',
+  varieDimBestDim: '여기서 뿌리내리면 무늬가 잘 안 납니다 — 놓을 수 있는 제일 밝은 {best}도 무늬엔 어둡습니다',
   /* ★ 2026-11-02 총괄 C3 · [plan] 507ba40d §4 — 제일 밝은 칸이 찼을 때(6판 S90 «제일 밝은 데는 창턱 화분받침 1번 칸» — 무순 판이 앉은 칸) */
   goBestTaken: '여기는 {who}가 자라기엔 어둡습니다 — 제일 밝은 {best}에는 {what}이 있습니다'
 });
@@ -20005,7 +20081,11 @@ function varieDimWarn(g) {
   const bb = best ? growBandAt(best, g.variegated) : null;
   if (best && best !== c.slotId && bb && varieLightStepOfBand(bb.band) === 'bright')
     return PLACE_DARK_KO.varieDim.replace('{best}', slotLabel(best));
-  return PLACE_DARK_KO.varieDimNoBright;
+  /* ★ 11-03 plan §12 ㉥ — «제일 밝은 데가 있다» 바로 뒤 «어디도 밝지 않다»로 엇갈려 읽혔다 · §darkPlaceWarn atBest 와 같은 자(여기 ≥ best 면 여기가 제일 밝음) */
+  if (!best) return PLACE_DARK_KO.varieDimNoBright;
+  const hereD = Number.isFinite(here.dli) ? here.dli : -Infinity;
+  if (best === c.slotId || !bb || !Number.isFinite(bb.dli) || bb.dli <= hereD + 1e-6) return PLACE_DARK_KO.varieDimAtBest;
+  return PLACE_DARK_KO.varieDimBestDim.replace('{best}', slotLabel(best));
 }
 /* 놓은 그것의 빛 한 줄 — 안 자람이 먼저 · 그다음 무늬 띠 */
 function placeLightWarn(g) {
@@ -22622,7 +22702,7 @@ const MOVE_LINE_KO = Object.freeze({
   short: '이사비 {need}원 · 지금 {cash}원 — {short}원 모자랍니다',
   varie: '이사비 {need}원 · 지금 {cash}원 — 무늬 잎을 아직 못 봤습니다',
   homeTitle: '🏠 다음 목표 — 내 집 마련 {target}원',
-  homeSub: '[방] 판과 가계부에서 남은 돈을 볼 수 있습니다'
+  homeSub: '할 일 탭과 가계부에서 내 집 마련까지 얼마인지 볼 수 있습니다'   /* ★ 11-03 plan §13 ㉡ — 내 집 줄은 가계부 · 할 일 탭에 선다 · «남은 돈»은 손에 남은 돈으로 읽혔다 */
 });
 const wonKo = n => Math.round(n || 0).toLocaleString('ko-KR');
 /* 이사하면 원룸 첫 월세 날까지 버티나 — 이사 창 두 줄(§openMoveAsk)과 같은 셈 · 못 세면 null(대사가 «오늘»을 안 권한다) */

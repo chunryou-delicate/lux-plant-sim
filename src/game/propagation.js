@@ -2150,7 +2150,8 @@ export function stepCuttings(S, opt = {}) {
       if (key && !c.warned.includes(key)) {
         c.warned.push(key);
         const w = { id: 'cutting_warn', cuttingId: c.id, daysLeft,
-                    ko: `삽수 ${c.id} — 분갈이까지 ${daysLeft}일 남았습니다. ` +
+                    /* ★ 11-03 plan §12 ㉦ — 속 이름(cut_02)을 안 낸다 · 'node' 는 혹이 난 삽수 · «남은 날»(deadlineDay − 오늘) */
+                    ko: `⚠ 혹이 난 삽수 — 분갈이 남은 날 ${daysLeft}일입니다. ` +
                         `안 하면 시들어 사라집니다` };
         warnings.push(w); events.push(w);
         if (log) log('⚠ ' + w.ko);

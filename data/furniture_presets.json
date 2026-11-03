@@ -1286,7 +1286,7 @@
     },
     "shop_display": {
       "type": "shop_display",
-      "name_ko": "가게 진열대",
+      "name_ko": "진열대",
       "_D59": "★ 2026-10-10 [house] plan 식물 가게(D59) · 총괄 «가게 기준 배치» — 투룸(가게 방) 창 앞에 처음부터 놓인다. 앞 낮고 뒤 높은 세 단 · 단 깊이 0.25(바닥 칸 하나) · 자리 9(단마다 셋). 빌더 furniture_pastel B.shop_display · v2 옷은 Higgsfield 3D 주문(docs/handoff/higgsfield-3d-order-house-20261010.json)이 오면.",
       "_shop": "★ 가구점에 안 낸다(shop_listed:false) — 가게에 딸린 것. 가구점에 올릴지는 plan·총괄이 정한다(올리면 값은 크기 규칙).",
       "shop_listed": false,

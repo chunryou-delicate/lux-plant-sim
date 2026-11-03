@@ -464,6 +464,19 @@ function lampsOnOf(S, io) {
   return n;
 }
 
+/* ★ 11-03 plan §13 ㉦ — 가게 · 돌봄 원천 ctx 한 곳. 하루 굴림(§nextDay)과 빈 판 글(화면 §boardEmptyKo)이 같은 손으로 센다 — 다르면 «곧»과 «없습니다»가 엇갈린다.
+     자리는 getter(쓸 때만 · 한 번) · 등 수는 §lampsOnOf · 모주 무늬 마디는 §motherVarieOf(첫 화분을 꽂은 채 끝남 · state §selectLeadPlant 규약) */
+export function shopSourceCtxOf(S, io, sky) {
+  const lampsOn = lampsOnOf(S, io);
+  let spotsMemo;
+  return { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn, motherVarie: motherVarieOf(S, io),
+           get spots() { if (spotsMemo === undefined) spotsMemo = shopSpotsOf(S, io, sky); return spotsMemo; } };
+}
+export function careSourceCtxOf(S, io) {
+  let spots7Memo;
+  return { lamps: lampsOnOf(S, io), get spots7() { if (spots7Memo === undefined) spots7Memo = careSpotsOf(S, io); return spots7Memo; } };
+}
+
 /* ★ 2026-10-24 B(총괄 D80 ①) — 방 자리 [{ slotId, dropM, dli }] · dli = 그 자리 «오늘부터 7일» 평균(같은 날씨 달력 skyFor · 규칙 avg7 과 같은 자 —
      growth 1584판: 그날 DLI 면 맡김 헛열림 20 · 놓침 174 → 7일 평균 6 · 66). 맡김 굴리는 날에만 센다(getter). 못 세면 null */
 export function careSpotsOf(S, io) {
@@ -1317,19 +1330,15 @@ function nextDayBody(S, io) {
   /* ★ 2026-10-10 D59 — 가게(진로 shop · 산 집)의 하루: 기한 지난 주문 · 새 주문 — 손님 이름이 드는 줄은 기록 줄(plan) */
   let jobShop = null;
   try {
-    const lampsOn = lampsOnOf(S, io);
-    /* ★ D71 — 방 자리는 주문을 굴리는 날에만 센다(getter · 하루 한 번) */
-    let spotsMemo;
-    jobShop = stepShopJob(S, { cutOpen: (S.cutOpenToday && S.cutOpenToday.n) || 0, lamps: lampsOn, motherVarie: motherVarieOf(S, io),
-                               get spots() { if (spotsMemo === undefined) spotsMemo = shopSpotsOf(S, io, report && report.sky); return spotsMemo; } });
+    /* ★ D71 — 방 자리는 주문을 굴리는 날에만 센다(getter · 하루 한 번) · ★ 11-03 ctx 는 §shopSourceCtxOf 한 곳(빈 주문판 글과 같은 손) */
+    jobShop = stepShopJob(S, shopSourceCtxOf(S, io, report && report.sky));
     for (const e of (jobShop && jobShop.events) || []) if (e && e.ko && (e.id === 'order_new' || e.id === 'order_expired' || e.id === 'shop_open' || e.id === 'shop_ending'))
       pushLog(S, (e.id === 'order_new' ? '📋 ' : e.id === 'order_expired' ? '⌛ ' : e.id === 'shop_ending' ? '🏅 ' : '🪧 ') + e.ko + (e.want ? ` — ${e.want}` : ''));
   } catch (e) { pushLog(S, '⚠ 가게 하루 실패 — ' + e.message); jobShop = { error: e.message, events: [] }; }
   /* ★ 2026-10-24 B 판 «식물 돌봄»(plan-care-career-spec · 총괄 D73 · D80) — 맡김 · 나음 · 기한 · 손님 말은 기록 줄 */
   let jobCare = null;
   try {
-    let spots7Memo;
-    jobCare = stepCareJob(S, { lamps: lampsOnOf(S, io), get spots7() { if (spots7Memo === undefined) spots7Memo = careSpotsOf(S, io); return spots7Memo; } });
+    jobCare = stepCareJob(S, careSourceCtxOf(S, io));   /* ★ 11-03 ctx 한 곳(§careSourceCtxOf · 빈 맡김판 글과 같은 손) */
     for (const e of (jobCare && jobCare.events) || []) {
       if (e && e.id === 'care_return' && e.auto && e.won > 0) creditShopOrder(S, e.won, { ko: '돌봄 수고비', log: m => pushLog(S, m) });   /* 기한 날 손님이 수고비를 내고 받아 감 */
       if (e && e.ko && ['care_open', 'care_new', 'care_saved', 'care_return', 'care_expired', 'care_ending'].includes(e.id))

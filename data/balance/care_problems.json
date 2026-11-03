@@ -25,7 +25,7 @@
       "ko": "잎이 다 짐", "clue": "잎이 다 져서 죽은 것 같다며 맡겼다.", "teaches": "어두우면 잠든다 — 죽은 게 아니다",
       "scripts": { "new": "careNewAlDark", "stuck": "careStuckAlDark", "saved": "careSavedAlDark" } },
     { "id": "al_winter", "species": "alocasia_frydek", "tier": "spring", "unlockAtSaved": 1, "seasons": ["autumn", "winter"],
-      "ko": "겨울에 잎이 짐", "clue": "겨울에 잎이 다 녹았다며 버리기 전에 맡겼다.", "teaches": "겨울엔 잔다",
+      "ko": "잎이 다 녹음", "clue": "잎이 다 녹았다며 버리기 전에 맡겼다.", "teaches": "겨울엔 잔다",
       "scripts": { "new": "careNewAlWinter", "stuck": "careStuckAlWinter", "saved": "careSavedAlWinter" } },
     { "id": "sc_floor", "species": "scindapsus", "tier": "normal", "unlockAtSaved": 3, "seasons": ["spring", "summer", "autumn", "winter"],
       "ko": "줄기가 멈춤", "clue": "줄기가 바닥에 닿더니 더 안 자란다며 맡겼다.", "teaches": "높이 둘수록 길게",

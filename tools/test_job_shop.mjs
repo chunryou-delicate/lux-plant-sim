@@ -146,6 +146,17 @@ T('M 가게 끝맺음(D75 · plan-career-endings §10) — 단골 30 다음 날 
   S2.jobShop.regulars = Array.from({ length: 30 }, (_, i) => 'r' + i); S2.jobShop.milestones[30] = S2.day;
   const e2 = days(S2, 1).find(e => e.id === 'shop_ending');
   assert.ok(e2 && e2.fewPlants === true && e2.plantsPlaced === 0, JSON.stringify(e2));
+  /* ★ 11-03 plan §13 ㉥ — 맡은 화분(q.care · 손님 것)은 «늘려 온 그루»에 안 든다 · 끝맺음 날(단골 30 다음 날)은 그대로 · 갈래(fewPlants)만 갈린다 */
+  { const mk = care => { const Sx = openS({ cuttings: [] }); Sx.pots = [];
+      for (let i = 0; i < 3; i++) { const q = SP.addSpeciesPot(Sx, 'pink_princess', { origin: 'trade' });
+        if (care) q.care = { customerId: 'x' + i, since: Sx.day, requestId: 'cr_00' + i };
+        SP.setSpeciesAt(Sx, q.id, { slotId: 's:q' + i, at: { x: i, y: 1, z: 0 } }); }
+      Sx.jobShop.regulars = Array.from({ length: 30 }, (_, i) => 'r' + i); Sx.jobShop.milestones[30] = Sx.day; return Sx; };
+    const Sc = mk(true), So = mk(false);
+    const ec = days(Sc, 1).find(e => e.id === 'shop_ending'), eo = days(So, 1).find(e => e.id === 'shop_ending');
+    assert.ok(ec && eo && ec.day === eo.day && JS.shopEndedOn(Sc) === JS.shopEndedOn(So), '끝맺음 날이 맡은 화분으로 바뀝니다: ' + JSON.stringify([ec, eo]));
+    assert.ok(eo.fewPlants === false && eo.plantsPlaced === 3, '내 그루 셋: ' + JSON.stringify(eo));
+    assert.ok(ec.fewPlants === true && ec.plantsPlaced === 0, '맡은 화분이 «늘려 온 그루»에 듭니다: ' + JSON.stringify(ec)); }
   /* 옛 세이브 — 진로 이력 칸 없이 단골 30 을 이미 넘음 → 불러온 뒤 첫 하루 넘김에 한 번 */
   const S3 = newS({ story: { job: { id: 'shop', since: 280 } }, jobShop: JS.unpackJobShop({ orders: [], regulars: Array.from({ length: 31 }, (_, i) => 'r' + i), openedOn: 280, milestones: { 3: 290, 10: 300, 30: 330 } }) });
   S3.day = 400;
@@ -219,5 +230,14 @@ T('I 주문 가드 넷(plan §11) — 겨울·하프문 등 2 · PP 맨 위 분�
     for (const q of SP.speciesPotsOf(S)) { assert.strictEqual(q.slotId, null, q.id + ' 자리가 남았다'); assert.strictEqual(q.at, null); assert.ok(!SP.speciesPlaced(q)); }
   });
 }
+/* ★ 11-03 plan §13 ㉦ — 빈 주문판 «손님이 곧 옵니다»는 원천이 있을 때만(하루 굴림과 같은 §shopSources · tier 하나라도) */
+T('N 빈 주문판 원천(plan §13 ㉦) — 보낼 것이 없으면 거짓 · 뿌리낸 삽수가 생기면 참', () => {
+  const S = openS({ cuttings: [] }); S.pots = []; S.jobShop.orders = [];
+  assert.strictEqual(JS.shopHasSource(S, {}), false, JSON.stringify(Object.entries(JS.shopSources(S, {})).filter(([, v]) => v === true)));
+  S.cuttings = [cut('c1')];
+  assert.strictEqual(JS.shopHasSource(S, {}), true);
+  S.cuttings = []; S.cutOpenToday = { n: 1 };   /* 오늘 자를 마디(하루 굴림 ctx.cutOpen 과 같은 칸) */
+  assert.strictEqual(JS.shopHasSource(S, { cutOpen: 1 }), true);
+});
 console.log(bad ? `job_shop: FAIL (${bad})` : 'job_shop: PASS');
 process.exit(bad ? 1 : 0);

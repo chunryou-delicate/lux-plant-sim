@@ -245,8 +245,9 @@ function careRequestsStep(S, J, day, out) {
     if (!q) { J.requests = J.requests.filter(x => x !== r); continue; }   /* 그루가 사라졌다(있을 수 없는 길) — 맡김도 걷는다 */
     if (r.savedOn == null) {
       let healed = false; try { healed = careHealed(q, r); } catch { healed = false; }
-      if (healed) { r.savedOn = day; out.events.push({ id: 'care_saved', ko: `맡은 화분이 나았습니다 — 돌려줄 수 있습니다`, problem: r.problem, requestId: r.id, potId: q.id }); }
-      else if (!r.stuckSaid && day - r.openedOn >= CJ.stuckDays) { r.stuckSaid = true; out.events.push({ id: 'care_stuck', problem: r.problem, requestId: r.id }); }
+      /* ★ 11-03 plan §13 ㉤(총괄 가름 B) — 대사가 서는 그날 철(season)을 싣는다(al_winter 막힘 · 나음 줄을 철로 가름 · dialogue §scriptsForEvents) */
+      if (healed) { r.savedOn = day; out.events.push({ id: 'care_saved', ko: `맡은 화분이 나았습니다 — 돌려줄 수 있습니다`, problem: r.problem, requestId: r.id, potId: q.id, season: seasonAt(S) }); }
+      else if (!r.stuckSaid && day - r.openedOn >= CJ.stuckDays) { r.stuckSaid = true; out.events.push({ id: 'care_stuck', problem: r.problem, requestId: r.id, season: seasonAt(S) }); }
     }
     if (day > r.dueOn) {
       if (r.savedOn != null) out.events.push(...settle(S, r, { auto: true }).events);   /* 나았는데 안 돌려줬으면 손님이 수고비를 내고 받아 간다(숨은 손해 없음) */

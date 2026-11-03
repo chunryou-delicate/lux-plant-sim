@@ -13,6 +13,8 @@
      ㉴ 투룸 몬스테라를 어두운 칸으로 옮기면 — «… 놓을 수 있는 제일 밝은 자리는 {칸}입니다»(§11 글)
      ㉵ 360 — [옮기기] 아래글 «놓을 수 있는 데는 {X}이 제일 밝습니다»가 한 줄
      ㉲ 참 경고(총괄 조건 2) — 원룸(현관과 이어진 판 · 비판 6판 S Day 97 세이브)에서 빈 화분을 문 앞 바닥에 놓으면 길 경고는 그대로 «문 앞 길이 막힙니다»
+     ㉶ (11-03 plan §12 ㉠) 투룸 가방의 몬스테라는 «몬스테라 {n}»(반지하 도착 이름 «축복받은 몬스테라 삽수»가 아님)
+     ㉷ (11-03 총괄 · FURN_KO) 진열대 칸은 «진열대 N번 칸» — 확인 바 제목 · 손가락 · 아래글에 «가구 N번 칸» 없음
      예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
@@ -53,11 +55,16 @@ ok(!b.탈 && !/3단 선반/.test(b.ev || ''), '㉯ 알림이 손 안 닿는 «3�
 await bannerOff();
 /* ═══ ㉰ 몬스테라 ═══ */
 await J(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`); await sleep(1500); await settle();
-const tc = await J(`(()=>{ const c=[...document.querySelectorAll('#pageBag .bagslot')].find(e=>/축복받은/.test(e.textContent||'')); if (c) c.click(); return c ? (c.dataset.place || 'x') : null; })()`); await sleep(2200); await settle();
+/* ★ 11-03 plan §12 ㉠ — 가방 몬스테라 칸을 이름 글 대신 칸 표지(data-potbag)로 찾는다(이름이 «몬스테라 {n}»으로 바뀜) */
+const potNames = await J(`[...document.querySelectorAll('#pageBag [data-potbag]')].map(b => b.getAttribute('title'))`);
+console.log('  ㉶ 가방 몬스테라 이름', JSON.stringify(potNames));
+ok(Array.isArray(potNames) && potNames.length >= 1 && potNames.every(t => /^몬스테라( \d+)?$/.test(t || '')), '㉶ 투룸 가방의 몬스테라는 «몬스테라 {n}»(«축복받은 몬스테라 삽수» 아님)', JSON.stringify(potNames));
+const tc = await J(`(()=>{ const c=document.querySelector('#pageBag [data-potbag]'); if (c) c.click(); return c ? (c.dataset.place || 'x') : null; })()`); await sleep(2200); await settle();
 const c = await J(`(()=>{ const pc=document.getElementById('placeConfirm'); return { confirm: !!(pc && pc.offsetParent), who: (document.getElementById('placeConfirmWho')||{}).textContent || null, warn: (document.getElementById('placeConfirmWarn')||{}).textContent || '' }; })()`);
 console.log('  ㉰ 몬스테라 누름', JSON.stringify({ tc, c }));
 if (OUT) await page.shot(`${OUT}/390_c8c_pot.png`);
 ok(!c.탈 && c.confirm && !/문 앞 길이 막/.test(c.warn), '㉰ 가방 몬스테라 [누름] — 확인 바가 «문 앞 길이 막힙니다»를 안 말함', JSON.stringify({ who: c.who, warn: c.warn }));
+ok(!c.탈 && /^진열대 \d+번 칸에 둘까요\?$/.test(c.who || '') && !/가구 \d+번 칸/.test(c.who || ''), '㉷ 확인 바 제목 «진열대 N번 칸에 둘까요?»(«가구 N번 칸» 아님)', JSON.stringify(c.who));
 await J(`(()=>{ const b=document.getElementById('placeOk'); if (b && b.offsetParent) b.click(); return !!b; })()`); await sleep(2000); await dlg(); await bannerOff();
 /* ═══ ㉱ [옮기기] 손가락 · 아래글 ═══ */
 const key = await J(`(()=>{ const p=(window.__S().pots||[])[0]; if (!p) return null; const rows = window.__rv.plants ? window.__rv.plants() : []; const r = rows.find(q => q && q.potId === p.id); return r ? r.key : (p.slotId || null); })()`);
@@ -73,6 +80,8 @@ if (OUT) await page.shot(`${OUT}/390_c8c_move.png`);
 ok(!d.탈 && d.on && !!d.goal && !/3단 선반/.test(d.goal), '㉱ [옮기기] 손가락 «여기로 끌어 보세요 — X» — X 가 손 안 닿는 3단 선반이 아님', JSON.stringify({ say: d.say }));
 ok(!d.탈 && !!d.goal && d.lab === `놓을 수 있는 데는 ${d.goal}${/[가-힣]/.test(d.goal.slice(-1)) && (d.goal.slice(-1).charCodeAt(0) - 0xac00) % 28 ? '이' : '가'} 제일 밝습니다`, '㉱ 아래글이 손가락과 같은 칸 «놓을 수 있는 데는 X이 제일 밝습니다»(§11)', JSON.stringify({ goal: d.goal, lab: d.lab }));
 ok(!d.탈 && !!d.usable && !d.taken.includes(d.usable), '㉱ 손가락이 짚는 칸(§usableBrightSlot)은 비어 있음(삽수 · 화분이 앉은 칸 아님)', JSON.stringify({ usable: d.usable, taken: d.taken }));
+ok(!d.탈 && /^tworoom-shop-display:/.test(d.usable || '') && /^진열대 \d+번 칸$/.test(d.goal || '') && /놓을 수 있는 데는 진열대 \d+번 칸이 제일 밝습니다/.test(d.lab || '')
+   && !/가구 \d+번 칸/.test((d.say || '') + (d.lab || '')), '㉷ 진열대 칸 손가락 · 아래글 «진열대 N번 칸»(«가구 N번 칸» 아님)', JSON.stringify({ usable: d.usable, say: d.say, lab: d.lab }));
 await J(`(()=>{ const b=document.getElementById('placeCancel') || document.getElementById('pickCancel'); if (b && b.offsetParent) b.click(); try { window.__picked.clear(); } catch (e) { void e; } return 1; })()`); await sleep(1000);
 /* ═══ ㉴ 투룸 몬스테라 → 어두운 칸([📍 자리] 목록에서 가장 어두운 줄) — «놓을 수 있는 제일 밝은 자리는» ═══ */
 await J(`(()=>{ window.__picked.select(${JSON.stringify(key)}); return 1; })()`); await sleep(900); await settle();
@@ -126,7 +135,7 @@ ok(!e.탈 && e.placed && /문 앞 길이 막/.test(e.warn || ''), '㉲ 참 경�
   await p3.goto(`${BASE}/game.html`); await p3.waitFor('window.__byeotBooted === true', 300000, 500); await p3.waitFor('!!window.__rv', 240000, 500); await sleep(4000);
   for (let i = 0; i < 160; i++) { const t = await J3(`document.getElementById('stage').classList.contains('talking')`); if (t !== true) break; await p3.eval(`(()=>{ const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(250); }
   await J3(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`); await sleep(1500);
-  await J3(`(()=>{ const c=[...document.querySelectorAll('#pageBag .bagslot')].find(e=>/축복받은/.test(e.textContent||'')); if (c) c.click(); return !!c; })()`); await sleep(2200);
+  await J3(`(()=>{ const c=document.querySelector('#pageBag [data-potbag]'); if (c) c.click(); return !!c; })()`); await sleep(2200);
   await J3(`(()=>{ const b=document.getElementById('placeOk'); if (b && b.offsetParent) b.click(); return 1; })()`); await sleep(1800);
   for (let i = 0; i < 160; i++) { const t = await J3(`document.getElementById('stage').classList.contains('talking')`); if (t !== true) break; await p3.eval(`(()=>{ const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(250); }
   const k3 = await J3(`(()=>{ const p=(window.__S().pots||[])[0]; const r=(window.__rv.plants()||[]).find(q=>q&&q.potId===p.id); return r ? r.key : null; })()`);
