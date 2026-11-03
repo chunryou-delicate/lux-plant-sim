@@ -1,5 +1,5 @@
 {
- "_doc": "growth-equip-sensitivity-20261103.md 짝 · 고정 복사본 e31cc01c · humanQ · guide g,1-10 700일 · 진로 shop71 · careR · breedR 1300일 · 짝 뺌(장비 − 기준) · dn = 당긴(작아진) 판 · up = 늘어난 판 · half = 내 집이 기준 절반 이하인 판",
+ "_doc": "growth-equip-sensitivity-20261103.md 짝(⑩ 조합 · 무늬 캐논 셈 포함) · 고정 복사본 e31cc01c · humanQ · guide g,1-10 700일 · 진로 shop71 · careR · breedR 1300일 · 짝 뺌(장비 − 기준) · dn = 당긴(작아진) 판 · up = 늘어난 판 · half = 내 집이 기준 절반 이하인 판",
  "measuredAt": "2026-11-04 03:33~",
  "groups": {
   "L2_L3_L4": {
@@ -8048,6 +8048,4815 @@
     }
    }
   },
+  "combo_gameHand": {
+   "base": "GH_base",
+   "baseRows": {
+    "humanQ": {
+     "n": 11,
+     "crash": 0,
+     "money": 140,
+     "move": 140,
+     "net": 280,
+     "home": 355,
+     "end": 355,
+     "c60": 1195130,
+     "c120": 1962850,
+     "c240": 2217490,
+     "hm1": 64,
+     "fm1": 207,
+     "hmN": 3,
+     "fmN": 0,
+     "grN": 5,
+     "vSold": 4,
+     "vWon": 2900000,
+     "pSold": 6,
+     "sale1": 155,
+     "vSale1": 155,
+     "cuts": 12,
+     "root1": 148,
+     "leftPreMean": 6.295,
+     "leftPreDays": 124,
+     "zeroPreDays": 15,
+     "blkPreDays": 12,
+     "spentPre": 1043,
+     "maxAtMove": 19
+    },
+    "guide": {
+     "n": 11,
+     "crash": 0,
+     "money": 150,
+     "move": 150,
+     "net": 300,
+     "home": 415,
+     "end": 415,
+     "c60": 1040730,
+     "c120": 1809650,
+     "c240": 2271044,
+     "hm1": 64,
+     "fm1": 298,
+     "hmN": 2,
+     "fmN": 0,
+     "grN": 4,
+     "vSold": 3,
+     "vWon": 2200000,
+     "pSold": 7,
+     "sale1": 152,
+     "vSale1": 152,
+     "cuts": 12,
+     "root1": 148,
+     "leftPreMean": 6.477,
+     "leftPreDays": 132,
+     "zeroPreDays": 16,
+     "blkPreDays": 13,
+     "spentPre": 1139,
+     "maxAtMove": 19
+    }
+   },
+   "cfgs": {
+    "GH_A": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 140,
+       "cfg": 135,
+       "dMean": -2.27,
+       "dn": 5,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "move": {
+       "base": 140,
+       "cfg": 135,
+       "dMean": -2.27,
+       "dn": 5,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "net": {
+       "base": 280,
+       "cfg": 275,
+       "dMean": -5.45,
+       "dn": 3,
+       "up": 3,
+       "min": -59,
+       "max": 30
+      },
+      "home": {
+       "base": 355,
+       "cfg": 350,
+       "dMean": -6.27,
+       "dn": 4,
+       "up": 2,
+       "min": -75,
+       "max": 60
+      },
+      "end": {
+       "base": 355,
+       "cfg": 350,
+       "dMean": -6.27,
+       "dn": 4,
+       "up": 2,
+       "min": -75,
+       "max": 60
+      },
+      "c60": {
+       "base": 1195130,
+       "cfg": 1195130,
+       "dMean": 1745.45,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 6400
+      },
+      "c120": {
+       "base": 1962850,
+       "cfg": 1972650,
+       "dMean": 15581.82,
+       "dn": 0,
+       "up": 11,
+       "min": 9800,
+       "max": 30200
+      },
+      "c240": {
+       "base": 2217490,
+       "cfg": 2352188,
+       "dMean": 152201.09,
+       "dn": 1,
+       "up": 10,
+       "min": -283856,
+       "max": 540298
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": -0.09,
+       "dn": 3,
+       "up": 1,
+       "min": -2,
+       "max": 3
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": -0.18,
+       "dn": 3,
+       "up": 1,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2900000,
+       "cfg": 2600000,
+       "dMean": -63636.36,
+       "dn": 3,
+       "up": 1,
+       "min": -700000,
+       "max": 700000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": -0.09,
+       "dn": 2,
+       "up": 1,
+       "min": -3,
+       "max": 3
+      },
+      "sale1": {
+       "base": 155,
+       "cfg": 155,
+       "dMean": 2.27,
+       "dn": 1,
+       "up": 4,
+       "min": -2,
+       "max": 8
+      },
+      "vSale1": {
+       "base": 155,
+       "cfg": 155,
+       "dMean": 2.27,
+       "dn": 1,
+       "up": 4,
+       "min": -2,
+       "max": 8
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 11,
+       "dMean": -0.27,
+       "dn": 4,
+       "up": 2,
+       "min": -2,
+       "max": 1
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 148,
+       "dMean": 2.36,
+       "dn": 1,
+       "up": 4,
+       "min": -1,
+       "max": 8
+      },
+      "leftPreMean": {
+       "base": 6.295,
+       "cfg": 10.007,
+       "dMean": 3.77,
+       "dn": 0,
+       "up": 11,
+       "min": 3.691,
+       "max": 3.863
+      },
+      "leftPreDays": {
+       "base": 124,
+       "cfg": 134,
+       "dMean": 13,
+       "dn": 0,
+       "up": 11,
+       "min": 10,
+       "max": 17
+      },
+      "zeroPreDays": {
+       "base": 15,
+       "cfg": 0,
+       "dMean": -15.27,
+       "dn": 11,
+       "up": 0,
+       "min": -17,
+       "max": -13
+      },
+      "blkPreDays": {
+       "base": 12,
+       "cfg": 0,
+       "dMean": -13,
+       "dn": 11,
+       "up": 0,
+       "min": -16,
+       "max": -10
+      },
+      "spentPre": {
+       "base": 1043,
+       "cfg": 616,
+       "dMean": -407.73,
+       "dn": 11,
+       "up": 0,
+       "min": -430,
+       "max": -377
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 16,
+       "dMean": -2.64,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -2
+      },
+      "sameKeys": "hm1,fm1,hmN"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 150,
+       "cfg": 145,
+       "dMean": -2.27,
+       "dn": 5,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "move": {
+       "base": 150,
+       "cfg": 145,
+       "dMean": -2.27,
+       "dn": 5,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "net": {
+       "base": 300,
+       "cfg": 287,
+       "dMean": -8.82,
+       "dn": 6,
+       "up": 3,
+       "min": -63,
+       "max": 30
+      },
+      "home": {
+       "base": 415,
+       "cfg": 360,
+       "dMean": -17.45,
+       "dn": 4,
+       "up": 2,
+       "min": -102,
+       "max": 10
+      },
+      "end": {
+       "base": 415,
+       "cfg": 360,
+       "dMean": -17.45,
+       "dn": 4,
+       "up": 2,
+       "min": -102,
+       "max": 10
+      },
+      "c60": {
+       "base": 1040730,
+       "cfg": 1040130,
+       "dMean": 1309.09,
+       "dn": 8,
+       "up": 3,
+       "min": -600,
+       "max": 6400
+      },
+      "c120": {
+       "base": 1809650,
+       "cfg": 1818250,
+       "dMean": 14872.73,
+       "dn": 0,
+       "up": 11,
+       "min": 8600,
+       "max": 30800
+      },
+      "c240": {
+       "base": 2271044,
+       "cfg": 2205028,
+       "dMean": -22714.73,
+       "dn": 5,
+       "up": 6,
+       "min": -587494,
+       "max": 264688
+      },
+      "fm1": {
+       "base": 298,
+       "cfg": 272,
+       "dMean": -17.67,
+       "dn": 1,
+       "up": 0,
+       "min": -53,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.64,
+       "dn": 0,
+       "up": 4,
+       "min": 0,
+       "max": 2
+      },
+      "grN": {
+       "base": 4,
+       "cfg": 6,
+       "dMean": 0.82,
+       "dn": 0,
+       "up": 5,
+       "min": 0,
+       "max": 2
+      },
+      "vSold": {
+       "base": 3,
+       "cfg": 4,
+       "dMean": 0.55,
+       "dn": 0,
+       "up": 4,
+       "min": 0,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2200000,
+       "cfg": 2600000,
+       "dMean": 372727.27,
+       "dn": 0,
+       "up": 4,
+       "min": 0,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 7,
+       "cfg": 6,
+       "dMean": -1,
+       "dn": 3,
+       "up": 0,
+       "min": -6,
+       "max": 0
+      },
+      "sale1": {
+       "base": 152,
+       "cfg": 152,
+       "dMean": 0.45,
+       "dn": 3,
+       "up": 1,
+       "min": -1,
+       "max": 8
+      },
+      "vSale1": {
+       "base": 152,
+       "cfg": 152,
+       "dMean": 0.45,
+       "dn": 3,
+       "up": 1,
+       "min": -1,
+       "max": 8
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.45,
+       "dn": 2,
+       "up": 2,
+       "min": -5,
+       "max": 1
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 148,
+       "dMean": 0.45,
+       "dn": 3,
+       "up": 1,
+       "min": -1,
+       "max": 8
+      },
+      "leftPreMean": {
+       "base": 6.477,
+       "cfg": 10.188,
+       "dMean": 3.75,
+       "dn": 0,
+       "up": 11,
+       "min": 3.664,
+       "max": 3.863
+      },
+      "leftPreDays": {
+       "base": 132,
+       "cfg": 144,
+       "dMean": 13.55,
+       "dn": 0,
+       "up": 11,
+       "min": 11,
+       "max": 17
+      },
+      "zeroPreDays": {
+       "base": 16,
+       "cfg": 0,
+       "dMean": -15.82,
+       "dn": 11,
+       "up": 0,
+       "min": -17,
+       "max": -13
+      },
+      "blkPreDays": {
+       "base": 13,
+       "cfg": 0,
+       "dMean": -13.36,
+       "dn": 11,
+       "up": 0,
+       "min": -16,
+       "max": -10
+      },
+      "spentPre": {
+       "base": 1139,
+       "cfg": 669,
+       "dMean": -438.45,
+       "dn": 11,
+       "up": 0,
+       "min": -475,
+       "max": -377
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 17,
+       "dMean": -2.64,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -2
+      },
+      "sameKeys": "hm1,fmN"
+     }
+    },
+    "GH_B": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 140,
+       "cfg": 135,
+       "dMean": -2.55,
+       "dn": 8,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "move": {
+       "base": 140,
+       "cfg": 135,
+       "dMean": -2.55,
+       "dn": 8,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "net": {
+       "base": 280,
+       "cfg": 278,
+       "dMean": -8.18,
+       "dn": 5,
+       "up": 4,
+       "min": -58,
+       "max": 45
+      },
+      "home": {
+       "base": 355,
+       "cfg": 355,
+       "dMean": -15.27,
+       "dn": 8,
+       "up": 2,
+       "min": -75,
+       "max": 70
+      },
+      "end": {
+       "base": 355,
+       "cfg": 355,
+       "dMean": -15.27,
+       "dn": 8,
+       "up": 2,
+       "min": -75,
+       "max": 70
+      },
+      "c60": {
+       "base": 1195130,
+       "cfg": 1195130,
+       "dMean": 1745.45,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 6400
+      },
+      "c120": {
+       "base": 1962850,
+       "cfg": 1972650,
+       "dMean": 15581.82,
+       "dn": 0,
+       "up": 11,
+       "min": 9800,
+       "max": 30200
+      },
+      "c240": {
+       "base": 2217490,
+       "cfg": 2356988,
+       "dMean": 119038,
+       "dn": 1,
+       "up": 10,
+       "min": -660566,
+       "max": 540298
+      },
+      "hm1": {
+       "base": 64,
+       "cfg": 65,
+       "dMean": 1,
+       "dn": 0,
+       "up": 11,
+       "min": 1,
+       "max": 1
+      },
+      "fm1": {
+       "base": 207,
+       "cfg": 299,
+       "dMean": 1,
+       "dn": 0,
+       "up": 2,
+       "min": 1,
+       "max": 1
+      },
+      "hmN": {
+       "base": 3,
+       "cfg": 3,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 6,
+       "dMean": 0.45,
+       "dn": 2,
+       "up": 3,
+       "min": -1,
+       "max": 3
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 5,
+       "dMean": 0.18,
+       "dn": 3,
+       "up": 3,
+       "min": -1,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2900000,
+       "cfg": 2550000,
+       "dMean": 27272.73,
+       "dn": 3,
+       "up": 3,
+       "min": -750000,
+       "max": 750000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 5,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 2,
+       "min": -4,
+       "max": 1
+      },
+      "sale1": {
+       "base": 155,
+       "cfg": 154,
+       "dMean": 1.91,
+       "dn": 6,
+       "up": 4,
+       "min": -2,
+       "max": 9
+      },
+      "vSale1": {
+       "base": 155,
+       "cfg": 154,
+       "dMean": 1.91,
+       "dn": 6,
+       "up": 4,
+       "min": -2,
+       "max": 9
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 11,
+       "dMean": -0.36,
+       "dn": 6,
+       "up": 3,
+       "min": -2,
+       "max": 2
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 147,
+       "dMean": 1.91,
+       "dn": 6,
+       "up": 4,
+       "min": -2,
+       "max": 9
+      },
+      "leftPreMean": {
+       "base": 6.295,
+       "cfg": 8.022,
+       "dMean": 1.78,
+       "dn": 0,
+       "up": 11,
+       "min": 1.706,
+       "max": 1.858
+      },
+      "leftPreDays": {
+       "base": 124,
+       "cfg": 134,
+       "dMean": 12.73,
+       "dn": 0,
+       "up": 11,
+       "min": 10,
+       "max": 17
+      },
+      "zeroPreDays": {
+       "base": 15,
+       "cfg": 0,
+       "dMean": -15.27,
+       "dn": 11,
+       "up": 0,
+       "min": -17,
+       "max": -13
+      },
+      "blkPreDays": {
+       "base": 12,
+       "cfg": 0,
+       "dMean": -13,
+       "dn": 11,
+       "up": 0,
+       "min": -16,
+       "max": -10
+      },
+      "spentPre": {
+       "base": 1043,
+       "cfg": 616,
+       "dMean": -409.45,
+       "dn": 11,
+       "up": 0,
+       "min": -430,
+       "max": -382
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 16,
+       "dMean": -2.64,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -2
+      }
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 150,
+       "cfg": 145,
+       "dMean": -2.73,
+       "dn": 10,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "move": {
+       "base": 150,
+       "cfg": 145,
+       "dMean": -2.73,
+       "dn": 10,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "net": {
+       "base": 300,
+       "cfg": 320,
+       "dMean": 1.36,
+       "dn": 5,
+       "up": 4,
+       "min": -63,
+       "max": 85
+      },
+      "home": {
+       "base": 415,
+       "cfg": 410,
+       "dMean": -0.73,
+       "dn": 5,
+       "up": 5,
+       "min": -65,
+       "max": 67
+      },
+      "end": {
+       "base": 415,
+       "cfg": 410,
+       "dMean": -0.73,
+       "dn": 5,
+       "up": 5,
+       "min": -65,
+       "max": 67
+      },
+      "c60": {
+       "base": 1040730,
+       "cfg": 1040130,
+       "dMean": 1309.09,
+       "dn": 8,
+       "up": 3,
+       "min": -600,
+       "max": 6400
+      },
+      "c120": {
+       "base": 1809650,
+       "cfg": 1818250,
+       "dMean": 14872.73,
+       "dn": 0,
+       "up": 11,
+       "min": 8600,
+       "max": 30800
+      },
+      "c240": {
+       "base": 2271044,
+       "cfg": 2205028,
+       "dMean": -89062.91,
+       "dn": 6,
+       "up": 5,
+       "min": -651966,
+       "max": 264688
+      },
+      "hm1": {
+       "base": 64,
+       "cfg": 65,
+       "dMean": 1,
+       "dn": 0,
+       "up": 11,
+       "min": 1,
+       "max": 1
+      },
+      "fm1": {
+       "base": 298,
+       "cfg": 272,
+       "dMean": -17,
+       "dn": 1,
+       "up": 2,
+       "min": -53,
+       "max": 1
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.36,
+       "dn": 1,
+       "up": 3,
+       "min": -1,
+       "max": 2
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 4,
+       "cfg": 6,
+       "dMean": 0.91,
+       "dn": 1,
+       "up": 6,
+       "min": -1,
+       "max": 3
+      },
+      "vSold": {
+       "base": 3,
+       "cfg": 5,
+       "dMean": 0.64,
+       "dn": 0,
+       "up": 5,
+       "min": 0,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2200000,
+       "cfg": 2500000,
+       "dMean": 222727.27,
+       "dn": 1,
+       "up": 4,
+       "min": -450000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 7,
+       "cfg": 7,
+       "dMean": -0.45,
+       "dn": 4,
+       "up": 3,
+       "min": -4,
+       "max": 2
+      },
+      "sale1": {
+       "base": 152,
+       "cfg": 151,
+       "dMean": -0.55,
+       "dn": 10,
+       "up": 1,
+       "min": -3,
+       "max": 9
+      },
+      "vSale1": {
+       "base": 152,
+       "cfg": 151,
+       "dMean": -0.55,
+       "dn": 10,
+       "up": 1,
+       "min": -3,
+       "max": 9
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 13,
+       "dMean": -0.09,
+       "dn": 3,
+       "up": 3,
+       "min": -2,
+       "max": 2
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 147,
+       "dMean": -0.36,
+       "dn": 10,
+       "up": 1,
+       "min": -2,
+       "max": 9
+      },
+      "leftPreMean": {
+       "base": 6.477,
+       "cfg": 8.208,
+       "dMean": 1.76,
+       "dn": 0,
+       "up": 11,
+       "min": 1.678,
+       "max": 1.858
+      },
+      "leftPreDays": {
+       "base": 132,
+       "cfg": 144,
+       "dMean": 13.09,
+       "dn": 0,
+       "up": 11,
+       "min": 11,
+       "max": 17
+      },
+      "zeroPreDays": {
+       "base": 16,
+       "cfg": 0,
+       "dMean": -15.82,
+       "dn": 11,
+       "up": 0,
+       "min": -17,
+       "max": -13
+      },
+      "blkPreDays": {
+       "base": 13,
+       "cfg": 0,
+       "dMean": -13.36,
+       "dn": 11,
+       "up": 0,
+       "min": -16,
+       "max": -10
+      },
+      "spentPre": {
+       "base": 1139,
+       "cfg": 669,
+       "dMean": -441.55,
+       "dn": 11,
+       "up": 0,
+       "min": -476,
+       "max": -382
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 17,
+       "dMean": -2.64,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -2
+      }
+     }
+    },
+    "GH_C": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 140,
+       "cfg": 135,
+       "dMean": -2.09,
+       "dn": 5,
+       "up": 2,
+       "min": -5,
+       "max": 1
+      },
+      "move": {
+       "base": 140,
+       "cfg": 135,
+       "dMean": -2.09,
+       "dn": 5,
+       "up": 2,
+       "min": -5,
+       "max": 1
+      },
+      "net": {
+       "base": 280,
+       "cfg": 278,
+       "dMean": 3.36,
+       "dn": 4,
+       "up": 3,
+       "min": -58,
+       "max": 80
+      },
+      "home": {
+       "base": 355,
+       "cfg": 380,
+       "dMean": -1.09,
+       "dn": 5,
+       "up": 2,
+       "min": -94,
+       "max": 99
+      },
+      "end": {
+       "base": 355,
+       "cfg": 380,
+       "dMean": -1.09,
+       "dn": 5,
+       "up": 2,
+       "min": -94,
+       "max": 99
+      },
+      "c60": {
+       "base": 1195130,
+       "cfg": 1195130,
+       "dMean": 1745.45,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 6400
+      },
+      "c120": {
+       "base": 1962850,
+       "cfg": 1972650,
+       "dMean": 15581.82,
+       "dn": 0,
+       "up": 11,
+       "min": 9800,
+       "max": 30200
+      },
+      "c240": {
+       "base": 2217490,
+       "cfg": 2336988,
+       "dMean": 80295.27,
+       "dn": 1,
+       "up": 10,
+       "min": -760200,
+       "max": 540298
+      },
+      "hm1": {
+       "base": 64,
+       "cfg": 65,
+       "dMean": 1,
+       "dn": 0,
+       "up": 11,
+       "min": 1,
+       "max": 1
+      },
+      "fm1": {
+       "base": 207,
+       "cfg": 270,
+       "dMean": 50,
+       "dn": 0,
+       "up": 2,
+       "min": 1,
+       "max": 99
+      },
+      "hmN": {
+       "base": 3,
+       "cfg": 2,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 1,
+       "min": -2,
+       "max": 1
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": 0,
+       "dn": 3,
+       "up": 2,
+       "min": -2,
+       "max": 3
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": 0,
+       "dn": 3,
+       "up": 2,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2900000,
+       "cfg": 2900000,
+       "dMean": 0,
+       "dn": 2,
+       "up": 3,
+       "min": -1500000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": -0.09,
+       "dn": 3,
+       "up": 2,
+       "min": -4,
+       "max": 6
+      },
+      "sale1": {
+       "base": 155,
+       "cfg": 156,
+       "dMean": 3.91,
+       "dn": 0,
+       "up": 10,
+       "min": 0,
+       "max": 11
+      },
+      "vSale1": {
+       "base": 155,
+       "cfg": 156,
+       "dMean": 3.91,
+       "dn": 0,
+       "up": 10,
+       "min": 0,
+       "max": 11
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.18,
+       "dn": 5,
+       "up": 2,
+       "min": -2,
+       "max": 4
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 149,
+       "dMean": 3.91,
+       "dn": 0,
+       "up": 10,
+       "min": 0,
+       "max": 11
+      },
+      "leftPreMean": {
+       "base": 6.295,
+       "cfg": 10.022,
+       "dMean": 3.79,
+       "dn": 0,
+       "up": 11,
+       "min": 3.706,
+       "max": 3.903
+      },
+      "leftPreDays": {
+       "base": 124,
+       "cfg": 134,
+       "dMean": 13.18,
+       "dn": 0,
+       "up": 11,
+       "min": 10,
+       "max": 17
+      },
+      "zeroPreDays": {
+       "base": 15,
+       "cfg": 0,
+       "dMean": -15.27,
+       "dn": 11,
+       "up": 0,
+       "min": -17,
+       "max": -13
+      },
+      "blkPreDays": {
+       "base": 12,
+       "cfg": 0,
+       "dMean": -13,
+       "dn": 11,
+       "up": 0,
+       "min": -16,
+       "max": -10
+      },
+      "spentPre": {
+       "base": 1043,
+       "cfg": 616,
+       "dMean": -407.09,
+       "dn": 11,
+       "up": 0,
+       "min": -430,
+       "max": -371
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 16,
+       "dMean": -2.64,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -2
+      }
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 150,
+       "cfg": 145,
+       "dMean": -1.91,
+       "dn": 5,
+       "up": 4,
+       "min": -5,
+       "max": 1
+      },
+      "move": {
+       "base": 150,
+       "cfg": 145,
+       "dMean": -1.91,
+       "dn": 5,
+       "up": 4,
+       "min": -5,
+       "max": 1
+      },
+      "net": {
+       "base": 300,
+       "cfg": 287,
+       "dMean": -14.91,
+       "dn": 6,
+       "up": 2,
+       "min": -100,
+       "max": 30
+      },
+      "home": {
+       "base": 415,
+       "cfg": 360,
+       "dMean": -24.82,
+       "dn": 4,
+       "up": 2,
+       "min": -173,
+       "max": 10
+      },
+      "end": {
+       "base": 415,
+       "cfg": 360,
+       "dMean": -24.82,
+       "dn": 4,
+       "up": 2,
+       "min": -173,
+       "max": 10
+      },
+      "c60": {
+       "base": 1040730,
+       "cfg": 1040130,
+       "dMean": 1309.09,
+       "dn": 8,
+       "up": 3,
+       "min": -600,
+       "max": 6400
+      },
+      "c120": {
+       "base": 1809650,
+       "cfg": 1818250,
+       "dMean": 14872.73,
+       "dn": 0,
+       "up": 11,
+       "min": 8600,
+       "max": 30800
+      },
+      "c240": {
+       "base": 2271044,
+       "cfg": 2185028,
+       "dMean": 98154.18,
+       "dn": 3,
+       "up": 8,
+       "min": -120016,
+       "max": 651688
+      },
+      "hm1": {
+       "base": 64,
+       "cfg": 65,
+       "dMean": 1,
+       "dn": 0,
+       "up": 11,
+       "min": 1,
+       "max": 1
+      },
+      "fm1": {
+       "base": 298,
+       "cfg": 299,
+       "dMean": -2.33,
+       "dn": 1,
+       "up": 2,
+       "min": -9,
+       "max": 1
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.55,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 3
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 4,
+       "cfg": 5,
+       "dMean": 0.82,
+       "dn": 0,
+       "up": 6,
+       "min": 0,
+       "max": 3
+      },
+      "vSold": {
+       "base": 3,
+       "cfg": 4,
+       "dMean": 0.45,
+       "dn": 0,
+       "up": 4,
+       "min": 0,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2200000,
+       "cfg": 2500000,
+       "dMean": 268181.82,
+       "dn": 0,
+       "up": 4,
+       "min": 0,
+       "max": 1550000
+      },
+      "pSold": {
+       "base": 7,
+       "cfg": 6,
+       "dMean": -1.55,
+       "dn": 5,
+       "up": 0,
+       "min": -7,
+       "max": 0
+      },
+      "sale1": {
+       "base": 152,
+       "cfg": 153,
+       "dMean": 1.45,
+       "dn": 1,
+       "up": 7,
+       "min": -1,
+       "max": 11
+      },
+      "vSale1": {
+       "base": 152,
+       "cfg": 153,
+       "dMean": 1.45,
+       "dn": 1,
+       "up": 7,
+       "min": -1,
+       "max": 11
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -1.09,
+       "dn": 5,
+       "up": 0,
+       "min": -6,
+       "max": 0
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 149,
+       "dMean": 1.64,
+       "dn": 0,
+       "up": 8,
+       "min": 0,
+       "max": 11
+      },
+      "leftPreMean": {
+       "base": 6.477,
+       "cfg": 10.208,
+       "dMean": 3.77,
+       "dn": 0,
+       "up": 11,
+       "min": 3.678,
+       "max": 3.905
+      },
+      "leftPreDays": {
+       "base": 132,
+       "cfg": 144,
+       "dMean": 13.91,
+       "dn": 0,
+       "up": 11,
+       "min": 11,
+       "max": 18
+      },
+      "zeroPreDays": {
+       "base": 16,
+       "cfg": 0,
+       "dMean": -15.82,
+       "dn": 11,
+       "up": 0,
+       "min": -17,
+       "max": -13
+      },
+      "blkPreDays": {
+       "base": 13,
+       "cfg": 0,
+       "dMean": -13.36,
+       "dn": 11,
+       "up": 0,
+       "min": -16,
+       "max": -10
+      },
+      "spentPre": {
+       "base": 1139,
+       "cfg": 669,
+       "dMean": -437.09,
+       "dn": 11,
+       "up": 0,
+       "min": -476,
+       "max": -371
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 17,
+       "dMean": -2.64,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -2
+      }
+     }
+    },
+    "GH_S67": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 140,
+       "cfg": 135,
+       "dMean": -2.09,
+       "dn": 5,
+       "up": 2,
+       "min": -5,
+       "max": 1
+      },
+      "move": {
+       "base": 140,
+       "cfg": 135,
+       "dMean": -2.09,
+       "dn": 5,
+       "up": 2,
+       "min": -5,
+       "max": 1
+      },
+      "net": {
+       "base": 280,
+       "cfg": 267,
+       "dMean": 2.18,
+       "dn": 4,
+       "up": 2,
+       "min": -58,
+       "max": 80
+      },
+      "home": {
+       "base": 355,
+       "cfg": 380,
+       "dMean": 4.64,
+       "dn": 4,
+       "up": 3,
+       "min": -75,
+       "max": 99
+      },
+      "end": {
+       "base": 355,
+       "cfg": 380,
+       "dMean": 4.64,
+       "dn": 4,
+       "up": 3,
+       "min": -75,
+       "max": 99
+      },
+      "c60": {
+       "base": 1195130,
+       "cfg": 1195130,
+       "dMean": 1745.45,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 6400
+      },
+      "c120": {
+       "base": 1962850,
+       "cfg": 1972650,
+       "dMean": 15581.82,
+       "dn": 0,
+       "up": 11,
+       "min": 9800,
+       "max": 30200
+      },
+      "c240": {
+       "base": 2217490,
+       "cfg": 2336988,
+       "dMean": 50295.27,
+       "dn": 1,
+       "up": 10,
+       "min": -760200,
+       "max": 540298
+      },
+      "hm1": {
+       "base": 64,
+       "cfg": 65,
+       "dMean": 1,
+       "dn": 0,
+       "up": 11,
+       "min": 1,
+       "max": 1
+      },
+      "fm1": {
+       "base": 207,
+       "cfg": 257,
+       "dMean": 50,
+       "dn": 0,
+       "up": 2,
+       "min": 1,
+       "max": 99
+      },
+      "hmN": {
+       "base": 3,
+       "cfg": 2,
+       "dMean": -0.18,
+       "dn": 1,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": 0.09,
+       "dn": 3,
+       "up": 2,
+       "min": -2,
+       "max": 3
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": 0,
+       "dn": 3,
+       "up": 2,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2900000,
+       "cfg": 2550000,
+       "dMean": -109090.91,
+       "dn": 3,
+       "up": 2,
+       "min": -1500000,
+       "max": 700000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0,
+       "dn": 2,
+       "up": 2,
+       "min": -4,
+       "max": 6
+      },
+      "sale1": {
+       "base": 155,
+       "cfg": 156,
+       "dMean": 3.91,
+       "dn": 0,
+       "up": 10,
+       "min": 0,
+       "max": 11
+      },
+      "vSale1": {
+       "base": 155,
+       "cfg": 156,
+       "dMean": 3.91,
+       "dn": 0,
+       "up": 10,
+       "min": 0,
+       "max": 11
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0,
+       "dn": 4,
+       "up": 2,
+       "min": -2,
+       "max": 4
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 149,
+       "dMean": 3.91,
+       "dn": 0,
+       "up": 10,
+       "min": 0,
+       "max": 11
+      },
+      "leftPreMean": {
+       "base": 6.295,
+       "cfg": 10.022,
+       "dMean": 3.79,
+       "dn": 0,
+       "up": 11,
+       "min": 3.706,
+       "max": 3.903
+      },
+      "leftPreDays": {
+       "base": 124,
+       "cfg": 134,
+       "dMean": 13.18,
+       "dn": 0,
+       "up": 11,
+       "min": 10,
+       "max": 17
+      },
+      "zeroPreDays": {
+       "base": 15,
+       "cfg": 0,
+       "dMean": -15.27,
+       "dn": 11,
+       "up": 0,
+       "min": -17,
+       "max": -13
+      },
+      "blkPreDays": {
+       "base": 12,
+       "cfg": 0,
+       "dMean": -13,
+       "dn": 11,
+       "up": 0,
+       "min": -16,
+       "max": -10
+      },
+      "spentPre": {
+       "base": 1043,
+       "cfg": 616,
+       "dMean": -407.09,
+       "dn": 11,
+       "up": 0,
+       "min": -430,
+       "max": -371
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 16,
+       "dMean": -2.64,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -2
+      },
+      "sameKeys": "fmN"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 150,
+       "cfg": 145,
+       "dMean": -1.91,
+       "dn": 5,
+       "up": 4,
+       "min": -5,
+       "max": 1
+      },
+      "move": {
+       "base": 150,
+       "cfg": 145,
+       "dMean": -1.91,
+       "dn": 5,
+       "up": 4,
+       "min": -5,
+       "max": 1
+      },
+      "net": {
+       "base": 300,
+       "cfg": 287,
+       "dMean": -16.27,
+       "dn": 6,
+       "up": 2,
+       "min": -100,
+       "max": 20
+      },
+      "home": {
+       "base": 415,
+       "cfg": 360,
+       "dMean": -19,
+       "dn": 3,
+       "up": 3,
+       "min": -139,
+       "max": 10
+      },
+      "end": {
+       "base": 415,
+       "cfg": 360,
+       "dMean": -19,
+       "dn": 3,
+       "up": 3,
+       "min": -139,
+       "max": 10
+      },
+      "c60": {
+       "base": 1040730,
+       "cfg": 1040130,
+       "dMean": 1309.09,
+       "dn": 8,
+       "up": 3,
+       "min": -600,
+       "max": 6400
+      },
+      "c120": {
+       "base": 1809650,
+       "cfg": 1818250,
+       "dMean": 14872.73,
+       "dn": 0,
+       "up": 11,
+       "min": 8600,
+       "max": 30800
+      },
+      "c240": {
+       "base": 2271044,
+       "cfg": 2185028,
+       "dMean": 68154.18,
+       "dn": 4,
+       "up": 7,
+       "min": -125616,
+       "max": 651688
+      },
+      "hm1": {
+       "base": 64,
+       "cfg": 65,
+       "dMean": 1,
+       "dn": 0,
+       "up": 11,
+       "min": 1,
+       "max": 1
+      },
+      "fm1": {
+       "base": 298,
+       "cfg": 299,
+       "dMean": 0.67,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 1
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 2,
+       "dMean": 0.36,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 2
+      },
+      "grN": {
+       "base": 4,
+       "cfg": 6,
+       "dMean": 0.64,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 3
+      },
+      "vSold": {
+       "base": 3,
+       "cfg": 4,
+       "dMean": 0.45,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2200000,
+       "cfg": 2500000,
+       "dMean": 231818.18,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 7,
+       "cfg": 6,
+       "dMean": -1.27,
+       "dn": 4,
+       "up": 0,
+       "min": -7,
+       "max": 0
+      },
+      "sale1": {
+       "base": 152,
+       "cfg": 153,
+       "dMean": 1.45,
+       "dn": 1,
+       "up": 7,
+       "min": -1,
+       "max": 11
+      },
+      "vSale1": {
+       "base": 152,
+       "cfg": 153,
+       "dMean": 1.45,
+       "dn": 1,
+       "up": 7,
+       "min": -1,
+       "max": 11
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.91,
+       "dn": 5,
+       "up": 1,
+       "min": -5,
+       "max": 1
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 149,
+       "dMean": 1.64,
+       "dn": 0,
+       "up": 8,
+       "min": 0,
+       "max": 11
+      },
+      "leftPreMean": {
+       "base": 6.477,
+       "cfg": 10.208,
+       "dMean": 3.77,
+       "dn": 0,
+       "up": 11,
+       "min": 3.678,
+       "max": 3.905
+      },
+      "leftPreDays": {
+       "base": 132,
+       "cfg": 144,
+       "dMean": 13.91,
+       "dn": 0,
+       "up": 11,
+       "min": 11,
+       "max": 18
+      },
+      "zeroPreDays": {
+       "base": 16,
+       "cfg": 0,
+       "dMean": -15.82,
+       "dn": 11,
+       "up": 0,
+       "min": -17,
+       "max": -13
+      },
+      "blkPreDays": {
+       "base": 13,
+       "cfg": 0,
+       "dMean": -13.36,
+       "dn": 11,
+       "up": 0,
+       "min": -16,
+       "max": -10
+      },
+      "spentPre": {
+       "base": 1139,
+       "cfg": 669,
+       "dMean": -437.09,
+       "dn": 11,
+       "up": 0,
+       "min": -476,
+       "max": -371
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 17,
+       "dMean": -2.64,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -2
+      },
+      "sameKeys": "fmN"
+     }
+    },
+    "GH_L2m_120": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 280,
+       "cfg": 280,
+       "dMean": 0.91,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 10
+      },
+      "home": {
+       "base": 355,
+       "cfg": 355,
+       "dMean": -2.09,
+       "dn": 1,
+       "up": 0,
+       "min": -23,
+       "max": 0
+      },
+      "end": {
+       "base": 355,
+       "cfg": 355,
+       "dMean": -2.09,
+       "dn": 1,
+       "up": 0,
+       "min": -23,
+       "max": 0
+      },
+      "c240": {
+       "base": 2217490,
+       "cfg": 2217490,
+       "dMean": 30000,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 330000
+      },
+      "hmN": {
+       "base": 3,
+       "cfg": 3,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 6,
+       "dMean": 0.18,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 1
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 11,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "money,move,c60,c120,hm1,fm1,vSold,vWon,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 300,
+       "cfg": 325,
+       "dMean": 2.27,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 25
+      },
+      "home": {
+       "base": 415,
+       "cfg": 410,
+       "dMean": -2.73,
+       "dn": 1,
+       "up": 0,
+       "min": -30,
+       "max": 0
+      },
+      "end": {
+       "base": 415,
+       "cfg": 410,
+       "dMean": -2.73,
+       "dn": 1,
+       "up": 0,
+       "min": -30,
+       "max": 0
+      },
+      "c240": {
+       "base": 2271044,
+       "cfg": 2271044,
+       "dMean": 30000,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 330000
+      },
+      "grN": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "vSold": {
+       "base": 3,
+       "cfg": 4,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "vWon": {
+       "base": 2200000,
+       "cfg": 2200000,
+       "dMean": 31818.18,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 350000
+      },
+      "pSold": {
+       "base": 7,
+       "cfg": 7,
+       "dMean": -0.27,
+       "dn": 1,
+       "up": 0,
+       "min": -3,
+       "max": 0
+      },
+      "sameKeys": "money,move,c60,c120,hm1,fm1,hmN,fmN,sale1,vSale1,cuts,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     }
+    },
+    "GH_L5_2": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 140,
+       "cfg": 140,
+       "dMean": -0.55,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "move": {
+       "base": 140,
+       "cfg": 140,
+       "dMean": -0.55,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "net": {
+       "base": 280,
+       "cfg": 285,
+       "dMean": -2,
+       "dn": 2,
+       "up": 1,
+       "min": -75,
+       "max": 88
+      },
+      "home": {
+       "base": 355,
+       "cfg": 366,
+       "dMean": -8.18,
+       "dn": 5,
+       "up": 1,
+       "min": -100,
+       "max": 70
+      },
+      "end": {
+       "base": 355,
+       "cfg": 366,
+       "dMean": -8.18,
+       "dn": 5,
+       "up": 1,
+       "min": -100,
+       "max": 70
+      },
+      "c240": {
+       "base": 2217490,
+       "cfg": 2312548,
+       "dMean": 68727.64,
+       "dn": 3,
+       "up": 2,
+       "min": -693332,
+       "max": 750000
+      },
+      "hmN": {
+       "base": 3,
+       "cfg": 3,
+       "dMean": 0.27,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 2
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 6,
+       "dMean": 0.27,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 2
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 5,
+       "dMean": 0.18,
+       "dn": 1,
+       "up": 2,
+       "min": -1,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2900000,
+       "cfg": 2900000,
+       "dMean": 136363.64,
+       "dn": 1,
+       "up": 2,
+       "min": -750000,
+       "max": 1150000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 5,
+       "dMean": -0.36,
+       "dn": 2,
+       "up": 1,
+       "min": -3,
+       "max": 1
+      },
+      "sale1": {
+       "base": 155,
+       "cfg": 153,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "vSale1": {
+       "base": 155,
+       "cfg": 153,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0,
+       "dn": 1,
+       "up": 1,
+       "min": -2,
+       "max": 2
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 146,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "leftPreMean": {
+       "base": 6.295,
+       "cfg": 6.295,
+       "dMean": 0,
+       "dn": 2,
+       "up": 2,
+       "min": -0.035,
+       "max": 0.014
+      },
+      "leftPreDays": {
+       "base": 124,
+       "cfg": 124,
+       "dMean": -0.55,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "blkPreDays": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 1043,
+       "cfg": 1043,
+       "dMean": -5.91,
+       "dn": 3,
+       "up": 0,
+       "min": -25,
+       "max": 0
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 19,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "c60,c120,hm1,fm1,fmN,zeroPreDays"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 150,
+       "cfg": 150,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "move": {
+       "base": 150,
+       "cfg": 150,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "net": {
+       "base": 300,
+       "cfg": 300,
+       "dMean": -4.09,
+       "dn": 3,
+       "up": 3,
+       "min": -111,
+       "max": 85
+      },
+      "home": {
+       "base": 415,
+       "cfg": 410,
+       "dMean": -12.36,
+       "dn": 3,
+       "up": 2,
+       "min": -152,
+       "max": 91
+      },
+      "end": {
+       "base": 415,
+       "cfg": 410,
+       "dMean": -12.36,
+       "dn": 3,
+       "up": 2,
+       "min": -152,
+       "max": 91
+      },
+      "c240": {
+       "base": 2271044,
+       "cfg": 2062758,
+       "dMean": -145734.73,
+       "dn": 6,
+       "up": 3,
+       "min": -1049894,
+       "max": 730000
+      },
+      "fm1": {
+       "base": 298,
+       "cfg": 272,
+       "dMean": -17.67,
+       "dn": 1,
+       "up": 0,
+       "min": -53,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 2,
+       "dMean": 0.36,
+       "dn": 1,
+       "up": 3,
+       "min": -1,
+       "max": 2
+      },
+      "grN": {
+       "base": 4,
+       "cfg": 6,
+       "dMean": 0.64,
+       "dn": 1,
+       "up": 4,
+       "min": -1,
+       "max": 3
+      },
+      "vSold": {
+       "base": 3,
+       "cfg": 5,
+       "dMean": 0.73,
+       "dn": 0,
+       "up": 4,
+       "min": 0,
+       "max": 3
+      },
+      "vWon": {
+       "base": 2200000,
+       "cfg": 2900000,
+       "dMean": 363636.36,
+       "dn": 1,
+       "up": 3,
+       "min": -450000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 7,
+       "cfg": 6,
+       "dMean": -1.09,
+       "dn": 2,
+       "up": 2,
+       "min": -9,
+       "max": 2
+      },
+      "sale1": {
+       "base": 152,
+       "cfg": 150,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "vSale1": {
+       "base": 152,
+       "cfg": 150,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.64,
+       "dn": 2,
+       "up": 2,
+       "min": -6,
+       "max": 3
+      },
+      "root1": {
+       "base": 148,
+       "cfg": 146,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "leftPreMean": {
+       "base": 6.477,
+       "cfg": 6.49,
+       "dMean": -0.01,
+       "dn": 3,
+       "up": 3,
+       "min": -0.081,
+       "max": 0.058
+      },
+      "leftPreDays": {
+       "base": 132,
+       "cfg": 132,
+       "dMean": -0.73,
+       "dn": 4,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "zeroPreDays": {
+       "base": 16,
+       "cfg": 16,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "blkPreDays": {
+       "base": 13,
+       "cfg": 13,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 1139,
+       "cfg": 1138,
+       "dMean": -9,
+       "dn": 5,
+       "up": 0,
+       "min": -25,
+       "max": 0
+      },
+      "maxAtMove": {
+       "base": 19,
+       "cfg": 19,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "c60,c120,hm1,fmN"
+     }
+    },
+    "GH_L4_08": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "sameKeys": "money,move,net,home,end,c60,c120,c240,hm1,fm1,hmN,fmN,grN,vSold,vWon,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "pSold": {
+       "base": 7,
+       "cfg": 7,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 13,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "sameKeys": "money,move,net,home,end,c60,c120,c240,hm1,fm1,hmN,fmN,grN,vSold,vWon,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     }
+    },
+    "GH_L3_30": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "home": {
+       "base": 355,
+       "cfg": 350,
+       "dMean": -2.91,
+       "dn": 2,
+       "up": 0,
+       "min": -18,
+       "max": 0
+      },
+      "end": {
+       "base": 355,
+       "cfg": 350,
+       "dMean": -2.91,
+       "dn": 2,
+       "up": 0,
+       "min": -18,
+       "max": 0
+      },
+      "hmN": {
+       "base": 3,
+       "cfg": 3,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "vWon": {
+       "base": 2900000,
+       "cfg": 2600000,
+       "dMean": 4545.45,
+       "dn": 1,
+       "up": 1,
+       "min": -350000,
+       "max": 400000
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "money,move,net,c60,c120,c240,hm1,fm1,fmN,pSold,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "sameKeys": "money,move,net,home,end,c60,c120,c240,hm1,fm1,hmN,fmN,grN,vSold,vWon,pSold,sale1,vSale1,cuts,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     }
+    }
+   }
+  },
+  "combo_harnessHandTwins": {
+   "base": "GW_base",
+   "baseRows": {
+    "humanQ": {
+     "n": 11,
+     "crash": 0,
+     "money": 135,
+     "move": 135,
+     "net": 267,
+     "home": 380,
+     "end": 380,
+     "c60": 1195130,
+     "c120": 1972650,
+     "c240": 2336988,
+     "hm1": 65,
+     "fm1": 257,
+     "hmN": 2,
+     "fmN": 0,
+     "grN": 5,
+     "vSold": 4,
+     "vWon": 2550000,
+     "pSold": 6,
+     "sale1": 156,
+     "vSale1": 156,
+     "cuts": 12,
+     "root1": 149,
+     "leftPreMean": 8.642,
+     "leftPreDays": 134,
+     "zeroPreDays": 0,
+     "blkPreDays": 0,
+     "spentPre": 496,
+     "maxAtMove": 15
+    },
+    "guide": {
+     "n": 11,
+     "crash": 0,
+     "money": 145,
+     "move": 145,
+     "net": 287,
+     "home": 360,
+     "end": 360,
+     "c60": 1040130,
+     "c120": 1818250,
+     "c240": 2185028,
+     "hm1": 65,
+     "fm1": 299,
+     "hmN": 2,
+     "fmN": 0,
+     "grN": 6,
+     "vSold": 4,
+     "vWon": 2500000,
+     "pSold": 6,
+     "sale1": 153,
+     "vSale1": 153,
+     "cuts": 12,
+     "root1": 149,
+     "leftPreMean": 8.819,
+     "leftPreDays": 144,
+     "zeroPreDays": 0,
+     "blkPreDays": 0,
+     "spentPre": 536,
+     "maxAtMove": 16
+    }
+   },
+   "cfgs": {
+    "GW_An": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 135,
+       "cfg": 135,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "move": {
+       "base": 135,
+       "cfg": 135,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "net": {
+       "base": 267,
+       "cfg": 275,
+       "dMean": -7.64,
+       "dn": 4,
+       "up": 3,
+       "min": -80,
+       "max": 30
+      },
+      "home": {
+       "base": 380,
+       "cfg": 350,
+       "dMean": -10.91,
+       "dn": 3,
+       "up": 2,
+       "min": -99,
+       "max": 60
+      },
+      "end": {
+       "base": 380,
+       "cfg": 350,
+       "dMean": -10.91,
+       "dn": 3,
+       "up": 2,
+       "min": -99,
+       "max": 60
+      },
+      "c240": {
+       "base": 2336988,
+       "cfg": 2352188,
+       "dMean": 101905.82,
+       "dn": 3,
+       "up": 4,
+       "min": -330000,
+       "max": 770000
+      },
+      "hm1": {
+       "base": 65,
+       "cfg": 64,
+       "dMean": -1,
+       "dn": 11,
+       "up": 0,
+       "min": -1,
+       "max": -1
+      },
+      "fm1": {
+       "base": 257,
+       "cfg": 298,
+       "dMean": -50,
+       "dn": 2,
+       "up": 0,
+       "min": -99,
+       "max": -1
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.18,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 2
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 2,
+       "min": -3,
+       "max": 2
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 1,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2550000,
+       "cfg": 2600000,
+       "dMean": 45454.55,
+       "dn": 2,
+       "up": 1,
+       "min": -700000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": -0.09,
+       "dn": 3,
+       "up": 2,
+       "min": -6,
+       "max": 4
+      },
+      "sale1": {
+       "base": 156,
+       "cfg": 155,
+       "dMean": -1.64,
+       "dn": 10,
+       "up": 0,
+       "min": -4,
+       "max": 0
+      },
+      "vSale1": {
+       "base": 156,
+       "cfg": 155,
+       "dMean": -1.64,
+       "dn": 10,
+       "up": 0,
+       "min": -4,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 11,
+       "dMean": -0.27,
+       "dn": 3,
+       "up": 2,
+       "min": -3,
+       "max": 2
+      },
+      "root1": {
+       "base": 149,
+       "cfg": 148,
+       "dMean": -1.55,
+       "dn": 10,
+       "up": 0,
+       "min": -4,
+       "max": 0
+      },
+      "leftPreMean": {
+       "base": 8.642,
+       "cfg": 8.619,
+       "dMean": -0.02,
+       "dn": 11,
+       "up": 0,
+       "min": -0.047,
+       "max": -0.014
+      },
+      "leftPreDays": {
+       "base": 134,
+       "cfg": 134,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 496,
+       "cfg": 496,
+       "dMean": -0.64,
+       "dn": 2,
+       "up": 1,
+       "min": -5,
+       "max": 1
+      },
+      "sameKeys": "c60,c120,zeroPreDays,blkPreDays,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 145,
+       "cfg": 145,
+       "dMean": -0.36,
+       "dn": 4,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "move": {
+       "base": 145,
+       "cfg": 145,
+       "dMean": -0.36,
+       "dn": 4,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "net": {
+       "base": 287,
+       "cfg": 287,
+       "dMean": 7.45,
+       "dn": 4,
+       "up": 3,
+       "min": -43,
+       "max": 101
+      },
+      "home": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": 1.55,
+       "dn": 3,
+       "up": 2,
+       "min": -107,
+       "max": 143
+      },
+      "end": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": 1.55,
+       "dn": 3,
+       "up": 2,
+       "min": -107,
+       "max": 143
+      },
+      "c240": {
+       "base": 2185028,
+       "cfg": 2205028,
+       "dMean": -90868.91,
+       "dn": 6,
+       "up": 2,
+       "min": -730000,
+       "max": 330000
+      },
+      "hm1": {
+       "base": 65,
+       "cfg": 64,
+       "dMean": -1,
+       "dn": 11,
+       "up": 0,
+       "min": -1,
+       "max": -1
+      },
+      "fm1": {
+       "base": 299,
+       "cfg": 272,
+       "dMean": -18.33,
+       "dn": 3,
+       "up": 0,
+       "min": -53,
+       "max": -1
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.27,
+       "dn": 1,
+       "up": 3,
+       "min": -2,
+       "max": 2
+      },
+      "grN": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.18,
+       "dn": 2,
+       "up": 4,
+       "min": -3,
+       "max": 2
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": 0.09,
+       "dn": 2,
+       "up": 3,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2500000,
+       "cfg": 2600000,
+       "dMean": 140909.09,
+       "dn": 2,
+       "up": 3,
+       "min": -1500000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.27,
+       "dn": 2,
+       "up": 3,
+       "min": -6,
+       "max": 7
+      },
+      "sale1": {
+       "base": 153,
+       "cfg": 152,
+       "dMean": -1,
+       "dn": 9,
+       "up": 0,
+       "min": -3,
+       "max": 0
+      },
+      "vSale1": {
+       "base": 153,
+       "cfg": 152,
+       "dMean": -1,
+       "dn": 9,
+       "up": 0,
+       "min": -3,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0.45,
+       "dn": 2,
+       "up": 5,
+       "min": -5,
+       "max": 5
+      },
+      "root1": {
+       "base": 149,
+       "cfg": 148,
+       "dMean": -1.18,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -1
+      },
+      "leftPreMean": {
+       "base": 8.819,
+       "cfg": 8.792,
+       "dMean": -0.03,
+       "dn": 11,
+       "up": 0,
+       "min": -0.047,
+       "max": -0.021
+      },
+      "leftPreDays": {
+       "base": 144,
+       "cfg": 144,
+       "dMean": -0.36,
+       "dn": 4,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 536,
+       "cfg": 536,
+       "dMean": -1.36,
+       "dn": 4,
+       "up": 1,
+       "min": -5,
+       "max": 1
+      },
+      "sameKeys": "c60,c120,fmN,zeroPreDays,blkPreDays,maxAtMove"
+     }
+    },
+    "GW_Bn": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 135,
+       "cfg": 135,
+       "dMean": -0.45,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "move": {
+       "base": 135,
+       "cfg": 135,
+       "dMean": -0.45,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "net": {
+       "base": 267,
+       "cfg": 278,
+       "dMean": -10.36,
+       "dn": 3,
+       "up": 2,
+       "min": -79,
+       "max": 45
+      },
+      "home": {
+       "base": 380,
+       "cfg": 355,
+       "dMean": -19.91,
+       "dn": 6,
+       "up": 1,
+       "min": -100,
+       "max": 70
+      },
+      "end": {
+       "base": 380,
+       "cfg": 355,
+       "dMean": -19.91,
+       "dn": 6,
+       "up": 1,
+       "min": -100,
+       "max": 70
+      },
+      "c240": {
+       "base": 2336988,
+       "cfg": 2356988,
+       "dMean": 68742.73,
+       "dn": 2,
+       "up": 3,
+       "min": -693332,
+       "max": 769834
+      },
+      "fm1": {
+       "base": 257,
+       "cfg": 299,
+       "dMean": -49,
+       "dn": 1,
+       "up": 0,
+       "min": -98,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.27,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 2
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 6,
+       "dMean": 0.36,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 2
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 5,
+       "dMean": 0.18,
+       "dn": 1,
+       "up": 2,
+       "min": -1,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2550000,
+       "cfg": 2550000,
+       "dMean": 136363.64,
+       "dn": 1,
+       "up": 2,
+       "min": -750000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 5,
+       "dMean": -0.82,
+       "dn": 4,
+       "up": 1,
+       "min": -6,
+       "max": 1
+      },
+      "sale1": {
+       "base": 156,
+       "cfg": 154,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "vSale1": {
+       "base": 156,
+       "cfg": 154,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 11,
+       "dMean": -0.36,
+       "dn": 4,
+       "up": 1,
+       "min": -3,
+       "max": 2
+      },
+      "root1": {
+       "base": 149,
+       "cfg": 147,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "leftPreMean": {
+       "base": 8.642,
+       "cfg": 8.642,
+       "dMean": -0.01,
+       "dn": 3,
+       "up": 1,
+       "min": -0.035,
+       "max": 0.014
+      },
+      "leftPreDays": {
+       "base": 134,
+       "cfg": 134,
+       "dMean": -0.45,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 496,
+       "cfg": 496,
+       "dMean": -1.82,
+       "dn": 3,
+       "up": 0,
+       "min": -9,
+       "max": 0
+      },
+      "sameKeys": "c60,c120,hm1,zeroPreDays,blkPreDays,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 145,
+       "cfg": 145,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "move": {
+       "base": 145,
+       "cfg": 145,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "net": {
+       "base": 287,
+       "cfg": 320,
+       "dMean": 17.64,
+       "dn": 1,
+       "up": 3,
+       "min": -13,
+       "max": 102
+      },
+      "home": {
+       "base": 360,
+       "cfg": 410,
+       "dMean": 18.27,
+       "dn": 3,
+       "up": 3,
+       "min": -30,
+       "max": 144
+      },
+      "end": {
+       "base": 360,
+       "cfg": 410,
+       "dMean": 18.27,
+       "dn": 3,
+       "up": 3,
+       "min": -30,
+       "max": 144
+      },
+      "c240": {
+       "base": 2185028,
+       "cfg": 2205028,
+       "dMean": -157217.09,
+       "dn": 7,
+       "up": 2,
+       "min": -730000,
+       "max": 337000
+      },
+      "fm1": {
+       "base": 299,
+       "cfg": 272,
+       "dMean": -17.67,
+       "dn": 1,
+       "up": 0,
+       "min": -53,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0,
+       "dn": 2,
+       "up": 2,
+       "min": -2,
+       "max": 2
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.27,
+       "dn": 2,
+       "up": 4,
+       "min": -2,
+       "max": 3
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 5,
+       "dMean": 0.18,
+       "dn": 1,
+       "up": 3,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2500000,
+       "cfg": 2500000,
+       "dMean": -9090.91,
+       "dn": 2,
+       "up": 2,
+       "min": -1500000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 7,
+       "dMean": 0.82,
+       "dn": 1,
+       "up": 4,
+       "min": -3,
+       "max": 7
+      },
+      "sale1": {
+       "base": 153,
+       "cfg": 151,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "vSale1": {
+       "base": 153,
+       "cfg": 151,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 13,
+       "dMean": 0.82,
+       "dn": 1,
+       "up": 4,
+       "min": -1,
+       "max": 5
+      },
+      "root1": {
+       "base": 149,
+       "cfg": 147,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "leftPreMean": {
+       "base": 8.819,
+       "cfg": 8.819,
+       "dMean": -0.01,
+       "dn": 5,
+       "up": 1,
+       "min": -0.035,
+       "max": 0.013
+      },
+      "leftPreDays": {
+       "base": 144,
+       "cfg": 144,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 536,
+       "cfg": 536,
+       "dMean": -3.36,
+       "dn": 5,
+       "up": 0,
+       "min": -9,
+       "max": 0
+      },
+      "sameKeys": "c60,c120,hm1,zeroPreDays,blkPreDays,maxAtMove"
+     }
+    },
+    "GW_Cn": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 267,
+       "cfg": 278,
+       "dMean": 1.18,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 13
+      },
+      "home": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": -5.73,
+       "dn": 3,
+       "up": 0,
+       "min": -32,
+       "max": 0
+      },
+      "end": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": -5.73,
+       "dn": 3,
+       "up": 0,
+       "min": -32,
+       "max": 0
+      },
+      "c240": {
+       "base": 2336988,
+       "cfg": 2336988,
+       "dMean": 30000,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 330000
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 2,
+       "dMean": 0,
+       "dn": 1,
+       "up": 1,
+       "min": -1,
+       "max": 1
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "vWon": {
+       "base": 2550000,
+       "cfg": 2900000,
+       "dMean": 109090.91,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 800000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "money,move,c60,c120,hm1,fm1,vSold,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 287,
+       "cfg": 287,
+       "dMean": 1.36,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 15
+      },
+      "home": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": -5.82,
+       "dn": 2,
+       "up": 0,
+       "min": -34,
+       "max": 0
+      },
+      "end": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": -5.82,
+       "dn": 2,
+       "up": 0,
+       "min": -34,
+       "max": 0
+      },
+      "c240": {
+       "base": 2185028,
+       "cfg": 2185028,
+       "dMean": 30000,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 330000
+      },
+      "fm1": {
+       "base": 299,
+       "cfg": 299,
+       "dMean": -3,
+       "dn": 1,
+       "up": 0,
+       "min": -9,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.18,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 1
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 6,
+       "cfg": 5,
+       "dMean": 0.18,
+       "dn": 1,
+       "up": 3,
+       "min": -1,
+       "max": 1
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": 0,
+       "dn": 1,
+       "up": 1,
+       "min": -1,
+       "max": 1
+      },
+      "vWon": {
+       "base": 2500000,
+       "cfg": 2500000,
+       "dMean": 36363.64,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 350000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": -0.27,
+       "dn": 1,
+       "up": 0,
+       "min": -3,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "money,move,c60,c120,hm1,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     }
+    },
+    "GW_L1_1": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 135,
+       "cfg": 135,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "move": {
+       "base": 135,
+       "cfg": 135,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "net": {
+       "base": 267,
+       "cfg": 267,
+       "dMean": -8.55,
+       "dn": 4,
+       "up": 2,
+       "min": -80,
+       "max": 30
+      },
+      "home": {
+       "base": 380,
+       "cfg": 350,
+       "dMean": -8.36,
+       "dn": 3,
+       "up": 2,
+       "min": -99,
+       "max": 60
+      },
+      "end": {
+       "base": 380,
+       "cfg": 350,
+       "dMean": -8.36,
+       "dn": 3,
+       "up": 2,
+       "min": -99,
+       "max": 60
+      },
+      "c240": {
+       "base": 2336988,
+       "cfg": 2352188,
+       "dMean": 71905.82,
+       "dn": 3,
+       "up": 3,
+       "min": -330000,
+       "max": 770000
+      },
+      "hm1": {
+       "base": 65,
+       "cfg": 64,
+       "dMean": -1,
+       "dn": 11,
+       "up": 0,
+       "min": -1,
+       "max": -1
+      },
+      "fm1": {
+       "base": 257,
+       "cfg": 207,
+       "dMean": -50,
+       "dn": 2,
+       "up": 0,
+       "min": -99,
+       "max": -1
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.18,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 2
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": -0.27,
+       "dn": 2,
+       "up": 1,
+       "min": -3,
+       "max": 2
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 1,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2550000,
+       "cfg": 2600000,
+       "dMean": 45454.55,
+       "dn": 2,
+       "up": 1,
+       "min": -700000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0,
+       "dn": 2,
+       "up": 2,
+       "min": -6,
+       "max": 4
+      },
+      "sale1": {
+       "base": 156,
+       "cfg": 155,
+       "dMean": -1.64,
+       "dn": 10,
+       "up": 0,
+       "min": -4,
+       "max": 0
+      },
+      "vSale1": {
+       "base": 156,
+       "cfg": 155,
+       "dMean": -1.64,
+       "dn": 10,
+       "up": 0,
+       "min": -4,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 2,
+       "min": -3,
+       "max": 2
+      },
+      "root1": {
+       "base": 149,
+       "cfg": 148,
+       "dMean": -1.55,
+       "dn": 10,
+       "up": 0,
+       "min": -4,
+       "max": 0
+      },
+      "leftPreMean": {
+       "base": 8.642,
+       "cfg": 8.619,
+       "dMean": -0.02,
+       "dn": 11,
+       "up": 0,
+       "min": -0.047,
+       "max": -0.014
+      },
+      "leftPreDays": {
+       "base": 134,
+       "cfg": 134,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 496,
+       "cfg": 496,
+       "dMean": -0.64,
+       "dn": 2,
+       "up": 1,
+       "min": -5,
+       "max": 1
+      },
+      "sameKeys": "c60,c120,fmN,zeroPreDays,blkPreDays,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 145,
+       "cfg": 145,
+       "dMean": -0.36,
+       "dn": 4,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "move": {
+       "base": 145,
+       "cfg": 145,
+       "dMean": -0.36,
+       "dn": 4,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "net": {
+       "base": 287,
+       "cfg": 287,
+       "dMean": 6.09,
+       "dn": 4,
+       "up": 2,
+       "min": -43,
+       "max": 101
+      },
+      "home": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": 4.27,
+       "dn": 2,
+       "up": 2,
+       "min": -107,
+       "max": 143
+      },
+      "end": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": 4.27,
+       "dn": 2,
+       "up": 2,
+       "min": -107,
+       "max": 143
+      },
+      "c240": {
+       "base": 2185028,
+       "cfg": 2205028,
+       "dMean": -120868.91,
+       "dn": 6,
+       "up": 1,
+       "min": -730000,
+       "max": 20000
+      },
+      "hm1": {
+       "base": 65,
+       "cfg": 64,
+       "dMean": -1,
+       "dn": 11,
+       "up": 0,
+       "min": -1,
+       "max": -1
+      },
+      "fm1": {
+       "base": 299,
+       "cfg": 272,
+       "dMean": -18.33,
+       "dn": 3,
+       "up": 0,
+       "min": -53,
+       "max": -1
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.18,
+       "dn": 1,
+       "up": 2,
+       "min": -2,
+       "max": 2
+      },
+      "grN": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0,
+       "dn": 2,
+       "up": 3,
+       "min": -3,
+       "max": 2
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": 0,
+       "dn": 2,
+       "up": 2,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2500000,
+       "cfg": 2600000,
+       "dMean": 109090.91,
+       "dn": 2,
+       "up": 2,
+       "min": -1500000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.55,
+       "dn": 1,
+       "up": 3,
+       "min": -6,
+       "max": 7
+      },
+      "sale1": {
+       "base": 153,
+       "cfg": 152,
+       "dMean": -1,
+       "dn": 9,
+       "up": 0,
+       "min": -3,
+       "max": 0
+      },
+      "vSale1": {
+       "base": 153,
+       "cfg": 152,
+       "dMean": -1,
+       "dn": 9,
+       "up": 0,
+       "min": -3,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0.64,
+       "dn": 1,
+       "up": 6,
+       "min": -5,
+       "max": 5
+      },
+      "root1": {
+       "base": 149,
+       "cfg": 148,
+       "dMean": -1.18,
+       "dn": 11,
+       "up": 0,
+       "min": -3,
+       "max": -1
+      },
+      "leftPreMean": {
+       "base": 8.819,
+       "cfg": 8.792,
+       "dMean": -0.03,
+       "dn": 11,
+       "up": 0,
+       "min": -0.047,
+       "max": -0.021
+      },
+      "leftPreDays": {
+       "base": 144,
+       "cfg": 144,
+       "dMean": -0.36,
+       "dn": 4,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 536,
+       "cfg": 536,
+       "dMean": -1.36,
+       "dn": 4,
+       "up": 1,
+       "min": -5,
+       "max": 1
+      },
+      "sameKeys": "c60,c120,fmN,zeroPreDays,blkPreDays,maxAtMove"
+     }
+    },
+    "GW_L2m_120": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 267,
+       "cfg": 278,
+       "dMean": 1.18,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 13
+      },
+      "home": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": -2.91,
+       "dn": 1,
+       "up": 0,
+       "min": -32,
+       "max": 0
+      },
+      "end": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": -2.91,
+       "dn": 1,
+       "up": 0,
+       "min": -32,
+       "max": 0
+      },
+      "c240": {
+       "base": 2336988,
+       "cfg": 2336988,
+       "dMean": 30000,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 330000
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "money,move,c60,c120,hm1,fm1,hmN,vSold,vWon,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 287,
+       "cfg": 287,
+       "dMean": 1.36,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 15
+      },
+      "home": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": -2.73,
+       "dn": 1,
+       "up": 0,
+       "min": -30,
+       "max": 0
+      },
+      "end": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": -2.73,
+       "dn": 1,
+       "up": 0,
+       "min": -30,
+       "max": 0
+      },
+      "c240": {
+       "base": 2185028,
+       "cfg": 2185028,
+       "dMean": 30000,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 330000
+      },
+      "fm1": {
+       "base": 299,
+       "cfg": 299,
+       "dMean": -3,
+       "dn": 1,
+       "up": 0,
+       "min": -9,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.27,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 1
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "vWon": {
+       "base": 2500000,
+       "cfg": 2500000,
+       "dMean": 31818.18,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 350000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": -0.27,
+       "dn": 1,
+       "up": 0,
+       "min": -3,
+       "max": 0
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "money,move,c60,c120,hm1,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     }
+    },
+    "GW_L5_2": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 135,
+       "cfg": 135,
+       "dMean": -0.45,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "move": {
+       "base": 135,
+       "cfg": 135,
+       "dMean": -0.45,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "net": {
+       "base": 267,
+       "cfg": 267,
+       "dMean": -11.55,
+       "dn": 3,
+       "up": 1,
+       "min": -79,
+       "max": 45
+      },
+      "home": {
+       "base": 380,
+       "cfg": 355,
+       "dMean": -17.18,
+       "dn": 6,
+       "up": 1,
+       "min": -100,
+       "max": 70
+      },
+      "end": {
+       "base": 380,
+       "cfg": 355,
+       "dMean": -17.18,
+       "dn": 6,
+       "up": 1,
+       "min": -100,
+       "max": 70
+      },
+      "c240": {
+       "base": 2336988,
+       "cfg": 2356988,
+       "dMean": 38742.73,
+       "dn": 2,
+       "up": 2,
+       "min": -693332,
+       "max": 769834
+      },
+      "fm1": {
+       "base": 257,
+       "cfg": 208,
+       "dMean": -49,
+       "dn": 1,
+       "up": 0,
+       "min": -98,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 3,
+       "dMean": 0.27,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 2
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 6,
+       "dMean": 0.27,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 2
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 5,
+       "dMean": 0.18,
+       "dn": 1,
+       "up": 2,
+       "min": -1,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2550000,
+       "cfg": 2550000,
+       "dMean": 136363.64,
+       "dn": 1,
+       "up": 2,
+       "min": -750000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 5,
+       "dMean": -0.82,
+       "dn": 4,
+       "up": 1,
+       "min": -6,
+       "max": 1
+      },
+      "sale1": {
+       "base": 156,
+       "cfg": 154,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "vSale1": {
+       "base": 156,
+       "cfg": 154,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 11,
+       "dMean": -0.36,
+       "dn": 3,
+       "up": 1,
+       "min": -3,
+       "max": 2
+      },
+      "root1": {
+       "base": 149,
+       "cfg": 147,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "leftPreMean": {
+       "base": 8.642,
+       "cfg": 8.642,
+       "dMean": -0.01,
+       "dn": 3,
+       "up": 1,
+       "min": -0.035,
+       "max": 0.014
+      },
+      "leftPreDays": {
+       "base": 134,
+       "cfg": 134,
+       "dMean": -0.45,
+       "dn": 3,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 496,
+       "cfg": 496,
+       "dMean": -1.82,
+       "dn": 3,
+       "up": 0,
+       "min": -9,
+       "max": 0
+      },
+      "sameKeys": "c60,c120,hm1,fmN,zeroPreDays,blkPreDays,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "money": {
+       "base": 145,
+       "cfg": 145,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "move": {
+       "base": 145,
+       "cfg": 145,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "net": {
+       "base": 287,
+       "cfg": 315,
+       "dMean": 16.27,
+       "dn": 1,
+       "up": 2,
+       "min": -13,
+       "max": 102
+      },
+      "home": {
+       "base": 360,
+       "cfg": 410,
+       "dMean": 21.45,
+       "dn": 1,
+       "up": 3,
+       "min": -16,
+       "max": 144
+      },
+      "end": {
+       "base": 360,
+       "cfg": 410,
+       "dMean": 21.45,
+       "dn": 1,
+       "up": 3,
+       "min": -16,
+       "max": 144
+      },
+      "c240": {
+       "base": 2185028,
+       "cfg": 2205028,
+       "dMean": -187217.09,
+       "dn": 7,
+       "up": 2,
+       "min": -730000,
+       "max": 20000
+      },
+      "fm1": {
+       "base": 299,
+       "cfg": 272,
+       "dMean": -17.67,
+       "dn": 1,
+       "up": 0,
+       "min": -53,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 2,
+       "dMean": -0.09,
+       "dn": 2,
+       "up": 1,
+       "min": -2,
+       "max": 2
+      },
+      "grN": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0,
+       "dn": 2,
+       "up": 2,
+       "min": -2,
+       "max": 2
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 5,
+       "dMean": 0.09,
+       "dn": 1,
+       "up": 2,
+       "min": -2,
+       "max": 2
+      },
+      "vWon": {
+       "base": 2500000,
+       "cfg": 2500000,
+       "dMean": -40909.09,
+       "dn": 2,
+       "up": 1,
+       "min": -1500000,
+       "max": 1500000
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 7,
+       "dMean": 1,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 7
+      },
+      "sale1": {
+       "base": 153,
+       "cfg": 151,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "vSale1": {
+       "base": 153,
+       "cfg": 151,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 13,
+       "dMean": 0.82,
+       "dn": 0,
+       "up": 3,
+       "min": 0,
+       "max": 5
+      },
+      "root1": {
+       "base": 149,
+       "cfg": 147,
+       "dMean": -2,
+       "dn": 11,
+       "up": 0,
+       "min": -2,
+       "max": -2
+      },
+      "leftPreMean": {
+       "base": 8.819,
+       "cfg": 8.819,
+       "dMean": -0.01,
+       "dn": 5,
+       "up": 1,
+       "min": -0.035,
+       "max": 0.013
+      },
+      "leftPreDays": {
+       "base": 144,
+       "cfg": 144,
+       "dMean": -0.82,
+       "dn": 5,
+       "up": 0,
+       "min": -2,
+       "max": 0
+      },
+      "spentPre": {
+       "base": 536,
+       "cfg": 536,
+       "dMean": -3.36,
+       "dn": 5,
+       "up": 0,
+       "min": -9,
+       "max": 0
+      },
+      "sameKeys": "c60,c120,hm1,fmN,zeroPreDays,blkPreDays,maxAtMove"
+     }
+    },
+    "GW_L4_08": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 267,
+       "cfg": 267,
+       "dMean": -4.27,
+       "dn": 1,
+       "up": 0,
+       "min": -47,
+       "max": 0
+      },
+      "home": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": 0.18,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 2
+      },
+      "end": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": 0.18,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 2
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "sameKeys": "money,move,c60,c120,c240,hm1,fm1,hmN,fmN,grN,vSold,vWon,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "home": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": -0.45,
+       "dn": 1,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "end": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": -0.45,
+       "dn": 1,
+       "up": 0,
+       "min": -5,
+       "max": 0
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "sameKeys": "money,move,net,c60,c120,c240,hm1,fm1,hmN,fmN,grN,vSold,vWon,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     }
+    },
+    "GW_L3_30": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "home": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": -2.82,
+       "dn": 2,
+       "up": 0,
+       "min": -19,
+       "max": 0
+      },
+      "end": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": -2.82,
+       "dn": 2,
+       "up": 0,
+       "min": -19,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 2,
+       "dMean": 0,
+       "dn": 1,
+       "up": 1,
+       "min": -1,
+       "max": 1
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "vWon": {
+       "base": 2550000,
+       "cfg": 2900000,
+       "dMean": 109090.91,
+       "dn": 0,
+       "up": 2,
+       "min": 0,
+       "max": 800000
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "money,move,net,c60,c120,c240,hm1,fm1,vSold,pSold,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "home": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": -3.09,
+       "dn": 1,
+       "up": 0,
+       "min": -34,
+       "max": 0
+      },
+      "end": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": -3.09,
+       "dn": 1,
+       "up": 0,
+       "min": -34,
+       "max": 0
+      },
+      "hmN": {
+       "base": 2,
+       "cfg": 2,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "grN": {
+       "base": 6,
+       "cfg": 5,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "vWon": {
+       "base": 2500000,
+       "cfg": 2500000,
+       "dMean": 4545.45,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 50000
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "sameKeys": "money,move,net,c60,c120,c240,hm1,fm1,fmN,pSold,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     }
+    }
+   }
+  },
   "career": {
    "base": "J_base",
    "cfgs": {
@@ -10812,6 +15621,2664 @@
     "dry": 0
    }
   ]
+ },
+ "comboVsSum_gameHand": {
+  "GH_A": {
+   "humanQ": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -2.273
+     },
+     "sum": {
+      "med": 0,
+      "mean": -1.182
+     },
+     "overSum": 4,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -6.273
+     },
+     "sum": {
+      "med": 0,
+      "mean": 5.182
+     },
+     "overSum": 3,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 9800,
+      "mean": 15581.818
+     },
+     "sum": {
+      "med": 6800,
+      "mean": 18363.636
+     },
+     "overSum": 8,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 32600,
+      "mean": 152201.091
+     },
+     "sum": {
+      "med": 53766,
+      "mean": 155650
+     },
+     "overSum": 3,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": -63636.364
+     },
+     "sum": {
+      "med": 0,
+      "mean": -177272.727
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": -15,
+      "mean": -15.273
+     },
+     "sum": {
+      "med": -27,
+      "mean": -27.545
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": -12,
+      "mean": -13
+     },
+     "sum": {
+      "med": -24,
+      "mean": -26.727
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   },
+   "guide": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -2.273
+     },
+     "sum": {
+      "med": 0,
+      "mean": -4.182
+     },
+     "overSum": 4,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -17.455
+     },
+     "sum": {
+      "med": -14,
+      "mean": -36.455
+     },
+     "overSum": 3,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 8600,
+      "mean": 14872.727
+     },
+     "sum": {
+      "med": 3800,
+      "mean": 16345.455
+     },
+     "overSum": 8,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 9800,
+      "mean": -22714.727
+     },
+     "sum": {
+      "med": 65368,
+      "mean": 32584.909
+     },
+     "overSum": 5,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 372727.273
+     },
+     "sum": {
+      "med": 300000,
+      "mean": 604545.455
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": -16,
+      "mean": -15.818
+     },
+     "sum": {
+      "med": -29,
+      "mean": -28.636
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": -13,
+      "mean": -13.364
+     },
+     "sum": {
+      "med": -26,
+      "mean": -27.455
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   }
+  },
+  "GH_B": {
+   "humanQ": {
+    "move": {
+     "combo": {
+      "med": -1,
+      "mean": -2.545
+     },
+     "sum": {
+      "med": -2,
+      "mean": -2.636
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": -10,
+      "mean": -15.273
+     },
+     "sum": {
+      "med": -21,
+      "mean": -5.636
+     },
+     "overSum": 5,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 9800,
+      "mean": 15581.818
+     },
+     "sum": {
+      "med": 9800,
+      "mean": 15581.818
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 37328,
+      "mean": 119038
+     },
+     "sum": {
+      "med": 46144,
+      "mean": 149022.909
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 27272.727
+     },
+     "sum": {
+      "med": 0,
+      "mean": 27272.727
+     },
+     "overSum": 1,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": -15,
+      "mean": -15.273
+     },
+     "sum": {
+      "med": -15,
+      "mean": -15.273
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": -12,
+      "mean": -13
+     },
+     "sum": {
+      "med": -12,
+      "mean": -13.091
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   },
+   "guide": {
+    "move": {
+     "combo": {
+      "med": -1,
+      "mean": -2.727
+     },
+     "sum": {
+      "med": -1,
+      "mean": -2.727
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -0.727
+     },
+     "sum": {
+      "med": 0,
+      "mean": -34.091
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 8600,
+      "mean": 14872.727
+     },
+     "sum": {
+      "med": 8600,
+      "mean": 14872.727
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": -51200,
+      "mean": -89062.909
+     },
+     "sum": {
+      "med": 9634,
+      "mean": -47580.545
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 222727.273
+     },
+     "sum": {
+      "med": 0,
+      "mean": 627272.727
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": -16,
+      "mean": -15.818
+     },
+     "sum": {
+      "med": -16,
+      "mean": -15.909
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": -13,
+      "mean": -13.364
+     },
+     "sum": {
+      "med": -13,
+      "mean": -13.455
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   }
+  },
+  "GH_C": {
+   "humanQ": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -2.091
+     },
+     "sum": {
+      "med": 0,
+      "mean": -1.182
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -1.091
+     },
+     "sum": {
+      "med": 0,
+      "mean": 2.273
+     },
+     "overSum": 1,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 9800,
+      "mean": 15581.818
+     },
+     "sum": {
+      "med": 6800,
+      "mean": 18363.636
+     },
+     "overSum": 8,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 37328,
+      "mean": 80295.273
+     },
+     "sum": {
+      "med": 53766,
+      "mean": 155650
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": -172727.273
+     },
+     "overSum": 3,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": -15,
+      "mean": -15.273
+     },
+     "sum": {
+      "med": -27,
+      "mean": -27.545
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": -12,
+      "mean": -13
+     },
+     "sum": {
+      "med": -20,
+      "mean": -22
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   },
+   "guide": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -1.909
+     },
+     "sum": {
+      "med": 0,
+      "mean": -4.182
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -24.818
+     },
+     "sum": {
+      "med": -14,
+      "mean": -36.455
+     },
+     "overSum": 3,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 8600,
+      "mean": 14872.727
+     },
+     "sum": {
+      "med": 3800,
+      "mean": 16345.455
+     },
+     "overSum": 8,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 41366,
+      "mean": 98154.182
+     },
+     "sum": {
+      "med": 65368,
+      "mean": 32584.909
+     },
+     "overSum": 7,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 268181.818
+     },
+     "sum": {
+      "med": 300000,
+      "mean": 604545.455
+     },
+     "overSum": 1,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": -16,
+      "mean": -15.818
+     },
+     "sum": {
+      "med": -29,
+      "mean": -28.636
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": -13,
+      "mean": -13.364
+     },
+     "sum": {
+      "med": -22,
+      "mean": -22.727
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   }
+  },
+  "GH_S67": {
+   "humanQ": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -2.091
+     },
+     "sum": {
+      "med": 0,
+      "mean": -1.182
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": 4.636
+     },
+     "sum": {
+      "med": 0,
+      "mean": 7.273
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 9800,
+      "mean": 15581.818
+     },
+     "sum": {
+      "med": 6800,
+      "mean": 18363.636
+     },
+     "overSum": 8,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 32766,
+      "mean": 50295.273
+     },
+     "sum": {
+      "med": 53766,
+      "mean": 125650
+     },
+     "overSum": 2,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": -109090.909
+     },
+     "sum": {
+      "med": 0,
+      "mean": -177272.727
+     },
+     "overSum": 1,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": -15,
+      "mean": -15.273
+     },
+     "sum": {
+      "med": -27,
+      "mean": -27.545
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": -12,
+      "mean": -13
+     },
+     "sum": {
+      "med": -20,
+      "mean": -22
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   },
+   "guide": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -1.909
+     },
+     "sum": {
+      "med": 0,
+      "mean": -4.182
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -19
+     },
+     "sum": {
+      "med": 0,
+      "mean": -33.727
+     },
+     "overSum": 3,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 8600,
+      "mean": 14872.727
+     },
+     "sum": {
+      "med": 3800,
+      "mean": 16345.455
+     },
+     "overSum": 8,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 31400,
+      "mean": 68154.182
+     },
+     "sum": {
+      "med": 7566,
+      "mean": 2584.909
+     },
+     "overSum": 7,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 231818.182
+     },
+     "sum": {
+      "med": 0,
+      "mean": 572727.273
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": -16,
+      "mean": -15.818
+     },
+     "sum": {
+      "med": -29,
+      "mean": -28.636
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": -13,
+      "mean": -13.364
+     },
+     "sum": {
+      "med": -22,
+      "mean": -22.727
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   }
+  }
+ },
+ "comboVsSum_harnessHand": {
+  "GW_An": {
+   "humanQ": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -0.182
+     },
+     "sum": {
+      "med": 0,
+      "mean": -0.182
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -10.909
+     },
+     "sum": {
+      "med": 0,
+      "mean": -11.273
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 0,
+      "mean": 101905.818
+     },
+     "sum": {
+      "med": 0,
+      "mean": 101905.818
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 45454.545
+     },
+     "sum": {
+      "med": 0,
+      "mean": 45454.545
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   },
+   "guide": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -0.364
+     },
+     "sum": {
+      "med": 0,
+      "mean": -0.364
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": 1.545
+     },
+     "sum": {
+      "med": 0,
+      "mean": 1.545
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": -166,
+      "mean": -90868.909
+     },
+     "sum": {
+      "med": -166,
+      "mean": -90868.909
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 140909.091
+     },
+     "sum": {
+      "med": 0,
+      "mean": 140909.091
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   }
+  },
+  "GW_Bn": {
+   "humanQ": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -0.455
+     },
+     "sum": {
+      "med": 0,
+      "mean": -0.455
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": -1,
+      "mean": -19.909
+     },
+     "sum": {
+      "med": -1,
+      "mean": -19.909
+     },
+     "overSum": 1,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 0,
+      "mean": 68742.727
+     },
+     "sum": {
+      "med": 0,
+      "mean": 68742.727
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 136363.636
+     },
+     "sum": {
+      "med": 0,
+      "mean": 136363.636
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   },
+   "guide": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": -0.818
+     },
+     "sum": {
+      "med": 0,
+      "mean": -0.818
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": 18.273
+     },
+     "sum": {
+      "med": 0,
+      "mean": 18.273
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": -332,
+      "mean": -157217.091
+     },
+     "sum": {
+      "med": -332,
+      "mean": -157217.091
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": -9090.909
+     },
+     "sum": {
+      "med": 0,
+      "mean": -9090.909
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   }
+  },
+  "GW_Cn": {
+   "humanQ": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -5.727
+     },
+     "sum": {
+      "med": 0,
+      "mean": -5.727
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 0,
+      "mean": 30000
+     },
+     "sum": {
+      "med": 0,
+      "mean": 30000
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 109090.909
+     },
+     "sum": {
+      "med": 0,
+      "mean": 109090.909
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   },
+   "guide": {
+    "move": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "home": {
+     "combo": {
+      "med": 0,
+      "mean": -5.818
+     },
+     "sum": {
+      "med": 0,
+      "mean": -5.818
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c120": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "c240": {
+     "combo": {
+      "med": 0,
+      "mean": 30000
+     },
+     "sum": {
+      "med": 0,
+      "mean": 30000
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "vWon": {
+     "combo": {
+      "med": 0,
+      "mean": 36363.636
+     },
+     "sum": {
+      "med": 0,
+      "mean": 36363.636
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "zero": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "blk": {
+     "combo": {
+      "med": 0,
+      "mean": 0
+     },
+     "sum": {
+      "med": 0,
+      "mean": 0
+     },
+     "overSum": 0,
+     "vsHarness": {
+      "better": 0,
+      "worse": 0,
+      "same": 11,
+      "meanDiff": 0
+     }
+    },
+    "half": 0
+   }
+  }
+ },
+ "career_combo_gameHand": {
+  "base": "J_GH_base",
+  "cfgs": {
+   "J_GH_C": {
+    "shop71": {
+     "move": {
+      "base": 150,
+      "cfg": 145,
+      "dMean": -0.818,
+      "dn": 3,
+      "up": 4,
+      "min": -5,
+      "max": 1
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": 7.455,
+      "dn": 3,
+      "up": 5,
+      "min": -78,
+      "max": 170
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": 7.455,
+      "dn": 3,
+      "up": 5,
+      "min": -78,
+      "max": 170
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "open": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": 7.455,
+      "dn": 3,
+      "up": 5,
+      "min": -78,
+      "max": 170
+     },
+     "done": {
+      "base": 57,
+      "cfg": 60,
+      "dMean": -1.273,
+      "dn": 5,
+      "up": 5,
+      "min": -40,
+      "max": 29
+     },
+     "expired": {
+      "base": 6,
+      "cfg": 5,
+      "dMean": 0.545,
+      "dn": 5,
+      "up": 3,
+      "min": -12,
+      "max": 22
+     },
+     "won": {
+      "base": 5833800,
+      "cfg": 6661860,
+      "dMean": 210501.818,
+      "dn": 4,
+      "up": 7,
+      "min": -4477040,
+      "max": 2566600
+     },
+     "mPot": {
+      "base": 5,
+      "cfg": 5,
+      "dMean": -0.364,
+      "dn": 5,
+      "up": 4,
+      "min": -5,
+      "max": 2
+     },
+     "mCut": {
+      "base": 3,
+      "cfg": 3,
+      "dMean": 0.182,
+      "dn": 3,
+      "up": 5,
+      "min": -2,
+      "max": 2
+     }
+    },
+    "careR": {
+     "move": {
+      "base": 150,
+      "cfg": 145,
+      "dMean": -0.818,
+      "dn": 3,
+      "up": 4,
+      "min": -5,
+      "max": 1
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": 7.455,
+      "dn": 3,
+      "up": 5,
+      "min": -78,
+      "max": 170
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": 7.455,
+      "dn": 3,
+      "up": 5,
+      "min": -78,
+      "max": 170
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "won": {
+      "base": 7993200,
+      "cfg": 7813600,
+      "dMean": -339647.273,
+      "dn": 5,
+      "up": 4,
+      "min": -3143960,
+      "max": 1952840
+     },
+     "ms3": {
+      "base": 21,
+      "cfg": 21,
+      "dMean": -1.545,
+      "dn": 2,
+      "up": 4,
+      "min": -41,
+      "max": 17
+     },
+     "ms10": {
+      "base": 83,
+      "cfg": 81,
+      "dMean": -7.091,
+      "dn": 5,
+      "up": 3,
+      "min": -77,
+      "max": 33
+     },
+     "ms30": {
+      "base": 333,
+      "cfg": 344,
+      "dMean": 2.364,
+      "dn": 4,
+      "up": 5,
+      "min": -127,
+      "max": 92
+     },
+     "saved": {
+      "base": 73,
+      "cfg": 69,
+      "dMean": -2.182,
+      "dn": 5,
+      "up": 4,
+      "min": -20,
+      "max": 10
+     }
+    },
+    "breedR": {
+     "move": {
+      "base": 150,
+      "cfg": 145,
+      "dMean": -0.818,
+      "dn": 3,
+      "up": 4,
+      "min": -5,
+      "max": 1
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": 7.455,
+      "dn": 3,
+      "up": 5,
+      "min": -78,
+      "max": 170
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": 7.455,
+      "dn": 3,
+      "up": 5,
+      "min": -78,
+      "max": 170
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "prize": {
+      "base": 2250000,
+      "cfg": 2250000,
+      "dMean": -118181.818,
+      "dn": 3,
+      "up": 1,
+      "min": -1150000,
+      "max": 1150000
+     },
+     "v1": {
+      "base": 153,
+      "cfg": 90,
+      "dMean": -37.364,
+      "dn": 7,
+      "up": 2,
+      "min": -153,
+      "max": 141
+     },
+     "v3": {
+      "base": 296,
+      "cfg": 303,
+      "dMean": -1.273,
+      "dn": 4,
+      "up": 4,
+      "min": -85,
+      "max": 40
+     },
+     "vAll": {
+      "base": 401,
+      "cfg": 354,
+      "dMean": -60,
+      "dn": 1,
+      "up": 0,
+      "min": -60,
+      "max": -60
+     },
+     "mHalf": {
+      "base": 336,
+      "cfg": 300.5,
+      "dMean": -56.2,
+      "dn": 7,
+      "up": 3,
+      "min": -225,
+      "max": 31
+     },
+     "mFull": {
+      "base": 401,
+      "cfg": 367,
+      "dMean": 0.5,
+      "dn": 1,
+      "up": 1,
+      "min": -84,
+      "max": 85
+     },
+     "cHalf": {
+      "base": 277,
+      "cfg": 132,
+      "dMean": -85.273,
+      "dn": 9,
+      "up": 1,
+      "min": -231,
+      "max": 17
+     },
+     "cFull": {
+      "base": 332,
+      "cfg": 314,
+      "dMean": -66.167,
+      "dn": 4,
+      "up": 2,
+      "min": -305,
+      "max": 42
+     }
+    }
+   }
+  }
+ },
+ "career_combo_harnessHand": {
+  "base": "J_base",
+  "cfgs": {
+   "J_C": {
+    "shop71": {
+     "move": {
+      "base": 145,
+      "cfg": 145,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": -0.636,
+      "dn": 1,
+      "up": 0,
+      "min": -7,
+      "max": 0
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": -0.636,
+      "dn": 1,
+      "up": 0,
+      "min": -7,
+      "max": 0
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "open": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": -0.636,
+      "dn": 1,
+      "up": 0,
+      "min": -7,
+      "max": 0
+     },
+     "done": {
+      "base": 60,
+      "cfg": 60,
+      "dMean": -0.091,
+      "dn": 1,
+      "up": 0,
+      "min": -1,
+      "max": 0
+     },
+     "expired": {
+      "base": 6,
+      "cfg": 6,
+      "dMean": 0.182,
+      "dn": 0,
+      "up": 1,
+      "min": 0,
+      "max": 2
+     },
+     "won": {
+      "base": 5308200,
+      "cfg": 5702160,
+      "dMean": 76509.091,
+      "dn": 1,
+      "up": 1,
+      "min": -107400,
+      "max": 949000
+     },
+     "mPot": {
+      "base": 5,
+      "cfg": 5,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "mCut": {
+      "base": 2,
+      "cfg": 2,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     }
+    },
+    "careR": {
+     "move": {
+      "base": 145,
+      "cfg": 145,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": -0.636,
+      "dn": 1,
+      "up": 0,
+      "min": -7,
+      "max": 0
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": -0.636,
+      "dn": 1,
+      "up": 0,
+      "min": -7,
+      "max": 0
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "won": {
+      "base": 7294480,
+      "cfg": 7441440,
+      "dMean": 51141.818,
+      "dn": 0,
+      "up": 1,
+      "min": 0,
+      "max": 562560
+     },
+     "ms3": {
+      "base": 21,
+      "cfg": 21,
+      "dMean": 0.182,
+      "dn": 0,
+      "up": 1,
+      "min": 0,
+      "max": 2
+     },
+     "ms10": {
+      "base": 84,
+      "cfg": 84,
+      "dMean": -1.091,
+      "dn": 1,
+      "up": 0,
+      "min": -12,
+      "max": 0
+     },
+     "ms30": {
+      "base": 350,
+      "cfg": 350,
+      "dMean": -1.727,
+      "dn": 1,
+      "up": 0,
+      "min": -19,
+      "max": 0
+     },
+     "saved": {
+      "base": 73,
+      "cfg": 73,
+      "dMean": 0.091,
+      "dn": 0,
+      "up": 1,
+      "min": 0,
+      "max": 1
+     }
+    },
+    "breedR": {
+     "move": {
+      "base": 145,
+      "cfg": 145,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": -0.636,
+      "dn": 1,
+      "up": 0,
+      "min": -7,
+      "max": 0
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": -0.636,
+      "dn": 1,
+      "up": 0,
+      "min": -7,
+      "max": 0
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "prize": {
+      "base": 2250000,
+      "cfg": 2250000,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "v1": {
+      "base": 153,
+      "cfg": 143,
+      "dMean": -15.909,
+      "dn": 2,
+      "up": 0,
+      "min": -170,
+      "max": 0
+     },
+     "v3": {
+      "base": 303,
+      "cfg": 303,
+      "dMean": -0.364,
+      "dn": 2,
+      "up": 1,
+      "min": -10,
+      "max": 7
+     },
+     "vAll": {
+      "base": 471.5,
+      "cfg": 471.5,
+      "dMean": -9.25,
+      "dn": 1,
+      "up": 0,
+      "min": -37,
+      "max": 0
+     },
+     "mHalf": {
+      "base": 324,
+      "cfg": 323,
+      "dMean": -18.545,
+      "dn": 4,
+      "up": 2,
+      "min": -220,
+      "max": 30
+     },
+     "mFull": {
+      "base": 378.5,
+      "cfg": 378.5,
+      "dMean": -19.75,
+      "dn": 1,
+      "up": 0,
+      "min": -79,
+      "max": 0
+     },
+     "cHalf": {
+      "base": 277,
+      "cfg": 161,
+      "dMean": -39.909,
+      "dn": 4,
+      "up": 2,
+      "min": -256,
+      "max": 15
+     },
+     "cFull": {
+      "base": 345.5,
+      "cfg": 350,
+      "dMean": -6.875,
+      "dn": 2,
+      "up": 0,
+      "min": -31,
+      "max": 0
+     }
+    }
+   }
+  }
+ },
+ "career_gameHand_vs_harnessHand": {
+  "base": "J_base",
+  "cfgs": {
+   "J_GH_base": {
+    "shop71": {
+     "move": {
+      "base": 145,
+      "cfg": 150,
+      "dMean": 1.273,
+      "dn": 0,
+      "up": 3,
+      "min": 0,
+      "max": 5
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": -2.545,
+      "dn": 4,
+      "up": 2,
+      "min": -25,
+      "max": 35
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": -2.545,
+      "dn": 4,
+      "up": 2,
+      "min": -25,
+      "max": 35
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "open": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": -2.545,
+      "dn": 4,
+      "up": 2,
+      "min": -25,
+      "max": 35
+     },
+     "done": {
+      "base": 60,
+      "cfg": 57,
+      "dMean": -2.545,
+      "dn": 6,
+      "up": 2,
+      "min": -38,
+      "max": 40
+     },
+     "expired": {
+      "base": 6,
+      "cfg": 6,
+      "dMean": -0.182,
+      "dn": 5,
+      "up": 3,
+      "min": -25,
+      "max": 23
+     },
+     "won": {
+      "base": 5308200,
+      "cfg": 5833800,
+      "dMean": -13074.545,
+      "dn": 6,
+      "up": 3,
+      "min": -2167600,
+      "max": 2918100
+     },
+     "mPot": {
+      "base": 5,
+      "cfg": 5,
+      "dMean": -0.455,
+      "dn": 4,
+      "up": 2,
+      "min": -3,
+      "max": 3
+     },
+     "mCut": {
+      "base": 2,
+      "cfg": 3,
+      "dMean": 0.545,
+      "dn": 0,
+      "up": 5,
+      "min": 0,
+      "max": 2
+     }
+    },
+    "careR": {
+     "move": {
+      "base": 145,
+      "cfg": 150,
+      "dMean": 1.273,
+      "dn": 0,
+      "up": 3,
+      "min": 0,
+      "max": 5
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": -2.545,
+      "dn": 4,
+      "up": 2,
+      "min": -25,
+      "max": 35
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": -2.545,
+      "dn": 4,
+      "up": 2,
+      "min": -25,
+      "max": 35
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "won": {
+      "base": 7294480,
+      "cfg": 7993200,
+      "dMean": 181272.727,
+      "dn": 2,
+      "up": 4,
+      "min": -414640,
+      "max": 1172480
+     },
+     "ms3": {
+      "base": 21,
+      "cfg": 21,
+      "dMean": 0.636,
+      "dn": 0,
+      "up": 2,
+      "min": 0,
+      "max": 4
+     },
+     "ms10": {
+      "base": 84,
+      "cfg": 83,
+      "dMean": -9.455,
+      "dn": 4,
+      "up": 2,
+      "min": -119,
+      "max": 28
+     },
+     "ms30": {
+      "base": 350,
+      "cfg": 333,
+      "dMean": -7.455,
+      "dn": 4,
+      "up": 2,
+      "min": -43,
+      "max": 35
+     },
+     "saved": {
+      "base": 73,
+      "cfg": 73,
+      "dMean": 0.091,
+      "dn": 3,
+      "up": 3,
+      "min": -3,
+      "max": 4
+     }
+    },
+    "breedR": {
+     "move": {
+      "base": 145,
+      "cfg": 150,
+      "dMean": 1.273,
+      "dn": 0,
+      "up": 3,
+      "min": 0,
+      "max": 5
+     },
+     "home": {
+      "base": 367,
+      "cfg": 367,
+      "dMean": -2.545,
+      "dn": 4,
+      "up": 2,
+      "min": -25,
+      "max": 35
+     },
+     "end": {
+      "base": 1097,
+      "cfg": 1097,
+      "dMean": -2.545,
+      "dn": 4,
+      "up": 2,
+      "min": -25,
+      "max": 35
+     },
+     "crash": {
+      "base": 0,
+      "cfg": 0,
+      "dMean": 0,
+      "dn": 0,
+      "up": 0,
+      "min": 0,
+      "max": 0
+     },
+     "prize": {
+      "base": 2250000,
+      "cfg": 2250000,
+      "dMean": -104545.455,
+      "dn": 1,
+      "up": 0,
+      "min": -1150000,
+      "max": 0
+     },
+     "v1": {
+      "base": 153,
+      "cfg": 153,
+      "dMean": -1.818,
+      "dn": 3,
+      "up": 3,
+      "min": -63,
+      "max": 37
+     },
+     "v3": {
+      "base": 303,
+      "cfg": 296,
+      "dMean": -8.091,
+      "dn": 3,
+      "up": 3,
+      "min": -42,
+      "max": 7
+     },
+     "vAll": {
+      "base": 471.5,
+      "cfg": 401,
+      "dMean": -105.667,
+      "dn": 2,
+      "up": 0,
+      "min": -167,
+      "max": 0
+     },
+     "mHalf": {
+      "base": 324,
+      "cfg": 336,
+      "dMean": 1.545,
+      "dn": 3,
+      "up": 2,
+      "min": -24,
+      "max": 38
+     },
+     "mFull": {
+      "base": 378.5,
+      "cfg": 401,
+      "dMean": -16.667,
+      "dn": 1,
+      "up": 1,
+      "min": -150,
+      "max": 100
+     },
+     "cHalf": {
+      "base": 277,
+      "cfg": 277,
+      "dMean": 17.818,
+      "dn": 4,
+      "up": 2,
+      "min": -23,
+      "max": 240
+     },
+     "cFull": {
+      "base": 345.5,
+      "cfg": 332,
+      "dMean": -14,
+      "dn": 2,
+      "up": 2,
+      "min": -111,
+      "max": 15
+     }
+    }
+   }
+  }
+ },
+ "varieCanon": {
+  "formula": "p = 0.20 × fLight(dli7) × fStable × (성숙 전 ×2 · 상한 0.9) · 값 = p × 무늬 한 장 기댓값",
+  "fLight": {
+   "<2.7": 0,
+   "2.7~7.0": 0.5,
+   "7.0~15.4": 1.5,
+   "15.4~16": 1,
+   ">16": 0.3
+  },
+  "gradeBands": {
+   "mid": "slow 2.7~5.0",
+   "bright": "best · good · over 5.0~"
+  },
+  "midWithL2x1_2_L3_30": {
+   "p": 0.12,
+   "ev": 586000,
+   "value": 70320
+  },
+  "brightBare": [
+   {
+    "dli": "7.0~15.4",
+    "p": 0.3,
+    "value": 201000,
+    "holds": true,
+    "maxL2": 3.43
+   },
+   {
+    "dli": "15.4~16",
+    "p": 0.2,
+    "value": 134000,
+    "holds": true,
+    "maxL2": 2.287
+   },
+   {
+    "dli": "5.0~7.0",
+    "p": 0.1,
+    "value": 67000,
+    "holds": false,
+    "maxL2": 1.143
+   },
+   {
+    "dli": ">16",
+    "p": 0.06,
+    "value": 40200,
+    "holds": false,
+    "maxL2": 0.686,
+    "note": "과광 벌점 — 장비 없는 중간도 넘음"
+   }
+  ],
+  "maxL2_dli5to7_byL3": {
+   "0%": 1.218,
+   "10%": 1.192,
+   "20%": 1.167,
+   "30%": 1.143
+  }
  },
  "suspect2115": {
   "L3_10": {
