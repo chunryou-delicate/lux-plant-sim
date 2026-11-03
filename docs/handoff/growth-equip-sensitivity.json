@@ -10662,6 +10662,240 @@
     }
    }
   },
+  "combo_Cprime_L2x1_1": {
+   "base": "GH_C",
+   "baseRows": {
+    "humanQ": {
+     "n": 11,
+     "crash": 0,
+     "money": 135,
+     "move": 135,
+     "net": 278,
+     "home": 380,
+     "end": 380,
+     "c60": 1195130,
+     "c120": 1972650,
+     "c240": 2336988,
+     "hm1": 65,
+     "fm1": 270,
+     "hmN": 2,
+     "fmN": 0,
+     "grN": 5,
+     "vSold": 4,
+     "vWon": 2900000,
+     "pSold": 6,
+     "sale1": 156,
+     "vSale1": 156,
+     "cuts": 12,
+     "root1": 149,
+     "leftPreMean": 10.022,
+     "leftPreDays": 134,
+     "zeroPreDays": 0,
+     "blkPreDays": 0,
+     "spentPre": 616,
+     "maxAtMove": 16
+    },
+    "guide": {
+     "n": 11,
+     "crash": 0,
+     "money": 145,
+     "move": 145,
+     "net": 287,
+     "home": 360,
+     "end": 360,
+     "c60": 1040130,
+     "c120": 1818250,
+     "c240": 2185028,
+     "hm1": 65,
+     "fm1": 299,
+     "hmN": 3,
+     "fmN": 0,
+     "grN": 5,
+     "vSold": 4,
+     "vWon": 2500000,
+     "pSold": 6,
+     "sale1": 153,
+     "vSale1": 153,
+     "cuts": 12,
+     "root1": 149,
+     "leftPreMean": 10.208,
+     "leftPreDays": 144,
+     "zeroPreDays": 0,
+     "blkPreDays": 0,
+     "spentPre": 669,
+     "maxAtMove": 17
+    }
+   },
+   "cfgs": {
+    "GH_C11": {
+     "humanQ": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 278,
+       "cfg": 267,
+       "dMean": -1.18,
+       "dn": 1,
+       "up": 0,
+       "min": -13,
+       "max": 0
+      },
+      "home": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": 2.91,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 32
+      },
+      "end": {
+       "base": 380,
+       "cfg": 380,
+       "dMean": 2.91,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 32
+      },
+      "c240": {
+       "base": 2336988,
+       "cfg": 2336988,
+       "dMean": -30000,
+       "dn": 1,
+       "up": 0,
+       "min": -330000,
+       "max": 0
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "sameKeys": "money,move,c60,c120,hm1,fm1,hmN,fmN,grN,vSold,vWon,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     },
+     "guide": {
+      "n": 11,
+      "half": 0,
+      "crash": 0,
+      "net": {
+       "base": 287,
+       "cfg": 287,
+       "dMean": -1.36,
+       "dn": 1,
+       "up": 0,
+       "min": -15,
+       "max": 0
+      },
+      "home": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": 2.73,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 30
+      },
+      "end": {
+       "base": 360,
+       "cfg": 360,
+       "dMean": 2.73,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 30
+      },
+      "c240": {
+       "base": 2185028,
+       "cfg": 2185028,
+       "dMean": -30000,
+       "dn": 1,
+       "up": 0,
+       "min": -330000,
+       "max": 0
+      },
+      "fm1": {
+       "base": 299,
+       "cfg": 299,
+       "dMean": 3,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 9
+      },
+      "fmN": {
+       "base": 0,
+       "cfg": 0,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "grN": {
+       "base": 5,
+       "cfg": 5,
+       "dMean": -0.18,
+       "dn": 2,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "vSold": {
+       "base": 4,
+       "cfg": 4,
+       "dMean": -0.09,
+       "dn": 1,
+       "up": 0,
+       "min": -1,
+       "max": 0
+      },
+      "vWon": {
+       "base": 2500000,
+       "cfg": 2500000,
+       "dMean": -31818.18,
+       "dn": 1,
+       "up": 0,
+       "min": -350000,
+       "max": 0
+      },
+      "pSold": {
+       "base": 6,
+       "cfg": 6,
+       "dMean": 0.27,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 3
+      },
+      "cuts": {
+       "base": 12,
+       "cfg": 12,
+       "dMean": 0.09,
+       "dn": 0,
+       "up": 1,
+       "min": 0,
+       "max": 1
+      },
+      "sameKeys": "money,move,c60,c120,hm1,hmN,sale1,vSale1,root1,leftPreMean,leftPreDays,zeroPreDays,blkPreDays,spentPre,maxAtMove"
+     }
+    }
+   }
+  },
   "combo_harnessHandTwins": {
    "base": "GW_base",
    "baseRows": {
@@ -18278,6 +18512,880 @@
    "10%": 1.192,
    "20%": 1.167,
    "30%": 1.143
+  }
+ },
+ "varieEdgeSlots": {
+  "tool": "tools/probe_varie_edge_slots.mjs",
+  "args": {
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "years": 2,
+   "yearDay0": 135,
+   "litHours": 12,
+   "cells": {
+    "dark": [
+     0,
+     2.7
+    ],
+    "mid": [
+     2.7,
+     5
+    ],
+    "edge": [
+     5,
+     7
+    ],
+    "opt": [
+     7,
+     15.4
+    ],
+    "high": [
+     15.4,
+     null
+    ]
+   }
+  },
+  "rooms": {
+   "banjiha": {
+    "ko": "banjiha 기본 가구",
+    "slots": 15,
+    "rigs": [
+     "banjiha-growlight-bar",
+     "banjiha-growlight-clip",
+     "banjiha-growlight-stand"
+    ],
+    "byLamps": {
+     "0": {
+      "spring": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "summer": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "winter": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "1": {
+      "spring": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 1,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 27.7% · 최적 0% · 평균 4.67"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "winter": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "2": {
+      "spring": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 1,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 27.7% · 최적 0% · 평균 4.71"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "winter": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "3": {
+      "spring": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 1,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 27.9% · 최적 0% · 평균 4.82"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "winter": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 1,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     }
+    }
+   },
+   "oneroom": {
+    "ko": "oneroom 기본 가구",
+    "slots": 4,
+    "rigs": [
+     "oneroom-growlight-bar",
+     "oneroom-growlight-clip",
+     "oneroom-growlight-stand"
+    ],
+    "byLamps": {
+     "0": {
+      "spring": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 4,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 3,
+       "edgeByMean": 0,
+       "midByMean": 4,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 25.6% · 최적 0% · 평균 4.21",
+        "sill:1 가 27.3% · 최적 0% · 평균 4.23",
+        "sill:2 가 25.6% · 최적 0% · 평균 4.16"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "winter": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "1": {
+      "spring": {
+       "edgeShareOfBrightDays": 99,
+       "edgeHalfDays": 1,
+       "edge10Days": 2,
+       "edgeByMean": 1,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 81.9% · 최적 1.3% · 평균 5.72",
+        "sill:1 가 39.6% · 최적 0% · 평균 4.83"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 80.7,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 2,
+       "midByMean": 2,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 59.6% · 최적 36.3% · 평균 6.77",
+        "sill:1 가 74.6% · 최적 9.6% · 평균 5.88",
+        "sill:2 가 35.1% · 최적 1.1% · 평균 4.76",
+        "sill:3 가 27.4% · 최적 0% · 평균 4.36"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 99,
+       "edgeHalfDays": 1,
+       "edge10Days": 2,
+       "edgeByMean": 1,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 65% · 최적 0.7% · 평균 5.39",
+        "sill:1 가 21.1% · 최적 0.2% · 평균 4.5"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 2,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "2": {
+      "spring": {
+       "edgeShareOfBrightDays": 93.1,
+       "edgeHalfDays": 4,
+       "edge10Days": 4,
+       "edgeByMean": 4,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 75.5% · 최적 10.1% · 평균 5.93",
+        "sill:1 가 60.1% · 최적 0% · 평균 5.18",
+        "sill:2 가 59.9% · 최적 0% · 평균 5.13",
+        "sill:3 가 78.9% · 최적 10.1% · 평균 5.92"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 56.4,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 4,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 40% · 최적 57.2% · 평균 6.98",
+        "sill:1 가 59.2% · 최적 27.3% · 평균 6.23",
+        "sill:2 가 60.8% · 최적 25.6% · 평균 6.16",
+        "sill:3 가 47.3% · 최적 49.9% · 평균 6.91"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 97.3,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 2,
+       "midByMean": 2,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 82.7% · 최적 2.9% · 평균 5.61",
+        "sill:1 가 34.1% · 최적 0.4% · 평균 4.85",
+        "sill:2 가 33.9% · 최적 0.3% · 평균 4.8",
+        "sill:3 가 82.8% · 최적 2.8% · 평균 5.61"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 1,
+       "edgeByMean": 0,
+       "midByMean": 4,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:3 가 11.1% · 최적 0% · 평균 4.49"
+       ]
+      }
+     },
+     "3": {
+      "spring": {
+       "edgeShareOfBrightDays": 76.2,
+       "edgeHalfDays": 4,
+       "edge10Days": 4,
+       "edgeByMean": 4,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 59.6% · 최적 39.6% · 평균 6.85",
+        "sill:1 가 84.1% · 최적 10.1% · 평균 6.15",
+        "sill:2 가 78.9% · 최적 10.1% · 평균 5.95",
+        "sill:3 가 67.8% · 최적 31.1% · 평균 6.6"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 30.6,
+       "edgeHalfDays": 0,
+       "edge10Days": 4,
+       "edgeByMean": 1,
+       "midByMean": 0,
+       "brightOptByMean": 3,
+       "edge10": [
+        "sill:0 가 15% · 최적 84.6% · 평균 7.9",
+        "sill:1 가 38.7% · 최적 59.1% · 평균 7.21",
+        "sill:2 가 40.1% · 최적 57.2% · 평균 6.99",
+        "sill:3 가 26.9% · 최적 72.6% · 평균 7.59"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 86.6,
+       "edgeHalfDays": 4,
+       "edge10Days": 4,
+       "edgeByMean": 4,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 67.7% · 최적 31.1% · 평균 6.52",
+        "sill:1 가 82.6% · 최적 3.5% · 평균 5.82",
+        "sill:2 가 82.7% · 최적 2.9% · 평균 5.63",
+        "sill:3 가 86.3% · 최적 11.7% · 평균 6.29"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 99.7,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 2,
+       "midByMean": 2,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 81.4% · 최적 0.3% · 평균 5.33",
+        "sill:1 가 15.7% · 최적 0.1% · 평균 4.63",
+        "sill:2 가 11.1% · 최적 0% · 평균 4.45",
+        "sill:3 가 64.1% · 최적 0.1% · 평균 5.17"
+       ]
+      }
+     }
+    }
+   },
+   "oneroom_layoutD": {
+    "ko": "oneroom 기준 배치 D",
+    "slots": 18,
+    "rigs": [
+     "oneroom-growlight-bar",
+     "oneroom-growlight-clip",
+     "oneroom-growlight-stand"
+    ],
+    "byLamps": {
+     "0": {
+      "spring": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 4,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 3,
+       "edgeByMean": 0,
+       "midByMean": 4,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 25.6% · 최적 0% · 평균 4.21",
+        "sill:1 가 27.3% · 최적 0% · 평균 4.23",
+        "sill:2 가 25.6% · 최적 0% · 평균 4.16"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "winter": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "1": {
+      "spring": {
+       "edgeShareOfBrightDays": 99,
+       "edgeHalfDays": 1,
+       "edge10Days": 2,
+       "edgeByMean": 1,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 81.9% · 최적 1.3% · 평균 5.72",
+        "sill:1 가 39.6% · 최적 0% · 평균 4.83"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 80.7,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 2,
+       "midByMean": 2,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 59.6% · 최적 36.3% · 평균 6.77",
+        "sill:1 가 74.6% · 최적 9.6% · 평균 5.88",
+        "sill:2 가 35.1% · 최적 1.1% · 평균 4.76",
+        "sill:3 가 27.4% · 최적 0% · 평균 4.36"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 99,
+       "edgeHalfDays": 1,
+       "edge10Days": 2,
+       "edgeByMean": 1,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 65% · 최적 0.7% · 평균 5.39",
+        "sill:1 가 21.1% · 최적 0.2% · 평균 4.5"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 2,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "2": {
+      "spring": {
+       "edgeShareOfBrightDays": 93.1,
+       "edgeHalfDays": 4,
+       "edge10Days": 4,
+       "edgeByMean": 4,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 75.5% · 최적 10.1% · 평균 5.93",
+        "sill:1 가 60.1% · 최적 0% · 평균 5.18",
+        "sill:2 가 59.9% · 최적 0% · 평균 5.13",
+        "sill:3 가 78.9% · 최적 10.1% · 평균 5.92"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 56.4,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 4,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 40% · 최적 57.2% · 평균 6.98",
+        "sill:1 가 59.2% · 최적 27.3% · 평균 6.23",
+        "sill:2 가 60.8% · 최적 25.6% · 평균 6.16",
+        "sill:3 가 47.3% · 최적 49.9% · 평균 6.91"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 97.3,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 2,
+       "midByMean": 2,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 82.7% · 최적 2.9% · 평균 5.61",
+        "sill:1 가 34.1% · 최적 0.4% · 평균 4.85",
+        "sill:2 가 33.9% · 최적 0.3% · 평균 4.8",
+        "sill:3 가 82.8% · 최적 2.8% · 평균 5.61"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 1,
+       "edgeByMean": 0,
+       "midByMean": 4,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:3 가 11.1% · 최적 0% · 평균 4.49"
+       ]
+      }
+     },
+     "3": {
+      "spring": {
+       "edgeShareOfBrightDays": 80.2,
+       "edgeHalfDays": 5,
+       "edge10Days": 6,
+       "edgeByMean": 4,
+       "midByMean": 6,
+       "brightOptByMean": 0,
+       "edge10": [
+        "etagere:6 가 19.1% · 최적 0% · 평균 4.72",
+        "etagere:7 가 51.8% · 최적 0% · 평균 4.98",
+        "sill:0 가 59.6% · 최적 39.6% · 평균 6.85",
+        "sill:1 가 84.1% · 최적 10.1% · 평균 6.15",
+        "sill:2 가 78.9% · 최적 10.1% · 평균 5.95",
+        "sill:3 가 67.8% · 최적 31.1% · 평균 6.6"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 53.5,
+       "edgeHalfDays": 2,
+       "edge10Days": 7,
+       "edgeByMean": 3,
+       "midByMean": 4,
+       "brightOptByMean": 3,
+       "edge10": [
+        "etagere:6 가 59.6% · 최적 0% · 평균 5.13",
+        "etagere:7 가 84.9% · 최적 0% · 평균 5.39",
+        "etagere:8 가 49.8% · 최적 0% · 평균 4.95",
+        "sill:0 가 15% · 최적 84.6% · 평균 7.9",
+        "sill:1 가 38.7% · 최적 59.1% · 평균 7.21",
+        "sill:2 가 40.1% · 최적 57.2% · 평균 6.99",
+        "sill:3 가 26.9% · 최적 72.6% · 평균 7.59"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 88,
+       "edgeHalfDays": 4,
+       "edge10Days": 5,
+       "edgeByMean": 4,
+       "midByMean": 6,
+       "brightOptByMean": 0,
+       "edge10": [
+        "etagere:7 가 33.8% · 최적 0% · 평균 4.86",
+        "sill:0 가 67.7% · 최적 31.1% · 평균 6.52",
+        "sill:1 가 82.6% · 최적 3.5% · 평균 5.82",
+        "sill:2 가 82.7% · 최적 2.9% · 평균 5.63",
+        "sill:3 가 86.3% · 최적 11.7% · 평균 6.29"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 99.7,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 2,
+       "midByMean": 5,
+       "brightOptByMean": 0,
+       "edge10": [
+        "sill:0 가 81.4% · 최적 0.3% · 평균 5.33",
+        "sill:1 가 15.7% · 최적 0.1% · 평균 4.63",
+        "sill:2 가 11.1% · 최적 0% · 평균 4.45",
+        "sill:3 가 64.1% · 최적 0.1% · 평균 5.17"
+       ]
+      }
+     }
+    }
+   },
+   "tworoom": {
+    "ko": "tworoom 기본 가구",
+    "slots": 29,
+    "rigs": [
+     "tworoom-growlight-bar",
+     "tworoom-growlight-clip",
+     "tworoom-growlight-stand"
+    ],
+    "byLamps": {
+     "0": {
+      "spring": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 3,
+       "edgeByMean": 0,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 10.1% · 최적 0% · 평균 3.8",
+        "shelf-etagere-3tier:7 가 10.1% · 최적 0% · 평균 3.85",
+        "shelf-etagere-3tier:8 가 10.1% · 최적 0% · 평균 3.8"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 88.1,
+       "edgeHalfDays": 2,
+       "edge10Days": 3,
+       "edgeByMean": 3,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 51.7% · 최적 5.7% · 평균 5.05",
+        "shelf-etagere-3tier:7 가 49.4% · 최적 9.3% · 평균 5.14",
+        "shelf-etagere-3tier:8 가 51.7% · 최적 5.7% · 평균 5.05"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 99,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": []
+      },
+      "winter": {
+       "edgeShareOfBrightDays": null,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 0,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "1": {
+      "spring": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 3,
+       "edgeByMean": 0,
+       "midByMean": 6,
+       "brightOptByMean": 0,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 31.1% · 최적 0% · 평균 4.54",
+        "shelf-etagere-3tier:7 가 31.4% · 최적 0% · 평균 4.65",
+        "shelf-etagere-3tier:8 가 31.1% · 최적 0% · 평균 4.54"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 77,
+       "edgeHalfDays": 3,
+       "edge10Days": 4,
+       "edgeByMean": 3,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 63.1% · 최적 17.2% · 평균 5.8",
+        "shelf-etagere-3tier:7 가 55.2% · 최적 25.5% · 평균 5.93",
+        "shelf-etagere-3tier:8 가 63.1% · 최적 17.2% · 평균 5.8",
+        "shop-display:7 가 17.2% · 최적 0% · 평균 4.22"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 98,
+       "edgeHalfDays": 0,
+       "edge10Days": 3,
+       "edgeByMean": 0,
+       "midByMean": 6,
+       "brightOptByMean": 0,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 11.5% · 최적 0.2% · 평균 4.14",
+        "shelf-etagere-3tier:7 가 11.8% · 최적 0.3% · 평균 4.25",
+        "shelf-etagere-3tier:8 가 11.5% · 최적 0.2% · 평균 4.14"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 100,
+       "edgeHalfDays": 0,
+       "edge10Days": 0,
+       "edgeByMean": 0,
+       "midByMean": 3,
+       "brightOptByMean": 0,
+       "edge10": []
+      }
+     },
+     "2": {
+      "spring": {
+       "edgeShareOfBrightDays": 70.1,
+       "edgeHalfDays": 3,
+       "edge10Days": 5,
+       "edgeByMean": 3,
+       "midByMean": 2,
+       "brightOptByMean": 1,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 64.3% · 최적 1.3% · 평균 5.44",
+        "shelf-etagere-3tier:7 가 63.7% · 최적 31.1% · 평균 6.53",
+        "shelf-etagere-3tier:8 가 33.6% · 최적 65.6% · 평균 7.41",
+        "shop-display:7 가 58.1% · 최적 0% · 평균 5.04",
+        "shop-display:8 가 10.1% · 최적 0% · 평균 4.41"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 50.9,
+       "edgeHalfDays": 3,
+       "edge10Days": 4,
+       "edgeByMean": 3,
+       "midByMean": 6,
+       "brightOptByMean": 2,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 57% · 최적 36.1% · 평균 6.7",
+        "shelf-etagere-3tier:7 가 18.6% · 최적 80.3% · 평균 7.81",
+        "shop-display:7 가 75.7% · 최적 9.3% · 평균 5.86",
+        "shop-display:8 가 59.1% · 최적 0% · 평균 5.15"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 76.4,
+       "edgeHalfDays": 2,
+       "edge10Days": 4,
+       "edgeByMean": 2,
+       "midByMean": 3,
+       "brightOptByMean": 1,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 54% · 최적 0.6% · 평균 5.05",
+        "shelf-etagere-3tier:7 가 78.7% · 최적 11.7% · 평균 6.13",
+        "shelf-etagere-3tier:8 가 45.3% · 최적 54.4% · 평균 7.01",
+        "shop-display:7 가 34% · 최적 0.1% · 평균 4.77"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 98.8,
+       "edgeHalfDays": 1,
+       "edge10Days": 2,
+       "edgeByMean": 1,
+       "midByMean": 4,
+       "brightOptByMean": 0,
+       "edge10": [
+        "shelf-etagere-3tier:7 가 24.1% · 최적 0.1% · 평균 4.68",
+        "shelf-etagere-3tier:8 가 84.3% · 최적 1.2% · 평균 5.58"
+       ]
+      }
+     },
+     "3": {
+      "spring": {
+       "edgeShareOfBrightDays": 61.5,
+       "edgeHalfDays": 3,
+       "edge10Days": 4,
+       "edgeByMean": 3,
+       "midByMean": 6,
+       "brightOptByMean": 2,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 73.3% · 최적 10.2% · 평균 6.03",
+        "shelf-etagere-3tier:7 가 38.8% · 최적 60.4% · 평균 7.3",
+        "shop-display:7 가 86.9% · 최적 10.1% · 평균 6.23",
+        "shop-display:8 가 89% · 최적 10.1% · 평균 6.27"
+       ]
+      },
+      "summer": {
+       "edgeShareOfBrightDays": 32.7,
+       "edgeHalfDays": 0,
+       "edge10Days": 5,
+       "edgeByMean": 0,
+       "midByMean": 9,
+       "brightOptByMean": 5,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 37.1% · 최적 59.3% · 평균 7.29",
+        "shelf-etagere-3tier:7 가 11.2% · 최적 88.4% · 평균 8.58",
+        "shop-display:6 가 27.9% · 최적 0% · 평균 4.74",
+        "shop-display:7 가 41% · 최적 58.6% · 평균 7.05",
+        "shop-display:8 가 42.2% · 최적 57.4% · 평균 7.01"
+       ]
+      },
+      "autumn": {
+       "edgeShareOfBrightDays": 70.8,
+       "edgeHalfDays": 4,
+       "edge10Days": 5,
+       "edgeByMean": 4,
+       "midByMean": 5,
+       "brightOptByMean": 1,
+       "edge10": [
+        "shelf-etagere-3tier:6 가 79.8% · 최적 3.6% · 평균 5.64",
+        "shelf-etagere-3tier:7 가 56.2% · 최적 43.2% · 평균 6.9",
+        "shelf-etagere-3tier:8 가 13% · 최적 87% · 평균 8.03",
+        "shop-display:7 가 94% · 최적 3.1% · 평균 5.96",
+        "shop-display:8 가 95.9% · 최적 2.9% · 평균 6.04"
+       ]
+      },
+      "winter": {
+       "edgeShareOfBrightDays": 94.5,
+       "edgeHalfDays": 4,
+       "edge10Days": 4,
+       "edgeByMean": 4,
+       "midByMean": 4,
+       "brightOptByMean": 0,
+       "edge10": [
+        "shelf-etagere-3tier:7 가 80.7% · 최적 1.1% · 평균 5.45",
+        "shelf-etagere-3tier:8 가 84.2% · 최적 15.8% · 평균 6.6",
+        "shop-display:7 가 55.9% · 최적 0% · 평균 5.02",
+        "shop-display:8 가 67.8% · 최적 0% · 평균 5.19"
+       ]
+      }
+     }
+    }
+   }
   }
  },
  "suspect2115": {
