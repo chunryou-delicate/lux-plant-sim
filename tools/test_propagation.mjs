@@ -531,6 +531,10 @@ check('F 죽기 전에 경고가 최소 3번 나간다 — 마지막 경고는 �
   /* ★ 경고도 죽음도 전부 로그에 남는다 — 조용히 사라지지 않는다 */
   assert.ok(logs.some(m => m.includes('사라졌습니다')), '죽음이 로그에 없습니다');
   assert.ok(logs.filter(m => m.startsWith('⚠')).length >= 3, '경고가 로그에 안 남았습니다');
+  /* ★ 11-03 plan 대조(25224e96) — 기록 줄 앞 ⚠ 는 하나다(w.ko 에 또 넣어 «⚠ ⚠ 혹이 난 삽수 …»였다) · 속 이름(cut_xx)은 안 낸다 */
+  const cutWarn = logs.filter(m => m.includes('혹이 난 삽수'));
+  assert.ok(cutWarn.length >= 3 && cutWarn.every(m => /^⚠ 혹이 난 삽수 — 분갈이 남은 날 [0-9]+일입니다\. 안 하면 시들어 사라집니다$/.test(m)),
+    `분갈이 경고 기록 줄 꼴(⚠ 하나): ${cutWarn.slice(0, 2).join(' / ')}`);
   info(`경고 ${warnDays.length}회 (D+${warnDays.join(', D+')}) → 죽음 D+${diedDay}`);
 });
 

@@ -22,6 +22,8 @@
         ⚠ **거짓말을 안 하나**(곳간이 남았는데 「곳간이 없습니다」라고 하던 그 줄)
      E ★★ **콩나물+무순이 같이 있을 때** — 제일 헷갈릴 자리다
      W ★ 세 폭(360·390·430) — 잘리지 않고 · 가로로 안 넘치고 · 단추 44px
+       ★ 11-03 HINT_OOB(regs17 · 총괄) — 창을 닫은 뒤 점 손가락 «내 캐릭터를 눌러 보세요»가 세로 자세(cls 에 below · row 없음)로 화면 안 · 손은 캐릭터 점 위 ·
+         앞 자세(below · row · 손 민 자리)를 심어도 다음 판에 다시 세로로 선다 · 손끝 ↔ 캐릭터 점 거리는 값으로 적는다(390 사진)
 
    ⚠ **밸런스를 한 톨도 안 잰다.** 액수의 옳고 그름은 `test_econ`·`test_crop_*` 것이다.
      여기는 **화면이 그 값을 어떻게 말하는가**만 본다.
@@ -423,6 +425,33 @@ for (const w of [360, 390, 430]) {
   ok(`W-${w} ★ [✕]가 44px 이상`, q.closeH >= 44, `${q.closeH}px`);
   await page.eval(`window.__byeotPopClose()`, false);
   await sleep(250);
+
+  /* ★ 11-03 HINT_OOB(regs17 test_questui 3줄 · HEAD 9068a4cb 에도 있음) — 점 손가락이 앞 손가락 자세를 안 지워 가로 한 줄로 서고 왼쪽 끝을 넘었다 */
+  const phGeo = (inject) => `(async()=>{ const sl = ms => new Promise(f => setTimeout(f, ms));
+    const h = document.getElementById('hint'), say = h.querySelector('.say'), hand = h.querySelector('.hand'), KO = '내 캐릭터를 눌러 보세요';
+    for (let i = 0; i < 20 && !(h.classList.contains('on') && say.textContent === KO); i++) await sl(250);
+    if (${inject ? 'true' : 'false'}) { h.classList.add('below', 'row'); hand.style.left = '40px'; await sl(700); } else await sl(300);
+    const an = hand.getAnimations(); for (const a of an) { try { a.pause(); a.currentTime = 0; } catch (e) { void e; } }
+    const rg = document.createRange(); rg.selectNodeContents(hand); const g = rg.getBoundingClientRect();
+    const hb = h.getBoundingClientRect(), sr = say.getBoundingClientRect();
+    for (const a of an) { try { a.play(); } catch (e) { void e; } }
+    let cx = null, cy = null;
+    try { const rv = window.__rv; const who = (rv.characters() || []).find(c => c && c.walkable); const q = who ? rv.screenPosOf(who.id) : null;
+      const c2 = document.getElementById('roomCanvas').getBoundingClientRect(); if (q) { cx = c2.left + q.x; cy = c2.top + q.y; } } catch (e) { void e; }
+    const L = Math.min(hb.left, sr.left), R = Math.max(hb.right, sr.right);
+    return JSON.stringify({ say: say.textContent, on: h.classList.contains('on'), cls: h.className, below: h.classList.contains('below'), row: h.classList.contains('row'),
+      L: Math.round(L), R: Math.round(R), iw: innerWidth, inScreen: L >= -0.5 && R <= innerWidth + 0.5,
+      cx: cx == null ? null : Math.round(cx), cy: cy == null ? null : Math.round(cy), handL: hand.style.left,
+      glyph: [Math.round(g.left), Math.round(g.top), Math.round(g.right), Math.round(g.bottom)],
+      tipGap: cy == null ? null : Math.round(cy - g.bottom), dxHand: cx == null ? null : Math.round((g.left + g.right) / 2 - cx) }); })()`;
+  const phRead = async (inject) => { try { return JSON.parse(await page.eval(phGeo(inject))); } catch (e) { return { 탈: String((e && e.message) || e) }; } };
+  const PH = await phRead(false);
+  if (process.env.OUT && w === 390 && !PH.탈) { try { await page.shot(`${process.env.OUT}/390_questui_walktip.png`); } catch (e) { console.log('  (사진 못 찍음)', e && e.message); } }
+  const PJ = await phRead(true);
+  for (const [tag, G] of [['창 닫은 뒤', PH], ['앞 자세(below · row · 손 40px)를 심은 뒤', PJ]])
+    ok(`W-${w} ★ 점 손가락 «내 캐릭터를 눌러 보세요» — ${tag}: 세로 자세(below · row 없음) · 화면 안 · 손은 캐릭터 점 위(|dx| ≤ 4)`,
+       !G.탈 && G.on && G.say === '내 캐릭터를 눌러 보세요' && !G.below && !G.row && G.inScreen && G.dxHand != null && Math.abs(G.dxHand) <= 4,
+       JSON.stringify(G));
 }
 await page.send('Emulation.setDeviceMetricsOverride',
   { width: 390, height: 844, deviceScaleFactor: 2, mobile: false });

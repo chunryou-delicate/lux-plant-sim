@@ -14,6 +14,8 @@
      `slotId` 는 **계약 열쇠라 버리지 않는다** — 옛 세이브와 헤드리스 시뮬(room_profile)이 그걸로 찾는다.
 ============================================================ */
 import { spotOf } from './place.js';
+/* ★ 11-03 8C6 — 조사 정본(아무것도 안 부르는 잎 모듈이라 한 방향 그대로) */
+import { josa } from './josa.js';
 
 /* ============================================================
    ★★ 작물 종류 — **체감의 축** (2026-08-04 박사님 확정)
@@ -1792,7 +1794,7 @@ export function placeCrop(fp, kindId, target, opt = {}) {
   if (opt.potId && !one)
     throw new Error(`[첫 플레이] 모르는 ${k.containerKo}입니다: ${opt.potId}`);
   const targets = one ? [one] : potsOf(site);
-  if (!targets.length) throw new Error(`[첫 플레이] 놓을 ${k.containerKo}가 없습니다`);
+  if (!targets.length) throw new Error(`[첫 플레이] 놓을 ${josa(k.containerKo, '이', '가')} 없습니다`);   /* ★ 11-03 8C6 — «새싹 재배판이» */
 
   /* ★★★ 2026-08-14 — **수확 잠금을 걷었다** (박사님: *"씨앗이없는 상태에서 시루가안옮겨져"*).
      ══════════════════════════════════════════════════════════════════
@@ -1890,7 +1892,7 @@ export function sowCropPot(fp, kindId, potId, opt = {}) {
   const p = cropPotOf(site, potId);
   if (!p) throw new Error(`[첫 플레이] 모르는 ${k.containerKo}입니다: ${potId}`);
   if (!cropPotPlaced(p)) {
-    const e = new Error(`[첫 플레이] ${k.containerKo}를 먼저 방 안에 놓아 주세요`);
+    const e = new Error(`[첫 플레이] ${josa(k.containerKo, '을', '를')} 먼저 방 안에 놓아 주세요`);
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }
@@ -3342,7 +3344,7 @@ export function resowBeansprout(fp, opt = {}) {
   if (!Number.isInteger(sirus) || sirus < 0)
     throw new Error(`[${k.ko}] ${k.containerKo} 수가 0 이상의 정수가 아닙니다: ${sirus}`);
   if (Number.isFinite(opt.maxSirus) && sirus > opt.maxSirus)
-    throw new Error(`[${k.ko}] ${k.containerKo}를 놓을 칸이 ${opt.maxSirus}칸뿐입니다 — ` +
+    throw new Error(`[${k.ko}] ${josa(k.containerKo, '을', '를')} 놓을 칸이 ${opt.maxSirus}칸뿐입니다 — ` +
                     `${sirus}개는 못 놓습니다 (선반을 놓으면 늘어납니다)`);
 
   const added = Math.max(0, sirus - had);

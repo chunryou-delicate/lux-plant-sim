@@ -70,6 +70,8 @@ const GL_PROBE = `(()=>{ try { const c=document.createElement('canvas'); const g
    opts.dpr           devicePixelRatio (폰은 3 이지만 측정은 2 로 둔다)
    opts.throttle      { cpu, netKbps } 폰 흉내. 안 주면 데스크톱 그대로
    돌려받는 page.gl = 'gpu' | 'soft' · page.glRenderer = WebGL 렌더러 이름 */
+/* ★ 11-03 HINT_OOB — 이 자(프로세스)가 손가락 상자를 잰 횟수 · 끝날 때 한 번 적는다(§launchGL) */
+let hintOobN = 0, hintOobExitHooked = false;
 export async function launch(opts = {}) {
   const want = glWanted();
   const page = await launchGL(opts, want);
@@ -181,6 +183,41 @@ async function launchGL(opts, gl, attempt = 1) {   /* attempt — ★ 2026-11-01
   await S('Runtime.enable');
   await S('Network.enable');
   await S('Log.enable');
+  /* ★ 11-03 8C5 꼬리 A(총괄) — **손가락 말풍선이 화면 밖으로 나갔나**를 자마다 같이 본다(켤 때만 · HINT_OOB=<적을 파일>).
+       손가락 «아래 · 한 줄»이 이제 안 꺾이므로(game.html #hint.below.row) 꺾여서 화면 안에 갇히던 자리가 오른쪽 끝을 넘지 않는지 —
+       #hint 또는 말풍선(.say) 상자가 0 ≤ left · right ≤ innerWidth 를 벗어나면 그 판의 첫 번 한 줄을 적는다(같은 말 · 같은 자리는 한 번).
+       ⚠ 자 단언에는 안 섞는다 — 회귀가 끝난 뒤 그 파일을 본다(줄마다 자 이름 · 말 · 자리). console.debug 라 다른 자의 경고 · 오류 셈에 안 걸린다
+       ★ 총괄 11-03 — «0줄 = 초록»이 «감시가 안 돎»과 갈리게: 자마다 {start} 한 줄(띄울 때) · {end, n}(끝날 때 · n = 손가락 상자를 잰 횟수) ·
+         맺음은 «벗어남 0 · start 줄 수 = 회귀 크롬 자 수 · n 합 > 0» 일 때만 초록 */
+  if (process.env.HINT_OOB) {
+    const oobProbe = path.basename(process.argv[1] || '');
+    try { fs.appendFileSync(process.env.HINT_OOB, JSON.stringify({ probe: oobProbe, start: true, W: opts.width || 390, t: Date.now() }) + '\n'); }
+    catch (e) { console.warn('[test_cdp] HINT_OOB 적기 실패', e && e.message); }
+    if (!hintOobExitHooked) { hintOobExitHooked = true;
+      process.on('exit', () => { try { fs.appendFileSync(process.env.HINT_OOB, JSON.stringify({ probe: oobProbe, end: true, n: hintOobN }) + '\n'); } catch (e) { void e; } }); }
+    await S('Page.addScriptToEvaluateOnNewDocument', { source: `(()=>{ if (window.__hintOobOn) return; window.__hintOobOn = true; const seen = new Set(); let n = 0, sent = 0;
+      setInterval(() => { if (n > sent) { console.debug('[hintOOBc] ' + (n - sent)); sent = n; } }, 2000);
+      setInterval(() => { try {
+        const h = document.getElementById('hint'); if (!h || !h.classList.contains('on')) return;
+        const cs = getComputedStyle(h); if (cs.display === 'none' || cs.visibility === 'hidden') return;
+        const r = h.getBoundingClientRect(); if (!r.width || !r.height) return;
+        n++;
+        const s = h.querySelector('.say'); const sr = (s && getComputedStyle(s).display !== 'none') ? s.getBoundingClientRect() : null;
+        const L = Math.min(r.left, sr && sr.width ? sr.left : r.left), R = Math.max(r.right, sr && sr.width ? sr.right : r.right);
+        if (L >= -0.5 && R <= innerWidth + 0.5) return;
+        const say = ((s && s.textContent) || '').slice(0, 40), k = say + '|' + Math.round(L) + '|' + Math.round(R);
+        if (seen.has(k)) return; seen.add(k);
+        console.debug('[hintOOB] ' + JSON.stringify({ say, L: Math.round(L), R: Math.round(R), W: innerWidth, cls: h.className, last: window.__hintLast ? window.__hintLast['자리'] : null }));
+      } catch (e) { void e; } }, 250); })();` });
+    listeners.push((method, p, sid) => {
+      if (sid !== sessionId || method !== 'Runtime.consoleAPICalled' || !p || p.type !== 'debug') return;
+      const a0 = p.args && p.args[0] && p.args[0].value;
+      if (typeof a0 === 'string' && a0.startsWith('[hintOOBc] ')) { hintOobN += Number(a0.slice(11)) || 0; return; }
+      if (typeof a0 !== 'string' || !a0.startsWith('[hintOOB] ')) return;
+      try { fs.appendFileSync(process.env.HINT_OOB, JSON.stringify({ probe: path.basename(process.argv[1] || ''), W: opts.width || 390, ...JSON.parse(a0.slice(10)) }) + '\n'); }
+      catch (e) { console.warn('[test_cdp] HINT_OOB 적기 실패', e && e.message); }
+    });
+  }
   await S('Emulation.setDeviceMetricsOverride', {
     width: opts.width || 390, height: opts.height || 844,
     deviceScaleFactor: opts.dpr || 2, mobile: !!opts.mobile

@@ -1401,7 +1401,9 @@
   #hint.below .hand{margin-top:0;margin-bottom:1px}
   /* ★ 2026-10-24 총괄 D72 ㉠ — «아래 · 한 줄»: 손(👆)을 글 왼쪽에 붙여 키를 줄인다. 밥상 창 360·390·430 에서 세로로 쌓은 «아래»(75px)는 화면 아래를 넘었고,
        그다음 «왼쪽»은 왼쪽 끝 단추라 자리가 없어 [이대로 다음 날] 글 위에 앉았다(사진 mealA_360) */
-  #hint.below.row{flex-direction:row-reverse;gap:2px}
+  /* ★ 11-03 8C5 꼬리 A(총괄 · 사진 390_c7d_boxall) — 표 이름 row 가 전역 .row{flex-wrap:wrap}(§.row)에 걸려, 말풍선을 오른쪽으로 민 자리에서
+       #hint(fixed · left 기준 -50%)의 폭이 «화면 오른쪽 끝까지 남은 폭»에 묶여 손이 다음 줄 오른쪽 끝으로 꺾였다(손 ↔ 단추 110px) ⇒ 안 꺾고 글 폭 그대로 */
+  #hint.below.row{flex-direction:row-reverse;gap:2px;flex-wrap:nowrap;width:max-content}
   #hint.below.row .hand{margin:0;font-size:26px}
   @keyframes handBobXL{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
   @keyframes handBobXR{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
@@ -3412,7 +3414,7 @@ import { newState, SIM_MODES, pot0, pushLog, givePlant, hasPlant, ARRIVAL,
    `sellCropSurplus`)는 **그대로 상점이다** — 식료품이라 상점이 맞다. */
 import { catalogList, orderItem, shopStatus, priceOf,
          /* ★ 조사 — 받침을 세어 이/가·을/를을 고른다. 정본은 여기 하나다(§josa) */
-         josa,
+         josa, jongOf,   /* ★ 11-03 8C6 — 받침 번호(숫자 끝 «몬스테라 1»도 읽음 · §josaRo) */
          /* ★ 그루 값은 **묻는다** — 화면이 다시 세면 코어와 갈린다(shop.js §quotePot) */
          quotePot,
          listPot, listCutting, dealListing, cancelListing,
@@ -4782,11 +4784,22 @@ function placePointHint(cx, cy, say, r = 48) {
   h.querySelector('.say').textContent = say;
   h.querySelector('.say').style.maxWidth = '';   /* ★ 11-01 b106 — 좁힌 옆자리 폭을 되돌린다 */
   h.querySelector('.say').style.whiteSpace = ''; h.querySelector('.say').style.width = ''; h.querySelector('.say').style.wordBreak = '';
-  h.classList.remove('side', 'toRight', 'navSide', 'handOnly');
-  h.querySelector('.hand').textContent = '👇';
+  /* ★ 11-03 HINT_OOB(regs17 test_questui · 총괄) — 앞 손가락(§placeHintAt ①-b «아래 · 한 줄»)이 남긴 'below' · 'row' 와 손 민 자리(hand.style.left)도 지운다.
+       ⛔ 안 지우면 점 손가락 «내 캐릭터를 눌러 보세요»가 가로 한 줄(#hint.below.row)로 서서 폭이 넓어지고 왼쪽 끝 캐릭터에서 화면 밖(390 L −11 · 360 L −17 · 430 L −1)이었다 */
+  h.classList.remove('side', 'toRight', 'below', 'row', 'navSide', 'handOnly');
+  const hand = h.querySelector('.hand');
+  hand.textContent = '👇';
+  hand.style.left = '0px';
   h.style.left = cx + 'px';
   h.style.top = Math.max(4, cy - 86) + 'px';
   h.classList.add('on');
+  /* ★ 가로도 물린다 — §placeHintAt «위에 선다»와 같은 셈: 말풍선은 화면 안(가장자리 8px) · 민 만큼 손을 되밀어 손은 그 점 위(말풍선 밖까지는 안 나감) */
+  { const hw = h.getBoundingClientRect().width;
+    if (hw > 0) {
+      const got = Math.min(innerWidth - 8 - hw / 2, Math.max(hw / 2 + 8, cx));
+      h.style.left = got + 'px';
+      hand.style.left = Math.max(-(hw / 2 - 8), Math.min(hw / 2 - 8, cx - got)).toFixed(1) + 'px';
+    } }
   dimAt(cx, cy, r);
 }
 /* ★★★★ 2026-09-02 — **점으로 짚는 손가락도 «따라다닌다»** (박사님 폰 그림: 「허공을 짚는다」).
@@ -4938,6 +4951,26 @@ function placeHintAt(el, say) {
       h.classList.remove('below', 'row'); h.classList.add('side', 'toRight'); hand.textContent = '👈'; hand.style.left = '0px';
       const mx = Math.floor(r.right - 8 - (lr.right + 8) - (hand.getBoundingClientRect().width || 30) - 6);
       if (say && mx >= 56) { say.style.maxWidth = mx + 'px'; h.style.left = (lr.right + 8) + 'px'; h.style.top = (r.top + r.height / 2) + 'px'; }
+    }
+  } catch (e) { void e; }
+  /* ★ 11-03 8C5 꼬리 B(총괄 가름 · 사진 390_c7d_boxall) — 가방 머리줄 [한꺼번에 놓기 (N개)]는 머리줄 오른쪽 빈자리에 말풍선을 세우고 손(👈)이 단추를 옆에서 짚는다.
+       ⛔ 위는 «가방 · N개» 머리글 · 아래는 이삿짐 칸 줄이라 비키기(§hintAvoidChip)가 «아래 · 한 줄»을 뽑아 말풍선이 칸 머리(×N 표)를 덮었다
+       ⇒ 한 줄이 들어가면 한 줄 · 아니면 남은 폭으로 접어(keep-all) 두 줄 · 말풍선 아래 끝은 칸 줄 꼭대기 − 2px 위로 올린다(손은 단추 높이 안) */
+  try {
+    if (el.matches && el.matches('#bagGrid [data-act="boxAll"]')) {
+      const say = h.querySelector('.say');
+      h.classList.remove('below', 'row', 'handOnly', 'navSide'); h.classList.add('side', 'toRight');
+      hand.textContent = '👈'; hand.style.left = '0px';
+      say.style.whiteSpace = ''; say.style.width = ''; say.style.maxWidth = ''; say.style.wordBreak = '';
+      h.style.left = (r.right + 8) + 'px'; h.style.top = (r.top + r.height / 2) + 'px';
+      if (h.getBoundingClientRect().right > innerWidth - 8) {
+        const mx = Math.floor(innerWidth - 8 - (r.right + 8) - (hand.getBoundingClientRect().width || 30) - 2);
+        if (mx >= 64) { say.style.maxWidth = mx + 'px'; say.style.wordBreak = 'keep-all'; }
+      }
+      const head = el.closest('.grouphead'), grid = head ? head.nextElementSibling : null;
+      const gTop = grid ? grid.getBoundingClientRect().top : Infinity;
+      const hb = h.getBoundingClientRect();
+      if (hb.bottom > gTop - 2) h.style.top = (r.top + r.height / 2 - (hb.bottom - (gTop - 2))) + 'px';
     }
   } catch (e) { void e; }
   el.classList.add('hintTarget');
@@ -5637,7 +5670,7 @@ const detail = {
     const where = !SPC.speciesPlaced(q) ? '가방 — 아직 안 놓았다' : (q.slotId && !isFreeSlotId(q.slotId) ? slotLabel(q.slotId) : '방 안');
     const btns = [];
     if (!SPC.speciesPlaced(q)) btns.push({ ko: '🪴 방에 놓기', primary: true, go: () => startPhonePlaceSpecies(q.id) });
-    else btns.push({ ko: '📦 가방에 넣기', go: () => { SPC.bagSpecies(S, q.id); pushLog(S, `📦 ${ko}을 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`); syncRoom(); fillSlots(); draw(); } });
+    else btns.push({ ko: '📦 가방에 넣기', go: () => { SPC.bagSpecies(S, q.id); pushLog(S, `📦 ${josa(ko, '을', '를')} 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`); syncRoom(); fillSlots(); draw(); } });
     if ((q.species === 'pink_princess' || q.species === 'scindapsus') && SPC.ppCuttableNodes(q).length) btns.push({ ko: '✂ 자르기', go: () => detail.open('ppCut', { id: q.id }) });
     btns.push({ ko: '🔍 확대 보기', go: () => openSpeciesZoom(q.id) });   /* growth setSpeciesView */
     btns.push({ ko: why ? '💰 팔기' : `💰 팔기 · ${price.won.toLocaleString()}원`, off: !!why, why: why || '', go: () => sellSpeciesNow(q.id) });
@@ -6122,7 +6155,7 @@ function movePotTo(slotId) {
   catch (e) { banner('옮기지 못했습니다', (e && e.message) || ''); return; }
   try { if (S.firstPlay && S.firstPlay.enabled && p === pot0(S)) moveMonstera(S.firstPlay, slotId); } catch { }
   const n = (S.pots || []).length > 1 ? ` ${(S.pots || []).indexOf(p) + 1}` : '';
-  pushLog(S, `🪴 몬스테라${n}를 ${josaRo(slotLabel(slotId))} 옮겼습니다`);
+  pushLog(S, `🪴 ${josa(`몬스테라${n}`, '을', '를')} ${josaRo(slotLabel(slotId))} 옮겼습니다`);   /* ★ 11-03 8C6 — «몬스테라 1을» */
   banner(`${josaRo(slotLabel(slotId))} 옮겼습니다`, '빛 판정은 7일 평균이라 며칠 지나야 새 자리 값이 됩니다');
   try { unlockAfterFix(); sfx.thud(); } catch { }
   try { if (isBrightestSlot(slotId) && (((S.lamps && S.lamps.count) > 0) ? dlgOpen('monsteraMovedLamp') : dlgOpen('monsteraMoved'))) focusOnMonstera(); } catch { }   /* ★ §isBrightestSlot · 첫 한 번만 당긴다(W3 #6) · D97 §4-3 등 단 판 */
@@ -6590,8 +6623,8 @@ window.__byeotGuideBright = () => {
 function josaIGa(word) { return josa(String(word || ''), '이', '가'); }
 /* ★ 2026-10-08 (총괄 14:10) — 「…(으)로」 틀이 화면에 그대로 나오던 것. ㄹ 받침은 «로»(서울로)라 shop.josa(받침 유무만)로는 안 된다 — 여기서 센다 */
 function josaRo(word) {
-  const t = String(word == null ? '' : word).trim(); const c = t.charCodeAt(t.length - 1);
-  const jong = c >= 0xAC00 && c <= 0xD7A3 ? (c - 0xAC00) % 28 : 0;
+  const t = String(word == null ? '' : word).trim();
+  const jong = jongOf(t);   /* ★ 11-03 8C6 — 정본(src/game/josa.js)이 센다 · 숫자 끝도(«칸 1로» · «칸 3으로») */
   return t + (jong && jong !== 8 ? '으로' : '로');
 }
 /* ★★★ 2026-08-29 [Plan] — **[옮기기] 중 가이드일 때는 아래글이 «왜»를 말한다.**
@@ -7173,7 +7206,8 @@ function updateHint() {
       const boxAllBtn = $('bagGrid') && $('bagGrid').querySelector('[data-act="boxAll"]');
       const boxCell = boxAllBtn || ($('bagGrid') && $('bagGrid').querySelector('[data-boxpot]'));
       try { if (sheetShown() && boxN > 0 && boxCell && boxCell.offsetParent && !onScreen(boxCell)) boxCell.scrollIntoView({ block: 'center' }); } catch { }
-      if (boxN > 0 && onScreen(boxCell) && !sheetCovers(boxCell)) return hintAt(boxCell, '들고 온 채소를 가구 위에 올리세요');
+      /* ★ 11-03 plan §15(6cffb974) — 단추를 짚을 때는 누르면 무엇이 되나(§provisionalSpot 은 작물 띠 안 빈 자리만 · 확인 바 없이 곧장) · 하나뿐이면 그대로 */
+      if (boxN > 0 && onScreen(boxCell) && !sheetCovers(boxCell)) return hintAt(boxCell, boxAllBtn ? '빛이 맞는 빈 자리에 바로 놓습니다' : '들고 온 채소를 가구 위에 올리세요');
       if ((siruN + trayN) > 0) seeBag(siruCell);   /* ★ 7C3 */
       if ((siruN + trayN) > 0 && onScreen(siruCell) && !sheetCovers(siruCell)) return hintAt(siruCell, '시루를 놓고 씨앗을 심으세요 — 처음처럼');
       /* ★ MINOR ② — 남은 것을 그대로 말한다(삽수는 위 갈래가 맡음) · 섞였을 때만 예전 말 */
@@ -9265,7 +9299,7 @@ function startPhonePlacePotBag(potId) {
   if (!key) {
     afterPlace();
     { const darkP = darkPlaceWarn({ obj: p, kind: 'pot', variegated: false });   /* ★ 2026-10-08 A·B */
-      banner('🪴 몬스테라를 놓았습니다', darkP ? `⚠ ${darkP}` : '눌러서 [옮기기]로 자리를 다시 고를 수 있습니다'); }
+      banner('🪴 몬스테라를 놓았습니다', darkP ? `⚠ ${darkP}` : '눌러서 <span class="nowrap">[옮기기]로</span> 자리를 다시 고를 수 있습니다'); }
     return { ok: true };
   }
   picked.confirming = true;
@@ -9350,10 +9384,10 @@ const isBoxedPot = (kind, id) => boxedPotsOf(kind).some(p => p && p.id === id);
 function boxPlacedBanner(r, ko) {
   const left = boxedCountOf(r.kind);
   const tail = left > 0 ? ` · 가방에 이삿짐 ${left}개 남음` : '';
-  if (r.started) return banner('이삿짐을 풀었습니다', `${ko}가 자라던 그대로 이어서 자랍니다${tail}`);
+  if (r.started) return banner('이삿짐을 풀었습니다', `${josa(ko, '이', '가')} 자라던 그대로 이어서 자랍니다${tail}`);   /* ★ 11-03 8C6 — «재배판이» */
   /* 이사 때 심어 두고 물을 안 준 것 — 이삿짐 수엔 안 들고(빈 용기 칸에서 나온다) 씨앗은 그대로다(first_play §boxCropPot ⚠) */
-  if (r.sown) return banner(`심어 둔 ${ko}를 놓았습니다`, `물을 주면 시작합니다${tail}`);
-  return banner(`빈 ${ko}를 놓았습니다`, `🌱 을 눌러 씨앗을 뿌리세요${tail}`);
+  if (r.sown) return banner(`심어 둔 ${josa(ko, '을', '를')} 놓았습니다`, `물을 주면 시작합니다${tail}`);
+  return banner(`빈 ${josa(ko, '을', '를')} 놓았습니다`, `🌱 을 눌러 씨앗을 뿌리세요${tail}`);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -13090,7 +13124,7 @@ function drawPotWater() {
       /* ★ 2026-08-10 — 여기도 **주어를 적는다**(위 drawWater 의 같은 정정).
          마른 줄·줄 수 있는 줄은 「몬스테라」라고 하는데 이 줄만 주어가 없어서,
          작물 얘기로 읽혔다. 같은 판을 두고 화면이 딴말하는 것처럼 보이던 것이 이것이다. */
-      : `💧 몬스테라${nth}는 아직 촉촉합니다 (${potWaterWaitDays(st)}일 뒤)`;   /* ★ #16 한 곳 */
+      : `💧 ${josa(`몬스테라${nth}`, '은', '는')} 아직 촉촉합니다 (${potWaterWaitDays(st)}일 뒤)`;   /* ★ 11-03 8C6 — «몬스테라 1은» */   /* ★ #16 한 곳 */
   twoLine(b);   /* ★ D95 ① */
 }
 
@@ -18163,7 +18197,7 @@ function commitPlaceInner(what, hit, opt = {}) {
       const r = resolvePlacement(q.id, atOf(hit), placeOpt());
       if (youngTooWide(q, r.slotId)) { const e = new Error(YOUNG_WIDE_NO_KO); e.tutorialInput = true; return placeFailed(e); }   /* D55 ② */
       SPC.setSpeciesAt(S, q.id, { slotId: r.slotId, at: r.at, dropM: (() => { try { return speciesDropInfoOf(io, { slotId: r.slotId, at: r.at }) ? speciesDropInfoOf(io, { slotId: r.slotId, at: r.at }).dropM : null; } catch { return null; } })() });   /* D76 — 늘어지는 높이 */
-      banner(`🌿 ${SPC.SPECIES_KO[q.species] || '새 식물'}을 놓았습니다`, speciesPlaceSub(q));
+      banner(`🌿 ${josa(SPC.SPECIES_KO[q.species] || '새 식물', '을', '를')} 놓았습니다`, speciesPlaceSub(q));   /* ★ 11-03 8C6 — «칼라테아를» */
       unlockAfterFix();
       sfx.thud();
     } catch (e) { return placeFailed(e); }
@@ -18333,7 +18367,7 @@ function commitPlaceInner(what, hit, opt = {}) {
     /* 추천 자리에 붙었으면 첫 플레이 학습 판정도 그 자리 이름으로 이어진다 */
     if (S.firstPlay.enabled && r.slotId && !isFreeSlotId(r.slotId)) moveMonstera(S.firstPlay, r.slotId);
     { const n = (S.pots || []).length > 1 ? ` ${(S.pots || []).indexOf(p) + 1}` : '';
-      pushLog(S, `🪴 몬스테라${n}를 ${josaRo(r.slotId && !isFreeSlotId(r.slotId) ? slotLabel(r.slotId) : '고르신 자리')} 옮겼습니다`); }
+      pushLog(S, `🪴 ${josa(`몬스테라${n}`, '을', '를')} ${josaRo(r.slotId && !isFreeSlotId(r.slotId) ? slotLabel(r.slotId) : '고르신 자리')} 옮겼습니다`); }
     unlockAfterFix();
   sfx.thud();                         /* ★ 놓았다 — 실패는 이 줄을 안 지난다 */
     if (isBrightestSlot(r.slotId) && (((S.lamps && S.lamps.count) > 0) ? dlgOpen('monsteraMovedLamp') : dlgOpen('monsteraMoved'))) focusOnMonstera();   /* ★ §isBrightestSlot · W3 #6 · D97 §4-3 */
@@ -19007,7 +19041,7 @@ function startPhonePlaceSpecies(id) {
     SPC.setSpeciesAt(S, q.id, { slotId: r.slotId, at: r.at, dropM: (() => { try { return speciesDropInfoOf(io, { slotId: r.slotId, at: r.at }) ? speciesDropInfoOf(io, { slotId: r.slotId, at: r.at }).dropM : null; } catch { return null; } })() });   /* D76 — 늘어지는 높이 */
   } catch (e) { banner('배치하지 못했습니다', (e && e.message) || ''); return { ok: false, why: (e && e.message) || String(e) }; }
   try { window.__byeotSheet.close(); } catch { }
-  banner(`🌿 ${SPC.SPECIES_KO[q.species] || '새 식물'}을 놓았습니다`, speciesPlaceSub(q) + ' · 눌러서 [옮기기]로 자리를 고르세요');
+  banner(`🌿 ${josa(SPC.SPECIES_KO[q.species] || '새 식물', '을', '를')} 놓았습니다`, speciesPlaceSub(q) + ' · 눌러서 <span class="nowrap">[옮기기]로</span> 자리를 고르세요');   /* ★ 11-03 8C6 — 조사 · «[옮기기]로» 한 덩이 */
   syncRoom(); draw();
   return { ok: true, id: q.id };
 }
@@ -19268,7 +19302,7 @@ async function startPhonePlaceFurnitureBag(uid, hangAt = null) {
   } catch (e) { console.warn('[가구] 조립에 못 먹였습니다 —', e && e.message); }
   const ko = furnKoOfPreset(row.preset) || (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.preset;   /* ★ D99 ⑧ 사람 말 */
   pushLog(S, `🪑 ${josa(ko, '을', '를')} 방에 놓았습니다 — 눌러서 [옮기기]로 자리를 고르세요`);
-  banner(`${josa(ko, '을', '를')} 놓았습니다`, '눌러서 [옮기기]로 자리를 고를 수 있습니다');
+  banner(`${josa(ko, '을', '를')} 놓았습니다`, '눌러서 <span class="nowrap">[옮기기]로</span> 자리를 고를 수 있습니다');
   try { window.__byeotSheet.close(); } catch { }
   try { sfx.thud(); } catch { }
   draw();
@@ -19394,10 +19428,10 @@ async function startPhonePlaceFurnitureStock(itemId, hangAt = null) {
   const ko = furnKoOfPreset(row.preset) || (furnPresets[row.preset] && furnPresets[row.preset].name_ko) || row.ko || row.preset;   /* ★ D99 ⑧ */
   if (hangAt) {
     pushLog(S, `🖼 ${josa(ko, '을', '를')} 벽에 걸었습니다`);
-    banner(`${josa(ko, '을', '를')} 걸었습니다`, '눌러서 [옮기기]로 다른 자리에 걸 수 있습니다');
+    banner(`${josa(ko, '을', '를')} 걸었습니다`, '눌러서 <span class="nowrap">[옮기기]로</span> 다른 자리에 걸 수 있습니다');
   } else {
     pushLog(S, `🪑 ${josa(ko, '을', '를')} 방에 놓았습니다 — 눌러서 [옮기기]로 자리를 고르세요`);
-    banner(`${josa(ko, '을', '를')} 놓았습니다`, '눌러서 [옮기기]로 자리를 고를 수 있습니다');
+    banner(`${josa(ko, '을', '를')} 놓았습니다`, '눌러서 <span class="nowrap">[옮기기]로</span> 자리를 고를 수 있습니다');
   }
   try { window.__byeotSheet.close(); } catch { }
   try { sfx.thud(); } catch { }
@@ -21267,7 +21301,7 @@ function bindPicked() {
       if (spr) {
         picked.clear();
         SPC.bagSpecies(S, spr.id);
-        pushLog(S, `📦 ${SPC.SPECIES_KO[spr.species] || '새 식물'}을 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
+        pushLog(S, `📦 ${josa(SPC.SPECIES_KO[spr.species] || '새 식물', '을', '를')} 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
         banner('가방에 넣었습니다', '가방에 있는 동안에는 자라지 않습니다 — 다시 놓으면 이어서 자랍니다');
         try { sfx.thud(); } catch { }
         try { syncRoom(); } catch { }
@@ -21279,7 +21313,7 @@ function bindPicked() {
         const n = (S.pots || []).length > 1 ? ` ${(S.pots || []).indexOf(pr) + 1}` : '';
         picked.clear();
         pr.slotId = null; pr.at = null; pr.placedOnce = false;
-        pushLog(S, `📦 몬스테라${n}를 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
+        pushLog(S, `📦 ${josa(`몬스테라${n}`, '을', '를')} 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
         banner('가방에 넣었습니다', '가방에 있는 동안에는 자라지 않습니다 — 다시 놓으면 이어서 자랍니다');
         try { sfx.thud(); } catch { }
         try { syncRoom(); } catch { }
@@ -21295,7 +21329,7 @@ function bindPicked() {
         catch (e) { banner('회수하지 못했습니다', (e && e.message) || ''); return; }
         if (!r || !r.ok) { banner('회수하지 못했습니다', (r && r.why) || ''); return; }
         const nm = cr.ord > 1 ? `${r.ko} ${cr.ord}` : r.ko;
-        pushLog(S, `📦 ${nm}를 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
+        pushLog(S, `📦 ${josa(nm, '을', '를')} 가방에 넣었습니다 — 다시 놓을 때까지 자라지 않습니다`);
         banner('가방에 넣었습니다',
                r.started ? `${r.ageDays}일치는 그대로 있습니다 — 다시 놓으면 이어서 자랍니다`
                          : '다시 놓을 수 있습니다');

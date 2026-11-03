@@ -797,7 +797,7 @@ export function canSwapPot(S, asset, opt = {}) {
   if (stockOf(S, kind.itemId) < 1) {
     const inbound = incomingOf(S, kind.itemId);
     return { ...base, ok: false,
-             reason: `${kind.ko}가 없습니다 — ` +
+             reason: `${josa(kind.ko, '이', '가')} 없습니다 — ` +   /* ★ 11-03 8C6 조사 */
                      (inbound ? `${inbound}개가 배송 중입니다` : '먼저 주문해 주세요') };
   }
 
@@ -981,7 +981,7 @@ export function orderItem(S, itemId, qty = 1, opt = {}) {
             `${it.leadDays}일 뒤(Day ${order.arrivesOnDay}) 도착`);
 
   return { ...order, cashWon: ts ? ts.cashWon : null,
-           events: [{ id: 'shop_ordered', ko: `${it.ko}를 주문했습니다`,
+           events: [{ id: 'shop_ordered', ko: `${josa(it.ko, '을', '를')} 주문했습니다`,   /* ★ 11-03 8C6 조사 */
                       itemId, qty, totalWon, arrivesOnDay: order.arrivesOnDay }] };
 }
 
@@ -2281,16 +2281,10 @@ export const MARKET_BUYERS = Object.freeze([
   '동네 이웃', '식물 모으는 분', '근처 카페 사장님', '같은 동 사시는 분', '첫 식물이라는 분'
 ]);
 
-/* 조사(을/를·이/가·은/는). ★ 값과 아무 상관이 없고 **글이 사람 말처럼 읽히게** 있다 —
-   「몬스테라을(를)」 같은 괄호가 화면에 뜨면 그 문장은 사람이 안 읽는다.
-   ⚠ 받침이 있는지만 본다. 한글이 아니면 받침 없음으로 친다(숫자·영문). */
-const hasJong = (s) => {
-  const t = String(s == null ? '' : s).trim();
-  if (!t) return false;
-  const c = t.charCodeAt(t.length - 1);
-  return c >= 0xAC00 && c <= 0xD7A3 ? ((c - 0xAC00) % 28) !== 0 : false;
-};
-export const josa = (s, withJong, without) => `${s}${hasJong(s) ? withJong : without}`;
+/* 조사(을/를·이/가·은/는). ★ 값과 아무 상관이 없고 **글이 사람 말처럼 읽히게** 있다.
+   ★ 2026-11-03 8C6 — 정본은 src/game/josa.js 로 옮겼다(숫자 끝 «몬스테라 1을»도 읽음) · 여기서 그대로 다시 내보내 부르는 자리는 안 바뀐다 */
+import { josa } from './josa.js';
+export { josa, jongOf } from './josa.js';
 
 /* 며칠 뒤인지를 **화면에 안 적는다** — 랜덤이라는 것이 이 기능의 요점이고, 날짜를 미리
    알려 주면 기다림이 「그날까지 [다음 날]을 N번 누르기」라는 사무가 된다.

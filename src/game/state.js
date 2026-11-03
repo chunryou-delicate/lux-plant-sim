@@ -515,8 +515,8 @@ export function placeEmptyPot(S, at, opt = {}) {
     ...(decorative ? { itemId: potKind.itemId } : {})
   });
   pushLog(S, r.accepts && r.accepts.includes('seed')
-    ? `🪴 빈 ${r.containerKo}를 놓았습니다 — [🌱 심기]를 눌러 씨앗이나 삽수를 골라 주세요`
-    : `🫙 빈 ${r.containerKo}를 놓았습니다 — [🌱 심기]를 눌러 삽수를 골라 주세요`);
+    ? `🪴 빈 ${josa(r.containerKo, '을', '를')} 놓았습니다 — [🌱 심기]를 눌러 씨앗이나 삽수를 골라 주세요`
+    : `🫙 빈 ${josa(r.containerKo, '을', '를')} 놓았습니다 — [🌱 심기]를 눌러 삽수를 골라 주세요`);   /* ★ 11-03 8C6 조사 — «유리 수경병을» */
   return r;
 }
 
@@ -1052,7 +1052,7 @@ export function placeSiru(S, at, opt = {}) {
   let pot = null, fromStock = false, seedsUsed = 0;
   if (opt.potId) {
     pot = idleCropPots(site).find(p => p.id === opt.potId) || null;
-    if (!pot) { const e = new Error(`[배치] 가방에 그 ${k.containerKo}가 없습니다: ${opt.potId}`); e.tutorialInput = true; throw e; }
+    if (!pot) { const e = new Error(`[배치] 가방에 그 ${josa(k.containerKo, '이', '가')} 없습니다: ${opt.potId}`); e.tutorialInput = true; throw e; }
   } else pot = idleCropPots(site).find(p => !boxed.has(p)) || null;
   const fromBox = !!(pot && pot.moveBox);
   /* ★ D93 ③ — 찬 이름 자리에는 안 세운다(§namedSlotBusy) · 아무것도 만들고 빼기 전에 */
@@ -1095,22 +1095,22 @@ export function placeSiru(S, at, opt = {}) {
   /* ★ 2026-10-31 D92 — 이삿짐은 **제 상태 그대로** 선다 — 심어 둔 판을 빈 판으로 되돌리면 뿌린 씨앗이 사라진다(거둔 것은 넣을 때 이미 빈 판이다 · §boxCropPot) */
   if (!sow && !fromBox && pot.startedOnDay == null && !pot.harvested) pot.sown = false;
   pushLog(S, fromBox
-    ? (pot.startedOnDay != null ? `📦 이삿짐 ${k.containerKo}를 하나 놓았습니다 — 자라던 그대로 이어서 자랍니다`
+    ? (pot.startedOnDay != null ? `📦 이삿짐 ${josa(k.containerKo, '을', '를')} 하나 놓았습니다 — 자라던 그대로 이어서 자랍니다`   /* ★ 11-03 8C6 조사 — «새싹 재배판을» */
        /* 이사 때 심어 두고 물을 안 준 것 — «이삿짐»(돌던 것)이 아니다(first_play §boxedCropPots) · 씨앗은 그대로 */
-       : cropPotSown(pot) ? `🥣 심어 둔 ${k.containerKo}를 하나 놓았습니다 (물을 줘야 시작합니다)`
-       : `🌱 빈 ${k.containerKo}를 하나 놓았습니다 (씨앗을 심어야 시작합니다)`)
+       : cropPotSown(pot) ? `🥣 심어 둔 ${josa(k.containerKo, '을', '를')} 하나 놓았습니다 (물을 줘야 시작합니다)`
+       : `🌱 빈 ${josa(k.containerKo, '을', '를')} 하나 놓았습니다 (씨앗을 심어야 시작합니다)`)
     : !sow
-    ? `🌱 빈 ${k.containerKo}를 하나 놓았습니다 (씨앗을 심어야 시작합니다)`
+    ? `🌱 빈 ${josa(k.containerKo, '을', '를')} 하나 놓았습니다 (씨앗을 심어야 시작합니다)`
     : fromStock
-      ? `🥣 ${k.containerKo}를 하나 놓았습니다 — 씨앗 1봉지 (물을 줘야 시작합니다)`
-      : `🥣 ${k.containerKo}를 하나 놓았습니다 (물을 줘야 시작합니다)`);
+      ? `🥣 ${josa(k.containerKo, '을', '를')} 하나 놓았습니다 — 씨앗 1봉지 (물을 줘야 시작합니다)`
+      : `🥣 ${josa(k.containerKo, '을', '를')} 하나 놓았습니다 (물을 줘야 시작합니다)`);
   return { potId: pot.id, kind: kindId, slotId: pot.slotId, at: pot.at,
            sown: cropPotSown(pot),
            /* ★ D92 — 이삿짐에서 나왔나 · 자라던 것인가(화면이 «이어서 자란다»를 말할 근거 · [취소]가 이삿짐으로 되돌릴 근거) */
            fromBox, started: pot.startedOnDay != null,
            fromStock, seedsUsed, sirus: placedCropPots(site).length,
            spare: idleCropPots(site).length + (stockOf(S, k.containerItemId) || 0),
-           events: [{ id: 'siru_placed', ko: `${k.containerKo}를 놓았습니다`,
+           events: [{ id: 'siru_placed', ko: `${josa(k.containerKo, '을', '를')} 놓았습니다`,
                       kind: kindId, potId: pot.id }] };
 }
 
@@ -1192,7 +1192,7 @@ export function waterCrop(S, opt = {}) {
      사본은 대표 시루의 읽기용 복사본이라(first_play §makeCropSite) 비어도 시루는 서 있을 수 있다.
      그때 여기서 막으면 「방에 있는데 물을 못 주는」 판이 된다. */
   if (!placedCropPots(ensureCropPots(site)).length) {
-    const e = new Error(`[물주기] ${k.containerKo}를 먼저 방 안에 놓아 주세요`);
+    const e = new Error(`[물주기] ${josa(k.containerKo, '을', '를')} 먼저 방 안에 놓아 주세요`);
     e.tutorialInput = true;                 // 안내지 고장이 아니다
     throw e;
   }

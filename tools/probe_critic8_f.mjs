@@ -7,6 +7,8 @@
      ㉯ A 그날(Day 445) «많이 컸네! 이 칸이 좁아졌어 …»는 한 번까지 · [가게를 연다] 뒤(진로를 고른 날 · 짐 풀기 · 같은 날 다시 켬)엔 안 섬 — plan §12 ㉣
      ㉰ B 가방의 맡은 칼라테아 [누름] — 배너 아래 줄 «너무 밝으면 잎을 맙니다 — 알맞은 빛은 7일 평균 2~8입니다»(알로카시아 겨울잠 글 아님) — plan §12 ㉢
      ㉱ B 상점 주문 창 · 돈 모자람 — 끝 문장 «돈이 들어오면 시킬 수 있습니다 — 채소는 상점에 팔면 바로 들어옵니다.»(«며칠 지나야» 없음) — plan §13 ㉩
+     ㉲ (11-03 8C6 첫머리) B 놓기 배너 제목 조사 «칼라테아를 놓았습니다»(«칼라테아을» 아님)
+     ㉳ (11-03 8C6 · plan 25224e96) B 놓기 배너 꼬리 «[옮기기]로»가 한 덩이(nowrap)로 한 줄에 — «[옮기기]» / «로 …»로 갈리지 않음
      예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
@@ -100,6 +102,14 @@ console.log('  B 칼라테아 누름', JSON.stringify({ sp, ban }));
 if (OUT) await page.shot(`${OUT}/390_c8f_calathea.png`);
 ok(!sp.탈 && !!sp.hit && Array.isArray(ban) && ban.some(t => /너무 밝으면 잎을 맙니다 — 알맞은 빛은 7일 평균 2~8입니다/.test(t)) && !ban.some(t => /겨울엔 잎을 다 떨구고/.test(t)),
    '㉰ 맡은 칼라테아 [누름] — «너무 밝으면 잎을 맙니다 — 알맞은 빛은 7일 평균 2~8입니다»(알로카시아 겨울잠 글 아님)', JSON.stringify(ban));
+/* ★ 11-03 8C6 첫머리 — 조사 · «[옮기기]로» 한 덩이(사진 390_c8f_calathea 에서 «[옮기기]» / «로 자리를 …»로 갈렸다) */
+const nw = await J(`(()=>{ const e=document.getElementById('event'); const s=e.querySelector('.nowrap'); let tops=null;
+  if (s) { const rg=document.createRange(); rg.selectNodeContents(s); tops=[...new Set([...rg.getClientRects()].filter(q=>q.width>0).map(q=>Math.round(q.top)))]; }
+  return { on: e.classList.contains('on'), span: s ? s.textContent : null, tops }; })()`);
+ok(!nw.탈 && Array.isArray(ban) && ban.some(t => /칼라테아를 놓았습니다/.test(t)) && !ban.some(t => /칼라테아을/.test(t)),
+   '㉲ 놓기 배너 조사 «칼라테아를 놓았습니다»(«칼라테아을» 아님)', JSON.stringify((ban || []).slice(-2)));
+ok(!nw.탈 && nw.on && nw.span === '[옮기기]로' && Array.isArray(nw.tops) && nw.tops.length === 1,
+   '㉳ 배너 꼬리 «[옮기기]로»는 한 덩이로 한 줄에(갈려 꺾이지 않음)', JSON.stringify(nw));
 await talk(); await bannerOff();
 await J(`(()=>{ try { window.__byeotSheet.open('shop'); } catch (e) { void e; } return 1; })()`); await sleep(1500);
 const ids = await J(`[...document.querySelectorAll('#shopList [data-buy]')].map(b=>b.dataset.buy)`);

@@ -27,6 +27,7 @@
 import { resolvePlacement, atFromSlot, isFreeSlotId, inRoom, slotSeater } from './place.js';
 /* ★ 2026-10-31 총괄 D92 — 방에 선 시루·재배판을 세려고(§roomThingsOf). ⚠ 한 방향이다: first_play 는 place.js 만 부른다 */
 import { cropSites } from './first_play.js';
+import { josa } from './josa.js';   /* ★ 11-03 8C6 조사 정본 */
 import { useStock, assertStockAll, shopOf, CATALOG,
 /* ★★ 2026-08-17 — 무늬 **등급**(종류)은 전부 shop 이 읽는다.
    ⚠ 정본은 `data/balance/varie_grades.json` 이고 읽는 자리는 `shop.js` 한 곳이다.
@@ -1632,7 +1633,7 @@ export function placeCutContainer(S, container, at, opt = {}) {
                 usedOnDay: opt.usedOnDay == null ? null : opt.usedOnDay };
   S.emptyPots.push(row);
   const log = typeof opt.log === 'function' ? opt.log : null;
-  if (log) log(`🫙 빈 ${cont.ko}를 놓았습니다 — [🌱 심기]를 눌러 ` +
+  if (log) log(`🫙 빈 ${josa(cont.ko, '을', '를')} 놓았습니다 — [🌱 심기]를 눌러 ` +   /* ★ 11-03 8C6 — «유리 수경병을» */
                `${cont.accepts.includes('seed') ? '씨앗이나 삽수를' : '삽수를'} 골라 주세요`);
   return { ...row, containerKo: cont.ko, accepts: cont.accepts, left: S.emptyPots.length };
 }
@@ -2151,7 +2152,8 @@ export function stepCuttings(S, opt = {}) {
         c.warned.push(key);
         const w = { id: 'cutting_warn', cuttingId: c.id, daysLeft,
                     /* ★ 11-03 plan §12 ㉦ — 속 이름(cut_02)을 안 낸다 · 'node' 는 혹이 난 삽수 · «남은 날»(deadlineDay − 오늘) */
-                    ko: `⚠ 혹이 난 삽수 — 분갈이 남은 날 ${daysLeft}일입니다. ` +
+                    /* ★ 11-03 plan 대조(25224e96) — 앞 ⚠ 는 아래 기록 줄이 붙인다(여기 또 넣어 «⚠ ⚠»였다) */
+                    ko: `혹이 난 삽수 — 분갈이 남은 날 ${daysLeft}일입니다. ` +
                         `안 하면 시들어 사라집니다` };
         warnings.push(w); events.push(w);
         if (log) log('⚠ ' + w.ko);
