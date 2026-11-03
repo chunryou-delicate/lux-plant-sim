@@ -19388,6 +19388,179 @@
    }
   }
  },
+ "unlockDaysAndShop": {
+  "cfg": "GH_base_r",
+  "runs": 22,
+  "keys": {
+   "first:harvest": {
+    "med": 6,
+    "min": 6,
+    "max": 6,
+    "got": 22,
+    "beforeMove": 22,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 6,
+     "guide": 6
+    }
+   },
+   "first:spear": {
+    "med": 33,
+    "min": 33,
+    "max": 33,
+    "got": 22,
+    "beforeMove": 22,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 33,
+     "guide": 33
+    }
+   },
+   "monstera:arrive": {
+    "med": 8,
+    "min": 8,
+    "max": 8,
+    "got": 22,
+    "beforeMove": 22,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 8,
+     "guide": 8
+    }
+   },
+   "first:varie": {
+    "med": 19,
+    "min": 19,
+    "max": 19,
+    "got": 22,
+    "beforeMove": 22,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 19,
+     "guide": 19
+    }
+   },
+   "first:halfmoon": {
+    "med": 64,
+    "min": 64,
+    "max": 64,
+    "got": 22,
+    "beforeMove": 22,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 64,
+     "guide": 64
+    }
+   },
+   "first:fullmoon": {
+    "med": 298,
+    "min": 116,
+    "max": 325,
+    "got": 5,
+    "beforeMove": 2,
+    "notBeforeHome": 17,
+    "byPersona": {
+     "humanQ": 207,
+     "guide": 298
+    }
+   },
+   "count:harvest30": {
+    "med": 32,
+    "min": 32,
+    "max": 32,
+    "got": 22,
+    "beforeMove": 22,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 32,
+     "guide": 32
+    }
+   },
+   "first:root": {
+    "med": 148,
+    "min": 126,
+    "max": 184,
+    "got": 22,
+    "beforeMove": 10,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 148,
+     "guide": 148
+    }
+   },
+   "first:sale": {
+    "med": 155,
+    "min": 133,
+    "max": 194,
+    "got": 22,
+    "beforeMove": 0,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 155,
+     "guide": 152
+    }
+   },
+   "move:oneroom": {
+    "med": 140,
+    "min": 133,
+    "max": 150,
+    "got": 22,
+    "beforeMove": 0,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 140,
+     "guide": 150
+    }
+   },
+   "home:buy": {
+    "med": 392.5,
+    "min": 255,
+    "max": 505,
+    "got": 22,
+    "beforeMove": 0,
+    "notBeforeHome": 0,
+    "byPersona": {
+     "humanQ": 355,
+     "guide": 415
+    }
+   }
+  },
+  "shop": {
+   "상점 Day 1": {
+    "prices": {
+     "can": 12000,
+     "apron": 18000,
+     "journal": 6000
+    },
+    "shopDay": 1,
+    "negRuns": 0,
+    "negList": [],
+    "worstAfterRent": 792192,
+    "worstAt": "guide|8 Day 61(월세 뒤 828192 − 장비 36000)",
+    "dayMinAll": 744048,
+    "medRentMin": 819000
+   },
+   "order_seed 열린 날(Day 6)": {
+    "prices": {
+     "can": 12000,
+     "apron": 18000,
+     "journal": 6000
+    },
+    "shopDay": 6,
+    "negRuns": 0,
+    "negList": [],
+    "worstAfterRent": 792192,
+    "worstAt": "guide|8 Day 61(월세 뒤 828192 − 장비 36000)",
+    "dayMinAll": 744048,
+    "medRentMin": 819000
+   }
+  },
+  "rentDays90": [
+   1,
+   31,
+   61
+  ]
+ },
  "suspect2115": {
   "L3_10": {
    "same": 22,
