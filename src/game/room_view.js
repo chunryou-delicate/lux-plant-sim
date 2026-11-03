@@ -3056,13 +3056,14 @@ export async function createRoomView(canvas, opts = {}) {
      ★ 상자 크기는 그루의 `potD`(회전무관 지름) 그대로다. 새 숫자를 안 만든다.
      ⚠ 그루가 늘 때마다 격자를 다시 짓는다(`setWorld` 가 grid 를 비운다). 시루 16개에서
        재 보면 한 번에 1ms 미만이라 하루 넘길 때 몇 번 도는 것은 값이 싸다. */
-  function navColliders() {
+  function navColliders(skipKey = null) {   /* ★ 11-03 8C4 — skipKey: 그 그루 하나를 뺀 판(§reachWithout «이것 없이도 막혔나») */
     const base = (built && built.colliders) || [];
     const out = base.slice();
-    for (const [, p] of plants) {
+    for (const [key, p] of plants) {
       if (!p || !p.group) continue;
+      if (skipKey != null && key === skipKey) continue;
       const d = Math.max(0.05, p.potD || 0.2);
-      out.push({ x: p.group.position.x, z: p.group.position.z, w: d, d, rot: 0, plant: true });
+      out.push({ x: p.group.position.x, z: p.group.position.z, w: d, d, rot: 0, plant: true, key });
     }
     return out;
   }
@@ -9066,6 +9067,38 @@ export async function createRoomView(canvas, opts = {}) {
     });
   }
 
+  /* ★★ 11-03 8C4(총괄 가름 · 비판 8판 MAJOR #4) — 닿음 판 하나(문 · 그루 · 앉기 가구) · 상자 하나를 «더한» 판 · 그루 하나를 «뺀» 판과 견준다.
+       ⛔ 확인 바 «여기 두면 문 앞 길이 막힙니다»가 놓기 전부터 막혀 있던 문까지 놓은 탓으로 말했다 · 자동 자리 · 손가락은 놓으면 길을 막는 칸을 골랐다
+       ⚠ 판정만 한다(막지 않는다) · 길 판을 잠깐 다시 지었다 곧바로 되돌린다(§refreshNavObstacles 와 같은 손 · 한 번 1ms 안팎) — 화면은 놓기 · 옮기기 · 방 바뀜 때만 묻고 담아 둔다 */
+  function reachState(furnUids) {
+    const door = doorReach().filter(d => d && d.ok === false).length;
+    const unreach = new Set(unreachablePlants().map(u => u.key));
+    const furn = (furnUids || []).filter(u => { try { const r = besideReachOf(u); return !!(r && r.ok === false); } catch (e) { return false; } });
+    return { door, unreach, furn };
+  }
+  function blocksIfAt(x, z, d, furnUids) {
+    if (!built || !Number.isFinite(x) || !Number.isFinite(z)) return null;
+    if (!personHere()) return null;   /* 사람이 없으면 모른다(§reachOf 와 같은 규약) */
+    const before = reachState(furnUids);
+    const w = Math.max(0.05, +d || 0.2);
+    nav.setWorld({ colliders: [...navColliders(), { x, z, w, d: w, rot: 0, plant: true, key: '__probe__' }], size: built.size });
+    let after = null;
+    try { after = reachState(furnUids); } finally { nav.setWorld({ colliders: navColliders(), size: built.size }); }
+    const plantsNew = [...after.unreach].filter(k => !before.unreach.has(k));
+    const furnNew = after.furn.filter(u => !before.furn.includes(u));
+    return { door: after.door > before.door, plants: plantsNew, furn: furnNew, any: after.door > before.door || plantsNew.length > 0 || furnNew.length > 0 };
+  }
+  function reachWithout(key, furnUids) {
+    if (!built || key == null || !plants.has(key)) return null;
+    if (!personHere()) return null;
+    const now = reachState(furnUids);
+    nav.setWorld({ colliders: navColliders(key), size: built.size });
+    let before = null;
+    try { before = reachState(furnUids); } finally { nav.setWorld({ colliders: navColliders(), size: built.size }); }
+    return { door: now.door > before.door, plants: [...now.unreach].filter(k => k !== key && !before.unreach.has(k)), furn: now.furn.filter(u => !before.furn.includes(u)),
+             self: now.unreach.has(key) };
+  }
+
   /* ★★★ 어느 후보로 갈까 — **닿는가**를 먼저 묻는다 (2026-08-16 · G-9)
      ══════════════════════════════════════════════════════════════
      `standNear` 는 후보를 **그림이 좋은 순**으로 준다(카메라와 이루는 각 · 걷는 거리 ·
@@ -10629,6 +10662,10 @@ export async function createRoomView(canvas, opts = {}) {
     besideReach(uid) { return besideReachOf(uid); },
     doorReach() { return doorReach(); },
     navVersion() { return navVersion; },
+    /* ★ 11-03 8C4 — 놓으면 막히나(그 점에 상자 하나를 더한 판 · 새로 막히는 문 · 그루 열쇠 · 가구 uid) · 이것 없이도 막혔나(그 그루를 뺀 판과 견줌 · self = 그 그루에 못 감) · 사람 자리(재는 손잡이) */
+    blocksIfAt(x, z, d, furnUids) { return blocksIfAt(+x, +z, d, furnUids); },
+    reachWithout(key, furnUids) { return reachWithout(key, furnUids); },
+    personAt() { const p = personHere(); return p ? { x: +p.x.toFixed(3), z: +p.z.toFixed(3) } : null; },
     /* ★ 진단용 — 그 자리까지 「얼마나 가까이 설 수 있나」를 통째로 잰다(§standProbe).
        ⚠ 게임은 안 쓴다. tools/probe_reach.mjs 가 표를 뽑는 창구다. */
     standProbe(key, from) { return standProbe(key, from); },
