@@ -1832,6 +1832,8 @@
   /* 켜졌을 때만 눌린다 — 꺼진 배너가 무대를 가로채면 안 된다 */
   #event.on{pointer-events:auto;cursor:pointer}
   #event.on{opacity:1;transform:translate(-50%,0)}
+  /* ★ 11-04 U2-a — 확인 바(#placeConfirm)와 겹친 동안 그 바의 «여기에 둘까요?» 배너 칸만 숨긴다(§placeConfirm.clearBanner · 자리는 남김 · 남의 배너는 그대로) */
+  #event b.underConfirm{visibility:hidden !important}
   #event b{display:block;font-weight:700;font-size:19px;color:#14240f;
     background:linear-gradient(#bff5b0,#7ce69a);padding:11px 22px;border-radius:16px;
     box-shadow:0 8px 26px rgba(0,0,0,.45);text-align:center;line-height:1.45}
@@ -9348,7 +9350,7 @@ function startPhonePlacePotBag(potId) {
   /* 갓 꺼낸 것이라 [취소]는 **가방으로** 되돌린다(§placeConfirmCancel) */
   picked.before = { potId: p.id, fresh: true, slotId: null, at: null };
   placeConfirm.show();
-  banner('여기에 둘까요?', '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');
+  banner(PLACE_ASK_KO, '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');   /* ★ 11-04 U2-a — 제목은 한 곳(PLACE_ASK_KO) */
   return { ok: true };
 }
 const BAG_PLACEABLE = Object.freeze({
@@ -18912,6 +18914,8 @@ function plantMenuFollow(on) {
    ══════════════════════════════════════════════════════════════════════════ */
 /* ★ 11-03 총괄 — 확인 바 둘째 단추 글(#placeCancel · 기본 «취소» · fromStock 길만 «가방에 넣기») */
 const PLACE_CANCEL_KO = Object.freeze({ cancel: '취소', toBag: '가방에 넣기' });
+/* ★ 11-04 U2-a — 확인 바와 함께 서는 배너 제목(세 길: 가방 몬스테라 · 새 종 · 시루) · §placeConfirm.clearBanner 가 이 제목인 칸만 숨긴다 */
+const PLACE_ASK_KO = '여기에 둘까요?';
 const placeConfirm = {
   on: false,
   show() {
@@ -18925,6 +18929,21 @@ const placeConfirm = {
     this.on = false;
     $('stage').classList.remove('confirming');
     this.follow(false);
+    this.clearBanner();   /* ★ 11-04 U2-a — 바가 닫히면 숨김 표지를 뗀다 */
+  },
+  /* ★ 11-04 U2-a(총괄) — 바가 «자기» 배너(제목 PLACE_ASK_KO)와 겹치면 그 칸만 숨긴다. 남의 배너 칸은 그대로 둔다(숨긴 채 시간이 가면 못 본 채 지나감).
+       visibility 라 자리는 남아 겹침 셈이 안 흔들린다 · 배너가 다시 그려지면(새 <b>) 다음 걸음에 다시 단다 */
+  clearBanner() {
+    const ev = $('event'), pc = $('placeConfirm');
+    if (!ev) return;
+    const on = !!(this.on && pc && ev.classList.contains('on'));
+    const a = on ? pc.getBoundingClientRect() : null;
+    for (const b of ev.querySelectorAll(':scope > b')) {
+      const t = (b.firstChild && b.firstChild.nodeType === 3) ? b.firstChild.textContent.trim() : '';
+      let hit = false;
+      if (on && t === PLACE_ASK_KO) { const r = b.getBoundingClientRect(); hit = a.width > 0 && r.width > 0 && a.left < r.right && r.left < a.right && a.top < r.bottom && r.top < a.bottom; }
+      if (b.classList.contains('underConfirm') !== hit) b.classList.toggle('underConfirm', hit);
+    }
   },
   /* 글자와 경고를 채운다. **경고는 막지 않는다** — 박사님 지시가 그렇다(③). */
   paint() {
@@ -18977,11 +18996,13 @@ const placeConfirm = {
         if (this.on && lampAsk.uid && lampAsk.pos) {
           let q = null; try { q = roomView && roomView.worldToScreen(lampAsk.pos.x, lampAsk.pos.y, lampAsk.pos.z); } catch { q = null; }
           placeFloatMenu($('placeConfirm'), q);
+          this.clearBanner();   /* ★ 11-04 U2-a */
           return;
         }
         if (!this.on || !picked.slotId) return;
         let p = null; try { p = roomView && roomView.screenPosOf(picked.slotId); } catch { }
         placeFloatMenu($('placeConfirm'), p);
+        this.clearBanner();   /* ★ 11-04 U2-a — 바 자리를 잡은 뒤 «자기» 배너와 겹치나 */
         /* ★ 2026-10-08 E — 방이 그루를 다시 세우고 길 판을 고친 «뒤»에 다시 칠한다(syncRoom 은 비동기 ·
              놓자마자 칠하면 옛 길로 «닿음», 되돌리면 옛 길로 «못 감»이었다 — probe_reach_uses) */
         let nv = null; try { nv = roomView && roomView.navVersion ? roomView.navVersion() : null; } catch { nv = null; }
@@ -19112,7 +19133,7 @@ function startPhonePlaceSpecies(id, opt = {}) {
     picked.select(key);
     picked.before = { potId: q.id, species: true, fresh: true, fromStock: !!(opt && opt.fromStock), slotId: null, at: null, placedOnce: wasPlacedOnce };
     placeConfirm.show();
-    banner('여기에 둘까요?', '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');
+    banner(PLACE_ASK_KO, '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');   /* ★ 11-04 U2-a */
     return { ok: true, id: q.id, confirming: true };
   }
   banner(`🌿 ${josa(SPC.SPECIES_KO[q.species] || '새 식물', '을', '를')} 놓았습니다`, speciesPlaceSub(q) + ' · 눌러서 <span class="nowrap">[옮기기]로</span> 자리를 고르세요');   /* ★ 11-03 8C6 — 조사 · «[옮기기]로» 한 덩이 */
@@ -19760,7 +19781,7 @@ function startPhonePlace(kind = 'beansprout', opt = {}) {
        ⚠ 떠 있던 배너는 걷는다 — 폰에서 가방 칸을 누르면 끌기가 그 자리에서 끝나 「여기엔 못 놓았습니다」가 먼저 뜬다(걸어서 잼).
          예전엔 「여기에 둘까요?」가 덮어 가렸고, 안 걷으면 [확인] 팝업 옆에 틀린 말이 남는다 */
   const fpOn = S.firstPlay && S.firstPlay.enabled && !S.firstPlay.completed && !(S.tutorial && S.tutorial.movedOut);
-  if (!fpOn) banner('여기에 둘까요?', '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');
+  if (!fpOn) banner(PLACE_ASK_KO, '[확인] 을 누르면 그 자리에 놓입니다 · 자리를 바꾸려면 [다시 옮기기]');   /* ★ 11-04 U2-a */
   else { try { const ev = $('event'); if ((ev.textContent || '').includes('여기엔 못 놓았습니다')) ev.classList.remove('on'); } catch { } }   /* 그 말만 걷는다 — 아침 도착·수확 배너는 둔다(검토 W2) */
 }
 
