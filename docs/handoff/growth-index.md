@@ -293,6 +293,20 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-11-04 · 몬이 «할 일이 며칠째 그대로야»(nudgeWorry)는 언제 서나 — 재기만 (총괄 · plan 이 8aa170ce 대조 판 Day 446 에서 봄)
+
+```
+[잰 것] probe_branches(8aa170ce 고정 복사본 · --trace 때만 덧줄 nz = chatterContext nudge 임자 · 열린 할 일 · 방 판정 둘 · 덧줄 무해 ccf56040 과 0)
+  사람 22판   게임 손 36일 · 셋뿐 — Day 21 siru8(22판 · 전날 제 줄 nudgeSiruPush → 이튿날 범용 걱정) · 반지하 varie_bright 10 · 원룸 +8 root_bright 4
+              원룸 이사 +1~+3 0 · 투룸 날 없음(내 집에서 판이 끝남) · 하네스 손 22판도 같음(39일)
+  투룸 446    진로 판만 · 임자 pp_hold_pink(원룸 Day 276 에 열림 · 170일째) — 칩은 그날 연 home_unpack · care_unpack · breed_unpack
+              원룸 내내 임자 oneroom_home_fund(LONG_OWN · 범용 줄 안 섬) 뒤에 숨어 날수만 쌓였다가 집 날 home_fund 끝 → 이튿날 바로 걱정
+  진로 44판   161일 · 투룸 93 모두 pp_hold_pink · 안 끝내고 넘어간 8판(씨앗 g · 10) 모두 투룸 +1~+2 에 섬 · 끝내 안 한 shop71 g · 10 은 30일마다 25번
+  방 판정     dialogue.js:4616 questRoomOk(id, { movedOut }) — movedHome 없음 → 투룸 할 일은 늘 «방 아님»(446 의 까닭은 아님)
+              진로 44판 투룸 34,344 판-날 중 27,117 은 칩 쪽이면 임자가 있는데 대사 쪽 임자 없음 · 그날 nudgeBack «급한 건 아니야» 344번(투룸 nudgeBack 의 89%)
+```
+> ★ 값 · 코드 안 고침 — 고침은 core 몫 · 총괄이 가름. 전문 `growth-nudgeworry-20261104.md` · `growth-nudgeworry.json`.
+
 ### 2026-11-03~04 · D101 장비 효과 레버 민감도 E-L1~E-L7 — 재기만 (총괄 · plan cc882f28 E 절 · e31cc01c 고정 복사본)
 
 ```
