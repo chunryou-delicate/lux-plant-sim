@@ -29,13 +29,21 @@ const stage = (n = 1) => { const w = JSON.parse(fs.readFileSync(SAVE_A, 'utf8'))
   s.pots[0].listing = 'mk_001';
   return JSON.stringify(w); };
 const exc = [];
+const FRESH = process.env.FRESH !== '0';   /* ★ 11-04 — boot 마다 새 크롬(open 안) */
 const open = async (W) => {
-  const page = await launch({ width: W, height: 844, dpr: 2 });
-  page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
-  await page.send('Runtime.enable');
-  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+  /* ★ 11-04 — boot 마다 새 크롬(reg68: 한 크롬에서 세이브를 다시 열자 셋째 boot 무렵 렌더러 3.46GB · 빈 커밋 1.32 에서 지킴이가 닫음) · FRESH=0 이면 예전 꼴 */
+  let page = null, booted = false;
+  const fresh = async () => { if (page) { try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); } }
+    page = await launch({ width: W, height: 844, dpr: 2 });
+    page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
+    await page.send('Runtime.enable');
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+  };
+  await fresh();
   const J = async (js) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, 120000));
   const boot = async (txt) => {
+    if (FRESH && booted) await fresh();
+    booted = true;
     await page.goto(`${BASE}/data/balance/homes.json`);
     await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(txt)}); localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
     await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted === true', 300000, 500); await page.waitFor('!!window.__rv', 240000, 500); await sleep(3500);
@@ -56,7 +64,7 @@ const open = async (W) => {
   /* ★ 11-03 — 시트가 올라오는 움직임이 헤드리스 프레임 멈춤에 걸리면 [거래하기]가 «안 보임»으로 잡혀 손가락이 시트 닫기 문으로 갔다(fm58 세 번 중 한 번) ⇒ 누른 뒤 움직임을 끝 상태로 · 10×10 찍기로 프레임 한 장 */
   const settle = async () => { await J(`(()=>{ for (const a of document.getAnimations()) { try { a.finish(); } catch (e) { void e; } } return 1; })()`);
     await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 10, clip: { x: 0, y: 0, width: 10, height: 10, scale: 1 } }); await sleep(300); };
-  return { page, J, boot, H, settle };
+  return { page: { shot: (...a) => page.shot(...a), close: () => page.close() }, J, boot, H, settle };   /* ★ 11-04 — page 는 boot 마다 갈리니 바깥엔 «지금 page» 손잡이(바깥은 shot · close 만 씀) */
 };
 const ovr = (a, b) => !!a && !!b && a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
 /* ㉲(총괄 11-03 가름 · 사진 390_c7g_deal) — [거래하기]는 «손만»: 손 가운데 x 가 [거래하기] 좌우 안 · 같은 줄 [내리기] 좌우 밖 · 말풍선 글은 숨음(handOnly)

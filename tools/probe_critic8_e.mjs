@@ -20,16 +20,23 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
 let bad = 0; const ok = (c, m, d = '') => { console.log(`${c ? '  OK' : 'FAIL'}  ${m}${d ? '  → ' + d : ''}`); if (!c) bad++; };
 if (!fs.existsSync(SAVE)) { ok(false, '세이브 없음', SAVE); process.exit(1); }
 const exc = [];
-const page = await launch({ width: 390, height: 844, dpr: 2 });
-page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
-await page.send('Runtime.enable');
-await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+const FRESH = process.env.FRESH !== '0';   /* ★ 11-04 — 크롬을 한 번에 하나만(reg68: 390 을 연 채 360 을 더 띄워 둘 합 4.9GB · 빈 커밋 1.04 에서 지킴이가 닫음) · FRESH=0 이면 예전 꼴 */
+let page = null, booted = false;
+const fresh = async () => { if (page) { try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); } }
+  page = await launch({ width: 390, height: 844, dpr: 2 });
+  page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
+  await page.send('Runtime.enable');
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+};
+await fresh();
 const J = async (js) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, 120000));
 const dlg = async () => { for (let i = 0; i < 160; i++) { const t = await J(`document.getElementById('stage').classList.contains('talking')`); if (t !== true) break; await page.eval(`(()=>{ const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(250); } };
 const bannerOff = async () => { for (let i = 0; i < 20; i++) { const on = await J(`document.getElementById('event').classList.contains('on')`); if (on !== true) return; await J(`(()=>{ document.getElementById('event').click(); return 1; })()`); await sleep(400); } };
 const settle = async () => { await J(`(()=>{ for (const a of document.getAnimations()) { try { a.finish(); } catch (e) { void e; } } return 1; })()`);
   await page.send('Page.captureScreenshot', { format: 'jpeg', quality: 10, clip: { x: 0, y: 0, width: 10, height: 10, scale: 1 } }); await sleep(300); };
 const boot = async () => {
+  if (FRESH && booted) await fresh();
+  booted = true;
   await page.goto(`${BASE}/data/balance/homes.json`);
   await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(fs.readFileSync(SAVE, 'utf8'))}); localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
   await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted === true', 300000, 500); await page.waitFor('!!window.__rv', 240000, 500); await sleep(4000);
@@ -96,6 +103,7 @@ ok(!sA.탈 && !sB.탈 && boxIds.length > 0 && diff.length === 0, `㉰ 놓인 자
     Object.assign(pp, { slotId: null, at: null, moveBox: true, sown: true, harvested: false, ageDays: 1, startedOnDay: day - 1, idleSinceDay: day - 1 });
   const base0 = fp.beansprout.pots[0];
   for (let i = 0; i < 9; i++) fp.beansprout.pots.push({ ...JSON.parse(JSON.stringify(base0)), id: `crop_01_${90 + i}` });
+  if (FRESH && page) { try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); } page = null; }   /* ★ 11-04 — 390 크롬을 닫고 360 을 띄운다 */
   const p3 = await launch({ width: 360, height: 844, dpr: 2 });
   p3.on((method, pr) => { if (method === 'Runtime.exceptionThrown') exc.push(((pr.exceptionDetails.exception && pr.exceptionDetails.exception.description) || pr.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
   await p3.send('Runtime.enable'); await p3.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });

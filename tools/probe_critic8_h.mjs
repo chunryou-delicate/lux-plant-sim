@@ -8,7 +8,7 @@
      O 원룸 S Day 97(C:/Users/pc/byeot-core-keep/critic6/saveS_d97.json) — 작물을 다 이삿짐으로(critic8_e ㉱ 와 같은 손질 · 덧붙임 없음) · oneroom_unpack 넘어감 · 이삿짐만 남음
    단언(390)
      ㉮ T 손가락대로 걷기 — 삽수 → 몬스테라 → 새 식물마다 «{종}를 놓으세요»(가방 새 종 수만큼 · 390 · 360 한 줄) → [한꺼번에 놓기 (N개)] «빛이 맞는 빈 자리에 바로 놓습니다»(plan §16 ㉱ · §17 ㉮)
-     ㉯ T 마지막 그루(새 식물)를 놓은 «그 순간» home_unpack 이 끝난다(stamina.questsTaken · 칩이 다음 할 일) — 누름 길도 놓은 뒤 할 일을 다시 센다(총괄 11-03 ①)
+     ㉯ T 마지막 그루(새 식물)를 놓고 [확인]한 «그 순간» home_unpack 이 끝난다(stamina.questsTaken · 칩이 다음 할 일) — 새 종 누름 길은 확인 바(11-03 plan §18) · 할 일은 [확인]에서 센다
      ㉰ T [한꺼번에 놓기] 한 번 — 이삿짐 0 · 기록 «📦 이삿짐 N개를 한꺼번에 놓았습니다»(배너는 늦춘 새 종 배너 뒤에 설 수 있어 기록 줄로 본다)
         (11-03 총괄 · reg55 가름) 고리는 하나씩 방 뷰에 설 때까지 기다리는 비동기라 끝나는 때가 판마다 다르다 ⇒ 맺음 기록 줄이 설 때까지(최대 40초) 기다린 뒤 잰다 ·
         40초가 지나도 없으면 빨강(기록 끝 줄) · 맺음 줄 N = 놓인 수
@@ -123,7 +123,7 @@ ok(sp0.length > 0 && spRows.length === sp0.length && iMon >= 0 && iSp0 > iMon &&
 const UNPACK_CHIP = '가방의 식물을 새 집에 놓으세요';
 const after = iBox >= 0 ? tr[iBox] : (tr[tr.length - 1] || {});   /* 마지막 새 식물을 놓은 «바로 다음» 줄(그 사이 다른 손 없음) */
 ok(sp0.length > 0 && after.spBag === 0 && Array.isArray(after.taken) && after.taken.includes('home_unpack') && after.chip !== UNPACK_CHIP,
-   '㉯ 마지막 그루(새 식물)를 놓은 그 순간 home_unpack 이 끝난다(칩이 다음 할 일)', JSON.stringify({ spBag: after.spBag, taken: after.taken, chip: after.chip }));
+   '㉯ 마지막 그루(새 식물)를 놓고 [확인]한 그 순간 home_unpack 이 끝난다(칩이 다음 할 일 · 11-03 새 종 확인 바)', JSON.stringify({ spBag: after.spBag, taken: after.taken, chip: after.chip }));
 console.log('  ㉯ 칩이 넘어간 때', JSON.stringify(tr.map(r => [r.target, r.chip, (r.taken || []).join(',')])));
 const b0 = await J(LOOK);
 /* 기록은 200줄에서 앞을 덜어 낸다(state §pushLog) — 자리 번호로 자르지 않고 «누르기 전 맺음 줄 수»를 센다(판: 0) */

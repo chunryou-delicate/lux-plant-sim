@@ -834,7 +834,13 @@ export function migratePots(S, slots) {
     filled.push({ id, slotId: o.slotId, at: o.at });
   };
 
-  for (const p of S.pots || []) fill(p, p.id);
+  /* ★ 11-03 총괄 — «가방 안 그루»(자리 · 좌표 없음 · placedOnce === false · oneroom §clearPlacements)는 마이그레이션 대상이 아니다 —
+       빠뜨린 게 아니라 아직 안 놓은 것이라 건너뛴 사유 목록에도 넣지 않는다(이사 날 저장 → 이어하기에 «⚠ 복원 … slotId 가 없습니다»가 섰다)
+       ⚠ placedOnce === false 일 때만이다 — 그 칸이 없는 옛 세이브(undefined)는 예전대로 센다(사유 목록에 남긴다) */
+  for (const p of S.pots || []) {
+    if (p && !p.slotId && !p.at && p.placedOnce === false) continue;
+    fill(p, p.id);
+  }
 
   /* 아직 자리를 안 정한 시루(slotId 조차 없음)는 **마이그레이션 대상이 아니다** —
      빠뜨린 게 아니라 아직 안 놓은 것이라 건너뛴 사유 목록에도 넣지 않는다. */

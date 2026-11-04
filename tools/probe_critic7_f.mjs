@@ -27,15 +27,22 @@ const stage = (rid) => { const w = JSON.parse(fs.readFileSync(SAVE_S, 'utf8')); 
   for (const t of [...s.firstPlay.beansprout.pots, ...Object.values(s.firstPlay.crops || {}).flatMap(v => (v && v.pots) || [])].filter(p => p.id === rid)) { t.slotId = null; t.at = null; }
   return JSON.stringify(w); };
 const exc = [];
+const FRESH = process.env.FRESH !== '0';   /* ★ 11-04 — 자리마다 새 크롬(아래) */
 const ovr = (a, b) => !!a && !!b && a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
 for (const W of [360, 390]) {
-  const page = await launch({ width: W, height: 844, dpr: 2 });
-  page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
-  await page.send('Runtime.enable');
-  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+  /* ★ 11-04 — 자리마다 새 크롬(reg68: 한 크롬에서 세이브를 다섯 번 다시 열자 360 판 다섯째에 렌더러 3.47GB · 빈 커밋 1.23 에서 지킴이가 닫음) · FRESH=0 이면 예전 꼴 */
+  let page = null, nth = 0;
+  const fresh = async () => { if (page) { try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); } }
+    page = await launch({ width: W, height: 844, dpr: 2 });
+    page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
+    await page.send('Runtime.enable');
+    await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+  };
+  await fresh();
   const J = async (js) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, 120000));
   const bannerOff = async () => { for (let i = 0; i < 20; i++) { const on = await J(`document.getElementById('event').classList.contains('on')`); if (on !== true) return; await J(`(()=>{ document.getElementById('event').click(); return 1; })()`); await sleep(500); } };
   for (const C of [...CASES, { id: 'lamp', kind: 'lamp', ko: '등 다는 창' }]) {
+    if (FRESH && nth++ > 0) await fresh();
     await page.goto(`${BASE}/data/balance/homes.json`);
     await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(C.kind === 'lamp' ? stageLamp() : stage(C.id))}); localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
     await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted === true', 300000, 500); await page.waitFor('!!window.__rv', 240000, 500); await sleep(3500);

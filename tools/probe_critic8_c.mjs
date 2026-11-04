@@ -25,10 +25,15 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
 let bad = 0; const ok = (c, m, d = '') => { console.log(`${c ? '  OK' : 'FAIL'}  ${m}${d ? '  → ' + d : ''}`); if (!c) bad++; };
 if (!fs.existsSync(SAVE)) { ok(false, '세이브 없음', SAVE); process.exit(1); }
 const exc = [];
-const page = await launch({ width: 390, height: 844, dpr: 2 });
-page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
-await page.send('Runtime.enable');
-await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+const FRESH = process.env.FRESH !== '0';   /* ★ 11-04 — 세이브를 다시 넣는 판마다 새 크롬(reg68: 한 크롬에서 다시 넣자 54초에 렌더러 3.84GB · 빈 커밋 1.2 에서 지킴이가 닫음) · FRESH=0 이면 예전 꼴 */
+let page = null;
+const fresh = async () => { if (page) { try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); } }
+  page = await launch({ width: 390, height: 844, dpr: 2 });
+  page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
+  await page.send('Runtime.enable');
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+};
+await fresh();
 const J = async (js) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, 120000));
 const dlg = async () => { for (let i = 0; i < 160; i++) { const t = await J(`document.getElementById('stage').classList.contains('talking')`); if (t !== true) break; await page.eval(`(()=>{ const b=document.getElementById('dlgBox'); if(b) b.click(); return 1; })()`, false); await sleep(250); } };
 const bannerOff = async () => { for (let i = 0; i < 20; i++) { const on = await J(`document.getElementById('event').classList.contains('on')`); if (on !== true) return; await J(`(()=>{ document.getElementById('event').click(); return 1; })()`); await sleep(400); } };
@@ -99,6 +104,7 @@ await bannerOff();
   /* plan §11 ㉲ «다른 빈 칸이 다 어두우면» — 어두운 아랫단 칸(banjiha-etagere:2 · 하루 빛 0.08) 하나를 비운다(그 시루는 가방으로).
      ⚠ 빈 칸이 아예 없으면 놓을 수 있는 best 가 없어 옛 자로 떨어져 되돌림을 못 잡았다(11-03 첫 잼 · §11 전 판도 초록) */
   { const low = all.find(x => x.slotId === 'banjiha-etagere:2'); if (low) { low.slotId = null; low.at = null; } }
+  if (FRESH) await fresh();
   await page.goto(`${BASE}/data/balance/homes.json`);
   await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(JSON.stringify(w))}); localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
   await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted === true', 300000, 500); await page.waitFor('!!window.__rv', 240000, 500); await sleep(4000);
@@ -112,6 +118,7 @@ ok(!y.탈 && /^여기는 몬스테라가 자라기엔 어둡습니다 — 제일
 { const w = JSON.parse(fs.readFileSync(SAVE_S, 'utf8')); w.state.shop.stock.pot = 2;
   for (const p of w.state.firstPlay.beansprout.pots) if (p.slotId) Object.assign(p, { sown: true, harvested: false, ageDays: 1, startedOnDay: w.state.day - 1, idleSinceDay: w.state.day - 1 });
   for (const v of Object.values(w.state.firstPlay.crops || {})) for (const p of ((v && v.pots) || [])) if (p.slotId) Object.assign(p, { sown: true, harvested: false, ageDays: 1, startedOnDay: w.state.day - 1, idleSinceDay: w.state.day - 1 });
+  if (FRESH) await fresh();
   await page.goto(`${BASE}/data/balance/homes.json`);
   await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(JSON.stringify(w))}); localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
   await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted === true', 300000, 500); await page.waitFor('!!window.__rv', 240000, 500); await sleep(4000);

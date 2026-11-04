@@ -5,7 +5,7 @@
    단언(390)
      ㉮ A [내 집 마련] → [계약한다] → 진로 카드: 밑글 아래 «두고 가는 것 — 벽 · 창 · 천장에 붙은 가구 {n}개»(n ≥ 1 · 원룸 이사 창과 같은 셈 · 보이는 줄) — plan §13 ㉣
      ㉯ A 그날(Day 445) «많이 컸네! 이 칸이 좁아졌어 …»는 한 번까지 · [가게를 연다] 뒤(진로를 고른 날 · 짐 풀기 · 같은 날 다시 켬)엔 안 섬 — plan §12 ㉣
-     ㉰ B 가방의 맡은 칼라테아 [누름] — 배너 아래 줄 «너무 밝으면 잎을 맙니다 — 알맞은 빛은 7일 평균 2~8입니다»(알로카시아 겨울잠 글 아님) — plan §12 ㉢
+     ㉰ B 가방의 맡은 칼라테아 [누름] → 확인 바 [확인](11-03 plan §18) — 배너 아래 줄 «너무 밝으면 잎을 맙니다 — 자라는 빛은 7일 평균 2~8입니다»(11-03 plan §18 «알맞은» → «자라는»)(알로카시아 겨울잠 글 아님) — plan §12 ㉢
      ㉱ B 상점 주문 창 · 돈 모자람 — 끝 문장 «돈이 들어오면 시킬 수 있습니다 — 채소는 상점에 팔면 바로 들어옵니다.»(«며칠 지나야» 없음) — plan §13 ㉩
      ㉲ (11-03 8C6 첫머리) B 놓기 배너 제목 조사 «칼라테아를 놓았습니다»(«칼라테아을» 아님)
      ㉳ (11-03 8C6 · plan 25224e96) B 놓기 배너 꼬리 «[옮기기]로»가 한 덩이(nowrap)로 한 줄에 — «[옮기기]» / «로 …»로 갈리지 않음
@@ -19,10 +19,18 @@ if (OUT) fs.mkdirSync(OUT, { recursive: true });
 let bad = 0; const ok = (c, m, d = '') => { console.log(`${c ? '  OK' : 'FAIL'}  ${m}${d ? '  → ' + d : ''}`); if (!c) bad++; };
 for (const f of [SAVE_A, SAVE_B]) if (!fs.existsSync(f)) { ok(false, '세이브 없음', f); process.exit(1); }
 const exc = [];
-const page = await launch({ width: 390, height: 844, dpr: 2 });
-page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
-await page.send('Runtime.enable');
-await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+/* ★ 11-04 — load 마다 새 크롬(red62: 한 크롬에서 둘째 세이브를 열자 렌더러 2.8GB · 빈 커밋 1.45 에서 지킴이가 닫음) · 단언 · 차례 그대로
+     «같은 날 다시 켬»(A 안 page.goto)은 같은 크롬 그대로(다시 켤 때 세이브 · 메모리 칸을 보는 판 뜻) · FRESH=0 이면 예전처럼 크롬 하나 */
+const FRESH = process.env.FRESH !== '0';
+let page = null, loaded = false;
+const fresh = async () => {
+  if (page) { try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); } }
+  page = await launch({ width: 390, height: 844, dpr: 2 });
+  page.on((method, p) => { if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200)); });
+  await page.send('Runtime.enable');
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+};
+await fresh();
 const J = async (js) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, 120000));
 const talk = async (max = 160) => {
   const lines = [];
@@ -39,6 +47,9 @@ const bannerOff = async () => { for (let i = 0; i < 20; i++) { const on = await 
 /* 배너 글 적기(자 쪽 관찰 · 게임은 안 건드림) */
 const watchBanners = () => J(`(()=>{ const e=document.getElementById('event'); window.__c8fBan = []; const mo = new MutationObserver(()=>{ const t=(e.textContent||'').trim(); if (t) window.__c8fBan.push(t); }); mo.observe(e, { childList:true, subtree:true, characterData:true }); return 1; })()`);
 const load = async (file) => {
+  if (FRESH && loaded) await fresh();
+  loaded = true;
+  console.log(`  · load ${String(file).split('/').pop()} ${new Date().toTimeString().slice(0, 8)} FRESH=${FRESH ? 1 : 0}`);   /* 지킴이 BOOT 줄과 맞춰 보는 표 */
   await page.goto(`${BASE}/data/balance/homes.json`);
   await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(fs.readFileSync(file, 'utf8'))}); localStorage.setItem('byeot.guideSeen','1'); return 1; })()`, false);
   await page.goto(`${BASE}/game.html`); await page.waitFor('window.__byeotBooted === true', 300000, 500); await page.waitFor('!!window.__rv', 240000, 500); await sleep(4000);
@@ -97,11 +108,14 @@ await watchBanners();
 await J(`(()=>{ window.__byeotSheet.open('bag'); return 1; })()`); await sleep(1500);
 const sp = await J(`(()=>{ const cs=[...document.querySelectorAll('#pageBag .bagslot[data-place^="species:"]')]; const c = cs.find(e=>/칼라테아/.test((e.getAttribute('title')||'') + (e.textContent||''))); if (c) c.click(); return { n: cs.length, hit: c ? c.dataset.place : null }; })()`);
 await sleep(2500);
+/* ★ 11-03 plan §18 — 새 종 누름 길에 확인 바가 선다 ⇒ 사람처럼 [확인](배너는 그 뒤) · 확인 바가 없는 판(HEAD)은 그대로 */
+const confirmed = await J(`(()=>{ const b=document.getElementById('placeOk'); const on = document.getElementById('stage').classList.contains('confirming'); if (on && b && b.offsetParent) { b.click(); return true; } return false; })()`);
+if (confirmed === true) await sleep(2500);
 const ban = await J(`(window.__c8fBan || []).slice(-6)`);
-console.log('  B 칼라테아 누름', JSON.stringify({ sp, ban }));
+console.log('  B 칼라테아 누름', JSON.stringify({ sp, confirmed, ban }));
 if (OUT) await page.shot(`${OUT}/390_c8f_calathea.png`);
-ok(!sp.탈 && !!sp.hit && Array.isArray(ban) && ban.some(t => /너무 밝으면 잎을 맙니다 — 알맞은 빛은 7일 평균 2~8입니다/.test(t)) && !ban.some(t => /겨울엔 잎을 다 떨구고/.test(t)),
-   '㉰ 맡은 칼라테아 [누름] — «너무 밝으면 잎을 맙니다 — 알맞은 빛은 7일 평균 2~8입니다»(알로카시아 겨울잠 글 아님)', JSON.stringify(ban));
+ok(!sp.탈 && !!sp.hit && Array.isArray(ban) && ban.some(t => /너무 밝으면 잎을 맙니다 — 자라는 빛은 7일 평균 2~8입니다/.test(t)) && !ban.some(t => /겨울엔 잎을 다 떨구고/.test(t)),
+   '㉰ 맡은 칼라테아 [누름] → [확인] — «너무 밝으면 잎을 맙니다 — 자라는 빛은 7일 평균 2~8입니다»(plan §18 · 알로카시아 겨울잠 글 아님)', JSON.stringify(ban));
 /* ★ 11-03 8C6 첫머리 — 조사 · «[옮기기]로» 한 덩이(사진 390_c8f_calathea 에서 «[옮기기]» / «로 자리를 …»로 갈렸다) */
 const nw = await J(`(()=>{ const e=document.getElementById('event'); const s=e.querySelector('.nowrap'); let tops=null;
   if (s) { const rg=document.createRange(); rg.selectNodeContents(s); tops=[...new Set([...rg.getClientRects()].filter(q=>q.width>0).map(q=>Math.round(q.top)))]; }

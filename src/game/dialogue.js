@@ -4280,6 +4280,20 @@ export const CHATTER = [
      범용 줄이라 30일에 한 번. ⚠ id 는 그대로 둔다(probe·세이브 이력이 이 이름을 안다). */
   { id: 'nudgeBack', gap: 30, when: c => c.living && !c.nudge },
   /* ═══ ★★ 2026-10-08 [plan] 상태 줄(status) — §pickStatus 만 본다(잡담 풀에는 안 든다). 뜻·까닭은 §pickStatus 머리말 ═══ */
+  /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
+  /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼). D43: 도착 날은 §movedInBagCuttings 가 말했으니 이튿날(1)은 쉬고 사흘째(2)부터 */
+  { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
+                                                              && fin(c.bagCuttings) && c.bagCuttings > 0 },
+  /* ★ 2026-10-31 [plan] D92 ㉠ — 이삿짐(들고 온 채소)이 아직 가방(첫 이레 · 삽수가 가방에 있으면 삽수 줄 차례 — 창턱 먼저) */
+  { id: 'statusBagCropsMove',   status: true, gap: 3, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
+                                                              && fin(c.bagCrops) && c.bagCrops > 0 && !(fin(c.bagCuttings) && c.bagCuttings > 0) },
+  { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0
+                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
+  { id: 'statusBagCrops',       status: true, gap: 7, sameAs: 'statusBagCropsNoSpot', when: c => fin(c.bagCrops) && c.bagCrops > 0 && c.unpackNoSpot !== true
+                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
+  /* ★ 11-03 plan §12 ㉣ — 짐 풀기 «자리 없음»을 들은 판(화면 §noteUnpackNoSpot · turn.unpackNoSpot)이면 같은 글을 gap 30 */
+  { id: 'statusBagCropsNoSpot', status: true, gap: 30, sameAs: 'statusBagCrops', when: c => fin(c.bagCrops) && c.bagCrops > 0 && c.unpackNoSpot === true
+                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
   /* ⓐ 창턱 — 반지하(novice)에서 몬스테라가 자라는 칸은 창턱 하나다(§movedInOneroom 08-15 표). 등이 오면(가을) 그 말이 낡으므로 등 전까지만 */
   { id: 'statusSill',     status: true, gap: 30, when: c => c.hasMonstera && !c.movedOut && !(c.lampOwned >= 1) && c.potOnSill === true
                                             && (c.band === 'mid' || c.band === 'bright') },
@@ -4325,22 +4339,8 @@ export const CHATTER = [
   /* ★ 2026-10-08 [plan] 갈래 지도 7 — 원룸 첫 이레 · 무늬 원천 0 이면 「늘릴 게 없어」, 무늬 삽수를 들고 왔으면 «창턱 · 등» */
   { id: 'statusOneroomNoVarie', status: true, gap: 60, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 1 && c.daysInOneroom <= 7
                                                               && c.varieSources === 0 },
-  /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
-  /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼). D43: 도착 날은 §movedInBagCuttings 가 말했으니 이튿날(1)은 쉬고 사흘째(2)부터 */
-  { id: 'statusBagCuttingsMove', status: true, gap: 3, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
-                                                              && fin(c.bagCuttings) && c.bagCuttings > 0 },
-  /* ★ 2026-10-31 [plan] D92 ㉠ — 이삿짐(들고 온 채소)이 아직 가방(첫 이레 · 삽수가 가방에 있으면 삽수 줄 차례 — 창턱 먼저) */
-  { id: 'statusBagCropsMove',   status: true, gap: 3, when: c => c.movedOut && !c.movedHome && fin(c.daysInOneroom) && c.daysInOneroom >= 2 && c.daysInOneroom <= 7
-                                                              && fin(c.bagCrops) && c.bagCrops > 0 && !(fin(c.bagCuttings) && c.bagCuttings > 0) },
-  { id: 'statusBagCrops',       status: true, gap: 7, sameAs: 'statusBagCropsNoSpot', when: c => fin(c.bagCrops) && c.bagCrops > 0 && c.unpackNoSpot !== true
-                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
-  /* ★ 11-03 plan §12 ㉣ — 짐 풀기 «자리 없음»을 들은 판(화면 §noteUnpackNoSpot · turn.unpackNoSpot)이면 같은 글을 gap 30 */
-  { id: 'statusBagCropsNoSpot', status: true, gap: 30, sameAs: 'statusBagCrops', when: c => fin(c.bagCrops) && c.bagCrops > 0 && c.unpackNoSpot === true
-                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
   /* ★ 2026-10-09 [plan] D45 — 알로카시아가 자는 동안(칸 alDormantNow · [core]) */
   { id: 'statusAlSleeping',     status: true, gap: 14, when: c => c.alDormantNow === true },
-  { id: 'statusBagCuttings',    status: true, gap: 7,  when: c => fin(c.bagCuttings) && c.bagCuttings > 0
-                                                              && !(c.movedOut && fin(c.daysInOneroom) && c.daysInOneroom <= 7) },
   /* ★ 2026-10-09 [plan] 원룸 후반 — 한 해 · 목표 이정표 둘(처음 넘은 날 · 한 번씩 — gap 400 은 «한 판에 한 번») */
   /* ★ 2026-10-09 [plan] 재미 점검 — 수확 이정표(열 번째 · 서른 번째 · 한 판에 한 번) */
   /* ★ 2026-10-09 [plan] 재미 점검 — 16주의 «작은 새것» 둘(한 판에 한 번). 날은 게임 날(c.day) · 반지하에서만 */
