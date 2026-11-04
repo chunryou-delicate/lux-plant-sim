@@ -6709,6 +6709,9 @@ function updateHint() {
   hintNoDim = !!settingDone || !!(ts && ts.movedOut);   /* 원룸은 강제(어둡게) 없음 — [plan] ⓒ */
   /* ★ 확대 보기 쪽지 — 몬스테라가 창턱에 «선 순간»부터 한 번(coachSeen · coachClear 가 겹침을 미룬다 · [plan] ⑦②) */
   try { if (fp && fp.monstera && fp.monstera.guide && fp.monstera.guide.moved) coach('zoomTip'); } catch { }
+  /* ★ 11-04 U2-e(총괄) — 위 줄이 쪽지를 «방금» 띄웠으면 이 차례도 손가락은 쉰다. coach() 안의 updateHint 가 걷은 손가락을 이 바깥 차례가 아래 갈래에서 다시 세웠다
+       (원룸 이사 다음 날 · 쪽지 «가까이 볼 수 있습니다»와 [방] «여기서 살림을 봅니다»가 함께 · 맨 위 문(coachNow)은 이 줄보다 앞이라 못 막았다) */
+  if (coachNow) return hintAt(null);
   const stage = $('stage'), sheetOpen = $('sheet').classList.contains('open');
   /* ★★★★ 2026-08-30 — **「시트가 열렸나」가 아니라 「시트가 «이것을» 덮나」.**
      ══════════════════════════════════════════════════════════════════
