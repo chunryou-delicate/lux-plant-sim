@@ -4020,6 +4020,29 @@ const SIRU_NUDGE_QS = Object.freeze(['siru_two', 'siru5_cycle5', 'siru8', 'siru1
 const LONG_OWN_LINES = new Set(['oneroom_home_fund', 'radish5',
   /* ★ 2026-10-09 [plan] D45 — 겨울잠은 «할 일»이 아니라 «기다림»이다. 일반 독촉(해 볼래?)이 서면 거짓이 된다 */
   'al_keep_winter']);
+/* ★★ 2026-11-04 U2-f ②([plan] plan-nudge-u2f-20261104 · 총괄) — **쌓는 줄**은 범용 셋(권함 · 물음 · 걱정)을 안 낸다.
+     손을 해도 날이 지나야 끝난다(주문판 · 단골 · 맡김 · 표본 · 걸어 둔 줄기 · 펴지는 잎) — 그동안 «막힌 데 있어?»는 거짓이다(10-09 집 자금과 같은 까닭).
+     진로는 제 판 · 잡담(chatShop* · chatCare* · chatBreed* · hintShopDry · hintBreed*)이, sc_hang · ca_unfurl 은 제 줄(hintScHang · statusCaTooBright)이 말한다 */
+const STACK_NUDGE_LINES = new Set([...LONG_OWN_LINES,
+  'shop_first_order', 'shop_regulars3', 'shop_sign', 'shop_town',
+  'care_first', 'care_kinds3', 'care_sign', 'care_town', 'care_all_kinds',
+  'breed_first_sample', 'breed_first_variety', 'breed_three', 'breed_three_lines', 'breed_all',
+  'sc_hang', 'ca_unfurl']);
+/* ★ U2-f ② — **고른 줄**(곁줄 · 안 해도 판이 간다)은 권함 · 물음만(걱정 안 냄 — 30일마다 끝없이 돌아오고, «막힌 데»가 사람 탓이 아닐 수 있다) */
+const PICK_NUDGE_LINES = new Set(['pp_hold_pink', 'al_plant_corm']);
+/* ★ U2-f ④ — 범용 셋 «앞» 독촉 줄 가운데 오늘 조건이 참인 것이 있나 = «그 임자의 오늘 칸 제 줄»(앞줄은 모두 c.nudge.id 로 걸려 있다).
+     되풀이 자(§repeatOk)는 안 본다 — 간격 · 이틀 잇달아에 막혀 제 줄이 못 선 날도 범용 줄은 안 선다(어제 한 말을 흐리게 되풀이하지 않게) */
+const GENERIC_NUDGE_IDS = new Set(['nudgeOffer', 'nudgeAsk', 'nudgeWorry']);
+function ownNudgeToday(c) {
+  for (const r of CHATTER) {
+    if (GENERIC_NUDGE_IDS.has(r.id)) return false;
+    if (!r.nudge || r.late) continue;
+    try { if (r.when(c)) return true; } catch { /* 못 세면 없는 것으로 */ }
+  }
+  return false;
+}
+/* ★ U2-f ① 덧 · ④ — 범용 셋이 서도 되는 날: 새 줄(fresh0)이 화면 칩을 쥐지 않았고 · 제 줄이 오늘 칸에 없다 */
+const genericNudgeOk = c => c.nudgeFresh !== true && !ownNudgeToday(c);
 export const CHATTER = [
   /* 첫 플레이 — 수확 전 사흘. ★날짜를 딱 집어 걸지 않는다(`===` 로 걸었더니
      조용한 날 세기와 어긋나 셋 다 못 나오는 날이 있었다). 둘 중 안 나온 쪽이 먼저 나온다. */
@@ -4268,17 +4291,20 @@ export const CHATTER = [
                                                                 && Math.floor(c.nudge.days / 30) % 2 === 0 && c.varieSources === 0 },
   { id: 'nudgeHomePush2NoVarie', nudge: true, gap: 30, when: c => !!c.nudge && c.nudge.id === 'oneroom_home_fund' && c.nudge.days >= NUDGE_DAYS.worry
                                                                 && Math.floor(c.nudge.days / 30) % 2 === 1 && c.varieSources === 0 },
-  /* ═══ ★ 공통 셋 — 퀘스트별 줄이 없거나 그 줄이 어제 난 날의 그물. «범용 줄»이라 30일에 한 번(gap) ═══
+  /* ═══ ★ 공통 셋 — 퀘스트별 줄이 없는 칸의 그물(★ 11-04 U2-f ④ — 예전 «그 줄이 어제 난 날» 반쪽은 거뒀다). «범용 줄»이라 30일에 한 번(gap) ═══
      ⚠ 걱정은 이제 «끝이 없다»(≥ worry) — 예전 ④ 물러섬 자리까지 걱정이 맡는다(30일에 한 번이라 잔소리가 안 된다). */
   /* ★ 2026-10-09 [plan] — 집 자금 줄(13달 · 모으는 중)은 범용 셋에서 뺀다. 「할 일이 며칠째 그대로야. 막힌 데 있어?」가 달마다 났는데
      ([core] 갈래 판 · 늘리는 사람 8.3/판) 그동안 사람은 막힌 게 아니라 모으는 중이다. 집 자금은 제 줄(nudgeHome…)이 말한다. */
-  { id: 'nudgeOffer', nudge: true, gap: 30, when: c => !!c.nudge && !LONG_OWN_LINES.has(c.nudge.id) && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask },
-  { id: 'nudgeAsk',   nudge: true, gap: 30, when: c => !!c.nudge && !LONG_OWN_LINES.has(c.nudge.id) && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry },
-  { id: 'nudgeWorry', nudge: true, gap: 30, when: c => !!c.nudge && !LONG_OWN_LINES.has(c.nudge.id) && c.nudge.days >= NUDGE_DAYS.worry },
+  /* ★ 11-04 U2-f — ② 쌓는 줄(STACK_NUDGE_LINES)은 셋 다 안 냄 · 고른 줄(PICK_NUDGE_LINES)은 걱정만 안 냄 · ① 덧 · ④ §genericNudgeOk */
+  { id: 'nudgeOffer', nudge: true, gap: 30, when: c => !!c.nudge && !STACK_NUDGE_LINES.has(c.nudge.id) && c.nudge.days >= 1 && c.nudge.days < NUDGE_DAYS.ask && genericNudgeOk(c) },
+  { id: 'nudgeAsk',   nudge: true, gap: 30, when: c => !!c.nudge && !STACK_NUDGE_LINES.has(c.nudge.id) && c.nudge.days >= NUDGE_DAYS.ask && c.nudge.days < NUDGE_DAYS.worry && genericNudgeOk(c) },
+  { id: 'nudgeWorry', nudge: true, gap: 30, when: c => !!c.nudge && !STACK_NUDGE_LINES.has(c.nudge.id) && !PICK_NUDGE_LINES.has(c.nudge.id) && c.nudge.days >= NUDGE_DAYS.worry && genericNudgeOk(c) },
   /* ★ 「급한 건 아니야. 마음 내키면 해.」 — 독촉이 아니라 «잡담»이다(D19). 할 수 있는 퀘스트가 «없는» 날에만
      (다 끝났거나 · 시루가 도는 등 기다리는 중 — chatterContext.nudge 가 null). 할 일이 멎어 있는 날에 «급하지 않다»고 하면 거짓이다.
      범용 줄이라 30일에 한 번. ⚠ id 는 그대로 둔다(probe·세이브 이력이 이 이름을 안다). */
-  { id: 'nudgeBack', gap: 30, when: c => c.living && !c.nudge },
+  /* ★ 11-04 U2-f — 화면 칩(기다림 아님 · c.nudgeChip)이 있는 날엔 안 선다: 임자가 없는 것은 그 칩이 «오늘 아침 열려» 열린 날을 아직 모를 때 · 옛 세이브라 열린 날이 없을 때다
+       ([plan] 참인 조건 «nudgeBack 이 선 날, 칩이 없거나 칩이 기다림 줄이다») · 칩을 안 넘긴 부름(undefined)은 예전 그대로 */
+  { id: 'nudgeBack', gap: 30, when: c => c.living && !c.nudge && !c.nudgeChip },
   /* ═══ ★★ 2026-10-08 [plan] 상태 줄(status) — §pickStatus 만 본다(잡담 풀에는 안 든다). 뜻·까닭은 §pickStatus 머리말 ═══ */
   /* ★ 2026-10-09 [plan] D29 — 가방에 든 삽수가 있으면(이레에 한 번 · 사건·독촉 날엔 다음 빈 날) */
   /* ★ 2026-10-09 [plan] — 원룸 첫 이레는 이사 맥락의 줄이 먼저(그 사이 일반 줄은 쉼). D43: 도착 날은 §movedInBagCuttings 가 말했으니 이튿날(1)은 쉬고 사흘째(2)부터 */
@@ -4602,22 +4628,26 @@ export function chatterContext(turn = {}, S = null) {
                /* ★ 2026-10-09 [plan] 재미 점검 — 누적 거둔 수([core] cropNow.harvestTotal · 모르면 null) */
                harvestTotal: Number.isFinite(cn.harvestTotal) ? cn.harvestTotal : null };
     })(),
-    /* ★ 2026-09-02 — 독촉의 임자: «가장 먼저 열렸는데 아직 안 끝난» 퀘스트가 열린 지 며칠째인가.
-       열린 날은 stamina.questsOpenedOn(세이브에 실린다), 끝난 것은 stamina.questsTaken 이 안다. 새 칸은 열린 날 하나뿐이다. */
+    /* ★ 2026-11-04 U2-f — 화면 칩([core] turn.nudgeChip = quest.js §questChipAfterCheck · 부르는 쪽이 아침 하루 대사 앞에서 한 번 고름).
+         nudgeChip = 기다림 아닌 화면 칩(fresh0 || chip) id | null — nudgeBack 이 본다 · nudgeFresh = 새 줄(fresh0)이 화면 칩을 쥐었나 — 범용 셋이 쉰다.
+         칩을 안 넘긴 부름은 nudgeChip 이 undefined(옛 부름 — nudgeBack 예전 그대로) */
+    nudgeChip: (turn && turn.nudgeChip && typeof turn.nudgeChip === 'object') ? (turn.nudgeChip.live || null) : undefined,
+    nudgeFresh: !!(turn && turn.nudgeChip && typeof turn.nudgeChip === 'object' && turn.nudgeChip.fresh),
+    /* ★★ 2026-11-04 U2-f ①([plan] plan-nudge-u2f-20261104 · 총괄) — **독촉의 임자 = 칩 줄**(quest.js questView chip 과 같은 자 · checkQuests 뒤 값).
+         ⛔ 예전 «가장 먼저 열렸는데 아직 안 끝난» 줄은 칩과 달랐다 — 범용 셋의 글(«할 일에 적힌 거» · «할 일이 며칠째 그대로야»)이 칩이 아닌 줄을 두고 섰다
+           (투룸 nudgeWorry 93번 모두 pp_hold_pink · 그 셈의 방 판정엔 movedHome 이 없었다 — 칩의 방 판정 questRoomOk(q, 판 사진)은 안다).
+         날수는 nudgeDaysOf 그대로(«마지막으로 기다린 날 다음»부터) — 칩이 아닌 날을 noteQuestWaits 가 기다린 날로 적어 «칩에 선 날부터»가 된다.
+         칩이 기다림 줄이거나 없으면 null · 칩 줄의 열린 날을 모르면 null(그날 아침 열릴 줄 · 옛 세이브) · 칩을 안 넘긴 부름도 null. 차례 · NUDGE_DAYS · 문안 그대로 */
     nudge: (() => {
       try {
         const stm = S && S.stamina; if (!stm || !stm.questsOpenedOn || dayNow == null) return null;
-        const done = new Set(stm.questsTaken || []);
-        let best = null;
-        for (const [id, d] of Object.entries(stm.questsOpenedOn))
-          /* ★ 2026-10-07 D2(박사님 「할 수 있었던 날만」) — «기다리는 중»인 퀘스트는 건너뛰고 다음으로 오래된 것을 고른다.
-             판정은 [core] `nudge_wait.js`(09-25 패치 그대로). 다 기다림이면 독촉이 없고 그날 잡담이 돈다.
-             독촉 차례(사건 > 독촉 > 잡담)·NUDGE_DAYS·문안은 그대로다. */
-          if (!done.has(id) && Number.isFinite(d) && questRoomOk(id, { movedOut: !!(ts && ts.movedOut) }) &&
-              !nudgeWaiting(S, id, dayNow) && (best == null || d < best.on)) best = { id, on: d };
-        /* ★ 2026-10-08 — 날수는 «마지막으로 기다린 날 다음»부터 센다([core] nudgeDaysOf · 1c87d337).
-           한 번도 안 기다렸으면 예전 그대로(dayNow − 열린 날)다 — 그래서 첫 독촉이 «권함»을 건너뛰지 않는다. */
-        return best ? { id: best.id, days: nudgeDaysOf(S, best.id, best.on, dayNow) } : null;
+        const nc = turn && turn.nudgeChip;
+        if (!nc || typeof nc !== 'object' || !nc.chip) return null;
+        const id = nc.chip;
+        if ((stm.questsTaken || []).includes(id)) return null;
+        const on = stm.questsOpenedOn[id];
+        if (!Number.isFinite(on) || nudgeWaiting(S, id, dayNow)) return null;
+        return { id, days: nudgeDaysOf(S, id, on, dayNow) };
       } catch { return null; }
     })()
   };

@@ -1866,15 +1866,41 @@ export function questView(S, snapshot, opt = {}) {
    ⚠ **두 번 불러도 안전하다.** `finished` 는 아직 `questsTaken` 에 없는 것만 낸다. */
 /* ★ 2026-10-31 총괄 D98 ㉮ — «지금 한 걸음 보면 끝나는 줄» 미리 보기 · 상태를 안 바꾼다(stepQuests 가 바꾸는 둘 — _questOpen · stamina.questsOpenedOn — 을 베껴서 돈다).
      하네스는 할 일을 하루 한 번(손일 뒤) 재므로, 화면이 아침에 §checkQuests 로 보는 «아침에 끝난 할 일»을 이것으로 센다(반지하 사건 카드 미루기 · events_banjiha §deferBjCard) */
+/* 미리 보기 판 — stepQuests 가 바꾸는 것(_questOpen · stamina.questsOpenedOn · 닫기의 questsTaken · questsClosed)만 베낀다 */
+function questPreviewState(S) {
+  const st = S.stamina || {};
+  return { ...S, _questOpen: Array.isArray(S._questOpen) ? [...S._questOpen] : [],
+           stamina: { ...st, questsOpenedOn: { ...(st.questsOpenedOn || {}) },
+                      /* ★ D100 ③ — 닫기(§closeVarieQuests)가 장부 둘을 바꾸므로 베낀다(미리 보기가 진짜 판을 닫지 않게) */
+                      questsTaken: Array.isArray(st.questsTaken) ? [...st.questsTaken] : [],
+                      questsClosed: Array.isArray(st.questsClosed) ? [...st.questsClosed] : [] } };
+}
 export function questsFinishingNow(S, snapshot) {
   if (!S) return [];
-  const st = S.stamina || {};
-  const S2 = { ...S, _questOpen: Array.isArray(S._questOpen) ? [...S._questOpen] : [],
-               stamina: { ...st, questsOpenedOn: { ...(st.questsOpenedOn || {}) },
-                          /* ★ D100 ③ — 닫기(§closeVarieQuests)가 장부 둘을 바꾸므로 베낀다(미리 보기가 진짜 판을 닫지 않게) */
-                          questsTaken: Array.isArray(st.questsTaken) ? [...st.questsTaken] : [],
-                          questsClosed: Array.isArray(st.questsClosed) ? [...st.questsClosed] : [] } };
+  const S2 = questPreviewState(S);
   try { return (stepQuests(S2, snapshot).finished || []).slice(); } catch { return []; }
+}
+/* ★★ 2026-11-04 U2-f([plan] plan-nudge-u2f-20261104 8a44c714 · 총괄) — **화면 칩 미리 보기**(§checkQuests 뒤 칩) · 상태를 안 바꾼다.
+     화면 차례는 nextDay → 하루 대사(story.turn) → checkQuests → 그리기라, 사람이 대사를 읽을 때 보는 칩은 «checkQuests 뒤» 칩이다.
+     ⇒ 베낀 판에서 한 걸음(stepQuests) 돌리고 끝난 줄을 끝난 것으로 친 뒤(화면 grantStaminaQuest 의 questsTaken 몫) questView 를 본다 —
+       그날 아침 끝날 줄은 빠지고, 그날 아침 열릴 줄은 «열린 날 = 오늘»인 새 줄(fresh)로 잡힌다(끝난 줄 뒤로 사슬이 이어 열리는 것까지).
+     opt 는 questView 의 것(waitReason) — 화면 §questViewNow 와 같은 것을 넘긴다.
+     반환 { chip: 칩 줄 id(기다림 아님) | null · chipAny: 칩 줄 id(기다림이어도) | null · fresh: 새 줄 fresh[0] id(기다림 아님) | null ·
+            screen: 화면 칩(fresh || chipAny · 화면 §questChipLineOf 의 pick 과 같은 자) | null · live: 기다림 아닌 화면 칩(fresh || chip) | null } */
+export function questChipAfterCheck(S, snapshot, opt) {
+  const none = { chip: null, chipAny: null, fresh: null, screen: null, live: null };
+  if (!S) return none;
+  const S2 = questPreviewState(S);
+  try {
+    const r = stepQuests(S2, snapshot);
+    for (const id of (r && r.finished) || []) if (!S2.stamina.questsTaken.includes(id)) S2.stamina.questsTaken.push(id);
+  } catch { }
+  let v = null;
+  try { v = questView(S2, snapshot, opt); } catch { return none; }
+  const c = v && v.chip;
+  const f = v && Array.isArray(v.fresh) && v.fresh[0] && !v.fresh[0].waiting ? v.fresh[0] : null;
+  const chip = c && !c.waiting ? c.id : null, chipAny = c ? c.id : null, fresh = f ? f.id : null;
+  return { chip, chipAny, fresh, screen: fresh || chipAny, live: fresh || chip };
 }
 export function stepQuests(S, snapshot) {
   const s = snapOf(snapshot);

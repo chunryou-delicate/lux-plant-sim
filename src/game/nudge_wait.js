@@ -138,15 +138,21 @@ export function varieSourceCount(S) {
 /* ★ 2026-10-08 D2 — **기다린 날을 적는다.** 열려 있고 안 끝난 퀘스트가 오늘 기다리는 중이면 `questsWaitedOn[id] = day`.
    화면이 하루 대사를 고르기 «바로 앞»에 한 번 부른다(game.html §story.turn 앞). 다른 것은 안 바꾼다.
    ⚠ 이것이 유일하게 상태를 바꾸는 함수다(세이브 칸 stamina.questsWaitedOn). */
-export function noteQuestWaits(S, day = (S && S.day)) {
+/* ★ 2026-11-04 U2-f ①([plan] plan-nudge-u2f-20261104 · 총괄) — 칩을 넘기면(opt.chipId · 칩 없음은 null) «열렸고 안 끝났는데 오늘 칩이 아닌 줄»도
+     기다린 날로 적는다 ⇒ 독촉 날수(§nudgeDaysOf)가 «칩에 선 날부터» 선다(새 세이브 칸 없음 · 오늘 칩이 된 줄은 어제 적혀 첫날 0).
+     칩 = quest.js §questChipAfterCheck 의 chipAny(화면 checkQuests 뒤 칩 · 새 줄 fresh 가 화면을 쥐어도 qv.chip 기준).
+     ⚠ opt 를 안 넘긴 부름(하네스 저녁 부름 · 옛 부름)은 예전 그대로 — 기다림만 적는다 */
+export function noteQuestWaits(S, day = (S && S.day), opt = null) {
   const stm = S && S.stamina;
   if (!stm || !stm.questsOpenedOn || !Number.isInteger(day)) return 0;
   if (!stm.questsWaitedOn || typeof stm.questsWaitedOn !== 'object') stm.questsWaitedOn = {};
   const done = new Set(stm.questsTaken || []);
+  const chipMode = !!(opt && typeof opt === 'object' && Object.prototype.hasOwnProperty.call(opt, 'chipId'));
+  const chipId = chipMode ? opt.chipId : null;
   let n = 0;
   for (const id of Object.keys(stm.questsOpenedOn)) {
     if (done.has(id)) continue;
-    if (nudgeWaiting(S, id, day)) { stm.questsWaitedOn[id] = day; n++; }
+    if (nudgeWaiting(S, id, day) || (chipMode && id !== chipId)) { stm.questsWaitedOn[id] = day; n++; }
   }
   return n;
 }

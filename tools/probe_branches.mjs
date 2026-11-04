@@ -75,7 +75,7 @@ import { careSpotsOf } from '../src/game/loop.js';
 import { moveIntoOwnedHome } from '../src/game/oneroom.js';
 import { creditShopOrder, buyPriceOf } from '../src/game/shop.js';
 import { serialize as serializeSave, deserialize as deserializeSave } from '../src/game/save.js';   /* --dump — 단계마다 게임 세이브 꼴(byeot/save/1)로 뜬다 */
-import { stepQuests, questView, questRoomOk, questsFinishingNow } from '../src/game/quest.js';
+import { stepQuests, questView, questRoomOk, questsFinishingNow, questChipAfterCheck } from '../src/game/quest.js';
 import { nudgeWaiting, noteQuestWaits, nudgeWaitReason } from '../src/game/nudge_wait.js';
 import { grantStaminaQuest } from '../src/game/stamina.js';
 /* ★ 2026-10-09 (총괄 · plan 청) — 대사 고르기도 같이 돌린다(화면과 무관한 순수 함수 · game.html §story 와 같은 것) */
@@ -354,10 +354,15 @@ export async function play(name, seed, opt = {}) {
               book('rent', -(t.rentWon || 0)); book('power', -(t.electricityWon || 0)); book('living', -((t.spentWon || 0) - (t.electricityWon || 0)));
               /* ⚠ 구호금(tutorial §reliefWon · 처음 0원이 된 그날 한 번)은 결산 «안에서» 지갑을 메운다 — 끝 지갑만 보면 0원이 된 날이 안 보인다 */
               for (const e of t.events || []) if (e && e.id === 'relief') { book('relief', e.won || 0); if (out.firstBrokeAfterMove == null) out.firstBrokeAfterMove = S.day; out.reliefAfterMove = S.day; } }
-    /* 하루 대사(game.html: noteQuestWaits → homeTarget → story.turn) — 퀘스트 사건 대사는 아래 §퀘스트 에서 더한다 */
+    /* 하루 대사(game.html: 화면 칩 → noteQuestWaits → homeTarget → story.turn) — 퀘스트 사건 대사는 아래 §퀘스트 에서 더한다
+       ★ 11-04 U2-f — 화면 칩(game.html §questChipAfterCheck · checkQuests 뒤 칩)을 같은 셈으로: 이 아침의 끼니(meals 는 아래에서 이 턴 값으로 바뀐다 — 같은 식으로 먼저 셈) */
     saidToday = 0;
     let saidIds = [];
-    try { noteQuestWaits(S, S.day); turn.homeTarget = targets[0]; saidIds = story.turn(turn, S) || []; saidToday += saidIds.length; } catch { }
+    let amChip = null;
+    try { const mealsAm = ((turn && turn.firstPlayEvent && turn.firstPlayEvent.portions) || []).map(p => p && p.kind).filter(Boolean);
+          amChip = questChipAfterCheck(S, questSnapshotOf(S, io, { mealKinds: mealsAm, targetWon: targets[0] }), { waitReason: id => nudgeWaitReason(S, id) }); } catch { amChip = null; }
+    try { noteQuestWaits(S, S.day, amChip ? { chipId: amChip.chipAny } : undefined); if (amChip) turn.nudgeChip = amChip;
+          turn.homeTarget = targets[0]; saidIds = story.turn(turn, S) || []; saidToday += saidIds.length; } catch { }
     /* ★ 총괄 D88 ① 가름(육종 판) — 손이 심거나 팔기 «전»에 센다: 찾은 구근 출처 · AL 잠듦 · 싹(출처 × 무늬) · 늘 적는다(일꾼은 --one 만 받는다) */
     if (out.breed) {
       const B = out.breed; B.g = B.g || { cormFound: {}, cormSeen: {}, alSleeps: 0, alSleepCorms: 0, sprout: {} };
@@ -830,6 +835,8 @@ export async function play(name, seed, opt = {}) {
       cashIn: Object.keys(dayIn).length ? dayIn : null, said: saidIds.length ? saidIds : null,
       events: [...new Set([...((turn && turn.events) || []).map(e => e && e.id), ...(out._qEv || [])].filter(Boolean))],
       questsDone: (out._qDone || []).length ? out._qDone : null, chip: out._chip ?? null,
+      /* ★ 11-04 U2-f — 아침 화면 칩(하루 대사 때 · checkQuests 뒤 셈): s 화면 · c 칩(기다림 아님) · f 새 줄 */
+      amChip: amChip ? { s: amChip.screen, c: amChip.chip, f: amChip.fresh } : null,
       newGrades: dayGrades.length ? dayGrades : null, cuts: dayCuts || null,
       /* 10-10 — 삽수마다 상태(무늬 · 자리 · 올림) — «들고 간 삽수가 원룸 ③ 까지 가나»를 날마다 본다 */
       cutsNow: cuttingsOf(S).map(c => `${c.id}:${c.status}${c.varieFromCut ? 'V' : ''}${c.slotId || c.at ? '' : '(가방)'}${listingFor(S, c) ? '(올림)' : ''}`).join(' ') || null,
