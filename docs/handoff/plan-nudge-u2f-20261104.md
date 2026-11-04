@@ -66,6 +66,9 @@
     - 새 세이브 칸은 없다. questsWaitedOn 을 읽는 곳은 nudgeDaysOf(nudge_wait.js:157) 하나다(save.js 는 싣고 풀기만 · probe_nudge.mjs 는 자).
     - 오늘 칩이 된 줄은 어제 적혀 있으므로 첫날 날수가 0 이다. 권함은 이튿날부터다.
   - 칩은 아침 story.turn 앞(noteQuestWaits 자리)에서 한 번 고른다. noteQuestWaits 와 chatterContext 가 같은 값을 쓴다.
+    - [11-04 덧 · growth 물음] 화면 차례는 commitNextDay(game.html:15859) → showFirstPlayEvents(15867 · 그 안에서 noteQuestWaits 15414 → story.turn 15424) → checkQuests(15873) → draw(15874)다. 대사와 칩은 한 번에 처음 그려지므로, 사람이 줄을 읽을 때 보는 칩은 **checkQuests 뒤 칩**이다.
+    - 그래서 고르는 칩 = story.turn 때 questView 칩에서 «그날 아침 끝날 줄»(quest.js:1869 questsFinishingNow)을 뺀 것이다. 빼지 않으면 «할 일이 며칠째 그대로야» 바로 뒤에 그 줄의 끝 카드가 선다.
+    - 아침에 새로 열릴 줄은 questsOpenedOn 이 아직 없어 임자가 안 된다(위 «열린 날을 모르면 null»). 열린 날이 오늘이 되면 날수 0 이다.
   - 새 줄(fresh0 · game.html:14192 와 같은 자)이 화면 칩을 쥔 날(48시간)은 범용 셋이 쉰다. 제 줄은 선다(무엇을 하라는지 말에 있다). 칩이 아닌 줄로 적는 것은 qv.chip 기준이다 — fresh0 가 있어도 qv.chip 줄의 날수는 그대로 간다.
 - 참인 조건: 범용 셋이 선 날, 그날 화면 칩 = `c.nudge.id` 다. 그 줄이 칩에 «기다리지 않고» 선 지 `c.nudge.days` 일째다.
 
@@ -148,7 +151,7 @@
 ## 잴 차례
 
 - ㉮ growth: V1 · GH · H0 · JGH 앞뒤. 판 값 0 차이 · 방마다 범용 셋 수 · nudgeBack 수 · 투룸 446 줄 0.
-- ㉯ 범용 줄이 선 날, 그날 화면 칩(fresh0 || chip) ≠ 임자인 날 0.
+- ㉯ 범용 줄이 선 날, 그날 화면 칩(fresh0 || chip) ≠ 임자인 날 0. 칩은 story.turn 때 값에서 그날 아침 끝날 줄을 뺀 것으로 잰다. «앞» 판에서는 «범용 줄의 임자가 그날 아침에 끝난 날»도 센다.
 - ㉰ 걱정이 선 날마다 그 줄이 칩에 7일 넘게 잇달아 섰다(기다림 날 뺌).
 - ㉱ 쌓는 줄을 두고 선 범용 줄 0 · 고른 줄을 두고 선 걱정 0. 고른 줄 권함 · 물음은 칩 토막마다 많아야 하나씩이다.
 - ㉲ GH «제 줄 다음 날 범용 줄» 66 → 22(siru5 Coming→물음만 남음).
