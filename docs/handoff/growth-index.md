@@ -293,6 +293,18 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-11-04 · U2-f 몬이 독촉 앞뒤(8aa170ce → 51ebf8f4) — 재기만 (총괄 · plan-nudge-u2f «잴 차례» ㉮~㉲)
+
+```
+[잰 것] probe_branches 고정 복사본 둘 · 장비 깃발 + 덧줄 nz · mc(아침 화면 칩 = checkQuests 뒤 · core amChip 과 76,386 칸 같음) · 덧줄 무해 V0 · V1 0
+  규칙   네 판 모두 섬 — ㉯ 칩≠임자 22~141 → 0 · ㉰ 7일 못 된 걱정 → 0 · ㉱ 0 · 투룸 걱정 93 → 0 · 투룸 nudgeBack 388 → 52(모두 빈 칩 날)
+         ㉲ GH 66 → 23(plan 기대 22 · 남는 하나 guide 7 Day 147 VarieOffer → 4일째 물음 · 명세 ④ 대로)
+  판 값  하네스 손(V1 · H0) 끝 같음 · 중간 지갑만 반지하 37~81 ±2,500~5,000원
+         게임 손 씨앗 8 여섯 판 Day 46 카드(parcel → cat2)에서 갈려 번짐 — humanQ 8 내 집 323 → 440 · 진로 끝 지갑 −8,300 ~ +603,410
+         까닭 D98 ㉮ 카드 미룸이 nudgeSiruPush 를 봄(game.html:15434 · 미룸 GH 16 → 4) · 카드 묶음 · 카드 돈은 판마다 같음
+```
+> ★ 독촉 규칙이 지갑을 바꾸는 손은 없다 — 카드 미룸이 독촉 줄을 보는 한 카드 날이 따라 움직인다(가름은 plan · 총괄). 전문 `growth-u2f-nudge-20261104.md` · `growth-u2f-nudge.json`.
+
 ### 2026-11-04 · 몬이 «할 일이 며칠째 그대로야»(nudgeWorry)는 언제 서나 — 재기만 (총괄 · plan 이 8aa170ce 대조 판 Day 446 에서 봄)
 
 ```
