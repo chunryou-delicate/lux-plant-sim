@@ -18972,7 +18972,7 @@ const placeConfirm = {
     if (!warn) return;
     /* ★ 2026-10-08 A·B — 빛 한 줄이 먼저다(그 그루의 삶이 걸린 말) · 길 막힘은 그 다음 */
     let dark = null; try { dark = placeLightWarn(placedGrowerAt(picked.slotId)); } catch { dark = null; }
-    const reach = reachWarningFor(picked.potId || (picked.potInRoom && picked.potInRoom.id) || picked.emptyPotId || null, picked.slotId);   /* ★ 11-03 8C4 — 확인 중엔 potId 가 비고 그루는 potInRoom(§reachWarningFor 전후 견줌) */
+    const reach = reachWarningFor(picked.potId || (picked.potInRoom && picked.potInRoom.id) || picked.emptyPotId || (picked.before && picked.before.potId) || null, picked.slotId);   /* ★ 11-04 U2-b — 갓 꺼낸 그루(새 종 · 가방 몬스테라)는 before.potId 로 찾는다 */   /* ★ 11-03 8C4 — 확인 중엔 potId 가 비고 그루는 potInRoom(§reachWarningFor 전후 견줌) */
     const msg = [dark, reach].filter(Boolean).join(' · ');
     /* ★ 2026-10-25 총괄 D72 버그 1 — 옮기면 나아지나(손가락이 [다시 옮기기]를 짚을지 · §updateHint 확인 바 갈래):
          길이 막혔거나(reach) · 더 밝은(자라는) «빈» 칸이 따로 있을 때. «여기가 제일 밝은데도» · «어디에도 밝은 데가 없다»면 옮겨도 그대로라 [확인] */
@@ -20492,7 +20492,8 @@ function reachWarningFor(potId, key = null) {
   let list = [];
   try { list = roomView.unreachable() || []; } catch { return null; }
   const uses = blockedUsesNow();
-  if (!list.length && !uses.furn.length && !uses.door) return null;
+  /* ★ 11-04 U2-b — 여기(옛 길)는 «놓기 전과 가를 수 없는» 판이다(mine0 를 못 찾음) · 놓기 전부터 막혀 있던 문을 «여기 두면»으로 말하지 않는다(투룸 가게 첫날 · 총괄) */
+  if (!list.length && !uses.furn.length) return null;
   /* 사람이 부르는 이름으로 바꾼다 — `crop_01_02` 는 플레이어의 말이 아니다 */
   const nameOf = (row) => {
     const id = row.potId || row.key;
@@ -20511,9 +20512,9 @@ function reachWarningFor(potId, key = null) {
   const others = [...list.map(nameOf), ...uses.furn];
   const tail = '그래도 두시려면 [확인], 옮기려면 [다시 옮기기]';
   /* ★ E — 문 앞이 끊기면 그것부터 말한다([house] 초안 «여기 두면 문 앞 길이 막혀 침대·책상까지 못 갑니다») */
-  if (!others.length) return `여기 두면 문 앞 길이 막힙니다 — ${tail}`;
+  if (!others.length) return null;   /* ★ 11-04 U2-b — 옛 길은 문 말을 안 한다(위) */
   const head = others.slice(0, 2).join(' · ');
-  return `여기 두면 ${uses.door ? '문 앞 길이 막혀 ' : ''}${head}${others.length > 2 ? ` 외 ${others.length - 2}개` : ''}에 못 갑니다 — ` + tail;
+  return `여기 두면 ${head}${others.length > 2 ? ` 외 ${others.length - 2}개` : ''}에 못 갑니다 — ` + tail;
 }
 
 /* [확인] — 그 자리로 굳힌다. 상태는 이미 그렇게 돼 있으므로 **고르기만 푼다.**
@@ -20521,7 +20522,7 @@ function reachWarningFor(potId, key = null) {
      막히면 뭐 재배치하면 되지 그 식물을"). 경고는 알림이지 문이 아니다. */
 function placeConfirmOk() {
   const spBefore = (picked.before && picked.before.species && picked.before.fresh) ? picked.before.potId : null;   /* ★ 11-03 plan §18 */
-  const warn = reachWarningFor(picked.potId || (picked.potInRoom && picked.potInRoom.id) || picked.emptyPotId || null, picked.slotId);   /* ★ 11-03 8C4 */
+  const warn = reachWarningFor(picked.potId || (picked.potInRoom && picked.potInRoom.id) || picked.emptyPotId || (picked.before && picked.before.potId) || null, picked.slotId);   /* ★ 11-03 8C4 · ★ 11-04 U2-b before.potId */
   if (warn) pushLog(S, '⚠ ' + warn);          // 눌러 넘긴 경고도 기록에는 남는다
   /* ★★ 2026-08-17 — **옮기고 나면 그 자리에서 다시 고른다** (박사님: *"옮기기 하면
      씨앗 심기 버튼이 사라짐"*).
