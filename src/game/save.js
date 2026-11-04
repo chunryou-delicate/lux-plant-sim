@@ -59,6 +59,7 @@ import { STORY_SCHEMA, createStoryState } from './oneroom.js';
 import { packLeafWatch } from './leaf_wait.js';
 /* ★ 2026-10-09 D45 — 새 두 종(PP · AL). 그루 상태는 growth 규약(species/1) 그대로 싣는다(§species.packSpecies) */
 import { packSpecies, unpackSpecies } from './species.js';
+import { packNick } from './nick.js';   /* ★ 11-03 F3 — 그루 · 삽수 이름(있을 때만 칸) */
 /* ★ 2026-10-10 D59 — 진로 «식물 가게» 판(주문·단골) */
 import { packJobShop, unpackJobShop } from './job_shop.js';
 import { packJobCare, unpackJobCare } from './job_care.js';   /* ★ 2026-10-24 B 판 돌봄 */
@@ -209,6 +210,7 @@ function packPot(p, i) {
        ★ `false` 일 때만 적는다 — `true`/없음은 「놓았다」로 읽히므로 옛 세이브와 한 바이트도 안 달라진다.
        ⚠ 「가방」의 정본은 이 칸 하나다(state §rehomePot · game.html §bagPots). 두 벌로 만들지 말 것. */
     ...(p.placedOnce === false ? { placedOnce: false } : {}),
+    ...packNick(p),   /* ★ 11-03 F3 — 이름(있을 때만 · 옛 세이브와 같은 바이트) */
     plantId: optStr(p.plantId, `${path}.plantId`),
     potAsset: optStr(p.potAsset, `${path}.potAsset`),
     variegated: !!p.variegated,
@@ -355,6 +357,7 @@ function packCutting(c, i) {
     motherPotId: optStr(c.motherPotId, `${path}.motherPotId`),
     motherPlantId: optStr(c.motherPlantId, `${path}.motherPlantId`),
     cutOnDay: needInt(c.cutOnDay ?? 0, `${path}.cutOnDay`, { min: 0 }),
+    ...packNick(c),   /* ★ 11-03 F3 — 이름(있을 때만) */
     source: {
       nodeId: needStr(src.nodeId, `${path}.source.nodeId`),
       stem: needStr(src.stem, `${path}.source.stem`),

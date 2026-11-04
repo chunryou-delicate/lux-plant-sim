@@ -18,6 +18,7 @@
      al_sprout{varie,slept} · al_asleep{corms} · al_wake{first}
    ⚖ 값 · 때 — 총괄 D45 첫 판과 plan 추천 그대로(아래 SPECIES_GAME). core 가 새로 정한 것은 «⚖ core» 로 적었다(총괄께 몰아서 보고). */
 import { createSpeciesRules } from '../growth/species_growth.js';
+import { packNick } from './nick.js';   /* ★ 11-03 F3 — 새 종 그루 이름(있을 때만 칸) */
 
 let RULES = null, RULES_ERR = null;
 try {
@@ -495,7 +496,7 @@ export function packSpecies(sp) {
                                       placedOnce: !!q.placedOnce, gotDay: q.gotDay ?? null, origin: q.origin || null,
                                       ...(q.care ? { care: q.care } : {}), ...(q.flatSince != null ? { flatSince: q.flatSince } : {}),
                                       ...(Number.isFinite(q.dropM) ? { dropM: q.dropM } : {}),   /* D71 · D76 */
-                                      ...(q.motherId != null ? { motherId: q.motherId } : {}) })),   /* C 육종 — PP 줄 계보 */
+                                      ...(q.motherId != null ? { motherId: q.motherId } : {}), ...packNick(q) })),   /* C 육종 — PP 줄 계보 · ★ 11-03 F3 이름(있을 때만) */
     corms: sp.corms || [], trade: sp.trade || null, n: sp.n || null, seq: sp.seq || 0
   }));
 }
@@ -509,7 +510,7 @@ export function unpackSpecies(raw) {
                    placedOnce: !!q.placedOnce, gotDay: q.gotDay ?? null, origin: q.origin || null,
                    ...(q.care && typeof q.care === 'object' ? { care: { ...q.care } } : {}), ...(Number.isFinite(q.flatSince) ? { flatSince: q.flatSince } : {}),
                    ...(Number.isFinite(q.dropM) ? { dropM: q.dropM } : {}),
-                   ...(q.motherId != null ? { motherId: String(q.motherId) } : {}) });
+                   ...(q.motherId != null ? { motherId: String(q.motherId) } : {}), ...packNick(q) });   /* ★ 11-03 F3 이름 */
   }
   for (const c of Array.isArray(raw.corms) ? raw.corms : [])
     if (c && c.id) sp.corms.push({ id: String(c.id), seed: c.seed >>> 0, origin: c.origin || 'from_plain_mother', motherKind: c.motherKind ?? null, foundDay: c.foundDay ?? null });

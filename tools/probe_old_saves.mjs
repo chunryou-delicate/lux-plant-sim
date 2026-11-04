@@ -21,14 +21,21 @@ const files = fs.readdirSync(OLD).filter(f => /\.json$/.test(f)).sort();
 const rows = []; let bad = 0;
 const ok = (c, m, extra) => { console.log(`  ${c ? 'OK  ' : 'FAIL'} ${m}${extra ? ' — ' + extra : ''}`); if (!c) bad++; return c; };
 const broke = (save, what, got, want, sev) => rows.push({ save, what, got, want, sev });
-const page = await launch();
+/* ★ 11-04 총괄 ④ — FRESH=1 이면 세이브마다 새 크롬(지킴이가 빈 커밋 1.5GB 아래에서 닫던 판 · 세이브 안 «저장 → 다시 켬» 왕복은 같은 크롬) · 기본 0 = 예전 그대로 */
+const FRESH = process.env.FRESH === '1';
+let page = null, booted = false;
 const exc = [], warns = [];
+const fresh = async () => {
+if (page) { try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e && e.message); } }
+page = await launch();
 page.on((method, p) => {
   if (method === 'Runtime.exceptionThrown') exc.push(((p.exceptionDetails.exception && p.exceptionDetails.exception.description) || p.exceptionDetails.text || '').split('\n')[0].slice(0, 200));
   if (method === 'Runtime.consoleAPICalled' && (p.type === 'error' || p.type === 'warning')) warns.push(`${p.type}: ` + (p.args || []).map(a => a.value ?? a.description ?? '').join(' ').slice(0, 200));
 });
 await page.send('Runtime.enable');
 await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__byeotSkipDayAnim=true;` });
+};
+await fresh();
 const J = async (js, ms = 180000) => JSON.parse(await page.eval(`(async()=>{ try { return JSON.stringify(await (${js})); } catch(e) { return JSON.stringify({탈:e.message}); } })()`, true, ms));
 const shot = async n => { if (OUTDIR) await page.shot(`${OUTDIR}/${n}.png`); };
 const talk = async (max = 80) => { for (let i = 0; i < max; i++) {
@@ -46,6 +53,8 @@ try {
     const text = fs.readFileSync(path.join(OLD, f), 'utf8');
     const want = JSON.parse(text).state;
     const e0 = exc.length, w0 = warns.length;
+    if (FRESH && booted) await fresh();   /* ★ 11-04 총괄 ④ */
+    booted = true;
     await page.goto(`${BASE}/data/balance/homes.json`);
     await page.eval(`(()=>{ localStorage.clear(); localStorage.setItem('byeot/save/1', ${JSON.stringify(text)}); return 1; })()`, false);
     await boot();
