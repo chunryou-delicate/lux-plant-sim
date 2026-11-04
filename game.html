@@ -23314,6 +23314,7 @@ function banners(events) {
         if (cap && cap.offsetParent !== null && cap.getBoundingClientRect().height > 0) { const cq = cap.getBoundingClientRect(), sq = st.getBoundingClientRect(); el.style.top = Math.round(cq.bottom - sq.top + 22) + 'px'; }
         else el.style.top = ''; } catch (e) { void e; }
   try { bannerFit(el); } catch (e) { void e; }   /* ★ 11-02 넷째 묶음 둘째 — 상자 폭(§bannerFit) */
+  try { bannerRefitWatch(el); } catch (e) { void e; }   /* ★ 11-04 U2-d — 선 뒤 둘레가 바뀌면 다시 맞춤(넓히기 포함) */
   /* 누르면 바로 없앤다. `onclick` 이라 여러 번 붙어도 하나만 남는다 */
   el.onclick = () => { clearTimeout(bannerTimer); el.classList.remove('on'); bannerSawTalk = false; };
   bannerSawTalk = talkingNow();   /* ★ #9 */
@@ -23352,6 +23353,26 @@ function bannerFit(el) {
     if (L2 === L && R2 === R) break;
     L = L2; R = R2;
   }
+}
+/* ★ 11-04 U2-d(총괄) — 배너가 떠 있는 동안 둘레(손가락 · 말풍선 · 시트 · 화면 폭)가 바뀌면 §bannerFit 을 다시 부른다(좁은 기둥으로 남지 않게).
+     열쇠는 손 그림이 아니라 «짚는 것»의 사각형이다(손은 까딱여 프레임마다 다름) · 배너가 걷히면 멈춘다 · 0.25초마다 열쇠 한 줄만 셈 */
+let bannerRefitTimer = null;
+function bannerRefitKey() {
+  const r = e => { if (!e) return '-'; const q = e.getBoundingClientRect(); return q.width > 1 && q.height > 1 ? `${Math.round(q.left / 4)},${Math.round(q.top / 4)},${Math.round(q.right / 4)},${Math.round(q.bottom / 4)}` : '-'; };
+  const h = $('hint'), on = !!(h && h.classList.contains('on')), sh = $('sheet');
+  const say = on ? h.querySelector('.say') : null, sayOn = !!(say && !h.classList.contains('mute') && getComputedStyle(say).display !== 'none');
+  return [innerWidth, on ? 1 : 0, on ? r(document.querySelector('.hintTarget')) : '-', sayOn ? r(say) : '-', sh && sh.classList.contains('open') ? r(sh) : '-'].join('|');
+}
+function bannerRefitWatch(el) {
+  if (!el) return;
+  el._fitKey = bannerRefitKey();
+  if (bannerRefitTimer != null) return;
+  bannerRefitTimer = setInterval(() => {
+    const e = $('event');
+    if (!e || !e.classList.contains('on')) { clearInterval(bannerRefitTimer); bannerRefitTimer = null; return; }
+    let k = null; try { k = bannerRefitKey(); } catch (x) { void x; return; }
+    if (k !== e._fitKey) { e._fitKey = k; try { bannerFit(e); } catch (x) { void x; } }
+  }, 250);
 }
 function banner(title, sub) { banners([{ title, sub }]); }
 window.__byeotBannerTest = (list) => { banners(list); return (($('event') || {}).innerText || ''); };   /* 재는 손잡이(#16 합치기) */
