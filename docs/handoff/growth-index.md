@@ -293,6 +293,18 @@ userData kind:'youngPlant' · species · leafCount · leafCountWanted · leafRow
 사진    docs/handoff/img/species_zoom_pp8.png · species_zoom_alv.png (확대 모드 ?embed=game)
 ```
 
+### 2026-11-04 · F1 새 잎 펼치기 💠 — 사람 판에서 몇 번 서나 — 재기만 (총괄 · 72bfab29 · F1-b 0ff07309 같음)
+
+```
+[잰 것] probe_branches 고정 복사본 · 게임 물 · 게임 손 · 덧줄 f1(하네스가 날마다 부르는 assignPotLeafGrades 의 graded · assigned · 철 · 화분 · 삽수 잎) · 덧줄 무해 0
+  💠 날   사람 22판 합 4(4판에 하루 · 18판 0 · 원룸 · 봄 2 여름 2) · 진로 44판 합 12(12판에 하루 · 원룸 8 투룸 4 · 겨울 0)
+          씨앗 g · 1 · 10 의 모주 잎 하나씩뿐 · 정해진 날 → 드러난 날 124~174일(판 끝까지 안 드러난 무늬 잎 사람 2 · 진로 12)
+  삽수    잎이 날 때 등급이 정해지고 성숙이 없음 · cutting_leaf 대사 · 배너 0(조용히 지나감) · 💠 를 둔다면 사람 판 합 59(판마다 1~6) · 진로 692
+  씨앗    66판 모두 화분 하나(하네스 사람은 씨앗을 안 심음) · 게임은 놓인 화분마다 탄다
+  ⑪ 3장  e31cc01c 맨손 22판 newGrades(graded) 모주 + 삽수 합 — 68장 중 삽수 62 · 모주 6
+```
+> ★ 💠 는 원룸 · 투룸에서도 드물다(사람 판 0~1번) — 삽수 잎을 넣으면 판마다 몇 번이 된다. 전문 `growth-f1-unfurl-20261104.md` · `growth-f1-unfurl.json`.
+
 ### 2026-11-04 · U2-f 몬이 독촉 앞뒤(8aa170ce → 51ebf8f4) — 재기만 (총괄 · plan-nudge-u2f «잴 차례» ㉮~㉲)
 
 ```
