@@ -11,7 +11,9 @@
      ㉷ 360 — 힌트 · 까닭 줄 한 줄 · [자세히] 아래 줄은 꺾이면 낱말 사이에서만
    ★ 11-04 크롬 첫 판 뒤(총괄 가름) — 제목 줄은 글 노드 사각형만 센다(top 2px 묶음 · ✎ 단추의 사각형이 «줄»로 세어져 «달» 한 글자도 3줄로 나왔다) · ✎ 은 세로 가운데가 첫 글자 줄 안(penIn)
      ㉸ 이름 창에서 [이 이름으로]가 꺼진 동안 손가락 없음 · 까닭 줄이 .warn 으로 보이고 단추 opacity ≤ 0.5 · 켜진 뒤엔 손가락이 [그만두기]가 아님
-   (㉱ 팔기 창 한 줄 · ㉳ 생일은 F3 ③ 자로)
+   ★ 11-04 F3 꼬리(총괄 · plan ace732e9) — ㉶ 새 종 아래 줄은 종 이름이 한 번(앞붙임 없음) · ㉸ 입력 그 자리(같은 차례)와 100ms 뒤에도 꺼진 동안 손가락 없음
+     ㉱ 이름 붙인 새 종 [💰 팔기] → 확인 창 «{이름} — {won}원에 팝니다» · «이름 붙인 그루입니다. 되돌릴 수 없습니다.» · [판다] · [아직] → [아직]이면 안 팔림
+   (㉳ 생일은 F3 ③ 자로)
    예외 0 · J 단언엔 !탈 */
 import fs from 'node:fs';
 import { launch, sleep } from './test_cdp.mjs';
@@ -74,6 +76,13 @@ ok(!c1.탈 && c1.title === '콩이' && c1.aria === '이름 바꾸기' && /^몬�
 /* ㉴ 있음 힌트 · ㉵ 까닭 넷 · 조합 */
 await pen(); await sleep(500);
 const h1 = await J(NK);
+/* ㉸ 입력 그 자리 · 100ms — 켜진 [이 이름으로]를 손가락이 짚은 뒤(0.9초) «abc»를 넣는다 */
+await sleep(900);
+const HZF = `(()=>{ const h=document.getElementById('hint'), t=document.querySelector('.hintTarget'), p=document.getElementById('nickPanel'), g=document.getElementById('nickGo');
+  return { on: h.classList.contains('on'), target: t ? (t.id || t.className) : null, inPanel: !!(t && p.contains(t)), goDisabled: g.disabled }; })()`;
+const hzPre = await J(HZF);
+const hzSync = await J(`(()=>{ const i=document.getElementById('nickInput'); i.value='abc'; i.dispatchEvent(new Event('input',{bubbles:true})); return ${HZF}; })()`);
+await sleep(100); const hz100 = await J(HZF);
 const bAbc = await type('abc'), bJamo = await type('ㅋㅋ'), bLong = await type('가나다라마바사아자'), bDup = await type('핑크프린세스');
 /* ㉸ 꺼진 동안(같은 이름) — 반 초 지킴이가 돈 뒤 손가락 · 까닭 줄 · 단추 흐림 */
 const HZ = `(()=>{ const h=document.getElementById('hint'), t=document.querySelector('.hintTarget'), p=document.getElementById('nickPanel'), g=document.getElementById('nickGo'), w=document.getElementById('nickHint');
@@ -98,6 +107,9 @@ ok(bComp.hint === bDup.hint && bEnd.goDisabled === false && !bEnd.warn, '㉵ 조
 console.log('  ㉸', JSON.stringify({ hz0, hz1 }));
 ok(!hz0.탈 && hz0.goDisabled === true && !(hz0.on && hz0.inPanel) && hz0.warn && hz0.whyShown && hz0.sayOverWhy === 0 && hz0.goOpacity <= 0.5,
    `㉸ [이 이름으로]가 꺼진 동안 손가락 없음(${hz0.on ? hz0.target : '없음'}) · 까닭 줄 «${hz0.why}» 보임 · 단추 흐림 ${hz0.goOpacity}`, JSON.stringify(hz0));
+console.log('  ㉸ 그 자리 · 100ms', JSON.stringify({ hzPre, hzSync, hz100 }));
+ok(!hzSync.탈 && !hz100.탈 && hzSync.goDisabled === true && !(hzSync.on && hzSync.inPanel) && hz100.goDisabled === true && !(hz100.on && hz100.inPanel),
+   `㉸ 입력 그 자리 · 100ms 뒤에도 꺼진 동안 손가락 없음(그 자리 ${hzSync.on ? hzSync.target : '없음'} · 100ms ${hz100.on ? hz100.target : '없음'} · 앞 ${hzPre.on ? hzPre.target : '없음'})`, JSON.stringify({ hzPre, hzSync, hz100 }));
 ok(!hz1.탈 && hz1.goDisabled === false && hz1.target !== 'nickCancel', `㉸ 켜진 뒤 손가락이 [그만두기]가 아님(${hz1.on ? hz1.target : '없음'})`, JSON.stringify(hz1));
 /* ㉶ 바꿈 */
 await type('달'); await go(); const l2 = await logTail(); const c2 = await J(CARD);
@@ -132,8 +144,25 @@ const cc = ids.cut ? await J(CARD) : null;
 const sp = ids.sp[0]; if (sp) { await openCard('species', sp.id); await sleep(500); await pen(); await sleep(400); await type('분홍이'); await go(); }
 const cs = sp ? await J(CARD) : null;
 if (OUT) await page.shot(`${OUT}/390_f3_species_named.png`);
-ok((!ids.cut || (cc && cc.title === '아기' && /삽수 \d · /.test(cc.sub || ''))) && (!sp || (cs && cs.title === '분홍이' && cs.sub.startsWith(`${{ pink_princess: '핑크프린세스', alocasia_frydek: '알로카시아' }[sp.sp] || ''} · `))),
-   '㉶ 삽수 · 새 종도 같은 창 · 아래 줄 앞 원래 이름', JSON.stringify({ cc, cs }));
+const spKo = sp ? ({ pink_princess: '핑크프린세스', alocasia_frydek: '알로카시아' }[sp.sp] || '') : '';
+const spN = cs && spKo ? (cs.sub.split(spKo).length - 1) : null;
+ok((!ids.cut || (cc && cc.title === '아기' && /삽수 \d · /.test(cc.sub || ''))) && (!sp || (cs && cs.title === '분홍이' && spKo && cs.sub.startsWith(spKo) && spN === 1)),
+   `㉶ 삽수 · 새 종도 같은 창 · 삽수 아래 줄 앞 원래 이름 · 새 종 아래 줄 종 이름 한 번(${spN}번 · plan ace732e9)`, JSON.stringify({ cc, cs }));
+/* ㉱ 이름 붙인 새 종 팔기 — 확인 창 한 번 · [아직]이면 안 팔림 */
+let sell = null;
+if (sp) {
+  const clicked = await J(`(()=>{ const b=[...document.querySelectorAll('#dBtns button')].find(x => /^💰 팔기/.test((x.textContent||'').trim()) && !x.disabled); if (!b) return false; b.click(); return true; })()`);
+  await sleep(600);
+  sell = await J(`(()=>{ const p=document.getElementById('varieAsk'); return { clicked: ${JSON.stringify(true)}, on: p.classList.contains('on'), title: (document.getElementById('varieAskTitle')||{}).textContent,
+    lines: [...document.querySelectorAll('#varieAskLines > *')].map(x => (x.textContent||'').trim()).filter(Boolean), go: (document.getElementById('varieAskGo')||{}).textContent, cancel: (document.getElementById('varieAskCancel')||{}).textContent }; })()`);
+  sell.clicked = clicked;
+  if (OUT) await page.shot(`${OUT}/390_f3_sell_ask.png`);
+  await J(`(()=>{ const c=document.getElementById('varieAskCancel'); if (c && document.getElementById('varieAsk').classList.contains('on')) c.click(); return 1; })()`); await sleep(400);
+  sell.still = await J(`(((window.__S().species||{}).pots)||[]).some(q => q && q.id === ${JSON.stringify(sp.id)})`);
+}
+console.log('  ㉱', JSON.stringify(sell));
+ok(!sp || (sell && !sell.탈 && sell.clicked && sell.on && /^분홍이 — [0-9,]+원에 팝니다$/.test(sell.title || '') && (sell.lines || []).includes('이름 붙인 그루입니다. 되돌릴 수 없습니다.') && sell.go === '판다' && (sell.cancel || '').trim() === '아직' && sell.still === true),
+   `㉱ 이름 붙인 새 종 [💰 팔기] → 확인 창(«${sell && sell.title}» · 한 줄 · [판다] · [아직]) · [아직]이면 안 팔림`, JSON.stringify(sell));
 
 ok(exc.length === 0, '처리 안 된 예외 0', exc.slice(0, 3).join(' / '));
 try { await page.close(); } catch (e) { console.log('  (탭 닫기 탈)', e.message); }

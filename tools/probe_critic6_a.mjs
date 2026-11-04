@@ -198,13 +198,13 @@ ok(done5 === true && !/식물등을 달아/.test(chipL1.body || ''), '㉲ C5 단
 ok(lines5[0] === '등을 달았다. 손바닥만 하네.', '㉲ P5 단 그 자리에서 몬이 questDoneBuyLamp «등을 달았다. 손바닥만 하네.»', JSON.stringify(lines5));
 /* C6 */
 const offPt = await tapSel('#lightHeatOff'); await sleep(1500);
-const c6a = await J(`(()=>{ const b=document.getElementById('lightHeatOff'); const q=b.getBoundingClientRect(); return { heat: !!(window.__rv.lightHeatmap()||{}).on, shown: b.style.display !== 'none' && q.width > 0, t: (b.textContent||'').trim(), x: Math.round(q.left+q.width/2), y: Math.round(q.top+q.height/2) }; })()`);
+const c6a = await J(`(()=>{ const b=document.getElementById('lightHeatOff'); const q=b.getBoundingClientRect(); return { heat: !!(window.__rv.lightHeatmap()||{}).on, shown: b.style.display !== 'none' && q.width > 0, t: (b.textContent||'').trim(), a: b.getAttribute('aria-label'), on: b.classList.contains('on'), x: Math.round(q.left+q.width/2), y: Math.round(q.top+q.height/2) }; })()`);
 if (OUT) await page.shot(`${OUT}/390_c6a_c6_off.png`);
 await tapSel('#lightHeatOff'); await sleep(2000);
-const c6b = await J(`(()=>{ const b=document.getElementById('lightHeatOff'); return { heat: !!(window.__rv.lightHeatmap()||{}).on, t: (b.textContent||'').trim(), seen: !!window.__S().tutorial.heatChipSeen }; })()`);
+const c6b = await J(`(()=>{ const b=document.getElementById('lightHeatOff'); return { heat: !!(window.__rv.lightHeatmap()||{}).on, t: (b.textContent||'').trim(), a: b.getAttribute('aria-label'), on: b.classList.contains('on'), seen: !!window.__S().tutorial.heatChipSeen }; })()`);
 console.log('  ㉲ C6', JSON.stringify({ off: offPt && { x: Math.round(offPt.x), y: Math.round(offPt.y) }, c6a, c6b }));
-ok(!c6a.탈 && !c6a.heat && c6a.shown && /빛 분포 보기/.test(c6a.t) && offPt && Math.abs(offPt.y - c6a.y) < 3, '㉲ C6 끈 뒤 같은 자리에 [🔆 빛 분포 보기]가 남는다', JSON.stringify(c6a));
-ok(!c6b.탈 && c6b.heat && /끄기/.test(c6b.t) && c6b.seen, '㉲ C6 그것을 누르면 다시 켜진다(깃발 heatChipSeen 세이브)', JSON.stringify(c6b));
+ok(!c6a.탈 && !c6a.heat && c6a.shown && c6a.t === '🔆' && c6a.a === '빛 분포 보기' && !c6a.on && offPt && Math.abs(offPt.y - c6a.y) < 3, '㉲ C6 끈 뒤 같은 자리에 🔆(aria «빛 분포 보기» · 11-03 U11 그림 단추)가 남는다', JSON.stringify(c6a));
+ok(!c6b.탈 && c6b.heat && c6b.a === '빛 분포 끄기' && c6b.on && c6b.seen, '㉲ C6 그것을 누르면 다시 켜진다(aria «빛 분포 끄기» · .on · 깃발 heatChipSeen 세이브)', JSON.stringify(c6b));
 
 /* ═══ ㉳ C3①②③ — S97 ═══ */
 await boot(saveS);

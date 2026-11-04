@@ -1353,7 +1353,9 @@
        가를 수 있다 — 끌 손잡이는 지나가게 두고 나머지만 삼킨다. */
   #hintDim.on{display:block}
   /* ★ 막힌 손짓에 대한 대답 — **말을 새로 안 짓는다.** 이미 짚고 있는 그 손가락이 한 번 뛴다 */
-  #hint.knock{animation:hintKnock .42s ease}
+  #hint.knock{animation:hintKnock .3s ease}   /* ★ 11-03 U6 — 0.42 → 0.3초 · 말풍선 한 번 깜빡(아래) */
+  #hint.knock .say{animation:hintSayBlink .3s ease}
+  @keyframes hintSayBlink{0%{opacity:1}45%{opacity:.25}100%{opacity:1}}
   @keyframes hintKnock{
     0%{transform:translate(-50%,0) scale(1)}
     30%{transform:translate(-50%,-10px) scale(1.12)}
@@ -1477,9 +1479,15 @@
        ⛔ 할 일 «몬스테라 화분을 밝은 빈 칸으로 옮기세요»(22자)에 칩이 230px 가까이 넓어져 [식물] 손가락이 아래로 가 손이 [상점] · 말풍선이 [방]을 덮었다(c3_dark 꼴 되살아남) */
   html:has(#hint.on.navSide) #questChip{max-width:156px}
   /* ★ 11-02 7C2 꼬리(총괄 ㉴) — 칩 글이 두 줄이면 칩 아래 끝이 safe+114 라 이 단추(+112)를 2px 덮었다(360 · 긴 할 일 글 · 좁힌 칩 둘 다) ⇒ +118(4px 틈 · 아래 범례 +152 와 3px 틈) */
-  #lightHeatOff{position:absolute;z-index:23;right:10px;top:calc(var(--safe-t) + 118px);padding:6px 10px;border-radius:12px;
-    background:rgba(16,13,24,.82);border:1px solid rgba(255,180,84,.35);color:var(--gold);font-size:12px;font-weight:700;
-    box-shadow:0 4px 14px rgba(0,0,0,.45)}
+  /* ★ 11-03 U11 — «?»(#guideOpen · right 10 · 34px) 왼쪽 같은 크기 🔆 · 켠 동안 .on */
+  #lightHeatOff{position:absolute;z-index:23;right:51px;top:calc(var(--safe-t) + 8px);width:34px;height:34px;min-height:0;padding:0;border-radius:50%;
+    display:grid;place-items:center;background:rgba(16,13,24,.7);border:1px solid rgba(255,255,255,.18);color:var(--gold);font-size:15px;line-height:1;
+    box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  #lightHeatOff.on{background:rgba(255,190,110,.22);border-color:rgba(255,190,110,.85);box-shadow:0 0 0 2px rgba(255,190,110,.25)}
+  #stage.coaching #lightHeatOff{display:none !important}
+  /* ★ 11-04 U11 꼬리 둘째(총괄 ㉠) — 배너가 떠 있는 동안 🔆 은 숨는다(할 일 칩과 같은 결 · 배너 폭을 안 좁히게) · 돌아올 때는 배너가 다 사라진 뒤(0.45초) */
+  #stage:has(#event.on) #lightHeatOff{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility .2s}
+  #lightHeatOff{transition:opacity .2s ease .45s,visibility 0s linear .45s}
   /* ★ 2026-10-24 (plan d_B_switched · core 걸음) — 배너(#event)는 6초에 꺼진 뒤 0.45초 동안 사라지는데, 칩은 감춤 규칙(§#stage:has(#event.on))이 풀리는 즉시 돌아와
        그 사이 둘이 겹쳐 보였다. 칩이 «돌아올 때»만 배너가 다 사라진 뒤(0.45초)에 온다 — 감출 때는 위 규칙 그대로 바로 */
   #questChip{transition:opacity .2s ease .45s,visibility 0s linear .45s}
@@ -2097,7 +2105,7 @@
     <!-- ★ 할 일 쪽지 — 늘 보인다. 누르면 [할 일] 탭이 열린다(§questChip) -->
     <button id="questChip" type="button"><b>📜 할 일</b><span id="questChipText"></span></button>
     <!-- ★ 2026-10-31 D93 ④ m8 — 빛 분포가 켜진 동안 방 위에 «끄기»(식물 칸 안에만 있어 며칠째 켜진 채 방을 덮었다 · 비판 둘째 판 s115 · s143) -->
-    <button id="lightHeatOff" type="button" style="display:none">🔆 빛 분포 끄기</button>
+    <button id="lightHeatOff" type="button" style="display:none" aria-label="빛 분포 보기" aria-pressed="false">🔆</button>
     <!-- ══ ★★★ **모서리로 뺀 두 손** (2026-08-17 · 박사님: *"[다음 날] 버튼은 우측 하단으로,
          물 주는 거 알림 버튼은 좌측 하단으로. 화면 앞으로 아이콘 형태로 — 시야 안 가리고,
          칸 차지 안 하고."*)
@@ -4647,7 +4655,7 @@ function fenceKeyOf(el, say) {
     h.classList.remove('knock');
     void h.offsetWidth;                   /* 애니메이션을 다시 태우려면 한 번 끊어야 한다 */
     h.classList.add('knock');
-    setTimeout(() => h.classList.remove('knock'), 460);
+    setTimeout(() => h.classList.remove('knock'), 320);   /* ★ 11-03 U6 — 0.3초 움직임 뒤 뗀다 */
   };
   /* 그 점이 구멍 «안»인가 — 없으면(아직 안 판 덮개) 다 막는다 */
   const inHole = (x, y) => {
@@ -4914,6 +4922,22 @@ function placeHintAt(el, say) {
     h.style.left = (toRight ? r.right + 8 : Math.max(8, r.left - 8 - hb.width)) + 'px';
     h.style.top = Math.min(innerHeight - 8 - hb.height / 2,
                   Math.max(hb.height / 2 + 8, r.top + r.height / 2)) + 'px';
+    /* ★ 11-04 U11 꼬리(총괄) — «?» 왼쪽 🔆(#lightHeatOff)이 보이면 옆자리 꼬리표 오른쪽 끝을 그 왼쪽 − 6px 로 묶는다(꼬리표가 🔆 을 덮었다 · 390 · 360 사진) */
+    try {
+      const hq = $('lightHeatOff'), sayEl = h.querySelector('.say');
+      const q = (toRight && hq && sayEl) ? hq.getBoundingClientRect() : null;
+      if (q && q.width > 1 && q.height > 1) {
+        const s1 = sayEl.getBoundingClientRect();
+        if (s1.right > q.left - 6 && s1.top < q.bottom && s1.bottom > q.top) {
+          const mx = Math.floor(s1.width - (s1.right - (q.left - 6)));
+          if (mx >= 64) {
+            sayEl.style.maxWidth = mx + 'px'; sayEl.style.wordBreak = 'keep-all';
+            hb = h.getBoundingClientRect();
+            h.style.top = Math.min(innerHeight - 8 - hb.height / 2, Math.max(hb.height / 2 + 8, r.top + r.height / 2)) + 'px';
+          }
+        }
+      }
+    } catch (e) { void e; }
   } else {
     /* 위에 선다. ★가로도 물린다 — 가장자리 대상에서 글이 화면 밖으로 나갔다 */
     const want = r.left + r.width / 2;                    /* 대상 한가운데 */
@@ -5289,6 +5313,7 @@ function buildGuide() {
     [$('resDay'),   '오늘 날짜와 시각',            'up'],
     [$('resFood'),  '지금 가진 돈',                'up'],
     [$('resSta'),   '체력 — 오늘 돌볼 수 있는 횟수',  'up'],
+    [$('lightHeatOff'), '빛 분포 — 누르면 자리마다 밝기를 봅니다', 'up'],   /* ★ 11-03 U11(plan) — 그림 단추라 «누르는 것»을 글이 말한다 · 안 보이는 판이면 건너뜀 */
     /* ★★ 2026-08-11 — **이 게임이 무엇인지를 여기서 한 번 말한다.**
        조각 일곱이 전부 「어느 단추가 무엇인지」였고, 정작 「자리마다 밝기가 다르다」는
        Day 50 의 축하 배너에서 처음 나왔다(실측). 배우고 난 뒤에 말해 주는 셈이었다.
@@ -5452,7 +5477,7 @@ const detail = {
     }
     $('dArt').src = v.art; $('dArt').alt = '';
     $('dTitle').textContent = v.title;
-    $('dSub').textContent = (v.nick && v.nick.has ? `${v.nick.orig} · ` : '') + (v.sub || '');   /* ★ 11-03 F3 — 이름이 있으면 원래 이름을 아래 줄 앞에(새 종 이름이 사라지지 않게) */
+    $('dSub').textContent = (v.nick && v.nick.has && v.nick.kind !== 'species' ? `${v.nick.orig} · ` : '') + (v.sub || '');   /* ★ 11-04 F3 꼬리 ㉠ — 새 종은 아래 줄이 이미 종 이름으로 시작(speciesBriefKo) */   /* ★ 11-03 F3 — 이름이 있으면 원래 이름을 아래 줄 앞에(새 종 이름이 사라지지 않게) */
     if (v.nick) {   /* ★ 11-03 F3 — 제목 바로 뒤 ✎ */
       const pen = document.createElement('button'); pen.type = 'button'; pen.className = 'nickPen'; pen.textContent = NICK.NICK_KO.pen;
       pen.setAttribute('aria-label', v.nick.has ? NICK.NICK_KO.penAriaHas : NICK.NICK_KO.penAriaNone);
@@ -14651,8 +14676,9 @@ function drawLightHeatBtn() {
   b.classList.toggle('primary', on);
   /* ★ D93 ④ m8 — 켜진 동안 방 위 끄기 · ★ 2026-11-02 총괄 C6(비판 6판 #9 · d50_lightoff · d61_plant) — 한 번 켠 판은 끈 뒤에도 같은 자리에 [🔆 빛 분포 보기]가 남는다.
        ⛔ 끄면 칩이 사라져 다시 켤 곳을 못 찾았다([식물] 판 안에만 있었다) · 글은 [식물] 판 단추와 같은 말(켜기 = «보기» · 끄기 = «끄기») · 깃발은 세이브(tutorial.heatChipSeen) */
-  { const off = $('lightHeatOff'); if (off) { const keep = on || !!(S.tutorial && S.tutorial.heatChipSeen);
-      off.style.display = keep ? '' : 'none'; off.textContent = on ? '🔆 빛 분포 끄기' : '🔆 빛 분포 보기'; off.classList.toggle('idle', !on); } }
+  { const off = $('lightHeatOff'); if (off) { const keep = on || !!(S.tutorial && S.tutorial.heatChipSeen) || settingDoneNow();   /* ★ 11-03 U11 — 세팅 끝부터 늘 */
+      off.style.display = keep ? '' : 'none'; off.textContent = '🔆'; off.classList.toggle('on', on); off.classList.remove('idle');
+      off.setAttribute('aria-label', on ? '빛 분포 끄기' : '빛 분포 보기'); off.setAttribute('aria-pressed', on ? 'true' : 'false'); } }
   { const st0 = $('stage'); if (st0) st0.classList.toggle('heatOn', on); }   /* ★ D93 ⑥ m6 — 켜진 동안 방울 · 꼬리표를 걷는다(CSS #stage.heatOn) */
   if (!note) return;
   /* ⚠ 켜져 있을 때만 말한다 — 꺼 놓고 「몇 칸을 쟀다」를 적으면 그게 거짓말이다 */
@@ -14662,6 +14688,16 @@ function drawLightHeatBtn() {
     + (st.onFurniture ? ` (가구 위 ${st.onFurniture}칸)` : '');
 }
 /* ★ 2026-10-31 D93 ④ m8 — 끄는 손 하나(방 위 칩 · 하루 넘김이 같이 씀) */
+/* ★ 11-03 U11 — 첫 플레이 «세팅 끝»(updateHint settingDone 과 같은 셈: 몬스테라 집 잡음 · 콩나물 시루 둘 확정) · 첫 플레이 밖이면 참 */
+function settingDoneNow() {
+  const fp = S.firstPlay, ts = S.tutorial;
+  if (!fp || !fp.enabled || fp.completed || (ts && ts.movedOut)) return true;
+  try {
+    if (!(fp.monstera && fp.monstera.guide && fp.monstera.guide.moved)) return false;
+    const site = fp.beansprout;
+    return ((site && site.pots) || []).filter(p => p && (site.kind || 'beansprout') === 'beansprout' && cropPotConfirmed(p)).length >= 2;
+  } catch { return false; }
+}
 function lightHeatOff() {
   let on = false;
   try { on = !!(roomView && roomView.lightHeatmap && (roomView.lightHeatmap() || {}).on); } catch { on = false; }
@@ -15340,6 +15376,7 @@ function paintNick() {
   else { hint.textContent = has ? K.hintHas.replace('{orig}', t.orig).replace('{ro}', NICK.roOf(t.orig)) : K.hintNone; hint.classList.remove('warn'); }
   go.textContent = (!String(raw).trim() && has) ? K.goClear : K.go;
   go.disabled = !c.ok;
+  try { updateHint(); } catch (e) { void e; }   /* ★ 11-04 F3 꼬리 ㉡ — 단추가 꺼지거나 켜진 그 자리에서 손가락을 다시 고른다(지킴이 0.5초를 안 기다림) */
 }
 function openNick(t) {
   const o = nickObjOf(t); if (!o) return false;
@@ -15351,6 +15388,7 @@ function openNick(t) {
   nickComposing = false; paintNick();
   $('nickPanel').classList.add('on'); $('nickPanel').setAttribute('aria-hidden', 'false');
   try { $('nickInput').focus(); } catch { }
+  try { updateHint(); } catch (e) { void e; }   /* ★ 11-04 F3 꼬리 ㉡ — 창을 연 바로 뒤에도 */
   return true;
 }
 function closeNick() {
@@ -23466,7 +23504,9 @@ function bannerFit(el) {
   /* ★ 11-02 7C2 꼬리(총괄 사진 c_fix5/390_c7c_trayplace) — 할 일 칩은 안 센다: 배너가 서면 늘 숨는다(CSS #stage:has(#event.on) #questChip).
        ⛔ 숨는 움직임(.2s) 첫머리에 재면 칩이 «보이는» 것으로 잡혀 배너가 기둥과 칩 사이(390 · css 49~169)로 접혔다 — 제목 «여기에 / 둘까요?» · 본문 여섯 줄.
        ⇒ 대신 칩 밑 [🔆 빛 분포 보기](#lightHeatOff · 배너보다 위 층)는 센다 — 보일 때 배너 아래 끝이 그 단추 윗머리에 걸렸다(638164fe 같은 장면) */
-  const obs = [vis($('navbar')), guideQ, vis($('lightHeatOff')), hOn ? vis(h.querySelector('.say')) : null, handG, vis($('sheet'))].filter(Boolean);
+  /* ★ 11-04 U11 꼬리 둘째(총괄 ㉠) — 🔆(#lightHeatOff)은 이제 «?» 왼쪽 윗줄이고 배너가 떠 있는 동안 숨는다(CSS #stage:has(#event.on)) ⇒ 칩처럼 안 센다
+       (세면 배너 오른쪽 끝이 🔆 앞으로 41px 좁아져 제목이 두 줄 — critic6_e ㉲) */
+  const obs = [vis($('navbar')), guideQ, hOn ? vis(h.querySelector('.say')) : null, handG, vis($('sheet'))].filter(Boolean);
   const cap = sq.width * 0.88;
   let L = sq.left + 8, R = sq.right - 8;
   for (let k = 0; k < 3; k++) {
