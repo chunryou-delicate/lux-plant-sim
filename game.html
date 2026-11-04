@@ -1582,6 +1582,7 @@
   /* ★ 11-04 F1 — [나] 창 설정 줄(새 잎 직접 펼치기) */
   #dBody .setRow button{min-height:0;padding:4px 14px;border-radius:12px;font-size:13px;font-weight:700}
   #dBody .setNote{margin:2px 0 10px;font-size:12px;opacity:.72}
+  #dBody .setRow button.ghost{opacity:.72}   /* ★ 11-04 F1-b — 꺼짐은 회색 판(button.ghost) + 흐림 */
   #breedNameInput{display:block;width:100%;box-sizing:border-box;min-height:44px;margin:10px 0 4px;padding:0 12px;font-size:16px;border-radius:10px;
     border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:var(--ink)}
   /* ★ 2026-10-10 벽 걸이 v1 — 걸이 자리 원(house hangSpots · 화면 좌표는 캔버스 기준이라 무대 기준으로 옮겨 찍는다) */
@@ -3881,7 +3882,7 @@ let pendingLeafScene = null, leafBanners = [];
      ⚠ 등급은 잎이 날 때 빛으로 이미 정해졌다(§assignPotLeafGrades) — 누름은 정하지 않고 «드러내기만» 한다(뽑기 아님) */
 const UNFURL_KEY = 'byeot.unfurl';
 const UNFURL_KO = Object.freeze({ mark: '💠 {head}{n}번째 잎 펼치기', firstSeen: '처음 보는 꼴입니다',
-                                  setName: '새 잎 직접 펼치기', setNote: '끄면 무늬가 바로 드러납니다', on: '켬', off: '끔' });
+                                  setName: '새 잎 직접 펼치기', setNote: '끄면 무늬가 바로 드러납니다', on: '켜짐', off: '꺼짐' });   /* ★ 11-04 F1-b — 단추 글은 «지금 상태»(총괄) */
 window.__byeotUnfurlKo = UNFURL_KO;   /* 재는 손잡이(글) */
 function unfurlOn() { try { return localStorage.getItem(UNFURL_KEY) !== '0'; } catch (e) { return true; } }
 /* ✨ 무늬 배너 · 💠 가 그 그루를 같은 이름으로 부른다(첫 그루면 없음 · 아니면 «몇째 몬스테라 · ») */
@@ -5600,7 +5601,7 @@ const detail = {
         + `<p>${ME_KO.body[roomKey]}</p>`
         + '<ul class="todo">' + learn.map(([k, ok]) => `<li class="${ok ? 'done' : ''}">${k}</li>`).join('') + '</ul>'
         /* ★ 11-04 F1 — 설정 «새 잎 직접 펼치기»(끄면 무늬가 바로 드러남 · localStorage byeot.unfurl) */
-        + `<div class="row setRow"><span>${UNFURL_KO.setName}</span><button type="button" id="setUnfurl" aria-pressed="${unfurlOn()}">${unfurlOn() ? UNFURL_KO.on : UNFURL_KO.off}</button></div>`
+        + `<div class="row setRow"><span>${UNFURL_KO.setName}</span><button type="button" id="setUnfurl"${unfurlOn() ? '' : ' class="ghost"'} aria-pressed="${unfurlOn()}">${unfurlOn() ? UNFURL_KO.on : UNFURL_KO.off}</button></div>`
         + `<p class="setNote">${UNFURL_KO.setNote}</p>`,
       btns: [{ ko: '몬이는 누구?', go: () => detail.open('moni') }]
     };
@@ -6355,7 +6356,7 @@ function bindDetail() {
     const t = e.target && e.target.closest ? e.target.closest('#setUnfurl') : null; if (!t) return;
     const on = !unfurlOn();
     try { localStorage.setItem(UNFURL_KEY, on ? '1' : '0'); } catch (x) { void x; }
-    t.textContent = on ? UNFURL_KO.on : UNFURL_KO.off; t.setAttribute('aria-pressed', String(on));
+    t.textContent = on ? UNFURL_KO.on : UNFURL_KO.off; t.setAttribute('aria-pressed', String(on)); t.classList.toggle('ghost', !on);   /* ★ F1-b — 꺼짐은 회색 */
     if (!on) { try { flushUnfurl(true); drawMarks(); saveSoon(); } catch (x) { console.warn('[펼치기 끔]', x && x.message); } }
   });
   $('dClose').onclick = () => detail.close();

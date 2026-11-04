@@ -15,7 +15,8 @@
      ㉰ 저장 → 다시 켜도 줄 · 💠 그대로
      ㉲ 펼치기 전: 3D 그 잎 matSkin = midSkin(held) · 그 날 ✨ 배너에 그 잎 제목이 없음
      ㉴ 💠 aria-label = «💠 {앞붙임}{n}번째 잎 펼치기» · 배너 제목 «✨ {앞붙임}{n}번째 잎 — …» 과 앞붙임이 같다(총괄 11-04 · 한 그루 · 두 그루)
-     ㉵ [나] 창 «새 잎 직접 펼치기» 단추 켬 → 끔(aria-pressed · localStorage byeot.unfurl) → 다시 켬 · 아래 줄 «끄면 무늬가 바로 드러납니다»
+     ㉵ [나] 창 «새 잎 직접 펼치기» 단추 켜짐 → 꺼짐(aria-pressed · localStorage byeot.unfurl) → 다시 켜짐 · 아래 줄 «끄면 무늬가 바로 드러납니다»
+        (단추 글은 지금 상태 «켜짐 · 꺼짐» — F1-b 덧 총괄 11-04 · 회색 판은 probe_f1b_setting)
    판 확인: 씨앗 그루가 섰다 · (one) 모그루가 팔렸다 · 그 잎이 MAXD 안에 드러날 차례가 됐다(줄에 섬 또는 곧장 드러남 — 고치기 전 판은 곧장)
    예외 0 · J 단언엔 !탈 · 빨강 먼저: 72bfab29(고치기 전 · 줄 없음 · 곧장 배너) */
 import fs from 'node:fs';
@@ -189,8 +190,8 @@ if (CASE === 'two') {
   await J(`(()=>{ const b=document.getElementById('setUnfurl'); if (b) b.click(); return 1; })()`); await sleep(300);
   const s2 = await J(`(()=>{ const b=document.getElementById('setUnfurl'); return b ? { t: b.textContent, p: b.getAttribute('aria-pressed'), ls: localStorage.getItem('byeot.unfurl') } : null; })()`);
   console.log('  ㉵', JSON.stringify({ s0, s1, s2 }));
-  ok(!!s0 && !s0.탈 && s0.top === true && s0.t === '켬' && s0.p === 'true' && s0.note === '끄면 무늬가 바로 드러납니다' && !!s1 && s1.t === '끔' && s1.p === 'false' && s1.ls === '0' && !!s2 && s2.t === '켬' && s2.ls === '1',
-     '㉵ [나] 창 «새 잎 직접 펼치기» 켬 → 끔(byeot.unfurl 0) → 켬 · 아래 줄 «끄면 무늬가 바로 드러납니다»', JSON.stringify({ s0, s1, s2 }));
+  ok(!!s0 && !s0.탈 && s0.top === true && s0.t === '켜짐' && s0.p === 'true' && s0.note === '끄면 무늬가 바로 드러납니다' && !!s1 && s1.t === '꺼짐' && s1.p === 'false' && s1.ls === '0' && !!s2 && s2.t === '켜짐' && s2.ls === '1',
+     '㉵ [나] 창 «새 잎 직접 펼치기» 켜짐 → 꺼짐(byeot.unfurl 0) → 켜짐 · 아래 줄 «끄면 무늬가 바로 드러납니다»', JSON.stringify({ s0, s1, s2 }));
 } else {
   /* ㉮ 💠 누름(진짜 탭) */
   const albumBefore = (hit.u && hit.u.album) || {};

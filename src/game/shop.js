@@ -1903,12 +1903,10 @@ export function potLeafGradeListOf(pot, leaves, variegatedLeaves = 0) {
    **제일 오래된 무늬 잎 둘이 곧 잎2·잎3** 이다. 그래서 잎 번호를 몰라도 정해진다.
    ⚠ 그 밖의 무늬 잎(4번째부터)은 **안 정한다** — 그건 빛이 정할 몫이라 산반으로 떨어진다.
    ⚠ 장부가 한 칸이라도 있으면 **이 다리는 안 탄다.** 배선이 오면 저절로 죽는 코드다.
-   ⚠ 프롤로그 그루가 아니면(튜토가 꺼졌거나 둘째 화분이면) 안 탄다.
+   ⚠ 프롤로그 그루가 아니면(튜토가 꺼졌거나 튜토 모그루가 아니면 — §isProloguePot) 안 탄다.
    반환 잎별 등급 배열 · 안 걸리면 `null` */
 export function prologueLeafGradeListOf(S, pot, leaves, variegatedLeaves = 0) {
-  const pots = (S && S.pots) || [];
-  if (!pot || !pots[0] || pot.id !== pots[0].id) return null;
-  if (!(S.tutorial && S.tutorial.enabled)) return null;
+  if (!isProloguePot(S, pot)) return null;   /* ★ 11-04 F1-b — 첫 화분이 아니라 튜토 모그루 */
   if (!Number.isInteger(leaves) || leaves < 1 || !(variegatedLeaves > 0)) return null;
   const led = pot.leafGrades;
   if (led && typeof led === 'object' && Object.keys(led).length) return null;   // 장부가 이긴다
@@ -1926,12 +1924,26 @@ export function prologueLeafGradeListOf(S, pot, leaves, variegatedLeaves = 0) {
   return out;
 }
 
+/* ★★ 2026-11-04 F1-b(총괄 흠 가름) — **프롤로그 그루 = 튜토 선물 모그루**(생장 그루 id `__main__` · state §MAIN_GROWTH_ID 와 같은 글).
+   ⛔ 예전엔 «첫 화분(pots[0])»으로 갈랐다. 모그루를 팔고 씨앗 그루가 첫 화분이 되면
+     프롤로그 등급(잎 2 산반 · 잎 3 하프문) · 드러날 때 되짚기(why 'prologue') · «무늬를 처음 본 날» 장면(game §notePotLeafGrades)이 그 그루로 옮겨 붙었다.
+     프롤로그는 «튜토 모그루로 처음 무늬를 보는 날»을 위한 것이다. 씨앗 그루는 빛이 길이다(캐논).
+   ★ 그루 id 는 화분에 적혀 세이브에 실린다(state §MAIN_GROWTH_ID 머리말 «순서(pots[0])로 정하면 첫 화분을 팔거나 옮기는 날 이름이 통째로 밀린다»).
+     씨앗 그루는 `g:{화분 id}`(state §plantMonsteraSeed)라 안 걸린다. 첫 화분 자리가 바뀌어도 옮겨 붙지 않는다.
+   ⚠ 옛 세이브: save.js §growthId 가 빈 칸을 `__main__` 으로 채운다(다개체 전 판은 그루가 그 하나뿐) — 따로 표지(firstPlay)를 안 본다.
+   ⚠ shop.js 는 state.js 를 안 들인다(state 가 shop 을 들인다 — 고리). 그래서 글을 여기 하나 더 두고 test_f1b_prologue 가 둘이 같은지 본다. */
+export const PROLOGUE_GROWTH_ID = '__main__';
+export function isProloguePot(S, pot) {
+  if (!pot || !(S && S.tutorial && S.tutorial.enabled)) return false;
+  return (pot.growthId || PROLOGUE_GROWTH_ID) === PROLOGUE_GROWTH_ID;
+}
+
 /* ★★ 무늬가 난 잎에 **등급을 정해 적는다.** 하루에 한 번(턴 끝) 부르면 된다.
      opt.pot / opt.potId  (없으면 S.pots[0])
      opt.leafState  `growth_adapter.leafState()` 가 낸 목록  ★필수
      opt.band       그 자리의 몬스테라 밴드 이름  (또는 opt.step 으로 'dark'|'mid'|'bright')
      opt.seed       (기본 S.sim.seed) — 같은 세이브면 같은 답이 나와야 한다
-     opt.prologue   프롤로그 못박기를 쓸 것인가 (기본: 튜토가 켜져 있고 첫 화분이면 쓴다)
+     opt.prologue   프롤로그 못박기를 쓸 것인가 (기본: 튜토가 켜져 있고 튜토 모그루면 쓴다 — §isProloguePot · 11-04 F1-b)
    ★ **한 번 정하면 안 바뀐다.** 이미 적힌 잎은 건드리지 않는다(growth 의 `varieRoll` 과 같은 사고).
    ⚠ **빛을 못 재면 안 정한다.** 다음 날 다시 묻는다 — 0 으로도 「중간」으로도 안 메꾼다
      (`propagation.resolveVarieLight` 와 같은 규약).
@@ -1964,7 +1976,7 @@ export function assignPotLeafGrades(S, opt = {}) {
 
   const usePrologue = opt.prologue != null
     ? !!opt.prologue
-    : !!(S.tutorial && S.tutorial.enabled && pots[0] && pot.id === pots[0].id);
+    : isProloguePot(S, pot);   /* ★ 11-04 F1-b — 첫 화분이 아니라 튜토 모그루(그 뒤 «why 'prologue'» 되짚기 · game 장면도 이것을 따른다) */
   const seed = Number.isFinite(opt.seed) ? opt.seed : ((S.sim && S.sim.seed) || 0);
   const sorted = [...rows].filter(r => r && Number.isFinite(r.leafBirth))
                           .sort((a, b) => a.leafBirth - b.leafBirth);
