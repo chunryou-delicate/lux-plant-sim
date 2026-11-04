@@ -2031,7 +2031,14 @@ export function stepCuttings(S, opt = {}) {
            시루로 다 채워 «no-slot» 인데도 가방에서 분갈이까지) · 이사 뒤 자리를 잃은 삽수는 가방 그림인데 기한이 돌아 죽을 수 있었다.
          ★ 박사님 08-17 규칙 그대로다 — «가방으로 회수되면 성장은 멈춰 있는 것으로»(game.html §pickTake) · 화분도 가방이면 안 돈다(loop §inBag).
            한쪽만 멈추면 «놓기»가 뜻이 없어진다. 놓는 순간(setCuttingAt) 그날부터 다시 센다. */
-    if (!c.at && !c.slotId) { alive.push(c); continue; }
+    if (!c.at && !c.slotId) {
+      /* ★ 11-04 D29 남은 몫(총괄 ㉠ · plan ㉯) — 가방 밤은 기한도 멈춘다: 절대 날 칸 둘(그릇에 담은 날 · 혹 난 뒤 기한)을 하루씩 민다.
+           c.days 를 안 올리는 것(위)과 짝 — 한쪽만 멈추면 놓은 뒤 기한이 이미 지나 있었다(놓은 첫 밤 시듦 · «경고 없이 기한을 넘겼습니다»).
+           유한할 때만(옛 세이브 · 그릇 없는 칸은 그대로) · nodeOnDay · rootedOnDay 는 «그날 났다» 기록이라 안 민다 */
+      if (Number.isFinite(c.clockOnDay)) c.clockOnDay++;
+      if (Number.isFinite(c.deadlineDay)) c.deadlineDay++;
+      alive.push(c); continue;
+    }
     c.days++;
     const m = METHODS[c.method];
     if (!m) throw new Error(`[삽수] ${c.id} 의 방식이 이상합니다: ${c.method}`);

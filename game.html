@@ -7087,6 +7087,8 @@ function updateHint() {
     /* ★★ 2026-11-01 총괄 MAJOR — «되돌릴 수 없는 것을 잃는다»고 경고하는 고르기 창(무늬 원천 0 내놓기 · 거래 · 이사)에서는 손가락이 물러선다.
          ⛔ [그래도 내놓는다/판다/간다](.go)를 짚고 «여기를 눌러 보세요» — 창 글과 반대 말(96f1fe9c 사진) · 표는 경고 줄을 넣는 자리가 단다(data-warn) */
     if (pop && pop.dataset && pop.dataset.warn === '1') return hintAt(null, null);
+    /* ★ 11-04 D29 앞머리 ㉮(총괄) — 경고 꾸밈 없이 «한 번 멈추게» 하는 확인 창(이름 붙인 그루 팔기)도 손가락이 물러선다(표 data-nofinger · §showVarieAsk) */
+    if (pop && pop.dataset && pop.dataset.nofinger === '1') return hintAt(null, null);
     /* ★ 2026-11-02 총괄 C11 #13(비판 6판 S83_shopM) — 할 일 창은 «읽는 창»이다 · 살아 있는 마지막 단추가 [✕]라 «여기를 눌러 보세요»가 ✕ 를 덮었다 ⇒ 짚지 않는다 */
     /* ★ 11-03 8C3 — 단, 내 집 자금이 모였으면 그 창의 [내 집 마련하기](§drawQuestPanel #questHome)는 짚는다 */
     if (pop && pop.id === 'questPanel') {
@@ -19310,7 +19312,7 @@ function sellSpeciesNow(id, opt = {}) {
   { const q0 = (() => { try { return SPC.speciesPotOf(S, id); } catch { return null; } })();
     if (q0 && NICK.nickOf(q0) && !(opt && opt.confirmed)) {   /* 곧장 팔리고 못 무른다 — 정 붙인 그루는 한 번 묻는다(막지 않음) */
       let won = null; try { won = SPC.speciesPriceOf(q0).won; } catch { won = null; }
-      showVarieAsk({ title: NICK_SELL_KO.title.replace('{name}', NICK.nickOf(q0)).replace('{won}', Number.isFinite(won) ? won.toLocaleString() : '?'), lines: [NICK_SELL_KO.line], warn: false,
+      showVarieAsk({ title: NICK_SELL_KO.title.replace('{name}', NICK.nickOf(q0)).replace('{won}', Number.isFinite(won) ? won.toLocaleString() : '?'), lines: [NICK_SELL_KO.line], warn: false, noFinger: true,   /* ★ 11-04 ㉮ */
                      goKo: SELL_ASK_KO.goDeal,
                      onGo: () => sellSpeciesNow(id, { confirmed: true }) });
       return;
@@ -22881,9 +22883,11 @@ function showVarieAsk(o) {
   $('varieAskCancel').textContent = SELL_ASK_KO.cancel;
   varieAskGo = o.onGo;
   $('varieAsk').dataset.warn = o.warn ? '1' : '';   /* ★ 총괄 11-01 — 원천 0 경고 창이면 손가락이 물러선다(§updateHint .pop) */
+  $('varieAsk').dataset.nofinger = o.noFinger ? '1' : '';   /* ★ 11-04 D29 앞머리 ㉮ — 경고 꾸밈 없이 손가락만 물러서는 창(이름 붙인 그루 팔기) */
   $('varieAsk').classList.add('on'); $('varieAsk').setAttribute('aria-hidden', 'false');
+  try { updateHint(); } catch (e) { void e; }   /* ★ 11-04 — 창을 연 바로 뒤 손가락을 다시 고른다(지킴이 0.5초를 안 기다림 · F3 꼬리 ㉡ 과 같은 손) */
 }
-function closeVarieAsk() { varieAskGo = null; $('varieAsk').dataset.warn = ''; $('varieAsk').classList.remove('on'); $('varieAsk').setAttribute('aria-hidden', 'true'); }
+function closeVarieAsk() { varieAskGo = null; $('varieAsk').dataset.warn = ''; $('varieAsk').dataset.nofinger = ''; $('varieAsk').classList.remove('on'); $('varieAsk').setAttribute('aria-hidden', 'true'); }
 $('varieAskGo').onclick = () => { const f = varieAskGo; closeVarieAsk(); if (f) f(); };
 $('varieAskCancel').onclick = () => { closeVarieAsk(); };
 /* [상점] 단추 · 식물 상세 카드가 같이 부른다 — ★ D100 §2: [내놓기]는 늘 창(무엇을 · 얼마에 · 어떻게 팔리나) · 판 뒤 원천 0 이면 원천 줄 셋 + [그래도 내놓는다](몬이 줄은 뺐다 · [plan] 11-01)

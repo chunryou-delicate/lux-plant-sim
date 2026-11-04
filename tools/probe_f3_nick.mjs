@@ -156,11 +156,15 @@ if (sp) {
   sell = await J(`(()=>{ const p=document.getElementById('varieAsk'); return { clicked: ${JSON.stringify(true)}, on: p.classList.contains('on'), title: (document.getElementById('varieAskTitle')||{}).textContent,
     lines: [...document.querySelectorAll('#varieAskLines > *')].map(x => (x.textContent||'').trim()).filter(Boolean), go: (document.getElementById('varieAskGo')||{}).textContent, cancel: (document.getElementById('varieAskCancel')||{}).textContent }; })()`);
   sell.clicked = clicked;
+  await sleep(400);   /* ★ 11-04 ㉮ — 창이 선 뒤 0.9초(지킴이가 한 번은 돈 뒤)에도 손가락이 창 단추를 안 짚나 */
+  sell.finger = await J(`(()=>{ const h=document.getElementById('hint'), t=document.querySelector('.hintTarget'), p=document.getElementById('varieAsk'); return { on: h.classList.contains('on'), target: t ? (t.id || t.className) : null, inPanel: !!(t && p.contains(t)) }; })()`);
   if (OUT) await page.shot(`${OUT}/390_f3_sell_ask.png`);
   await J(`(()=>{ const c=document.getElementById('varieAskCancel'); if (c && document.getElementById('varieAsk').classList.contains('on')) c.click(); return 1; })()`); await sleep(400);
   sell.still = await J(`(((window.__S().species||{}).pots)||[]).some(q => q && q.id === ${JSON.stringify(sp.id)})`);
 }
 console.log('  ㉱', JSON.stringify(sell));
+ok(!sp || (sell && !sell.탈 && sell.finger && !(sell.finger.on && sell.finger.inPanel)),
+   `㉱ 확인 창 동안 손가락 없음(${sell && sell.finger && sell.finger.on ? sell.finger.target : '없음'} · 총괄 11-04 ㉮ — 한 번 멈추게 하는 창)`, JSON.stringify(sell && sell.finger));
 ok(!sp || (sell && !sell.탈 && sell.clicked && sell.on && /^분홍이 — [0-9,]+원에 팝니다$/.test(sell.title || '') && (sell.lines || []).includes('이름 붙인 그루입니다. 되돌릴 수 없습니다.') && sell.go === '판다' && (sell.cancel || '').trim() === '아직' && sell.still === true),
    `㉱ 이름 붙인 새 종 [💰 팔기] → 확인 창(«${sell && sell.title}» · 한 줄 · [판다] · [아직]) · [아직]이면 안 팔림`, JSON.stringify(sell));
 
