@@ -69,6 +69,7 @@
     - [11-04 덧 · growth 물음] 화면 차례는 commitNextDay(game.html:15859) → showFirstPlayEvents(15867 · 그 안에서 noteQuestWaits 15414 → story.turn 15424) → checkQuests(15873) → draw(15874)다. 대사와 칩은 한 번에 처음 그려지므로, 사람이 줄을 읽을 때 보는 칩은 **checkQuests 뒤 칩**이다.
     - 그래서 고르는 칩 = story.turn 때 questView 칩에서 «그날 아침 끝날 줄»(quest.js:1869 questsFinishingNow)을 뺀 것이다. 빼지 않으면 «할 일이 며칠째 그대로야» 바로 뒤에 그 줄의 끝 카드가 선다.
     - 아침에 새로 열릴 줄은 questsOpenedOn 이 아직 없어 임자가 안 된다(위 «열린 날을 모르면 null»). 열린 날이 오늘이 되면 날수 0 이다.
+    - fresh0 도 checkQuests 뒤 값이다. 그날 아침 열릴 줄(questView open 에 있고 questsOpenedOn 에 없는 줄)은 «열린 날 = 오늘»인 새 줄로 친다. story.turn 때 qv.fresh 만 보면 이 줄이 빠진다. 그러면 달력으로 오는 줄(buy_lamp 꼴)이 화면 칩을 쥔 첫 아침에 범용 줄이 다른 줄을 두고 선다.
   - 새 줄(fresh0 · game.html:14192 와 같은 자)이 화면 칩을 쥔 날(48시간)은 범용 셋이 쉰다. 제 줄은 선다(무엇을 하라는지 말에 있다). 칩이 아닌 줄로 적는 것은 qv.chip 기준이다 — fresh0 가 있어도 qv.chip 줄의 날수는 그대로 간다.
 - 참인 조건: 범용 셋이 선 날, 그날 화면 칩 = `c.nudge.id` 다. 그 줄이 칩에 «기다리지 않고» 선 지 `c.nudge.days` 일째다.
 
