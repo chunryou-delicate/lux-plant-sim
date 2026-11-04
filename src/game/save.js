@@ -1003,6 +1003,27 @@ function packTalk(t) {
     if (Number.isFinite(v)) lastDay[String(k)] = needInt(Math.max(0, Math.round(v)), `talk.lastDay.${k}`, { min: 0 });
   return { seen: [...new Set(strs(t.seen, 'talk.seen'))], recent: strs(t.recent, 'talk.recent').slice(-TALK_RECENT_MAX), lastDay };
 }
+/* ★ 2026-11-04 F1 새 잎 펼치기 — 펼침 대기 줄(S.unfurl) · 처음 본 꼴(S.album). 칸 없는 판은 null(옛 세이브 · 아직 안 씀 — talk 와 같은 결) */
+function packUnfurl(u) {
+  if (!Array.isArray(u) || !u.length) return null;
+  const out = [];
+  u.forEach((x, i) => {
+    if (!x || typeof x !== 'object') return;
+    const path = `unfurl[${i}]`;
+    out.push({ potId: needStr(String(x.potId), `${path}.potId`), leafBirth: needNum(x.leafBirth, `${path}.leafBirth`),
+               day: needInt(x.day ?? 0, `${path}.day`, { min: 0 }),
+               leafNo: x.leafNo == null ? null : needInt(x.leafNo, `${path}.leafNo`, { min: 0 }),
+               title: optStr(x.title, `${path}.title`), sub: optStr(x.sub, `${path}.sub`),
+               img: optStr(x.img, `${path}.img`), card: optStr(x.card, `${path}.card`) });
+  });
+  return out.length ? out : null;
+}
+function packAlbum(a) {
+  if (!a || typeof a !== 'object' || Array.isArray(a)) return null;
+  const out = {};
+  for (const [k, v] of Object.entries(a)) if (Number.isFinite(v)) out[needStr(String(k), 'album.key')] = needInt(Math.max(0, Math.round(v)), `album.${k}`, { min: 0 });
+  return Object.keys(out).length ? out : null;
+}
 function packStory(story) {
   if (!story) return null;
   const end = needObj(story.ending || {}, 'story.ending');
@@ -1338,6 +1359,7 @@ export function serialize(S, opt = {}) {
       character: packCharacter(S.character),
       /* ★ 2026-10-31 총괄 D90 종합5 — 본 대사(§packTalk) · 칸 없는 판은 null */
       talk: packTalk(S.talk),
+      unfurl: packUnfurl(S.unfurl), album: packAlbum(S.album),   /* ★ 11-04 F1 */
       firstPlay: packFirstPlay(S.firstPlay),
       story: packStory(S.story),
       tutorial: packTutorial(S.tutorial),
@@ -1808,7 +1830,8 @@ export function deserialize(raw, opt = {}) {
   S.jobCare = st.jobCare ? unpackJobCare(st.jobCare) : null;   /* B 돌봄 · 옛 세이브는 null */
   S.jobBreed = st.jobBreed ? unpackJobBreed(st.jobBreed) : null;   /* C 육종 · 옛 세이브는 null */
   { const h = unpackHero(st.hero); if (h) S.hero = h; const c = packCharacter(st.character); if (c) S.character = c; }
-  { const t = packTalk(st.talk); if (t) S.talk = t; }   /* ★ 10-31 본 대사 — 없으면 칸을 안 세운다(처음부터 · 예전 그대로) */   /* 남녀·캐릭터 — 없으면 칸을 안 세운다(기본 'f' · 'jachwi') */
+  { const t = packTalk(st.talk); if (t) S.talk = t; }
+  { const u = packUnfurl(st.unfurl); if (u) S.unfurl = u; const a = packAlbum(st.album); if (a) S.album = a; }   /* ★ 11-04 F1 — 없으면 칸을 안 세운다 */   /* ★ 10-31 본 대사 — 없으면 칸을 안 세운다(처음부터 · 예전 그대로) */   /* 남녀·캐릭터 — 없으면 칸을 안 세운다(기본 'f' · 'jachwi') */
   if (S.species) for (const q of S.species.pots) q.at = q.at ? makeAt(q.at) : null;
   S.cuttings = needArr(st.cuttings || [], 'state.cuttings').map((c, i) => {
     const q = packCutting(c, i);

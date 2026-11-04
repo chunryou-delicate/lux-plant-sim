@@ -1579,6 +1579,9 @@
   #nickHint{word-break:keep-all}
   #nickHint.warn{color:#ff9c8c}
   #nickGo[disabled]{opacity:.45}
+  /* ★ 11-04 F1 — [나] 창 설정 줄(새 잎 직접 펼치기) */
+  #dBody .setRow button{min-height:0;padding:4px 14px;border-radius:12px;font-size:13px;font-weight:700}
+  #dBody .setNote{margin:2px 0 10px;font-size:12px;opacity:.72}
   #breedNameInput{display:block;width:100%;box-sizing:border-box;min-height:44px;margin:10px 0 4px;padding:0 12px;font-size:16px;border-radius:10px;
     border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:var(--ink)}
   /* ★ 2026-10-10 벽 걸이 v1 — 걸이 자리 원(house hangSpots · 화면 좌표는 캔버스 기준이라 무대 기준으로 옮겨 찍는다) */
@@ -3873,6 +3876,60 @@ function checkStarved(t) {
      가 정확히 그것으로 이사 성공률을 A 60→13% 로 죽였다. 그루는 `potPriceOf` 다. */
 /* ★ W3 #5 — 무늬 장면(여기서 적고 §showFirstPlayEvents 가 띄운다) · 이 턴의 ✨ 배너(사건 배너가 덮지 않게 거기서 같이 띄운다). 메모리만 */
 let pendingLeafScene = null, leafBanners = [];
+/* ★★ 2026-11-04 F1 새 잎 펼치기(plan-ui-fun §F1 · 총괄 가름 · 글 총괄 11-04) — 펼침 대기 줄 S.unfurl · 처음 본 꼴 S.album(세이브 · 있을 때만)
+     줄 한 칸: { potId, leafBirth, day(넣은 날), leafNo, title · sub · img(그 날 배너 그대로) · card(꼴 카드 id) } — 배너를 그때 지어 두고 드러낼 때 그대로 띄운다
+     ⚠ 등급은 잎이 날 때 빛으로 이미 정해졌다(§assignPotLeafGrades) — 누름은 정하지 않고 «드러내기만» 한다(뽑기 아님) */
+const UNFURL_KEY = 'byeot.unfurl';
+const UNFURL_KO = Object.freeze({ mark: '💠 {head}{n}번째 잎 펼치기', firstSeen: '처음 보는 꼴입니다',
+                                  setName: '새 잎 직접 펼치기', setNote: '끄면 무늬가 바로 드러납니다', on: '켬', off: '끔' });
+window.__byeotUnfurlKo = UNFURL_KO;   /* 재는 손잡이(글) */
+function unfurlOn() { try { return localStorage.getItem(UNFURL_KEY) !== '0'; } catch (e) { return true; } }
+/* ✨ 무늬 배너 · 💠 가 그 그루를 같은 이름으로 부른다(첫 그루면 없음 · 아니면 «몇째 몬스테라 · ») */
+function leafBannerHeadOf(pot) { return pot === pot0(S) ? '' : `${(S.pots || []).indexOf(pot) + 1}째 몬스테라 · `; }
+function unfurlPending(potId, leafBirth) { return Array.isArray(S.unfurl) && S.unfurl.some(u => u && u.potId === potId && +u.leafBirth === +leafBirth); }
+/* 처음 본 꼴이면 적고 참 · 무지 · 모르는 꼴은 안 적음 */
+function unfurlAlbumNote(card) {
+  if (!card) return false;
+  if (!S.album || typeof S.album !== 'object' || Array.isArray(S.album)) S.album = {};
+  if (S.album[card] != null) return false;
+  S.album[card] = S.day; return true;
+}
+/* 드러내기 — tap: 💠 를 눌렀다(카메라 · 차임 · «처음 보는 꼴») · 아니면 아침 저절로(지금 배너 그대로) */
+function revealUnfurl(u, opt = {}) {
+  const list = Array.isArray(S.unfurl) ? S.unfurl : [];
+  const i = list.indexOf(u); if (i < 0) return false;
+  list.splice(i, 1); if (!list.length) delete S.unfurl;
+  const p = (S.pots || []).find(x => x && x.id === u.potId) || null;
+  if (p && (p.slotId || p.at)) {   /* 그 잎을 성숙 그림으로(펼침 줄에서 빠졌으니 진짜 matSkin) · 가방 그루는 안 그린다 */
+    const lead = p === pot0(S);
+    try { if (!lead) selectPlantFor(S, io, p); pushLeafSkins(p); } catch (e) { console.warn('[펼치기 그림]', e && e.message); }
+    finally { if (!lead) { try { selectLeadPlant(S, io.growth); } catch (e) { void e; } } }
+  }
+  const first = unfurlAlbumNote(u.card);
+  const b = { title: u.title, sub: (u.sub || '') + (opt.tap && first ? `<br>${UNFURL_KO.firstSeen}` : '') };
+  if (u.img) b.img = u.img;
+  (window.__stageLog ||= []).push({ day: S.day, kind: opt.tap ? 'leaf:open' : 'leaf:shown', potId: u.potId, leafBirth: u.leafBirth, first });
+  if (opt.tap) { try { focusOnMonstera(p); } catch (e) { void e; } try { sfx.chime(); } catch (e) { void e; } }
+  banners([b]); if (!opt.tap) leafBanners.push(b);
+  if (opt.tap) { try { drawMarks(); } catch (e) { void e; } try { saveSoon(); } catch (e) { void e; } }
+  return true;
+}
+/* 아침 — 어제(또는 그 앞)에 넣은 것을 지금 배너로 · all: 전부(설정을 끈 때) */
+function flushUnfurl(all) { for (const u of (Array.isArray(S.unfurl) ? S.unfurl.slice() : [])) if (all || !(u && u.day >= S.day)) revealUnfurl(u, { tap: false }); }
+/* 💠 방 말풍선 — 그 그루 위(놓인 그루만 · 가방 그루는 아침에 저절로) · 글은 aria-label · title(말풍선은 그림만 · 08-17) */
+function unfurlMarks() {
+  const out = [];
+  for (const u of (Array.isArray(S.unfurl) ? S.unfurl : [])) {
+    const p = (S.pots || []).find(x => x && x.id === u.potId);
+    if (!p || (!p.slotId && !p.at)) continue;
+    out.push({ key: p.slotId || `free:${p.id}`, unfurl: true,
+               ko: UNFURL_KO.mark.replace('{head}', leafBannerHeadOf(p)).replace('{n}', String(u.leafNo || '')),
+               go: () => revealUnfurl(u, { tap: true }) });
+  }
+  return out;
+}
+window.__byeotUnfurl = () => ({ on: unfurlOn(), list: (S.unfurl || []).map(u => ({ potId: u.potId, leafBirth: u.leafBirth, day: u.day, leafNo: u.leafNo, title: u.title, card: u.card })),
+                                album: { ...(S.album || {}) }, marks: unfurlMarks().map(m => ({ key: m.key, ko: m.ko })) });   /* 재는 손잡이(읽기) */
 /* ★ 잎별 무늬 그림을 생장 창(확대창)에 넘긴다 — 등급 장부(pot.leafGrades)가 정한 그림표 그대로(§noteLeafGrades 의 그 넘김을 떼어 냈다).
    ★★ 2026-10-08 ([leaf] 6e0d4cc6 · 총괄 ③가) — 예전엔 하루 넘김(noteTurn → noteLeafGrades)에서만 넘겨, **세이브를 불러오면**
      다음 하루까지 확대창이 방과 다른 무늬를 그렸다(4판 중 2·3판). ⇒ 불러온 직후(§resumeSave 뒤)와 확대창을 여는 순간(§openZoomFor · 첫 그루)에도 넘긴다.
@@ -3885,7 +3942,10 @@ function pushLeafSkins(pot = null) {
     if (!w || typeof w.setLeafSkins !== 'function') return false;
     const p0 = pot || pot0(S);
     if (!p0) return false;
-    w.setLeafSkins(Object.entries(potLeafSkinsOf(S, p0) || {}).map(([lb, v]) => ({ leafBirth: +lb, ...v })));
+    /* ★ 11-04 F1 ①(총괄) — 펼침 대기 잎은 성숙 그림(matSkin) 자리에 중간 그림(midSkin) — 펼치기 전에 3D 가 등급을 먼저 말하지 않게(그림만 · 셈 그대로) */
+    const list = Object.entries(potLeafSkinsOf(S, p0) || {}).map(([lb, v]) => ({ leafBirth: +lb, ...v, ...(unfurlPending(p0.id, +lb) && v && v.midSkin ? { matSkin: v.midSkin, unfurlHeld: true } : {}) }));
+    w.setLeafSkins(list);
+    window.__leafSkinsLast = { potId: p0.id, list: list.map(x => ({ leafBirth: x.leafBirth, grade: x.grade, midSkin: x.midSkin, matSkin: x.matSkin, held: !!x.unfurlHeld })) };   /* 재는 손잡이 */
     return true;
   } catch (e) { console.warn('[무늬 그림]', e && e.message); return false; }
 }
@@ -3908,6 +3968,7 @@ function pushLeafSkinsAll() {
      가방에 든 그루는 오늘 안 자랐다(loop §inBag) — 건너뛴다. 밴드는 그 화분이 이 턴에 받은 것(turn.plants[].growthSpeed) */
 function noteLeafGrades(t) {
   leafBanners = [];
+  try { flushUnfurl(false); } catch (e) { console.warn('[펼치기 아침]', e && e.message); }   /* ★ 11-04 F1 — 어제 안 누른 것은 지금 배너로 */
   if (!hasPlant(S)) return;
   const lead = pot0(S);
   const placed = (S.pots || []).filter(p => p && (p === lead || p.slotId || p.at));
@@ -3941,7 +4002,7 @@ function notePotLeafGrades(t, pot, isLead) {
          캐논이 *"성숙 특수무늬는 앞선 mid 의 특수 형태를 따라 그룹핑 — 미구현, 향후"* 라
          남겨 둔 그 자리다.
        ⚠ 창구가 없으면 조용히 지나간다 — 옛 생장 창에서도 게임은 돌아야 한다. */
-    pushLeafSkins(pot);
+    /* ★ 11-04 F1 — 그림(§pushLeafSkins)은 아래 펼침 줄에 넣은 «뒤»로 옮겼다(넣기 전에 넘기면 그 잎 성숙 무늬가 3D 에 먼저 선다) */
     /* ★ 2026-10-10 잎 카드(plan 6d7665e0 ①) — 그 등급을 «처음» 본 날(이 그루 장부에 오늘 것 말고 같은 등급이 없음) 배너 옆에 그 잎의 카드.
          카드는 그 잎이 실제로 그려지는 성숙잎 그림의 갈래(shop §leafCardOf) · 한 턴에 같은 등급이 둘이면 첫 잎만 · 무지는 안 띄운다 */
     const p0c = pot, todayB = new Set(((r && r.assigned) || []).map(a => String(a.leafBirth)));
@@ -3949,19 +4010,29 @@ function notePotLeafGrades(t, pot, isLead) {
     try { ledC = potLeafGradesOf(p0c) || {}; skinsC = potLeafSkinsOf(S, p0c) || {}; } catch (e) { console.warn('[잎 카드 장부]', e && e.message); }
     const cardShown = new Set();
     /* 첫 화분이 아니면 «몇째 몬스테라»를 앞에 단다(씨앗 그루 · 10-24) */
-    const potHead = isLead ? '' : `${(S.pots || []).indexOf(pot) + 1}째 몬스테라 · `;
+    const potHead = leafBannerHeadOf(pot);   /* ★ 11-04 F1 — 💠 와 같은 자 */
     for (const a of (r && r.assigned) || []) {
       const b = { title: `✨ ${potHead}${a.leafNo}번째 잎 — ${a.gradeKo}`,
                   sub: (((r.events || []).find(e => e.leafBirth === a.leafBirth) || {}).ko || '').replace(/\*\*/g, '') };
+      let card = null;   /* ★ 11-04 F1 — 꼴 카드 id(처음 본 꼴 S.album · 무지는 없음) */
       try {
         const first = !cardShown.has(a.grade) && !Object.entries(ledC).some(([lb, g]) => g === a.grade && !todayB.has(String(lb)));
         const mat = a.matSkin || ((skinsC[a.leafBirth] || skinsC[String(a.leafBirth)] || {}).matSkin) || null;   /* 알림 항목이 그 잎의 성숙잎 그림을 들고 온다(shop §assignPotLeafGrades) */
-        if (first) { const c = leafCardOf({ grade: a.grade, matSkin: mat }); if (c && c !== 'card_mon_plain') { b.img = `./assets/illust/cards/${c}.png`; cardShown.add(a.grade); } }
+        { const c0 = leafCardOf({ grade: a.grade, matSkin: mat }); card = c0 && c0 !== 'card_mon_plain' ? c0 : null; }
+        if (first) { const c = card; if (c) { b.img = `./assets/illust/cards/${c}.png`; cardShown.add(a.grade); } }
       } catch (e) { console.warn('[잎 카드]', e && e.message); }
+      /* ★ 11-04 F1 — 프롤로그 잎(첫 판 · 장면)이 아니고 설정이 켜져 있으면 배너 대신 펼침 줄(💠) · 끄면 지금처럼 바로 */
+      if (a.why !== 'prologue' && unfurlOn()) {
+        if (!Array.isArray(S.unfurl)) S.unfurl = [];
+        S.unfurl.push({ potId: pot.id, leafBirth: a.leafBirth, day: S.day, leafNo: a.leafNo, title: b.title, sub: b.sub, img: b.img || null, card });
+        continue;
+      }
+      unfurlAlbumNote(card);
       banners([b]); leafBanners.push(b);
       if (isLead && a.why === 'prologue' && a.leafNo === 2) pendingLeafScene = pendingLeafScene || 'seen';
       if (isLead && a.why === 'prologue' && a.grade === 'halfmoon') pendingLeafScene = 'half';
     }
+    pushLeafSkins(pot);   /* ★ 11-04 F1 — 펼침 줄에 넣은 뒤(그 잎은 중간 그림으로) */
   }
 }
 /* ★ 표시 전용 — 몬스테라가 **도착한** 자리. first_play 는 옮기면 slotId 를 덮어써서
@@ -5527,7 +5598,10 @@ const detail = {
       title: '나', sub: ME_KO.sub.replace('{room}', ME_KO.room[roomKey]).replace('{season}', seasonKo),   /* ★ U0 */
       body: rows.map(([k, v]) => `<div class="row"><span>${k}</span><b>${v}</b></div>`).join('')
         + `<p>${ME_KO.body[roomKey]}</p>`
-        + '<ul class="todo">' + learn.map(([k, ok]) => `<li class="${ok ? 'done' : ''}">${k}</li>`).join('') + '</ul>',
+        + '<ul class="todo">' + learn.map(([k, ok]) => `<li class="${ok ? 'done' : ''}">${k}</li>`).join('') + '</ul>'
+        /* ★ 11-04 F1 — 설정 «새 잎 직접 펼치기»(끄면 무늬가 바로 드러남 · localStorage byeot.unfurl) */
+        + `<div class="row setRow"><span>${UNFURL_KO.setName}</span><button type="button" id="setUnfurl" aria-pressed="${unfurlOn()}">${unfurlOn() ? UNFURL_KO.on : UNFURL_KO.off}</button></div>`
+        + `<p class="setNote">${UNFURL_KO.setNote}</p>`,
       btns: [{ ko: '몬이는 누구?', go: () => detail.open('moni') }]
     };
   },
@@ -6276,6 +6350,14 @@ function bindDetail() {
       if (q) { askMoveThing({ kind: 'species', id: q.id, potD: ARRIVAL_POT_D, variegated: false, label: NICK.nameOr(q, (SPC.SPECIES_KO && SPC.SPECIES_KO[q.species]) || '새 식물'), slotId: q.slotId || null }); return; }   /* ★ 11-03 F3 이름 */
     }); }
   $('meChip').onclick = () => detail.open('me');
+  /* ★ 11-04 F1 — [나] 창 «새 잎 직접 펼치기» 켬/끔 · 끄면 기다리던 💠 도 지금 배너로 */
+  $('dBody').addEventListener('click', (e) => {
+    const t = e.target && e.target.closest ? e.target.closest('#setUnfurl') : null; if (!t) return;
+    const on = !unfurlOn();
+    try { localStorage.setItem(UNFURL_KEY, on ? '1' : '0'); } catch (x) { void x; }
+    t.textContent = on ? UNFURL_KO.on : UNFURL_KO.off; t.setAttribute('aria-pressed', String(on));
+    if (!on) { try { flushUnfurl(true); drawMarks(); saveSoon(); } catch (x) { console.warn('[펼치기 끔]', x && x.message); } }
+  });
   $('dClose').onclick = () => detail.close();
   $('detail').onclick = e => { if (e.target === $('detail')) detail.close(); };
   /* 아이템 카드를 눌러서 연다. ★끌기와 부딪히지 않게 — 끄는 중이면 열지 않는다 */
@@ -13273,8 +13355,9 @@ let hintRepick = 0;
    ⚠ ①을 ② 뒤에 두면 "물 줄 게 있는 날"마다 삽수 경고가 통째로 가려진다.
      그 상태로 유예 8일이 지나면 경고를 한 번도 못 보고 삽수가 사라진다. */
 function markList() {
+  let unf = []; try { unf = unfurlMarks(); } catch (e) { console.warn('[💠]', e && e.message); }   /* ★ 11-04 F1 — 어느 무리에나 덧붙임(그 그루 위 · 같은 점 방울은 §placeMarks 가 벌림) */
   const urgent = cutMarks(true);
-  if (urgent.length) return urgent;
+  if (urgent.length) return [...urgent, ...unf];
   /* ★ 마른 몬스테라 — **콩나물보다 먼저**다 (2026-08-07).
      마른 날은 **하루가 통째로 안 세어진다** — 놓치면 그날이 사라진다.
      콩나물의 물·수확은 하루 늦어도 그날이 뒤로 밀릴 뿐 없어지지 않는다.
@@ -13284,11 +13367,11 @@ function markList() {
        마른 몬스테라 경고는 흐리게 남기고(하루를 잃는 날이라 알림은 남긴다) · 작물 · 빈 화분 말풍선은 오늘 안 세운다(상태 표지가 대신) · 내일 차면 그대로 */
   const tiredOf = (act) => { try { return !!staminaBlockNote(act); } catch (e) { return false; } };
   const dry = potMarks().map(m => tiredOf('water') ? { ...m, tone: ((m.tone || '') + ' tired').trim() } : m);
-  if (dry.length) return dry;
+  if (dry.length) return [...dry, ...unf];
   /* ★ 2026-11-01 총괄 D100 · [plan] §4-2 · 비판 #21 — 빈 화분 🌱(씨앗 심기)도 작물 말풍선과 같은 층(사람은 방에서 찾는다) */
   const crop = [...cropMarks(), ...emptyPotMarks()].filter(m => !(m.act && tiredOf(m.act)));   /* ★ #11 */
-  if (crop.length) return crop;
-  return cutMarks(false);
+  if (crop.length) return [...crop, ...unf];
+  return [...cutMarks(false), ...unf];
 }
 /* ★★ 2026-11-01 총괄 D100 ③ · [plan] §4-2 — 방에 놓인 빈 화분마다 «🌱 씨앗 심기» 말풍선(가방에 몬스테라 씨앗이 있을 때만) → [식물] 판 줄 단추와 같은 함수(§sowEmptyPot).
      ⛔ 비판 다섯째 판 #21: 원룸 빈 모종포트에 씨앗 심는 길을 못 찾았다 — [식물] 판 줄 단추뿐이었다 */
@@ -15267,9 +15350,9 @@ const SPEAR_ZOOM_WAIT_MS = 900;
 const SPEAR_ZOOM_HOLD_MS = 3600;
 /* ★ 2026-10-31 비판 셋째 판 MAJOR #4 — 지금 서 있는 «몬스테라 당기기» 하나(돌려놓을 때까지) · 새 당기기가 서면 옛 것의 돌려놓기는 손을 뗀다 */
 let spearFocus = null, spearFocusTok = 0;
-function focusOnMonstera() {
+function focusOnMonstera(potArg) {   /* ★ 11-04 F1 — 그루를 받는다(없으면 예전 그대로 첫 그루) */
   try {
-    const p = pot0(S);
+    const p = potArg || pot0(S);
     if (!p || !roomView || !roomView.focusSlot) return;
     const key = p.at ? `free:${p.id}` : p.slotId;
     if (!key) return;                                  /* 가방에 있으면 당길 것이 없다 */
