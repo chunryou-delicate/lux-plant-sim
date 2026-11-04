@@ -163,3 +163,30 @@
 
 - 칩 셈 때: growth 판 기록의 chip 칸은 저녁(손 뒤) 값이고 임자(nz)는 아침 값이다. 위 «반지하 · 원룸 2~3일»에는 이 때 다름이 섞였다. ㉯는 아침 칩으로 잰다.
 - nudgeBack «급한 건 아니야. 마음 내키면 해.»가 할 일을 다 끝낸 날(빈 칩)에도 서는 것은 D19 대로 둔다. careR 은 투룸 3,326 판-날이 빈 칩이다. 이번 청에 없어 손대지 않았다.
+
+---
+
+## 대조 (11-04 · core 51ebf8f4 · byeot-plan-verify)
+
+- 어긋남 0. 글 0줄(범용 넷 · nudgeBack 글이 해시에서 그대로) · 값 0(NUDGE_DAYS · gap 30 · NUDGE_LINE_GAP 7).
+- 줄마다
+  - ① 임자: chatterContext.nudge = turn.nudgeChip.chip(기다림 아닌 칩). 진짜 판에서 끝났거나 · 열린 날을 모르거나 · 기다림이면 null 이다. 옛 «가장 먼저 열린 줄» 셈과 questRoomOk 부름은 걷혔다.
+  - ① 날수: noteQuestWaits(S, day, { chipId: chipAny })가 칩이 아닌 열린 줄을 오늘로 적는다. qv.chip 기준이라 fresh0 가 화면을 쥐어도 칩 줄 날수는 그대로 간다. 새 세이브 칸은 없다.
+  - ① 덧 둘: questChipAfterCheck = 베낀 판에서 stepQuests 한 걸음 → 끝난 줄을 questsTaken 에 넣음 → questView. 그날 아침 끝날 줄은 빠지고 열릴 줄은 «열린 날 = 오늘» fresh 가 된다. fresh0 는 game.html 14194(51ebf8f4 판)와 같이 fresh[0] 이 기다림이 아닐 때만이다. 화면 checkQuests(11952)와 같은 questSnapshotNow(turn)을 쓴다.
+  - ② STACK_NUDGE_LINES 19 = LONG_OWN 3 + 표 16 그대로다. PICK_NUDGE_LINES = pp_hold_pink · al_plant_corm 이고 걱정에서만 빠진다.
+  - ③ 한 커밋이다(dialogue · quest · nudge_wait · game.html · probe_branches).
+  - ④ ownNudgeToday: 범용 셋 앞 nudge 줄의 when 만 본다(repeatOk 안 봄). 앞줄은 모두 c.nudge.id 로 걸려 있다. late 줄은 없다.
+- core 가 가른 넷
+  - (가) questChipAfterCheck: 명세 덧 둘(아침 끝날 줄 뺌 · 열릴 줄 fresh)을 한 셈으로 한다. 어긋남 아님.
+  - (나) nudgeBack `!c.nudge && !c.nudgeChip`: 명세 «규칙 그대로»보다 좁다. 그러나 명세 참인 조건(«칩이 없거나 칩이 기다림 줄»)과 같다. 임자가 null 인데 칩이 있는 날(아침 열릴 줄 · 옛 세이브)을 막는다. 어긋남 아님.
+  - (다) 옛 셈 걷음: 명세 ③(«4616 부름이 없어진다») 그대로다. 칩을 안 넘긴 부름은 임자 null 이다. 게임 story.turn 부름은 하나(15433)이고 칩을 넘긴다.
+  - (라) 하네스 저녁 noteQuestWaits 는 예전대로(기다림만) 둔다: 명세가 core 가름으로 넘긴 자리다. 게임에는 저녁 부름이 없다. 이 갈림은 이번 고침 앞부터 있던 하네스 · 화면 차이다.
+- 기록(사진에 안 서는 글이라 기록이 증거): c7/red82 fm116_probe_u2f_oldsave_141505.log(exit 0)
+  - tworoom_shop_first 446: 칩 home_unpack(열린 날 445) · nudgeOffer. 칩 = 임자 · 1일째라 참이다.
+  - 8b2c_oneroom 51: 칩 place_siru · fresh[0] leaf_three(늘 기다림이라 fresh0 아님) · nudgeWorry. 화면 칩 = 임자이고 51일째라 참이다. 52 · 53 은 fresh0 oneroom_root_bright 가 화면을 쥐어 범용 줄이 없다.
+  - 사진 8b2c_oneroom_after(Day 53)에 «새 무늬를 잘라 뿌리내린다» 칩이 서 있다. 기록과 같다.
+  - 다시 켠 첫날 걱정: fm115 6/9 → fm116 2/9. 남은 둘은 위 place_siru 판이다.
+- 판 값: 명세는 «판 값 그대로»가 목표였다. core 14판에서 끝 지갑 · 이사 · 끝 날은 같다. 중간 지갑이 Day 38~82 에 잠깐 갈린다. core 까닭은 D98 ㉮ 미룸이 nudgeSiruPush 에 걸려 있어서다(3 → 1). 총괄이 받았다.
+  - plan 이 코드로 본 것: 하네스 아침 questSnapshotOf 한 번 더(pantryKeepStatus → pantryLotsOf)는 곳간 목록을 앞에서 덜어 총액에 맞출 뿐이다. 다음 부름도 같은 결과를 내므로 갈림 까닭으로 안 본다(코드 위 · 판 못 잼).
+- 남은 것: growth 앞뒤 수를 명세 기대와 댄다(투룸 범용 93 → 0 · nudgeBack 388 → 빈 칩 날만 · GH 제 줄 다음 날 66 → 22).
+  - core 14판의 «원룸 Worry 29 → 1»은 plan 셈이 못 본 판(lazy 꼴)이 섞였다. growth 판에서 빠진 까닭(제 줄 날 · 칩 ≠ 임자 · 열린 날 모름)을 갈라 본다.
